@@ -1,2 +1,2 @@
 Common targets are:
-    ast2400-image
+    wedge-image
