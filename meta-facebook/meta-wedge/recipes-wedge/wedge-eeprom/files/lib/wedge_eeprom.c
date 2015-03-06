@@ -36,35 +36,11 @@
  */
 #define FBW_EEPROM_SIZE 256
 
-/*
- * Note: This crc8 function is received from Accton, who copied it
- * from open source.
- * Could need to re-implement it for license requirement.
- */
+
 static inline uint8_t fbw_crc8(uint8_t crc, uint8_t data)
 {
-  uint8_t i;
-
-  i = data ^ crc;
-  crc = 0;
-  if (i & 1)
-    crc ^= 0x5e;
-  if (i & 2)
-    crc ^= 0xbc;
-  if (i & 4)
-    crc ^= 0x61;
-  if (i & 8)
-    crc ^= 0xc2;
-  if (i & 0x10)
-    crc ^= 0x9d;
-  if (i & 0x20)
-    crc ^= 0x23;
-  if (i & 0x40)
-    crc ^= 0x46;
-  if (i & 0x80)
-    crc ^= 0x8c;
-
-  return crc;
+  /* donot verify crc now, always return 0 */
+  return 0;
 }
 
 static uint8_t fbw_crc8_buf(const uint8_t *buf, int len)
