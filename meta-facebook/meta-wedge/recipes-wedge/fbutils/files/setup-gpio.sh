@@ -46,15 +46,6 @@ devmem_set_bit $(scu_addr 70) 19
 devmem_clear_bit $(scu_addr a4) 8
 devmem_clear_bit $(scu_addr a4) 9
 devmem_clear_bit $(scu_addr a4) 10
-
-# Set up to watch for FC presence, and switch between interfaces.
-if [ -z "`weutil | grep 'Location on Fabric: LC'`" ]; then
-  devmem_clear_bit $(scu_addr 80) 0 # GPIOA0
-  devmem_clear_bit $(scu_addr 90) 0 # GPIOC0..C7, interested in C4, C5
-  devmem_clear_bit $(scu_addr 90) 25 # GPIOC0..C7, interested in C4, C5
-fi
-
-
 echo 192 > /sys/class/gpio/export
 echo 193 > /sys/class/gpio/export
 echo 194 > /sys/class/gpio/export
@@ -281,6 +272,10 @@ case "$board_type" in
         fi
         ;;
     *)
+        # Set up to watch for FC presence, and switch between interfaces.
+        # GPIOC0..C7, interested in C4, C5
+        devmem_clear_bit $(scu_addr 90) 0
+        devmem_clear_bit $(scu_addr 90) 25
         if [ $board_rev -lt 3 ]; then
             # Prior to DVTC
             # BP_SLOT_ID GPIO pins are U0, U1, U2, U3

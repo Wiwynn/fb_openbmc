@@ -30,18 +30,20 @@
 ### END INIT INFO
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
-NAME=usbcons
+NAME="FC Switcher"
 DESC="FC Failover Daemon"
 
 # source function library
 . /etc/init.d/functions
+
+. /usr/local/fbpackages/utils/ast-functions
 
 STOPPER=
 ACTION="$1"
 
 case "$ACTION" in
   start)
-    if [ -z "`weutil | grep 'Location on Fabric: LC'`" ]; then
+    if [ "$(wedge_board_type)" = "LC" ]; then
       # Ability to prevent this from starting by editing cmdline in u-boot.
       # Keeping this here until I get gadget switching working properly. (t4906522)
       /usr/local/bin/watch-fc.sh > /dev/null 2>&1 &
@@ -58,9 +60,13 @@ case "$ACTION" in
   restart|force-reload)
     echo -n "Restarting $DESC: "
     killall watch-fc.sh
-    sleep 1
-    /usr/local/bin/watch-fc.sh > /dev/null 2>&1 &
-    echo "$NAME."
+    if [ "$(wedge_board_type)" = "LC" ]; then
+      sleep 1
+      /usr/local/bin/watch-fc.sh > /dev/null 2>&1 &
+      echo "$NAME."
+    else
+      echo 'skipping watch-fc.sh: only necessary on six-pack line cards.'
+    fi
     ;;
   status)
     status watch-fc.sh
