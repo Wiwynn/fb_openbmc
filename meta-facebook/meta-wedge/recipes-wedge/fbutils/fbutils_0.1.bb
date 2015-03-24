@@ -29,6 +29,8 @@ SRC_URI = "file://ast-functions \
            file://rc.early \
            file://rc.local \
            file://src \
+           file://start_us_monitor.sh \
+           file://us_monitor.sh \
            file://COPYING \
           "
 
@@ -38,7 +40,7 @@ S = "${WORKDIR}"
 
 binfiles = "us_console.sh sol.sh power_led.sh post_led.sh \
   reset_usb.sh mdio.py setup_rov.sh wedge_power.sh wedge_us_mac.sh \
-  bcm5396.py bcm5396_util.py setup_switch.py watch-fc.sh"
+  bcm5396.py bcm5396_util.py setup_switch.py watch-fc.sh us_monitor.sh"
 
 DEPENDS_append = "update-rc.d-native"
 
@@ -75,6 +77,8 @@ do_install() {
   # for mac fixup should work
   install -m 755 eth0_mac_fixup.sh ${D}${sysconfdir}/init.d/eth0_mac_fixup.sh
   update-rc.d -r ${D} eth0_mac_fixup.sh start 70 S .
+  install -m 755 start_us_monitor.sh ${D}${sysconfdir}/init.d/start_us_monitor.sh
+  update-rc.d -r ${D} start_us_monitor.sh start 84 S .
   install -m 755 power-on.sh ${D}${sysconfdir}/init.d/power-on.sh
   update-rc.d -r ${D} power-on.sh start 85 S .
   install -m 755 fcswitcher.sh ${D}${sysconfdir}/init.d/fcswitcher.sh

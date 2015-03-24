@@ -19,18 +19,19 @@
 #
 
 ### BEGIN INIT INFO
-# Provides:          watch-fc
+# Provides:          us-monitor
 # Required-Start:
 # Required-Stop:
 # Default-Start:     S
 # Default-Stop:      0 6
-# Short-Description: Start the FC mointoring script
+# Short-Description: Start the microserver reset monitoring script
 #
 ### END INIT INFO
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
-NAME="FC Switcher"
-DESC="FC Failover Daemon"
+NAME="us_monitor"
+DESC="monitoring microserver reset"
+DAEMON="us_monitor.sh"
 
 # source function library
 . /etc/init.d/functions
@@ -42,33 +43,23 @@ ACTION="$1"
 
 case "$ACTION" in
   start)
-    if [ "$(wedge_board_type)" = "LC" ]; then
-      # Ability to prevent this from starting by editing cmdline in u-boot.
-      # Keeping this here until I get gadget switching working properly. (t4906522)
-      /usr/local/bin/watch-fc.sh > /dev/null 2>&1 &
-      echo "$NAME."
-    else
-      echo 'skipping watch-fc.sh: only necessary on six-pack line cards.'
-    fi
+    echo -n "Starting $DESC: "
+    /usr/local/bin/${DAEMON} > /dev/null 2>&1 &
+    echo "$NAME."
     ;;
   stop)
     echo -n "Stopping $DESC: "
-    killall watch-fc.sh
+    killall ${DAEMON}
     echo "$NAME."
     ;;
   restart|force-reload)
     echo -n "Restarting $DESC: "
-    killall watch-fc.sh
-    if [ "$(wedge_board_type)" = "LC" ]; then
-      sleep 1
-      /usr/local/bin/watch-fc.sh > /dev/null 2>&1 &
-      echo "$NAME."
-    else
-      echo 'skipping watch-fc.sh: only necessary on six-pack line cards.'
-    fi
+    killall ${DAEMON}
+    /usr/local/bin/${DAEMON} > /dev/null 2>&1 &
+    echo "$NAME."
     ;;
   status)
-    status watch-fc.sh
+    status ${DAEMON}
     exit $?
     ;;
   *)
