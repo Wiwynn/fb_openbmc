@@ -135,10 +135,15 @@ const char *fan_led[] = {GPIO_FAN0_LED, GPIO_FAN1_LED,
 
 #define COOLDOWN_SLOP INTERNAL_TEMPS(6)
 
-#define FAN_LOW 35
-#define FAN_MEDIUM 50
-#define FAN_HIGH 70
-#define FAN_MAX 99
+#define WEDGE_FAN_LOW 35
+#define WEDGE_FAN_MEDIUM 50
+#define WEDGE_FAN_HIGH 70
+#define WEDGE_FAN_MAX 99
+
+#define SIXPACK_FAN_LOW 35
+#define SIXPACK_FAN_MEDIUM 55
+#define SIXPACK_FAN_HIGH 75
+#define SIXPACK_FAN_MAX 99
 
 /*
  * Mapping physical to hardware addresses for fans;  it's different for
@@ -200,10 +205,10 @@ struct rpm_to_pct_map rpm_rear_map[] = {{30, 3911},
 
 #define FAN_FAILURE_OFFSET 30
 
-int fan_low = FAN_LOW;
-int fan_medium = FAN_MEDIUM;
-int fan_high = FAN_HIGH;
-int fan_max = FAN_MAX;
+int fan_low = WEDGE_FAN_LOW;
+int fan_medium = WEDGE_FAN_MEDIUM;
+int fan_high = WEDGE_FAN_HIGH;
+int fan_max = WEDGE_FAN_MAX;
 int total_fans = FANS;
 int fan_offset = 0;
 
@@ -346,7 +351,7 @@ bool is_two_fan_board(bool verbose) {
   if (wedge_eeprom_parse(NULL, &eeprom) == 0) {
     /* able to parse EEPROM */
     if (verbose) {
-      syslog(LOG_INFO, "board type is %s", eeprom.fbw_location);
+      fprintf(stderr, "board type is %s", eeprom.fbw_location);
     }
     /* only WEDGE is NOT two-fan board */
     return strncasecmp(eeprom.fbw_location, "wedge",
@@ -361,7 +366,7 @@ bool is_two_fan_board(bool verbose) {
      */
     status = read_ids(&rev_id, &board_id);
     if (verbose) {
-      syslog(LOG_INFO, "rev ID %d, board id %d", rev_id, board_id);
+      fprintf(stderr, "rev ID %d, board id %d", rev_id, board_id);
     }
     if (status == 0 && board_id != 0xf) {
       return true;
@@ -571,7 +576,7 @@ int main(int argc, char **argv) {
   int t2_temp;
   int userver_temp;
 
-  int fan_speed = FAN_HIGH;
+  int fan_speed = fan_high;
   int bad_reads = 0;
   int fan_failure = 0;
   int fan_speed_changes = 0;
@@ -593,6 +598,18 @@ int main(int argc, char **argv) {
   sigaction(SIGTERM, &sa, NULL);
   sigaction(SIGINT, &sa, NULL);
   sigaction(SIGUSR1, &sa, NULL);
+
+  if (is_two_fan_board(false)) {
+    /* Alternate, two fan configuration */
+    total_fans = 2;
+    fan_offset = 2; /* fan 3 is the first */
+
+    fan_low = SIXPACK_FAN_LOW;
+    fan_medium = SIXPACK_FAN_MEDIUM;
+    fan_high = SIXPACK_FAN_HIGH;
+    fan_max = SIXPACK_FAN_MAX;
+    fan_speed = fan_high;
+  }
 
   while ((opt = getopt(argc, argv, "l:m:h:b:t:r:v")) != -1) {
     switch (opt) {
@@ -654,10 +671,9 @@ int main(int argc, char **argv) {
    * of this process's liveliness. */
   set_persistent_watchdog(WATCHDOG_SET_PERSISTENT);
 
-  if (is_two_fan_board(verbose)) {
-    /* Alternate, two fan configuration */
-    total_fans = 2;
-    fan_offset = 2; /* fan 3 is the first */
+  if (verbose) {
+    syslog(LOG_DEBUG, "Starting up;  system should have %d fans.",
+           total_fans);
   }
 
   for (fan = 0; fan < total_fans; fan++) {
