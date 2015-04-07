@@ -164,8 +164,12 @@ wedge_board_type() {
     esac
 }
 
-# On FC, FAB_SLOT_ID (GPIOU0), low == FC0; high == FC1
-# On LC, Wedge,
+# On FC,
+#   board rev < 2:
+#     FAB_SLOT_ID (GPIOU0), low == FC0; high == FC1
+#   else:
+#     FAB_SLOT_ID (GPIOU6), low == FC0; high == FC1
+## On LC, Wedge,
 #   board rev < 3:
 #     GPIOU0(ID0), GPIOU1(ID1), GPIOU2(ID2), GPIOU3(ID3)
 #   else:
@@ -184,31 +188,39 @@ wedge_board_type() {
 wedge_slot_id() {
     local type slot id3 id2 id1 id0 FC_CARD_BASE board_rev
     FC_CARD_BASE=65
-    if [ "$1" = "FC-LEFT" ]; then
-        # fabric card left
-        slot=$(gpio_get U0)
-        slot=$((FC_CARD_BASE + slot * 2))
-    elif [ "$1" = "FC-RIGHT" ]; then
-        # fabric card right
-        slot=$(gpio_get U0)
-        slot=$((FC_CARD_BASE + slot * 2 + 1))
-    else
-        # either edge or LC
-        # need to check the board rev
-        board_rev=$(wedge_board_rev)
-        if [ $board_rev -lt 3 ]; then
-            id0=$(gpio_get U0)
-            id1=$(gpio_get U1)
-            id2=$(gpio_get U2)
-            id3=$(gpio_get U3)
-        else
-            id0=$(gpio_get U6)
-            id1=$(gpio_get U7)
-            id2=$(gpio_get V0)
-            id3=$(gpio_get V1)
-        fi
-        slot=$(((id2 * 4 + id1 * 2 + id0) * 2 + id3 + 1))
-   fi
+    # need to check the board rev
+    board_rev=$(wedge_board_rev)
+    case "$1" in
+        FC-LEFT|FC-RIGHT)
+            # On FC
+            if [ $board_rev -lt 2 ]; then
+                slot=$(gpio_get U0)
+            else
+                slot=$(gpio_get U6)
+            fi
+            if [ "$1" = "FC-LEFT" ]; then
+                # fabric card left
+                slot=$((FC_CARD_BASE + slot * 2))
+            else
+                # fabric card right
+                slot=$((FC_CARD_BASE + slot * 2 + 1))
+            fi
+            ;;
+        *)
+            # either edge or LC
+            if [ $board_rev -lt 3 ]; then
+                id0=$(gpio_get U0)
+                id1=$(gpio_get U1)
+                id2=$(gpio_get U2)
+                id3=$(gpio_get U3)
+            else
+                id0=$(gpio_get U6)
+                id1=$(gpio_get U7)
+                id2=$(gpio_get V0)
+                id3=$(gpio_get V1)
+            fi
+            slot=$(((id2 * 4 + id1 * 2 + id0) * 2 + id3 + 1))
+    esac
    echo "$slot"
 }
 
