@@ -120,6 +120,11 @@ wedge_is_us_on() {
     else
         prog=""
     fi
+    if [ $# -gt 2 ]; then
+        default=$3              # value 0 means defaul is 'ON'
+    else
+        default=1
+    fi
     n=1
     while true; do
         val=$(cat /sys/class/i2c-adapter/i2c-4/4-0040/gpio_inputs 2>/dev/null)
@@ -129,7 +134,7 @@ wedge_is_us_on() {
         n=$((n+1))
         if [ $n -gt $retries ]; then
             echo -n " failed to read GPIO. "
-            val=0
+            return $default
             break
         fi
         echo -n "$prog"

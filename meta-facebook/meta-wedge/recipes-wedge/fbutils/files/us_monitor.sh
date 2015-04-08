@@ -47,7 +47,7 @@ restore_us_com() {
 }
 
 while true; do
-    if ! wedge_is_us_on > /dev/null 2>&1; then
+    if ! wedge_is_us_on 1 '' 0 > /dev/null 2>&1; then
         pull_down_us_com
     else
         restore_us_com
