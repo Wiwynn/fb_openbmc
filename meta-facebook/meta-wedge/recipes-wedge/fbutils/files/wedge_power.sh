@@ -54,7 +54,7 @@ do_status() {
 }
 
 do_on() {
-    local force opt
+    local force opt pulse_us n retries
     force=0
     while getopts "f" opt; do
         case $opt in
@@ -76,15 +76,30 @@ do_on() {
             return 1
         fi
     fi
-    # first make sure, GPIOD1 (25) is high
-    gpio_set 25 1
     # then, put GPIOP7 (127) to low
     gpio_set 127 0
-    # generate the power on pulse
-    gpio_set 25 0
-    sleep 1
-    gpio_set 25 1
-    sleep 1
+    pulse_us=500000             # 500ms
+    retries=3
+    n=1
+    while true; do
+        # first make sure, GPIOD1 (25) is high
+        gpio_set 25 1
+        usleep $pulse_us
+        # generate the power on pulse
+        gpio_set 25 0
+        usleep $pulse_us
+        gpio_set 25 1
+        sleep 3
+        if wedge_is_us_on 1 '' 1; then
+            break
+        fi
+        n=$((n+1))
+        if [ $n -gt $retries ]; then
+            echo " Failed"
+            return 1
+        fi
+        echo -n "..."
+    done
     # Turn on the power LED (GPIOE5)
     /usr/local/bin/power_led.sh on
     echo " Done"
