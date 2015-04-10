@@ -274,8 +274,19 @@ case "$board_type" in
             fi
         else
             # DVT board
-            if [ "$board_type" = "FC-LEFT" ]; then
-                # Left FC
+            if [ "$board_type" = "FC-LEFT" ]; then # Left FC
+                # BMC_SW_RST is GPIOL0, 16p switch
+                # SCU84[16] must be 0
+                devmem_clear_bit $(scu_addr 84) 16
+                gpio_set L0 1
+
+                # MDC|MDIO_CONT are GPIOR6 and GPIOR7, 16p switch
+                # SCU88[30:31] must be 0
+                devmem_clear_bit $(scu_addr 88) 30
+                devmem_clear_bit $(scu_addr 88) 31
+                gpio_set R6 1
+                gpio_set R7 1
+
                 # SWITCH_EEPROM1_WRT is GPIOE2, 16p switch EEPROM (U61)
                 # SCU80[18], SCU8C[13], and SCU70[22] must be 0
                 devmem_clear_bit $(scu_addr 80) 18
@@ -283,17 +294,24 @@ case "$board_type" in
                 devmem_clear_bit $(scu_addr 70) 22
                 gpio_export E2
 
-                # BMC_PHYL_RST is GPIOF0, Left BMC PHY
-                # SCU84[24] must be 0
-                devmem_clear_bit $(scu_addr 80) 24
-                gpio_set F0 1
+                # SPI bus to 16p switch EEPROM
+                # GPIOI4 <--> BMC_EEPROM1_SPI_SS
+                # GPIOI5 <--> BMC_EEPROM1_SPI_SCK
+                # GPIOI6 <--> BMC_EEPROM1_SPI_MOSI
+                # GPIOI7 <--> BMC_EEPROM1_SPI_MISO
+                # The EEPROM SPI clk does not match with the BMC SPI master.
+                # Have to configure these pins as GPIO to use with
+                # SPI bitbang driver.
+                # SCU70[13:12,5] must be 0
+                devmem_clear_bit $(scu_addr 70) 5
+                devmem_clear_bit $(scu_addr 70) 12
+                devmem_clear_bit $(scu_addr 70) 13
+                gpio_export I4
+                gpio_export I5
+                gpio_export I6
+                gpio_export I7
 
-                # ISO_SWITCH_EEPROM2_WRT is GPIOV0, 5p switch EEPROM (U114)
-                # SCUA0[16] must be 1
-                devmem_set_bit $(scu_addr a0) 16
-                gpio_export V0
-
-                # BMC_PHY_RST is GPIOT0, Front Panel Port PHY
+                # BMC_PHY_RST is GPIOT0, Front Panel Port PHY on the 16p switch
                 # SCUA0[0] must be 1
                 devmem_set_bit $(scu_addr a0) 0
                 gpio_set T0 1
@@ -310,19 +328,31 @@ case "$board_type" in
                 gpio_set T4 1
                 gpio_set T5 1
 
-                # MDC|MDIO_CONT are GPIOR6 and GPIOR7, 16p switch
-                # SCU88[30:31] must be 0
-                devmem_clear_bit $(scu_addr 88) 30
-                devmem_clear_bit $(scu_addr 88) 31
-                gpio_set R6 1
-                gpio_set R7 1
+                # ISO_SWITCH_EEPROM2_WRT is GPIOV0, 5p switch EEPROM (U114)
+                # SCUA0[16] must be 1
+                devmem_set_bit $(scu_addr a0) 16
+                gpio_export V0
 
-                # BMC_SW_RST is GPIOL0, 16p switch
-                # SCU84[16] must be 0
-                devmem_clear_bit $(scu_addr 84) 16
-                gpio_set L0 1
-            else
-                # Right FC
+                # SPI bus to 5p switch EEPROM (U114)
+                # GPIOI0 <--> ISO_BMC_EEPROM2_SPI_SS
+                # GPIOI1 <--> ISO_BMC_EEPROM2_SPI_SCK
+                # GPIOI2 <--> ISO_BMC_EEPROM2_SPI_MOSI
+                # GPIOI3 <--> ISO_BMC_EEPROM2_SPI_MISO
+                # The EEPROM SPI clk does not match with the BMC SPI master.
+                # Have to configure these pins as GPIO to use with
+                # SPI bitbang driver.
+                # SCU70[13] must be 0, has already been set when
+                # preparing for GPIOI4-GPIOI7
+                gpio_export I0
+                gpio_export I1
+                gpio_export I2
+                gpio_export I3
+
+                # BMC_PHYL_RST is GPIOF0, Left BMC PHY
+                # SCU80[24] must be 0
+                devmem_clear_bit $(scu_addr 80) 24
+                gpio_set F0 1
+            else               # Right FC
                 # BMC_PHYR_RST is GPIOL1, Right BMC PHY
                 # SCU84[17] must be 0
                 devmem_clear_bit $(scu_addr 84) 17

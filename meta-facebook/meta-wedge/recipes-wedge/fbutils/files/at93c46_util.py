@@ -11,7 +11,8 @@ def get_raw(args):
 
 def get_chip(args):
     return AT93C46(args.bus_width, args.cs, args.clk, args.mosi, args.miso,
-                   args.byte_swap, args.verbose)
+                   args.byte_swap if hasattr(args, 'byte_swap') else None,
+                   args.verbose)
 
 def access_parser(ap):
     # Default, based on currenct HW configuration
@@ -22,17 +23,17 @@ def access_parser(ap):
 
     spi_group = ap.add_argument_group('SPI Access')
     spi_group.add_argument('--cs', type=int, default=SPI_CS_DEFAULT,
-                           help='The GPIO number for SPI CS pin (default: %s)'
-                           % SPI_CS_DEFAULT)
+                           help='The GPIO number for SPI CS pin '
+                                 '(default: %(default)s)')
     spi_group.add_argument('--clk', type=int, default=SPI_CLK_DEFAULT,
-                           help='The GPIO number for SPI CLK pin (default: %s)'
-                           % SPI_CLK_DEFAULT)
+                           help='The GPIO number for SPI CLK pin '
+                                 '(default: %(default)s)')
     spi_group.add_argument('--mosi', type=int, default=SPI_MOSI_DEFAULT,
-                           help='The GPIO number for SPI MOSI pin (default: %s)'
-                           % SPI_MOSI_DEFAULT)
+                           help='The GPIO number for SPI MOSI pin '
+                                 '(default: %(default)s)')
     spi_group.add_argument('--miso', type=int, default=SPI_MISO_DEFAULT,
-                           help='The GPIO number for SPI MISO pin (default: %s)'
-                           % SPI_MISO_DEFAULT)
+                           help='The GPIO number for SPI MISO pin '
+                                 '(default: %(default)s)')
 
 def bus_width_parser(ap):
     # Default, based on currenct HW configuration
@@ -40,8 +41,8 @@ def bus_width_parser(ap):
 
     bus_group = ap.add_argument_group('Bus Width')
     bus_group.add_argument('--bus-width', type=int, default=AT83C46_BUS_WIDTH,
-                           help='The configured bus width (default: %s)'
-                           % AT83C46_BUS_WIDTH)
+                           help='The configured bus width '
+                                '(default: %(default)s)')
 
 def read_raw(args):
     raw = get_raw(args)
@@ -99,8 +100,8 @@ def read_chip(args):
     if args.file is None:
         sys.stdout.write(data)
     else:
-        fp = open(args.file, "wb")
-        fp.write(data)
+        with open(args.file, "wb") as fp:
+            fp.write(data)
 
 def write_chip(args):
     chip = get_chip(args)
@@ -109,8 +110,8 @@ def write_chip(args):
     if args.file is None:
         data = sys.stdin.read(AT93C46.AT93C46_MEMORY_SIZE)
     else:
-        fp = open(args.file, "rb")
-        data = fp.read(AT93C46.AT93C46_MEMORY_SIZE)
+        with open(args.file, "rb") as fp:
+            data = fp.read(AT93C46.AT93C46_MEMORY_SIZE)
 
     if args.length is not None:
         # Make sure length is correct
@@ -136,8 +137,9 @@ def chip_subparser(subparsers):
                              help='The number of bytes to read (default: whole chip)')
     read_parser.add_argument('--file', type=str,
                              help='File to operate on (default: stdout)')
-    read_parser.add_argument('--byte-swap', action='store_true',
-                             help='Byte swap values for 16-bit reads/writes')
+    read_parser.add_argument('--byte-swap', default=False, action='store_true',
+                             help='Byte swap values for 16-bit reads/writes '
+                                  '(default: %(default)s)')
     read_parser.set_defaults(func=read_chip)
 
     write_parser = chip_sub.add_parser('write', help='Write to the chip')
@@ -147,8 +149,9 @@ def chip_subparser(subparsers):
                               help='The number of bytes to write (default: file length)')
     write_parser.add_argument('--file', type=str,
                               help='File to operate on (default: stdin)')
-    write_parser.add_argument('--byte-swap', action='store_true',
-                              help='Byte swap values for 16-bit reads/writes')
+    write_parser.add_argument('--byte-swap', default=False, action='store_true',
+                              help='Byte swap values for 16-bit reads/writes '
+                                   '(default: %(default)s)')
     write_parser.set_defaults(func=write_chip)
 
     erase_parser = chip_sub.add_parser('erase', help='Erase the chip')
