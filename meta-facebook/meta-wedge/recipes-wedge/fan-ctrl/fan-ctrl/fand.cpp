@@ -351,7 +351,7 @@ bool is_two_fan_board(bool verbose) {
   if (wedge_eeprom_parse(NULL, &eeprom) == 0) {
     /* able to parse EEPROM */
     if (verbose) {
-      fprintf(stderr, "board type is %s", eeprom.fbw_location);
+      syslog(LOG_INFO, "board type is %s", eeprom.fbw_location);
     }
     /* only WEDGE is NOT two-fan board */
     return strncasecmp(eeprom.fbw_location, "wedge",
@@ -366,7 +366,7 @@ bool is_two_fan_board(bool verbose) {
      */
     status = read_ids(&rev_id, &board_id);
     if (verbose) {
-      fprintf(stderr, "rev ID %d, board id %d", rev_id, board_id);
+      syslog(LOG_INFO, "rev ID %d, board id %d", rev_id, board_id);
     }
     if (status == 0 && board_id != 0xf) {
       return true;
@@ -599,6 +599,8 @@ int main(int argc, char **argv) {
   sigaction(SIGINT, &sa, NULL);
   sigaction(SIGUSR1, &sa, NULL);
 
+  openlog("fand", LOG_CONS, LOG_DAEMON);
+
   if (is_two_fan_board(false)) {
     /* Alternate, two fan configuration */
     total_fans = 2;
@@ -662,7 +664,6 @@ int main(int argc, char **argv) {
   }
 
   daemon(1, 0);
-  openlog("fand", LOG_CONS, LOG_DAEMON);
 
   /* Start watchdog in manual mode */
   start_watchdog(0);
@@ -830,9 +831,7 @@ int main(int argc, char **argv) {
     }
 
     if (fan_failure > 0) {
-      if (prev_fans_bad != fan_failure) {
-        syslog(LOG_ALERT, "%d fans failed", fan_failure);
-      }
+      syslog(LOG_ALERT, "%d fans failed", fan_failure);
 
       /*
        * If fans are bad, we need to blast all of the
