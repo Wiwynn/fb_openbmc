@@ -76,6 +76,9 @@ do_on() {
             return 1
         fi
     fi
+    # first make sure, GPIOD1 (25) is high
+    gpio_set 25 1
+    sleep 1
     # then, put GPIOP7 (127) to low
     gpio_set 127 0
     pulse_us=500000             # 500ms

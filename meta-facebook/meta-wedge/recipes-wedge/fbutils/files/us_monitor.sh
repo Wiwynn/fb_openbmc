@@ -39,7 +39,7 @@ restore_us_com() {
     devmem_set_bit $(scu_addr 84) 22
     devmem_set_bit $(scu_addr 84) 23
     # if sol.sh is running, keep uart from uS connected with BMC
-    if ps | grep sol.sh > /dev/null 2>&1; then
+    if pidof -x sol.sh > /dev/null 2>&1; then
         gpio_set 32 1
     else
         gpio_set 32 0
@@ -52,5 +52,5 @@ while true; do
     else
         restore_us_com
     fi
-    sleep 1
+    usleep 400000               # 400ms
 done
