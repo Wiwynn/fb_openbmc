@@ -32,8 +32,8 @@ SRC_URI = "file://ast-functions \
            file://mdio.py \
            file://bcm5396.py \
            file://bcm5396_util.py \
-           file://at93c46.py \
-           file://at93c46_util.py \
+           file://at93cx6.py \
+           file://at93cx6_util.py \
            file://mount_data0.sh \
            file://eth0_mac_fixup.sh \
            file://wedge_power.sh \
@@ -58,7 +58,7 @@ S = "${WORKDIR}"
 binfiles = "us_console.sh sol.sh power_led.sh post_led.sh \
   reset_usb.sh mdio.py setup_rov.sh wedge_power.sh wedge_us_mac.sh \
   bcm5396.py bcm5396_util.py setup_switch.py watch-fc.sh us_monitor.sh \
-  at93c46.py at93c46_util.py \
+  at93cx6.py at93cx6_util.py \
   "
 
 DEPENDS_append = "update-rc.d-native"

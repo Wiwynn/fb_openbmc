@@ -20,6 +20,13 @@ import subprocess
 import struct
 import sys
 
+
+AT93C46 = 'at93c46'
+AT93C56 = 'at93c56'
+AT93C66 = 'at93c66'
+AT93C86 = 'at93c86'
+
+
 class VerboseLogger:
     def __init__(self, verbose=False):
         self.verbose = verbose
@@ -30,18 +37,30 @@ class VerboseLogger:
         '''
         if self.verbose:
             if bytestream is not None:
-                sys.stderr.write("{}: {}\n".format(caption, " ".join(['{:02X}'.format(ord(x)) for x in bytestream])))
+                sys.stderr.write(
+                    "{}: {}\n" .format(
+                        caption, " ".join(['{:02X}'.format(ord(x))
+                                           for x in bytestream])))
             else:
                 sys.stderr.write("{}\n".format(caption))
 
-class AT93C46SPI(VerboseLogger):
-    '''The class to access AT93C46 through SPI intf'''
+
+class AT93CX6SPI(VerboseLogger):
+    '''The class to access AT93CX6 through SPI intf'''
     SPI_CMD = 'spi-bb'
 
     def __init__(self, bus_width, gpio_cs, gpio_ck, gpio_do, gpio_di,
-                 verbose=False):
+                 model, verbose=False):
+        addr_bits_map = {
+            AT93C46 : 6,
+            AT93C56 : 8,
+            AT93C66 : 8,
+            AT93C86 : 10,
+        }
         if bus_width != 8 and bus_width != 16:
-            raise Exception("Invalid bus width for AT93C46!")
+            raise Exception("Invalid bus width for AT93CX6!")
+        if model not in addr_bits_map:
+            raise Exception("Invalid model '%s'" % model)
 
         self.bus_width = bus_width
         self.gpio_cs = gpio_cs
@@ -50,8 +69,9 @@ class AT93C46SPI(VerboseLogger):
         self.gpio_di = gpio_di
         self.verbose = verbose
 
-        self.addr_bits = 6 if self.bus_width == 16 else 7
-        self.addr_mask = 0x3F if self.bus_width == 16 else 0x7F
+        self.addr_bits = addr_bits_map[model] \
+                         + (0 if self.bus_width == 16 else 1)
+        self.addr_mask = (1 << self.addr_bits) - 1
 
     def __shift(self, bytestream, value):
         '''
@@ -62,7 +82,8 @@ class AT93C46SPI(VerboseLogger):
             binary = binary[value:] + '0' * value
         else:
             binary = '0' * (-value) + binary[:value]
-        return "".join([chr(int(binary[x:x+8],2)) for x in range(0, len(binary), 8)])
+        return "".join([chr(int(binary[x:x+8],2))
+                        for x in range(0, len(binary), 8)])
 
     def __io(self, op, addr, data=None):
         '''
@@ -82,9 +103,8 @@ class AT93C46SPI(VerboseLogger):
             read_bits = self.addr_bits + 4 + self.bus_width
 
         # Format the command itself
-        cmd_loc = 6 if self.bus_width == 16 else 7
         instruction = addr & self.addr_mask
-        instruction = instruction | ((0x4 | (op & 0x3)) << cmd_loc)
+        instruction = instruction | ((0x4 | (op & 0x3)) << self.addr_bits)
         if data is not None:
             if self.bus_width == 16:
                 write_data = struct.pack(">HH", instruction, data & 0xFFFF)
@@ -92,7 +112,7 @@ class AT93C46SPI(VerboseLogger):
                 write_data = struct.pack(">HB", instruction, data & 0xFF)
         else:
             write_data = struct.pack(">H", instruction)
-        write_data = self.__shift(write_data, 16 - (cmd_loc + 3))
+        write_data = self.__shift(write_data, 16 - (self.addr_bits + 3))
 
         self._verbose_print("Write data", write_data)
 
@@ -115,7 +135,7 @@ class AT93C46SPI(VerboseLogger):
                         .communicate(input=write_data)
 
         # Format the response
-        read_data = self.__shift(out[0], cmd_loc + 4)
+        read_data = self.__shift(out[0], self.addr_bits + 4)
         if self.bus_width == 16:
             read_data = read_data[:2]
             self._verbose_print("Read data", read_data)
@@ -146,21 +166,31 @@ class AT93C46SPI(VerboseLogger):
     def ewds(self):
         self.__io(0x0, 0x0)
 
-class AT93C46(VerboseLogger):
+
+class AT93CX6(VerboseLogger):
     '''
-    The class which handles accessing memory on the AT93C46 chip.
+    The class which handles accessing memory on the AT93CX6 chip.
     '''
-    AT93C46_MEMORY_SIZE = 128
 
     def __init__(self, bus_width, gpio_cs, gpio_ck, gpio_do, gpio_di,
-                 byte_swap, verbose=False):
+                 byte_swap, model=AT93C46, verbose=False):
+        mem_size_map = {
+            # in bytes
+            AT93C46 : 128,
+            AT93C56 : 256,
+            AT93C66 : 512,
+            AT93C86 : 2048,
+        }
         self.bus_width = bus_width
         self.verbose = verbose
         self.byte_swap = byte_swap
+        self.model = model
+        self.memory_size = mem_size_map[model]
 
-        self.spi = AT93C46SPI(bus_width=bus_width, gpio_cs=gpio_cs,
+        self.spi = AT93CX6SPI(bus_width=bus_width, gpio_cs=gpio_cs,
                               gpio_ck=gpio_ck, gpio_do=gpio_do,
-                              gpio_di=gpio_di, verbose=verbose)
+                              gpio_di=gpio_di, model=model,
+                              verbose=verbose)
 
     def __swap(self, value):
         '''
@@ -174,6 +204,9 @@ class AT93C46(VerboseLogger):
         else:
             return value
 
+    def get_memory_size(self):
+        return self.memory_size
+
     def erase(self, offset=None, limit=None):
         '''
         Erase the chip.
@@ -181,15 +214,16 @@ class AT93C46(VerboseLogger):
         if offset is None:
             offset = 0
         if limit is None:
-            limit = self.AT93C46_MEMORY_SIZE
+            limit = self.memory_size
 
-        if offset < 0 or offset + limit > self.AT93C46_MEMORY_SIZE:
+        if offset < 0 or offset + limit > self.memory_size:
             raise Exception("Erase would be out of bounds!")
         if self.bus_width == 16 and \
            ((offset & 1) != 0 or ((offset + limit) & 1) != 0):
-            raise Exception("Erase can't start or end on odd boundary in 16-bit mode!")
+            raise Exception("Erase can't start or end on odd boundary in "
+                            "16-bit mode!")
 
-        if offset == 0 and limit == self.AT93C46_MEMORY_SIZE:
+        if offset == 0 and limit == self.memory_size:
             # Special case when we are erasing the entire chip
             self.spi.ewen()
             self.spi.eral()
@@ -210,7 +244,8 @@ class AT93C46(VerboseLogger):
                 self.spi.erase(addr)
             self.spi.ewds()
 
-            self._verbose_print("Erased {} bytes from offset {}".format(limit, offset))
+            self._verbose_print("Erased {} bytes from offset {}"
+                                .format(limit, offset))
 
     def read(self, offset=None, limit=None):
         '''
@@ -219,13 +254,14 @@ class AT93C46(VerboseLogger):
         if offset is None:
             offset = 0
         if limit is None:
-            limit = self.AT93C46_MEMORY_SIZE
+            limit = self.memory_size
 
-        if offset < 0 or offset + limit > self.AT93C46_MEMORY_SIZE:
+        if offset < 0 or offset + limit > self.memory_size:
             raise Exception("Read would be out of bounds!")
         if self.bus_width == 16 and \
            ((offset & 1) != 0 or ((offset + limit) & 1) != 0):
-            raise Exception("Read can't start or end on odd boundary in 16-bit mode!")
+            raise Exception("Read can't start or end on odd boundary in 16-bit "
+                            "mode!")
 
         output = ""
         if self.bus_width == 16:
@@ -238,9 +274,11 @@ class AT93C46(VerboseLogger):
             pack_instruction = "=B"
 
         for addr in range(real_offset, real_offset + real_limit):
-            output = output + struct.pack(pack_instruction, self.__swap(self.spi.read(addr)))
+            output = output + struct.pack(pack_instruction,
+                                          self.__swap(self.spi.read(addr)))
 
-        self._verbose_print("Read {} bytes from offset {}".format(limit, offset), output)
+        self._verbose_print("Read {} bytes from offset {}".format(limit, offset)
+                            , output)
 
         return output
 
@@ -251,11 +289,12 @@ class AT93C46(VerboseLogger):
         if offset is None:
             offset = 0
 
-        if offset < 0 or offset + len(data) > self.AT93C46_MEMORY_SIZE:
+        if offset < 0 or offset + len(data) > self.memory_size:
             raise Exception("Write would be out of bounds!")
         if self.bus_width == 16 and \
            ((offset & 1) != 0 or ((offset + len(data)) & 1) != 0):
-            raise Exception("Write can't start or end on odd boundary in 16-bit mode!")
+            raise Exception("Write can't start or end on odd boundary in "
+                            "16-bit mode!")
 
         if self.bus_width == 16:
             offset_divisor = 2
@@ -267,10 +306,13 @@ class AT93C46(VerboseLogger):
         self.spi.ewen()
         for addr in range(offset, offset + len(data), offset_divisor):
             actual_addr = addr / offset_divisor
-            value = self.__swap(struct.unpack(pack_instruction, data[(addr - offset):(addr - offset) + offset_divisor])[0])
+            value = self.__swap(struct.unpack(
+                pack_instruction, data[(addr - offset):(addr - offset)
+                                       + offset_divisor])[0])
 
             self.spi.erase(actual_addr)
             self.spi.write(actual_addr, value)
         self.spi.ewds()
 
-        self._verbose_print("Wrote {} bytes from offset {}".format(len(data), offset), data)
+        self._verbose_print("Wrote {} bytes from offset {}"
+                            .format(len(data), offset), data)
