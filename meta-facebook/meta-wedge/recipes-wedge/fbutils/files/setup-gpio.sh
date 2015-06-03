@@ -182,8 +182,8 @@ devmem_set_bit $(scu_addr 70) 13
 # GPIOQ5 is ISO_FLASH_HOLD, must be 1 to be out of reset
 # To use GPIOQ4 and GPIOQ5, SCU90[27] must be 0
 devmem_clear_bit $(scu_addr 90) 27
-gpio_set 134 1
-gpio_set 135 1
+gpio_set Q4 1
+gpio_set Q5 1
 # GPIOD6 is ISO_FL_PRG_SEL, set it to 0 so that BMC does not have control
 # on the EEPROM by default.
 # To use GPIOD6, SCU90[1] must be 0, SCU8C[21] must be 0, and Strap[21] must be 0
