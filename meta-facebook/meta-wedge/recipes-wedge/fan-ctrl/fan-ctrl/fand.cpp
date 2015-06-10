@@ -77,6 +77,8 @@
 
 #define BAD_READ_THRESHOLD 4    /* How many times can reads fail */
 #define FAN_FAILURE_THRESHOLD 4 /* How many times can a fan fail */
+#define FAN_SHUTDOWN_THRESHOLD 20 /* How long fans can be failed before */
+                                  /* we just shut down the whole thing. */
 
 #define PWM_DIR "/sys/devices/platform/ast_pwm_tacho.0"
 
@@ -86,8 +88,8 @@
 
 #define GPIO_USERVER_POWER_DIRECTION "/sys/class/gpio/gpio25/direction"
 #define GPIO_USERVER_POWER "/sys/class/gpio/gpio25/value"
-#define GPIO_T2_POWER_DIRECTION "/sys/class/gpio/gpio41/direction"
-#define GPIO_T2_POWER "/sys/class/gpio/gpio41/value"
+#define GPIO_T2_POWER_DIRECTION "/tmp/gpionames/T2_POWER_UP/direction"
+#define GPIO_T2_POWER "/tmp/gpionames/T2_POWER_UP/value"
 
 #define GPIO_FAN0_LED "/sys/class/gpio/gpio53/value"
 #define GPIO_FAN1_LED "/sys/class/gpio/gpio54/value"
@@ -120,7 +122,7 @@ const char *fan_led[] = {GPIO_FAN0_LED, GPIO_FAN1_LED,
 /* Sensor limits and tuning parameters */
 
 #define INTAKE_LIMIT INTERNAL_TEMPS(60)
-#define T2_LIMIT INTERNAL_TEMPS(95)
+#define T2_LIMIT INTERNAL_TEMPS(80)
 #define USERVER_LIMIT INTERNAL_TEMPS(75)
 
 #define TEMP_TOP INTERNAL_TEMPS(70)
@@ -532,13 +534,24 @@ int server_shutdown(const char *why) {
   write_device(GPIO_USERVER_POWER_DIRECTION, "out");
   write_device(GPIO_USERVER_POWER, "0");
   /*
-   * Putting T2 in reset generating a non-maskable interrupt to uS,
+   * Putting T2 in reset generates a non-maskable interrupt to uS;
    * the kernel running on uS might panic depending on its version.
-   * sleep 5s here to make sure uS is completely down.
+   * Sleep 5s here to make sure uS is completely down.
    */
   sleep(5);
-  write_device(GPIO_T2_POWER_DIRECTION, "out");
-  write_device(GPIO_T2_POWER, "0");
+
+  if (write_device(GPIO_T2_POWER_DIRECTION, "out") ||
+      write_device(GPIO_T2_POWER, "1")) {
+    /*
+     * We're here because something has gone badly wrong.  If we
+     * didn't manage to shut down the T2, cut power to the whole box,
+     * using the PMBus OPERATION register.  This will require a power
+     * cycle (removal of both power inputs) to recover.
+     */
+    syslog(LOG_EMERG, "T2 power off failed;  turning off via ADM1278");
+    system("rmmod adm1275");
+    system("i2cset -y 12 0x10 0x01 00");
+  }
 
   /*
    * We have to stop the watchdog, or the system will be automatically
@@ -845,6 +858,17 @@ int main(int argc, char **argv) {
       fan_speed = fan_max;
       for (fan = 0; fan < total_fans; fan++) {
         write_fan_speed(fan + fan_offset, fan_speed);
+      }
+
+      if (fan_failure == total_fans) {
+        int count = 0;
+        for (fan = 0; fan < total_fans; fan++) {
+          if (fan_bad[fan] > FAN_SHUTDOWN_THRESHOLD)
+            count++;
+        }
+        if (count == total_fans) {
+          server_shutdown("all fans are bad for more than 12 cycles");
+        }
       }
 
       /*
