@@ -254,7 +254,7 @@ case "$board_type" in
             gpio_export U1
             # T2_POWER_UP is GPIOT6
             devmem_set_bit $(scu_addr a0) 6
-            gpio_export T6
+            gpio_export T6 T2_POWER_UP
             # HS_FAULT_N is GPIOT7
             devmem_set_bit $(scu_addr a0) 7
             gpio_export T7
@@ -361,7 +361,7 @@ case "$board_type" in
             # T2_POWER_UP is GPIOU4
             # SCUA0[12] must be 1
             devmem_set_bit $(scu_addr a0) 12
-            gpio_export U4
+            gpio_export U4 T2_POWER_UP
 
             # HS_FAULT_N is GPIOU5
             # SCUA0[13] must be 1
@@ -397,7 +397,7 @@ case "$board_type" in
             gpio_export U3
             # T2_POWER_UP is GPIOT6
             devmem_set_bit $(scu_addr a0) 6
-            gpio_export T6
+            gpio_export T6 T2_POWER_UP
             # HS_FAULT_N is GPIOT7
             devmem_set_bit $(scu_addr a0) 7
             gpio_export T7
@@ -415,7 +415,7 @@ case "$board_type" in
             gpio_export V1
             # T2_POWER_UP is GPIOU4
             devmem_set_bit $(scu_addr a0) 12
-            gpio_export U4
+            gpio_export U4 T2_POWER_UP
             # HS_FAULT_N is GPIOU5
             devmem_set_bit $(scu_addr a0) 13
             gpio_export U5

@@ -1,5 +1,6 @@
 # Copyright 2014-present Facebook. All Rights Reserved.
 DEVMEM=/sbin/devmem
+SHADOW_GPIO=/tmp/gpionames
 
 devmem_set_bit() {
     local addr
@@ -66,6 +67,12 @@ gpio_export() {
     dir=$(gpio_dir $gpio)
     if [ ! -d ${dir} ]; then
         echo $gpio > $GPIOEXPORT
+    fi
+    if [ $# -gt 1 ]; then
+        if [ ! -d  $SHADOW_GPIO ]; then
+            mkdir -p $SHADOW_GPIO
+        fi
+        ln -s $dir $SHADOW_GPIO/$2
     fi
 }
 
