@@ -32,6 +32,7 @@ from rest_server import *
 from rest_sensors import *
 from rest_bmc import *
 from rest_gpios import *
+from rest_modbus import *
 
 CONSTANTS = {
     'certificate': '/usr/lib/ssl/certs/rest_server.pem',
@@ -106,6 +107,12 @@ def rest_sensors():
 @route('/api/sys/gpios')
 def rest_gpios():
   return get_gpios()
+
+@route('/api/sys/modbus_registers')
+def modbus_registers():
+    return get_modbus_registers()
+
+run(host = "::", port = 8080)
 
 # SSL Wrapper for Rest API
 class SSLWSGIRefServer(ServerAdapter):

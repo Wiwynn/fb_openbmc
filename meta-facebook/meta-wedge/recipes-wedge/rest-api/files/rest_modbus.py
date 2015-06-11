@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+#
 # Copyright 2014-present Facebook. All Rights Reserved.
 #
 # This program file is free software; you can redistribute it and/or modify it
@@ -14,27 +16,13 @@
 # Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
+#
 
-override CFLAGS+=-D_GNU_SOURCE -D_BSD_SOURCE -D_POSIX_C_SOURCE=199309 -Wall -Werror -std=c99
-override LDFLAGS+=-pthread
-all: modbuscmd gpiowatch modbussim rackmond rackmondata
+import subprocess
+from subprocess import Popen
 
-rackmondata: rackmondata.c modbus.c
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
-
-rackmond: rackmond.c modbus.c
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
-
-modbuscmd: modbuscmd.c modbus.c
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
-
-modbussim: modbussim.c modbus.c
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
-
-gpiowatch: gpiowatch.c
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
-
-.PHONY: clean
-
-clean:
-	rm -rf *.o modbuscmd gpiowatch modbussim rackmond rackmondata
+# Handler for sensors resource endpoint
+def get_modbus_registers():
+    p = Popen('/usr/local/bin/rackmondata', stdout=subprocess.PIPE)
+    out, err = p.communicate()
+    return out
