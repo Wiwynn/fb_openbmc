@@ -14,35 +14,25 @@
 # Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
-SUMMARY = "Fan controller"
-DESCRIPTION = "The utilities to control fan."
-SECTION = "base"
-PR = "r1"
-LICENSE = "GPLv2"
-LIC_FILES_CHKSUM = "file://fand.cpp;beginline=6;endline=18;md5=da35978751a9d71b73679307c4d296ec"
 
 DEPENDS_append = "libwedge-eeprom update-rc.d-native"
 
-SRC_URI = "file://get_fan_speed.sh \
-           file://init_pwm.sh \
-           file://set_fan_speed.sh \
-           file://README \
-           file://setup-fan.sh \
-           file://Makefile \
-           file://fand.cpp \
-           file://watchdog.h \
-           file://watchdog.cpp \
-          "
+FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
+SRC_URI += "file://get_fan_speed.sh \
+            file://init_pwm.sh \
+            file://set_fan_speed.sh \
+            file://setup-fan.sh \
+           "
 
 S = "${WORKDIR}"
 
-binfiles = "get_fan_speed.sh \
+binfiles += "get_fan_speed.sh \
             init_pwm.sh \
             set_fan_speed.sh \
-	    fand \
            "
 
-otherfiles = "README"
+LDFLAGS_append = " -lwedge_eeprom"
+CXXFLAGS_prepend = "-DWEDGE "
 
 pkgdir = "fan_ctrl"
 
