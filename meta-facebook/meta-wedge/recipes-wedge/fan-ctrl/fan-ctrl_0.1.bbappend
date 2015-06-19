@@ -32,7 +32,7 @@ binfiles += "get_fan_speed.sh \
            "
 
 LDFLAGS_append = " -lwedge_eeprom"
-CXXFLAGS_prepend = "-DWEDGE "
+CXXFLAGS_prepend = "-DCONFIG_WEDGE "
 
 pkgdir = "fan_ctrl"
 
