@@ -27,12 +27,13 @@ import json
 import ssl
 import socket
 import os
-from rest_fruid import *
-from rest_server import *
-from rest_sensors import *
-from rest_bmc import *
-from rest_gpios import *
-from rest_modbus import *
+import rest_fruid
+import rest_server
+import rest_sensors
+import rest_bmc
+import rest_gpios
+import rest_modbus
+import rest_slotid
 
 CONSTANTS = {
     'certificate': '/usr/lib/ssl/certs/rest_server.pem',
@@ -59,7 +60,8 @@ def rest_sys():
                     "Description": "Wedge System",
                     },
                 "Actions": [],
-                "Resources": [ "mb", "bmc", "server", "sensors", "gpios"],
+                "Resources": [ "mb", "bmc", "server", "sensors", "gpios",
+                               "modbus_registers", "slotid"],
              }
 
     return result
@@ -79,38 +81,43 @@ def rest_sys():
 
 # Handler for sys/mb/fruid resource endpoint
 @route('/api/sys/mb/fruid')
-def rest_fruid():
-  return get_fruid()
+def rest_fruid_hdl():
+  return rest_fruid.get_fruid()
 
 # Handler for sys/bmc resource endpoint
 @route('/api/sys/bmc')
-def rest_bmc():
-    return get_bmc()
+def rest_bmc_hdl():
+    return rest_bmc.get_bmc()
 
 # Handler for sys/server resource endpoint
 @route('/api/sys/server')
-def rest_bmc():
-    return get_server()
+def rest_server_hdl():
+    return rest_server.get_server()
 
 # Handler for uServer resource endpoint
 @route('/api/sys/server', method='POST')
-def rest_server():
+def rest_server_act_hdl():
     data = json.load(request.body)
-    return server_action(data)
+    return rest_server.server_action(data)
 
 # Handler for sensors resource endpoint
 @route('/api/sys/sensors')
-def rest_sensors():
-  return get_sensors()
+def rest_sensors_hdl():
+  return rest_sensors.get_sensors()
 
 # Handler for sensors resource endpoint
 @route('/api/sys/gpios')
-def rest_gpios():
-  return get_gpios()
+def rest_gpios_hdl():
+  return rest_gpios.get_gpios()
 
 @route('/api/sys/modbus_registers')
-def modbus_registers():
-    return get_modbus_registers()
+def modbus_registers_hdl():
+    return rest_modbus.get_modbus_registers()
+
+# Handler for sensors resource endpoint
+@route('/api/sys/slotid')
+def rest_slotid_hdl():
+  return rest_slotid.get_slotid()
 
 run(host = "::", port = 8080)
 
