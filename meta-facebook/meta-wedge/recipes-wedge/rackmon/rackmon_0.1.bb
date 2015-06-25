@@ -34,6 +34,8 @@ SRC_URI = "file://Makefile \
            file://rackmondata.c \
            file://setup-rackmond.sh \
            file://rackmon-config.py \
+           file://psu-update-delta.py \
+           file://hexfile.py \
           "
 
 S = "${WORKDIR}"
@@ -43,6 +45,8 @@ binfiles = "modbuscmd \
             gpiowatch \
             rackmond \
             rackmondata \
+            psu-update-delta.py \
+            hexfile.py \
            "
 
 #otherfiles = "README"
