@@ -17,7 +17,9 @@
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
-SRC_URI += "file://disable_watchdog.sh"
+SRC_URI += "file://disable_watchdog.sh \
+            file://setup-gpio.sh \
+           "
 
 do_install() {
   dst="${D}/usr/local/fbpackages/${pkgdir}"
@@ -43,6 +45,18 @@ do_install() {
   update-rc.d -r ${D} mount_data0.sh start 03 S .
   install -m 0755 ${WORKDIR}/rc.early ${D}${sysconfdir}/init.d/rc.early
   update-rc.d -r ${D} rc.early start 04 S .
+
+  install -m 755 setup-gpio.sh ${D}${sysconfdir}/init.d/setup-gpio.sh
+  update-rc.d -r ${D} setup-gpio.sh start 59 S .
+
+  # networking is done after rcS, any start level within rcS
+  # for mac fixup should work
+  install -m 755 eth0_mac_fixup.sh ${D}${sysconfdir}/init.d/eth0_mac_fixup.sh
+  update-rc.d -r ${D} eth0_mac_fixup.sh start 70 S .
+
+  install -m 755 power-on.sh ${D}${sysconfdir}/init.d/power-on.sh
+  update-rc.d -r ${D} power-on.sh start 85 S .
+
   install -m 0755 ${WORKDIR}/rc.local ${D}${sysconfdir}/init.d/rc.local
   update-rc.d -r ${D} rc.local start 99 2 3 4 5 .
 
