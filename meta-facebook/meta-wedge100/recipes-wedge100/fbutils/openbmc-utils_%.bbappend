@@ -19,6 +19,7 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
 SRC_URI += "file://disable_watchdog.sh \
             file://setup-gpio.sh \
+            file://board-utils.sh \
            "
 
 OPENBMC_UTILS_FILES += " \
