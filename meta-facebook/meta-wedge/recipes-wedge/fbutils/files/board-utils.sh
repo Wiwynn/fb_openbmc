@@ -131,7 +131,7 @@ wedge_slot_id() {
             fi
             slot=$(((id2 * 4 + id1 * 2 + id0) * 2 + id3 + 1))
     esac
-   echo "$slot"
+    echo "$slot"
 }
 
 # wedge_board_rev() is only valid after GPIO Y0, Y1, and Y2 are enabled
@@ -141,4 +141,23 @@ wedge_board_rev() {
     val1=$(cat /sys/class/gpio/gpio193/value 2>/dev/null)
     val2=$(cat /sys/class/gpio/gpio194/value 2>/dev/null)
     echo $((val0 | (val1 << 1) | (val2 << 2)))
+}
+
+# Should we enable OOB interface or not
+wedge_should_enable_oob() {
+    board_rev=$(wedge_board_rev)
+    board_type=$(wedge_board_type)
+    case "$board_type" in
+        FC-LEFT|FC-RIGHT)
+            if [ $board_rev -lt 2 ]; then
+                return 0
+            fi
+            ;;
+        *)
+            if [ $board_rev -lt 3 ]; then
+                return 0
+            fi
+            ;;
+    esac
+    return -1
 }
