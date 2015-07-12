@@ -14,14 +14,10 @@
 # Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
-SUMMARY = "Utilities"
-DESCRIPTION = "Various utilities"
-SECTION = "base"
-PR = "r1"
-LICENSE = "GPLv2"
-LIC_FILES_CHKSUM = "file://COPYING;md5=eb723b61539feef013de476e68b5c50a"
 
-SRC_URI = "file://ast-functions \
+FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
+
+SRC_URI += "file://board-utils.sh \
            file://us_console.sh \
            file://sol.sh \
            file://power_led.sh \
@@ -48,14 +44,10 @@ SRC_URI = "file://ast-functions \
            file://src \
            file://start_us_monitor.sh \
            file://us_monitor.sh \
-           file://COPYING \
           "
 
-pkgdir = "utils"
-
-S = "${WORKDIR}"
-
-binfiles = "us_console.sh sol.sh power_led.sh post_led.sh \
+OPENBMC_UTILS_FILES += " \
+  board-utils.sh us_console.sh sol.sh power_led.sh post_led.sh \
   reset_usb.sh mdio.py setup_rov.sh wedge_power.sh wedge_us_mac.sh \
   bcm5396.py bcm5396_util.py setup_switch.py watch-fc.sh us_monitor.sh \
   at93cx6.py at93cx6_util.py \
@@ -63,16 +55,11 @@ binfiles = "us_console.sh sol.sh power_led.sh post_led.sh \
 
 DEPENDS_append = "update-rc.d-native"
 
-do_install() {
-  dst="${D}/usr/local/fbpackages/${pkgdir}"
-  install -d $dst
-  install -m 644 ast-functions ${dst}/ast-functions
-  localbindir="${D}/usr/local/bin"
-  install -d ${localbindir}
-  for f in ${binfiles}; do
-      install -m 755 $f ${dst}/${f}
-      ln -s ../fbpackages/${pkgdir}/${f} ${localbindir}/${f}
-  done
+do_install_board() {
+  # for backward compatible, create /usr/local/fbpackages/utils/ast-functions
+  olddir="/usr/local/fbpackages/utils"
+  install -d ${D}${olddir}
+  ln -s "/usr/local/bin/openbmc-utils.sh" ${D}${olddir}/ast-functions
 
   # common lib and include files
   install -d ${D}${includedir}/facebook
@@ -106,4 +93,8 @@ do_install() {
   update-rc.d -r ${D} rc.local start 99 2 3 4 5 .
 }
 
-FILES_${PN} += "/usr/local ${sysconfdir}"
+do_install_append() {
+  do_install_board
+}
+
+FILES_${PN} += "${sysconfdir}"
