@@ -40,7 +40,7 @@ NTP_PKGS = " \
 IMAGE_INSTALL += " \
   kernel-modules \
   u-boot-fw-utils \
-  fbutils \
+  openbmc-utils \
   rackmon \
   watchdog-ctrl \
   i2c-tools \
