@@ -18,13 +18,14 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
 SRC_URI += "file://disable_watchdog.sh \
-            file://setup-gpio.sh \
             file://board-utils.sh \
            "
 
 OPENBMC_UTILS_FILES += " \
     disable_watchdog.sh \
     "
+
+DEPENDS_append = " update-rc.d-native"
 
 do_install_board() {
     # for backward compatible, create /usr/local/fbpackages/utils/ast-functions
@@ -46,9 +47,6 @@ do_install_board() {
     install -m 0755 ${WORKDIR}/rc.early ${D}${sysconfdir}/init.d/rc.early
     update-rc.d -r ${D} rc.early start 04 S .
 
-    install -m 755 setup-gpio.sh ${D}${sysconfdir}/init.d/setup-gpio.sh
-    update-rc.d -r ${D} setup-gpio.sh start 59 S .
-
     # networking is done after rcS, any start level within rcS
     # for mac fixup should work
     install -m 755 eth0_mac_fixup.sh ${D}${sysconfdir}/init.d/eth0_mac_fixup.sh
@@ -63,3 +61,5 @@ do_install_board() {
     install -m 0755 ${WORKDIR}/disable_watchdog.sh ${D}${sysconfdir}/init.d/disable_watchdog.sh
     update-rc.d -r ${D} disable_watchdog.sh start 99 2 3 4 5 .
 }
+
+FILES_${PN} += "${sysconfdir}"
