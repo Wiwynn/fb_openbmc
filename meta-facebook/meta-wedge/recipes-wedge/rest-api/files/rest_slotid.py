@@ -22,7 +22,7 @@ import subprocess
 
 # Handler for sensors resource endpoint
 def get_slotid():
-    p = subprocess.Popen('source /usr/local/fbpackages/utils/ast-functions;'
+    p = subprocess.Popen('source /usr/local/bin/openbmc-utils.sh;'
                          'wedge_slot_id $(wedge_board_type)',
                          shell=True, stdout=subprocess.PIPE)
     out, err = p.communicate()

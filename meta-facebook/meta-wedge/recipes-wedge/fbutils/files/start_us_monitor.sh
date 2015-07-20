@@ -36,7 +36,7 @@ DAEMON="us_monitor.sh"
 # source function library
 . /etc/init.d/functions
 
-. /usr/local/fbpackages/utils/ast-functions
+. /usr/local/bin/openbmc-utils.sh
 
 STOPPER=
 ACTION="$1"

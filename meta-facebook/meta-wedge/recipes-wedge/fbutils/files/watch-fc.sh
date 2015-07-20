@@ -18,7 +18,7 @@
 # Boston, MA 02110-1301 USA
 #
 
-. /usr/local/fbpackages/utils/ast-functions
+. /usr/local/bin/openbmc-utils.sh
 
 MAC1LINK=0    # GPIOA0
 FAB0_PRES=20  # GPIOC4

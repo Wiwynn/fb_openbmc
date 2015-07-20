@@ -39,7 +39,7 @@
 # When defined, the system doesn't reboot cleanly.  We're still
 # investigating this.
 
-. /usr/local/fbpackages/utils/ast-functions
+. /usr/local/bin/openbmc-utils.sh
 
 # Set up to read the board revision pins, Y0, Y1, Y2
 devmem_set_bit $(scu_addr 70) 19

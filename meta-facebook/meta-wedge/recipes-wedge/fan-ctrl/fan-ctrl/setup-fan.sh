@@ -27,7 +27,7 @@
 # Short-Description: Set fan speed
 ### END INIT INFO
 
-. /usr/local/fbpackages/utils/ast-functions
+. /usr/local/bin/openbmc-utils.sh
 
 # Enable the isolation buffer
 wedge_iso_buf_enable

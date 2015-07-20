@@ -18,7 +18,7 @@
 # Boston, MA 02110-1301 USA
 #
 
-CONSOLE_SH=/usr/local/fbpackages/utils/us_console.sh
+CONSOLE_SH=/usr/local/bin/us_console.sh
 
 $CONSOLE_SH connect
 
