@@ -1,6 +1,6 @@
 #!/bin/sh
 
-. /usr/local/fbpackages/utils/ast-functions
+. /usr/local/bin/openbmc-utils.sh
 
 /usr/local/bin/watchdog_ctrl.sh off
 
