@@ -24,7 +24,7 @@
 #include "nic.h"
 #include "intf.h"
 
-#include "facebook/log.h"
+#include "openbmc/log.h"
 #include "facebook/wedge_eeprom.h"
 
 #define WAIT4PACKET_TIMEOUT 10000        /* 10ms */

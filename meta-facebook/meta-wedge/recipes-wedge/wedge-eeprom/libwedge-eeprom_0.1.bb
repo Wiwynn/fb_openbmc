@@ -24,7 +24,7 @@ LIC_FILES_CHKSUM = "file://wedge_eeprom.c;beginline=4;endline=16;md5=da35978751a
 SRC_URI = "file://lib \
           "
 
-DEPENDS += "openbmc-utils"
+DEPENDS += "liblog"
 
 S = "${WORKDIR}/lib"
 

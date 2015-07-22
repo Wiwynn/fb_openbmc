@@ -27,7 +27,7 @@
 #include <sys/types.h>
 
 #include "facebook/i2c-dev.h"
-#include "facebook/log.h"
+#include "openbmc/log.h"
 
 #define ETHERTYPE_LLDP 0x88cc
 
