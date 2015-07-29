@@ -464,10 +464,14 @@ int do_command(int sock, rackmond_command* cmd) {
         if (world.config == NULL) {
           send(sock, "[]", 2, 0);
         } else {
+          struct timespec ts;
+          clock_gettime(CLOCK_REALTIME, &ts);
+          uint32_t now = ts.tv_sec;
           send(sock, "[", 1, 0);
           int data_pos = 0;
           while(world.stored_data[data_pos] != NULL && data_pos < MAX_ACTIVE_ADDRS) {
-            dprintf(sock, "{\"addr\":%d,\"ranges\":[", world.stored_data[data_pos]->addr);
+            dprintf(sock, "{\"addr\":%d,\"now\":%d,\"ranges\":[",
+                    world.stored_data[data_pos]->addr, now);
             for(int i = 0; i < world.config->num_intervals; i++) {
               uint32_t time;
               register_range_data *rd = &world.stored_data[data_pos]->range_data[i];
