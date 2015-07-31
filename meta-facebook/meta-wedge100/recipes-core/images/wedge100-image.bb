@@ -42,6 +42,7 @@ IMAGE_INSTALL += " \
   u-boot-fw-utils \
   openbmc-utils \
   openbmc-gpio \
+  fan-ctrl \
   rackmon \
   watchdog-ctrl \
   i2c-tools \
