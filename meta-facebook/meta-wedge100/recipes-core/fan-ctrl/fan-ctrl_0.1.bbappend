@@ -22,3 +22,17 @@ SRC_URI += "file://get_fan_speed.sh \
            "
 
 S = "${WORKDIR}"
+
+# only install get_fan_speed.sh and set_fan_speed.sh
+binfiles = "                                    \
+    get_fan_speed.sh                            \
+    set_fan_speed.sh                            \
+    "
+
+do_install() {
+    bin="${D}/usr/local/bin"
+    install -d $bin
+    for f in ${binfiles}; do
+        install -m 755 $f ${bin}/$f
+    done
+}
