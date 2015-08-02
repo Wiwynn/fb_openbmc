@@ -37,5 +37,4 @@ do_install() {
 }
 
 FILES_${PN} = "${libdir}/libwedge_eeprom.so"
-FILES_${PN}-dbg += "${libdir}/.debug"
 FILES_${PN}-dev = "${includedir}/facebook/wedge_eeprom.h"

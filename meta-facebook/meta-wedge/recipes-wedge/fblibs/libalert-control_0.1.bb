@@ -35,5 +35,4 @@ do_install() {
 }
 
 FILES_${PN} = "${libdir}/libalert_control.so"
-FILES_${PN}-dbg = "${libdir}/.debug"
 FILES_${PN}-dev = "${includedir}/facebook/alert_control.h"
