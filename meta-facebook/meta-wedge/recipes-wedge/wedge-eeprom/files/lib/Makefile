@@ -18,7 +18,7 @@
 lib: libwedge_eeprom.so
 
 libwedge_eeprom.so: wedge_eeprom.c
-	$(CC) $(CCFLAGS) -fPIC -c -o wedge_eeprom.o wedge_eeprom.c
+	$(CC) $(CFLAGS) -fPIC -c -o wedge_eeprom.o wedge_eeprom.c
 	$(CC) -shared -o libwedge_eeprom.so wedge_eeprom.o -lc
 
 .PHONY: clean
