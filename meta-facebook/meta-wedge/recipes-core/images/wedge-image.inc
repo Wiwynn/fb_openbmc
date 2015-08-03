@@ -61,6 +61,7 @@ IMAGE_INSTALL += " \
   ${NTP_PKGS} \
   iproute2 \
   dhcp-client \
+  spatula \
   "
 
 IMAGE_FEATURES += " \
