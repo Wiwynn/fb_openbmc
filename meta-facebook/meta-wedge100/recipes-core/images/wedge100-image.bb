@@ -63,6 +63,7 @@ IMAGE_INSTALL += " \
   iproute2 \
   dhcp-client \
   jbi \
+  flashrom \
   "
 
 IMAGE_FEATURES += " \
