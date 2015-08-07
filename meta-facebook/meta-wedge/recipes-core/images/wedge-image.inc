@@ -49,6 +49,7 @@ IMAGE_INSTALL += " \
   usb-console \
   oob-nic \
   lldp-util \
+  bmc-log \
   lmsensors-sensors \
   wedge-eeprom \
   sms-kcsd \
