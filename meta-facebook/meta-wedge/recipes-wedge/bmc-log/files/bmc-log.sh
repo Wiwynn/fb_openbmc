@@ -27,7 +27,8 @@
 # Short-Description: Collect micro-server kernel logs through serial port
 ### END INIT INFO
 
-. /etc/default/bmc-log-config
+. /etc/default/bmc-log
+. /etc/init.d/functions
 
 DAEMON=/usr/sbin/bmc-log
 NAME=bmc-log
