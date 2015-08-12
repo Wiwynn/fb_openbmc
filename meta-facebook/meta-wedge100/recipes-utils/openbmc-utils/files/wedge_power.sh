@@ -25,20 +25,8 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
 prog="$0"
 
 PWR_BTN_GPIO="BMC_PWR_BTN_OUT_N"
-SYSCPLD_SYSFS_DIR="/sys/class/i2c-adapter/i2c-12/12-0031"
 PWR_SYSTEM_SYSFS="${SYSCPLD_SYSFS_DIR}/pwr_cyc_all_n"
-PWR_MAIN_SYSFS="${SYSCPLD_SYSFS_DIR}/pwr_main_n"
-PWR_USRV_SYSFS="${SYSCPLD_SYSFS_DIR}/pwr_usrv_en"
-PWR_USRV_BTN_SYSFS="${SYSCPLD_SYSFS_DIR}/pwr_usrv_btn_en"
 PWR_USRV_RST_SYSFS="${SYSCPLD_SYSFS_DIR}/usrv_rst_n"
-
-power_on_board() {
-    # power on main power, uServer power, and enable power button
-    echo 1 > $PWR_MAIN_SYSFS
-    echo 1 > $PWR_USRV_SYSFS
-    echo 1 > $PWR_USRV_BTN_SYSFS
-    sleep 1
-}
 
 usage() {
     echo "Usage: $prog <command> [command options]"
@@ -69,8 +57,38 @@ do_status() {
     return 0
 }
 
+do_on_com_e() {
+    echo 1 > $PWR_USRV_SYSFS
+}
+
+do_on_panther_plus() {
+    local pulse_us n retries
+    # generate the power on pulse
+    pulse_us=500000             # 500ms
+    retries=3
+    n=1
+    while true; do
+        gpio_set $PWR_BTN_GPIO 1
+        usleep $pulse_us
+        # generate the power on pulse
+        gpio_set $PWR_BTN_GPIO 0
+        usleep $pulse_us
+        gpio_set $PWR_BTN_GPIO 1
+        sleep 3
+        if wedge_is_us_on 1 '' 1; then
+            break
+        fi
+        n=$((n+1))
+        if [ $n -gt $retries ]; then
+            return 1
+        fi
+        echo -n "..."
+    done
+    return 0
+}
+
 do_on() {
-    local force opt pulse_us n retries
+    local force opt ret
     force=0
     while getopts "f" opt; do
         case $opt in
@@ -93,49 +111,55 @@ do_on() {
         fi
     fi
 
-    # make power button high to prepare for
     # power on sequence
-    gpio_set $PWR_BTN_GPIO 1
+    if wedge_has_com_e; then
+        do_on_com_e
+        ret=$?
+    else
+        do_on_panther_plus
+        ret=$?
+    fi
 
-    # first power on main power and uServer power
-    power_on_board
-
-    # generate the power on pulse
-    pulse_us=500000             # 500ms
-    retries=3
-    n=1
-    while true; do
-        gpio_set $PWR_BTN_GPIO 1
-        usleep $pulse_us
-        # generate the power on pulse
-        gpio_set $PWR_BTN_GPIO 0
-        usleep $pulse_us
-        gpio_set $PWR_BTN_GPIO 1
-        sleep 3
-        if wedge_is_us_on 1 '' 1; then
-            break
-        fi
-        n=$((n+1))
-        if [ $n -gt $retries ]; then
-            echo " Failed"
-            return 1
-        fi
-        echo -n "..."
-    done
-    echo " Done"
-    return 0
+    if [ $ret -eq 0 ]; then
+        echo " Done"
+    else
+        echo " Failed"
+    fi
+    return $ret
 }
 
-do_off() {
-    echo -n "Power off microserver ..."
+do_off_panther_plus() {
     # first make sure, button is high
     gpio_set $PWR_BTN_GPIO 1
     # then, hold it down for 5s
     gpio_set $PWR_BTN_GPIO 0
     sleep 5
     gpio_set $PWR_BTN_GPIO 1
-    echo " Done"
     return 0
+}
+
+do_off_com_e() {
+    echo 0 > $PWR_USRV_SYSFS
+    return 0
+}
+
+do_off() {
+    local ret
+    echo -n "Power off microserver ..."
+    if wedge_has_com_e; then
+        do_off_com_e
+        ret=$?
+    else
+        do_off_panther_plus
+        ret=$?
+    fi
+
+    if [ $ret -eq 0 ]; then
+        echo " Done"
+    else
+        echo " Failed"
+    fi
+    return $ret
 }
 
 do_reset() {
