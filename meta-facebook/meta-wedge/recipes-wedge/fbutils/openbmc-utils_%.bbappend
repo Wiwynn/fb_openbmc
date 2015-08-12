@@ -37,8 +37,6 @@ SRC_URI += "file://board-utils.sh \
            file://wedge_us_mac.sh \
            file://setup_switch.py \
            file://create_vlan_intf \
-           file://watch-fc.sh \
-           file://fcswitcher.sh \
            file://rc.early \
            file://rc.local \
            file://src \
@@ -49,7 +47,7 @@ SRC_URI += "file://board-utils.sh \
 OPENBMC_UTILS_FILES += " \
   board-utils.sh us_console.sh sol.sh power_led.sh post_led.sh \
   reset_usb.sh mdio.py setup_rov.sh wedge_power.sh wedge_us_mac.sh \
-  bcm5396.py bcm5396_util.py setup_switch.py watch-fc.sh us_monitor.sh \
+  bcm5396.py bcm5396_util.py setup_switch.py us_monitor.sh \
   at93cx6.py at93cx6_util.py \
   "
 
@@ -86,8 +84,6 @@ do_install_board() {
   update-rc.d -r ${D} start_us_monitor.sh start 84 S .
   install -m 755 power-on.sh ${D}${sysconfdir}/init.d/power-on.sh
   update-rc.d -r ${D} power-on.sh start 85 S .
-  install -m 755 fcswitcher.sh ${D}${sysconfdir}/init.d/fcswitcher.sh
-  update-rc.d -r ${D} fcswitcher.sh start 90 S .
   install -m 0755 ${WORKDIR}/rc.local ${D}${sysconfdir}/init.d/rc.local
   update-rc.d -r ${D} rc.local start 99 2 3 4 5 .
 }
