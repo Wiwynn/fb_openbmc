@@ -23,6 +23,6 @@
 
 pid="/var/run/dhclient6.${IFACE}.pid"
 
-dhclient -6 -pf ${pid} ${IFACE}
+dhclient -6 -nw -pf ${pid} ${IFACE}
 
 exit 0
