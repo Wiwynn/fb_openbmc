@@ -34,6 +34,7 @@ import rest_bmc
 import rest_gpios
 import rest_modbus
 import rest_slotid
+import rest_psu_update
 
 CONSTANTS = {
     'certificate': '/usr/lib/ssl/certs/rest_server.pem',
@@ -113,6 +114,15 @@ def rest_gpios_hdl():
 @route('/api/sys/modbus_registers')
 def modbus_registers_hdl():
     return rest_modbus.get_modbus_registers()
+
+@route('/api/sys/psu_update')
+def psu_update_hdl():
+    return rest_psu_update.get_jobs()
+
+@route('/api/sys/psu_update', method='POST')
+def psu_update_hdl():
+    data = json.load(request.body)
+    return rest_psu_update.begin_job(data)
 
 # Handler for sensors resource endpoint
 @route('/api/sys/slotid')
