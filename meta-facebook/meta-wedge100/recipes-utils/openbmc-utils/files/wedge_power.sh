@@ -59,32 +59,7 @@ do_status() {
 
 do_on_com_e() {
     echo 1 > $PWR_USRV_SYSFS
-}
-
-do_on_panther_plus() {
-    local pulse_us n retries
-    # generate the power on pulse
-    pulse_us=500000             # 500ms
-    retries=3
-    n=1
-    while true; do
-        gpio_set $PWR_BTN_GPIO 1
-        usleep $pulse_us
-        # generate the power on pulse
-        gpio_set $PWR_BTN_GPIO 0
-        usleep $pulse_us
-        gpio_set $PWR_BTN_GPIO 1
-        sleep 3
-        if wedge_is_us_on 1 '' 1; then
-            break
-        fi
-        n=$((n+1))
-        if [ $n -gt $retries ]; then
-            return 1
-        fi
-        echo -n "..."
-    done
-    return 0
+    return $?
 }
 
 do_on() {
@@ -112,14 +87,8 @@ do_on() {
     fi
 
     # power on sequence
-    if wedge_has_com_e; then
-        do_on_com_e
-        ret=$?
-    else
-        do_on_panther_plus
-        ret=$?
-    fi
-
+    do_on_com_e
+    ret=$?
     if [ $ret -eq 0 ]; then
         echo " Done"
     else
@@ -128,32 +97,16 @@ do_on() {
     return $ret
 }
 
-do_off_panther_plus() {
-    # first make sure, button is high
-    gpio_set $PWR_BTN_GPIO 1
-    # then, hold it down for 5s
-    gpio_set $PWR_BTN_GPIO 0
-    sleep 5
-    gpio_set $PWR_BTN_GPIO 1
-    return 0
-}
-
 do_off_com_e() {
     echo 0 > $PWR_USRV_SYSFS
-    return 0
+    return $?
 }
 
 do_off() {
     local ret
     echo -n "Power off microserver ..."
-    if wedge_has_com_e; then
-        do_off_com_e
-        ret=$?
-    else
-        do_off_panther_plus
-        ret=$?
-    fi
-
+    do_off_com_e
+    ret=$?
     if [ $ret -eq 0 ]; then
         echo " Done"
     else
@@ -178,6 +131,7 @@ do_reset() {
     done
     if [ $system -eq 1 ]; then
         echo -n "Power reset whole system ..."
+        sleep 1
         echo 0 > $PWR_SYSTEM_SYSFS
     else
         if ! wedge_is_us_on; then
