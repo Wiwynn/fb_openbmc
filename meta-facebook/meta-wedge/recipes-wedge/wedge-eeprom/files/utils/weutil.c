@@ -45,9 +45,10 @@ int main(int argc, const char *argv[])
   printf("Product Name: %s\n", eeprom.fbw_product_name);
   printf("Product Part Number: %s\n", eeprom.fbw_product_number);
   printf("System Assembly Part Number: %s\n", eeprom.fbw_assembly_number);
+  printf("Facebook PCBA Part Number: %s\n", eeprom.fbw_facebook_pcba_number);
   printf("Facebook PCB Part Number: %s\n", eeprom.fbw_facebook_pcb_number);
-  printf("ODM PCB Part Number: %s\n", eeprom.fbw_odm_pcb_number);
-  printf("ODM PCB Serial Number: %s\n", eeprom.fbw_odm_pcb_serial);
+  printf("ODM PCBA Part Number: %s\n", eeprom.fbw_odm_pcba_number);
+  printf("ODM PCBA Serial Number: %s\n", eeprom.fbw_odm_pcba_serial);
   printf("Product Production State: %d\n", eeprom.fbw_production_state);
   printf("Product Version: %d\n", eeprom.fbw_product_version);
   printf("Product Sub-Version: %d\n", eeprom.fbw_product_subversion);
