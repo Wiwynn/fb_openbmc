@@ -34,5 +34,7 @@ SRC_URI = "file://Makefile \
 
 S = "${WORKDIR}"
 
-module_autoload_syscpld = "syscpld"
-module_autoload_fancpld = "fancpld"
+KERNEL_MODULE_AUTOLOAD += "                     \
+ syscpld                                        \
+ fancpld                                        \
+"
