@@ -207,6 +207,10 @@ reglist = [
      "length": 8},
     {"begin": 0x115, #BBU Device Name
      "length": 8},
+    {"begin": 0x11D, #FB Battery Status
+     "length": 4},
+    {"begin": 0x121, #SoH results
+     "length": 1},
 ]
 
 def main():
