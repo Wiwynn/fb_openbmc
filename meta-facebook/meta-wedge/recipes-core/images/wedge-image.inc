@@ -55,6 +55,7 @@ IMAGE_INSTALL += " \
   wedge-eeprom \
   sms-kcsd \
   rest-api \
+  cherryPy \
   bottle \
   ipmid \
   po-eeprom \

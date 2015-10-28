@@ -65,6 +65,7 @@ IMAGE_INSTALL += " \
   dhcp-client \
   jbi \
   flashrom \
+  cherryPy \
   "
 
 IMAGE_FEATURES += " \

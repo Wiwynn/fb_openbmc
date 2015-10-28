@@ -39,7 +39,7 @@ case "$ACTION" in
     if [ $pid ]; then
       echo "already running"
     else
-      $CMD > /tmp/rest.log 2>&1 &
+      $CMD > /tmp/rest_start.log 2>&1 &
       echo "done."
     fi
     ;;
