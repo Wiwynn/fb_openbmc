@@ -36,8 +36,8 @@ else
     FANS="$2"
 fi
 
-# Convert the percentage to our 1/32th unit.
-unit=$(( ( $1 * 32 ) / 100 ))
+# Convert the percentage to our 1/32th unit (0-31).
+unit=$(( ( $1 * 31 ) / 100 ))
 
 for fan in $FANS; do
     pwm="${FAN_DIR}/fantray${fan}_pwm"

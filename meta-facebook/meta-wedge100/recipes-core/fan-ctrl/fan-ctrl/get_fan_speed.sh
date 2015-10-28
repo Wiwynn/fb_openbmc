@@ -27,7 +27,7 @@ show_pwm()
 {
     pwm="${FAN_DIR}/fantray${1}_pwm"
     val=$(cat $pwm | head -n 1)
-    echo "$((val * 100 / 32))%"
+    echo "$((val * 100 / 31))%"
 }
 
 show_rpm()
