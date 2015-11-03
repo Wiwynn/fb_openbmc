@@ -182,7 +182,7 @@ def log_after_request():
 
     logging.info('{} - - [{}] "{} {} {}" {} {}'.format(
                   bottle.request.environ.get('REMOTE_ADDR'),
-                  datetime.datetime.now().strftime('%d/%mmm/%Y %H:%M:%S'),
+                  datetime.datetime.now().strftime('%d/%b/%Y %H:%M:%S'),
                   bottle.request.environ.get('REQUEST_METHOD'),
                   bottle.request.environ.get('REQUEST_URI'),
                   bottle.request.environ.get('SERVER_PROTOCOL'),
