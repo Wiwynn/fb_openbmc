@@ -116,7 +116,7 @@ do_off() {
 }
 
 do_reset() {
-    local system opt
+    local system opt pulse_us
     system=0
     while getopts "s" opt; do
         case $opt in
@@ -130,9 +130,18 @@ do_reset() {
         esac
     done
     if [ $system -eq 1 ]; then
+        pulse_us=100000             # 100ms
         echo -n "Power reset whole system ..."
         sleep 1
         echo 0 > $PWR_SYSTEM_SYSFS
+        # Echo 0 above should work already. However, after CPLD upgrade,
+        # We need to re-generate the pulse to make this work
+        usleep $pulse_us
+        echo 1 > $PWR_SYSTEM_SYSFS
+        usleep $pulse_us
+        echo 0 > $PWR_SYSTEM_SYSFS
+        usleep $pulse_us
+        echo 1 > $PWR_SYSTEM_SYSFS
     else
         if ! wedge_is_us_on; then
             echo "Power resetting microserver that is powered off has no effect."
