@@ -15,12 +15,12 @@
 # 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
 
-obj-m := syscpld.o fancpld.o 
+obj-m := i2c_dev_sysfs.o 
 
 SRC := $(shell pwd)
 
 all:
-	$(MAKE) -C $(KERNEL_SRC) M=$(SRC) 
+	$(MAKE) -C $(KERNEL_SRC) M=$(SRC)
 
 modules_install:
 	$(MAKE) -C $(KERNEL_SRC) M=$(SRC) modules_install

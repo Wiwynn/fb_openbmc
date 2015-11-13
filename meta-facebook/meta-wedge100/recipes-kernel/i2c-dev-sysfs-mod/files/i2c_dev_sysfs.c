@@ -44,6 +44,123 @@
 
 #endif
 
+ssize_t i2c_dev_show_label(struct device *dev,
+                           struct device_attribute *attr,
+                           char *buf)
+{
+  i2c_sysfs_attr_st *i2c_attr = TO_I2C_SYSFS_ATTR(attr);
+  const i2c_dev_attr_st *dev_attr = i2c_attr->isa_i2c_attr;
+
+  if (dev_attr->ida_help) {
+    return sprintf(buf, "%s\n", dev_attr->ida_help);
+  }
+  return sprintf(buf, "%s\n", dev_attr->ida_name);
+}
+EXPORT_SYMBOL_GPL(i2c_dev_show_label);
+
+int i2c_dev_read_byte(struct device *dev,
+                      struct device_attribute *attr)
+{
+  struct i2c_client *client = to_i2c_client(dev);
+  i2c_dev_data_st *data = i2c_get_clientdata(client);
+  i2c_sysfs_attr_st *i2c_attr = TO_I2C_SYSFS_ATTR(attr);
+  const i2c_dev_attr_st *dev_attr = i2c_attr->isa_i2c_attr;
+  int val;
+  int val_mask;
+
+  val_mask = ~(((-1) >> (dev_attr->ida_n_bits)) << (dev_attr->ida_n_bits));
+
+  mutex_lock(&data->idd_lock);
+
+  val = i2c_smbus_read_byte_data(client, dev_attr->ida_reg);
+
+  mutex_unlock(&data->idd_lock);
+
+  if (val < 0) {
+    /* error case */
+    return val;
+  }
+
+  val = (val >> dev_attr->ida_bit_offset) & val_mask;
+  return val;
+}
+EXPORT_SYMBOL_GPL(i2c_dev_read_byte);
+
+int i2c_dev_read_nbytes(struct device *dev,
+                        struct device_attribute *attr,
+                        uint8_t values[],
+                        int nbytes)
+{
+  struct i2c_client *client = to_i2c_client(dev);
+  i2c_dev_data_st *data = i2c_get_clientdata(client);
+  i2c_sysfs_attr_st *i2c_attr = TO_I2C_SYSFS_ATTR(attr);
+  const i2c_dev_attr_st *dev_attr = i2c_attr->isa_i2c_attr;
+  int i;
+
+  mutex_lock(&data->idd_lock);
+  for (i = 0; i < nbytes; ++i) {
+    values[i] = i2c_smbus_read_byte_data(client, dev_attr->ida_reg + i);
+    if (values[i] < 0) {
+      mutex_unlock(&data->idd_lock);
+      return values[i];
+    }
+  }
+  mutex_unlock(&data->idd_lock);
+  return nbytes;
+}
+EXPORT_SYMBOL_GPL(i2c_dev_read_nbytes);
+
+int i2c_dev_read_word_littleendian(struct device *dev,
+                                struct device_attribute *attr)
+{
+  uint8_t values[2];
+  int ret_val;
+
+  ret_val = i2c_dev_read_nbytes(dev, attr, values, 2);
+  if (ret_val < 0) {
+    return ret_val;
+  }
+  // values[0] : LSB
+  // values[1] : MSB
+  return ((values[1]<<8) + values[0]);
+}
+EXPORT_SYMBOL_GPL(i2c_dev_read_word_littleendian);
+
+int i2c_dev_read_word_bigendian(struct device *dev,
+                                struct device_attribute *attr)
+{
+  uint8_t values[2];
+  int ret_val;
+
+  ret_val = i2c_dev_read_nbytes(dev, attr, values, 2);
+  if (ret_val < 0) {
+    return ret_val;
+  }
+  // values[0] : MSB
+  // values[1] : LSB
+  return ((values[0]<<8) + values[1]);
+}
+EXPORT_SYMBOL_GPL(i2c_dev_read_word_bigendian);
+
+ssize_t i2c_dev_show_ascii(struct device *dev,
+                           struct device_attribute *attr,
+                           char *buf)
+{
+  i2c_sysfs_attr_st *i2c_attr = TO_I2C_SYSFS_ATTR(attr);
+  const i2c_dev_attr_st *dev_attr = i2c_attr->isa_i2c_attr;
+  int nbytes, ret_val;
+
+  nbytes = (dev_attr->ida_n_bits) / 8;
+  ret_val = i2c_dev_read_nbytes(dev, attr, buf, nbytes);
+  if (ret_val < 0) {
+    return ret_val;
+  }
+  //buf[] : ascii data
+  buf[nbytes] = '\n';
+  return (nbytes + 1);
+}
+EXPORT_SYMBOL_GPL(i2c_dev_show_ascii);
+
 static ssize_t i2c_dev_sysfs_show(struct device *dev,
                                   struct device_attribute *attr,
                                   char *buf)

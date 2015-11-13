@@ -15,17 +15,28 @@
 # 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
 
-obj-m := syscpld.o fancpld.o 
+SUMMARY = "Wedge100 i2c device library"
+DESCRIPTION = "i2c device sysfs attribute library"
+LICENSE = "GPLv2"
+LIC_FILES_CHKSUM = "file://COPYING;md5=12f884d2ae1ff87c09e5b7ccc2c4ca7e"
 
-SRC := $(shell pwd)
+inherit module
 
-all:
-	$(MAKE) -C $(KERNEL_SRC) M=$(SRC) 
+PR = "r0"
+PV = "0.1"
 
-modules_install:
-	$(MAKE) -C $(KERNEL_SRC) M=$(SRC) modules_install
+SRC_URI = "file://Makefile \
+           file://i2c_dev_sysfs.c \
+           file://i2c_dev_sysfs.h \
+           file://COPYING \
+          "
 
-clean:
-	rm -f *.o *~ core .depend .*.cmd *.ko *.mod.c
-	rm -f Module.markers Module.symvers modules.order
-	rm -rf .tmp_versions Modules.symvers
+S = "${WORKDIR}"
+
+do_install_append() {
+     kerneldir=${STAGING_KERNEL_DIR}/include/linux
+     install -d ${kerneldir}
+     install -m 0644 i2c_dev_sysfs.h ${kerneldir}/
+}
+
+FILES_${PN}-dev = "${kerneldir}/i2c_dev_sysfs.h"

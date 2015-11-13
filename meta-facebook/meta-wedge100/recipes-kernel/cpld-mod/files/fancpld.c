@@ -23,8 +23,7 @@
 #include <linux/errno.h>
 #include <linux/module.h>
 #include <linux/i2c.h>
-
-#include "i2c_dev_sysfs.h"
+#include <linux/i2c_dev_sysfs.h>
 
 #ifdef DEBUG
 
@@ -43,27 +42,12 @@ static ssize_t fancpld_fan_rpm_show(struct device *dev,
                                     struct device_attribute *attr,
                                     char *buf)
 {
-  struct i2c_client *client = to_i2c_client(dev);
-  i2c_dev_data_st *data = i2c_get_clientdata(client);
-  i2c_sysfs_attr_st *i2c_attr = TO_I2C_SYSFS_ATTR(attr);
-  const i2c_dev_attr_st *dev_attr = i2c_attr->isa_i2c_attr;
   int val;
-  int val_mask;
 
-  val_mask = ~(((-1) >> (dev_attr->ida_n_bits)) << (dev_attr->ida_n_bits));
-
-  mutex_lock(&data->idd_lock);
-
-  val = i2c_smbus_read_byte_data(client, dev_attr->ida_reg);
-
-  mutex_unlock(&data->idd_lock);
-
+  val = i2c_dev_read_byte(dev, attr);
   if (val < 0) {
-    /* error case */
     return val;
   }
-
-  val = (val >> dev_attr->ida_bit_offset) & val_mask;
   /* Multiply by 150 to get the RPM */
   val *= 150;
 

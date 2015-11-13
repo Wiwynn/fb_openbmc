@@ -64,5 +64,21 @@ int i2c_dev_sysfs_data_init(struct i2c_client *client,
                             const i2c_dev_attr_st *dev_attrs,
                             int n_attrs);
 void i2c_dev_sysfs_data_clean(struct i2c_client *client, i2c_dev_data_st *data);
+int i2c_dev_read_byte(struct device *dev,
+                      struct device_attribute *attr);
+int i2c_dev_read_nbytes(struct device *dev,
+                        struct device_attribute *attr,
+                        uint8_t values[],
+                        int nbytes);
+int i2c_dev_read_word_littleendian(struct device *dev,
+                                   struct device_attribute *attr);
+int i2c_dev_read_word_bigendian(struct device *dev,
+                                struct device_attribute *attr);
+ssize_t i2c_dev_show_label(struct device *dev,
+                           struct device_attribute *attr,
+                           char *buf);
+ssize_t i2c_dev_show_ascii(struct device *dev,
+                           struct device_attribute *attr,
+                           char *buf);
 
 #endif

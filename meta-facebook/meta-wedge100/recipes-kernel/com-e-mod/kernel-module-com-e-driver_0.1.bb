@@ -15,17 +15,26 @@
 # 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
 
-obj-m := syscpld.o fancpld.o 
+SUMMARY = "Wedge100 COMe driver"
+LICENSE = "GPLv2"
+LIC_FILES_CHKSUM = "file://COPYING;md5=12f884d2ae1ff87c09e5b7ccc2c4ca7e"
 
-SRC := $(shell pwd)
+inherit module
 
-all:
-	$(MAKE) -C $(KERNEL_SRC) M=$(SRC) 
+PR = "r0"
+PV = "0.1"
 
-modules_install:
-	$(MAKE) -C $(KERNEL_SRC) M=$(SRC) modules_install
+SRC_URI = "file://Makefile \
+           file://com_e_driver.c \
+           file://COPYING \
+          "
 
-clean:
-	rm -f *.o *~ core .depend .*.cmd *.ko *.mod.c
-	rm -f Module.markers Module.symvers modules.order
-	rm -rf .tmp_versions Modules.symvers
+S = "${WORKDIR}"
+
+DEPENDS += "kernel-module-i2c-dev-sysfs"
+
+RDEPENDS_${PN} += "kernel-module-i2c-dev-sysfs"
+
+KERNEL_MODULE_AUTOLOAD += " \
+ com_e_driver \
+"

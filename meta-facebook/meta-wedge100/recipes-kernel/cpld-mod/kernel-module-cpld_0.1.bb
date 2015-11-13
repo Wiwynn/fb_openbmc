@@ -25,14 +25,16 @@ PR = "r0"
 PV = "0.1"
 
 SRC_URI = "file://Makefile \
-           file://i2c_dev_sysfs.c \
-           file://i2c_dev_sysfs.h \
            file://syscpld.c \
            file://fancpld.c \
            file://COPYING \
           "
 
 S = "${WORKDIR}"
+
+DEPENDS += "kernel-module-i2c-dev-sysfs"
+
+RDEPENDS_${PN} += "kernel-module-i2c-dev-sysfs"
 
 KERNEL_MODULE_AUTOLOAD += "                     \
  syscpld                                        \
