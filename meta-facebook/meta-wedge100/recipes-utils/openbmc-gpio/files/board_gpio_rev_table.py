@@ -1,4 +1,4 @@
-# Copyright 2014-present Facebook. All Rights Reserved.
+# Copyright 2015-present Facebook. All rights reserved.
 #
 # This program file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -14,23 +14,20 @@
 # Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
 
-FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
+from openbmc_gpio_table import BoardGPIO
 
-SRC_URI += " \
-          file://board_gpio_table_v1.py \
-          file://board_gpio_table_v2.py \
-          file://board_gpio_rev_table.py \
-          file://openbmc_gpio_setup.py \
-          file://setup_board.py \
-          "
-OPENBMC_GPIO_SOC_TABLE = "ast2400_gpio_table.py"
+# The fallowing table is generated using:
+# python wedge100_gpio_parser.py data/wedge100-BMC-gpio.csv
+# DO NOT MODIFY THE TABLE!!!
+# Manual modification will be overridden!!!
 
-do_install_append() {
-     install -d ${D}${sysconfdir}/init.d
-     install -d ${D}${sysconfdir}/rcS.d
-     install -m 755 openbmc_gpio_setup.py ${D}${sysconfdir}/init.d/openbmc_gpio_setup.py
-     update-rc.d -r ${D} openbmc_gpio_setup.py start 59 S .
-}
-
-FILES_${PN} += "/usr/local/bin ${sysconfdir}"
+board_gpio_rev_table = [
+    BoardGPIO('GPIOY0', 'BOARD_REV_ID0'),
+    BoardGPIO('GPIOY1', 'BOARD_REV_ID1'),
+    BoardGPIO('GPIOY2', 'BOARD_REV_ID2'),
+]

@@ -1,4 +1,4 @@
-# Copyright 2014-present Facebook. All Rights Reserved.
+# Copyright 2015-present Facebook. All rights reserved.
 #
 # This program file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -15,22 +15,8 @@
 # 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
 
-FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
-
-SRC_URI += " \
-          file://board_gpio_table_v1.py \
-          file://board_gpio_table_v2.py \
-          file://board_gpio_rev_table.py \
-          file://openbmc_gpio_setup.py \
-          file://setup_board.py \
-          "
-OPENBMC_GPIO_SOC_TABLE = "ast2400_gpio_table.py"
-
-do_install_append() {
-     install -d ${D}${sysconfdir}/init.d
-     install -d ${D}${sysconfdir}/rcS.d
-     install -m 755 openbmc_gpio_setup.py ${D}${sysconfdir}/init.d/openbmc_gpio_setup.py
-     update-rc.d -r ${D} openbmc_gpio_setup.py start 59 S .
-}
-
-FILES_${PN} += "/usr/local/bin ${sysconfdir}"
+board_py_modules=[
+    'board_gpio_table_v1',
+    'board_gpio_table_v2',
+    'board_gpio_rev_table',
+]
