@@ -58,7 +58,7 @@ case "$ACTION" in
       kill $pid
     fi
     sleep 1
-    $CMD > /tmp/rest.log 2>&1 &
+    $CMD > /tmp/rest_start.log 2>&1 &
     echo "done."
     ;;
   status)

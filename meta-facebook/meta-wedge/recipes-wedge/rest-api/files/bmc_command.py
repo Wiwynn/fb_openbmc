@@ -31,6 +31,9 @@ import time
 
 DEFAULT_TIMEOUT = 10 #sec
 
+# Note: Python 3.0 supports communicate() with a timeout option.
+# If we upgrade to this version we will no longer need timed_communicate
+
 class TimeoutError(Exception):
     def __init__(self, output, error):
         super(TimeoutError, self).__init__('process timed out')
@@ -47,7 +50,7 @@ def kill_process(proc):
     except WaitTimeoutError:
         proc.kill()
         try:
-            proc.timed_wait(0.1)
+            timed_wait(proc, 0.1)
         except WaitTimeoutError:
             # This can happen if the process is stuck waiting inside a system
             # call for a long time.  There isn't much we can do unless we want
