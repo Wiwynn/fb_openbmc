@@ -59,11 +59,11 @@ int main(int argc, const char *argv[])
          eeprom.fbw_system_manufacturing_date);
   printf("PCB Manufacturer: %s\n", eeprom.fbw_pcb_manufacturer);
   printf("Assembled At: %s\n", eeprom.fbw_assembled);
-  printf("Local MAC: %X:%X:%X:%X:%X:%X\n",
+  printf("Local MAC: %02X:%02X:%02X:%02X:%02X:%02X\n",
          eeprom.fbw_local_mac[0], eeprom.fbw_local_mac[1],
          eeprom.fbw_local_mac[2], eeprom.fbw_local_mac[3],
          eeprom.fbw_local_mac[4], eeprom.fbw_local_mac[5]);
-  printf("Extended MAC Base: %X:%X:%X:%X:%X:%X\n",
+  printf("Extended MAC Base: %02X:%02X:%02X:%02X:%02X:%02X\n",
          eeprom.fbw_mac_base[0], eeprom.fbw_mac_base[1],
          eeprom.fbw_mac_base[2], eeprom.fbw_mac_base[3],
          eeprom.fbw_mac_base[4], eeprom.fbw_mac_base[5]);
