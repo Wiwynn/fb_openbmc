@@ -66,6 +66,7 @@ IMAGE_INSTALL += " \
   iproute2 \
   dhcp-client \
   spatula \
+  mTerm \
   "
 
 IMAGE_FEATURES += " \
