@@ -1190,6 +1190,7 @@ static int aspeednic_init(struct eth_device* dev, bd_t* bis)
   tx_new = 0;
   rx_new = 0;
 
+#if CONFIG_ASPED_NCSI_ENABLE
   if (CONFIG_ASPEED_MAC_PHY_SETTING >= 1) {
 //NCSI Start
 //DeSelect Package/ Select Package
@@ -1242,6 +1243,7 @@ static int aspeednic_init(struct eth_device* dev, bd_t* bis)
       }
     }
   }
+#endif
   return 1;
 }
 
