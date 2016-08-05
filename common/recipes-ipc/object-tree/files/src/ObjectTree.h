@@ -51,6 +51,7 @@ class ObjectTree {
      * @param ipc interface
      * @param rootName name of the root object
      * @throw invalid_argument if rootName does not meet the ipc regex
+     *        or if ipc is nullptr
      */
     ObjectTree(const std::shared_ptr<Ipc> &ipc, const std::string &rootName);
 
@@ -58,9 +59,13 @@ class ObjectTree {
      * Delete remove object registration
      */
     virtual ~ObjectTree() {
-      for (auto it = objectMap_.begin(); it != objectMap_.end(); it++) {
-        ipc_.get()->unregisterObject(it->first);
+      for (auto &it : objectMap_) {
+        ipc_.get()->unregisterObject(it.first);
       }
+    }
+
+    const Ipc* getIpc() const {
+      return ipc_.get();
     }
 
     Object* getRoot() const {
@@ -83,10 +88,11 @@ class ObjectTree {
      * @return nullptr if not found; Object* otherwise
      */
     Object* getObject(const std::string &path) const {
-      if (objectMap_.find(path) == objectMap_.end()) {
+      ObjectMap::const_iterator it;
+      if ((it = objectMap_.find(path)) == objectMap_.end()) {
         return nullptr;
       }
-      return objectMap_.find(path)->second.get();
+      return it->second.get();
     }
 
     bool containObject(const std::string &path) const {
@@ -95,17 +101,41 @@ class ObjectTree {
 
     /**
      * Add an object to the objectMap_ with parent path specified.
-     * Use the default ObjectArg specified in the constructor.
      *
      * @param name of the object to be added
+     * @param parentPath is the parent object path for the object to be
+     *        added at
+     * @throw std::invalid_argument if
+     *        * parentPath not found
+     *        * name does not meet the ipc's rule
+     *        * the object with the same name has already existed under
+     *          the parent
+     * @return raw pointer to the created object
+     */
+    virtual Object* addObject(const std::string &name,
+                              const std::string &parentPath);
+
+    /**
+     * Add the specified object to objectMap_ under the specified parent path.
+     * It is assumed that the object should not have any parent nor children
+     * objects. Otherwise, this function will throw an exception.
+     *
+     * @param unique_ptr to the object to be added
      * @param parentPath is the parent object path for the object
      *        to be added at
+     * @throw std::invalid_argument if
+     *        * the unique_ptr to object is empty
+     *        * object has non-empty children or non-null parent
+     *        * parentPath not found
+     *        * name does not meet the ipc's rule
+     *        * the object with the same name has already existed under
+     *          the parent
      * @return nullptr if parentPath not found or the object with name
      *         has already existed under the parent; otherwise,
      *         object is created and added
      */
-    virtual Object* addObject(const std::string &name,
-                              const std::string &parentPath);
+    virtual Object* addObject(std::unique_ptr<Object> object,
+                              const std::string       &parentPath);
 
     /**
      * Delete the object with name under the parentPath. Won't be able to
@@ -113,9 +143,13 @@ class ObjectTree {
      *
      * @param name of the object
      * @param path of the object's parent
+     * @throw std::invalid_argument if
+     *        * object not found
+     *        * object is root
+     *        * object has non-empty children
      */
     virtual void deleteObjectByName(const std::string &name,
-                              const std::string &parentPath) {
+                                    const std::string &parentPath) {
       deleteObjectByPath(ipc_.get()->getPath(parentPath, name));
     }
 
@@ -124,6 +158,10 @@ class ObjectTree {
      * Cannot delete an object with children.
      *
      * @param path of the object
+     * @throw std::invalid_argument if
+     *        * object not found
+     *        * object is root
+     *        * object has non-empty children
      */
     virtual void deleteObjectByPath(const std::string &path);
 
@@ -133,7 +171,7 @@ class ObjectTree {
      * nothing to do. User can hack their implementation here. The arg
      * will be put in the constructor to Ipc.
      */
-    static void onConnAcquiredCallBack(void* arg) {
+    static void onConnAcquiredCallBack() {
       // implementation here
     }
 
@@ -143,10 +181,68 @@ class ObjectTree {
      * nothing to do. User can hack their implementation here. The arg
      * will be put in the constructor to Ipc.
      */
-    static void onConnLostCallBack(void* arg) {
+    static void onConnLostCallBack() {
       // implementation here
     }
 
+  protected:
+
+    /**
+     * A helper function for adding an Object into the objectMap_ and
+     * register it with ipc_.
+     *
+     * @param path to be registered with the Object
+     * @param unique_ptr to the Object
+     * @return raw pointer to the Object
+     */
+    Object* addObjectByPath(std::unique_ptr<Object> upObj,
+                            const std::string       &path) {
+      Object* object = upObj.get();
+      objectMap_.insert(std::make_pair(path, std::move(upObj)));
+      ipc_->registerObject(path, object);
+      return object;
+    }
+
+    /**
+     * Get a new path from parentPath and specified name through ipc_.
+     *
+     * @param parentPath of the object name to be created
+     * @param name of the object to be created
+     * @throw std::invalid_argument if path does not meet ipc's rule
+     * @return path that combines parentPath and name through ipc's rule
+     */
+    const std::string getPath(const std::string &parentPath,
+                              const std::string &name) const {
+      const std::string path = ipc_.get()->getPath(parentPath, name);
+      if (!ipc_->isPathAllowed(path)) {
+        LOG(ERROR) << "Object path \"" << path << "\" "
+          << "does not match the ipc rule.";
+        throw std::invalid_argument("Invalid object path");
+      }
+      return path;
+    }
+
+    /**
+     * Get parent from the parentPath for adding new object. Check if
+     * there is a duplicated name under the parent.
+     *
+     * @param parentPath of the object name to be created
+     * @param name of the object to be created
+     * @throw std::invalid_argument if the parent does not exist or there is
+     *        a duplicated child with the same name
+     * @return pointer to the parent object
+     */
+    Object* getParent(const std::string &parentPath,
+                      const std::string &name) const;
+
+    /**
+     * A helper function to check if object passed in is valid.
+     *
+     * @param const ptr to Object
+     * @throw std::invalid_argument if object is nullptr or if the object
+     *        has non-empty children
+     */
+    void checkObject(const Object* object) const;
 };
 
 } // namespace ipc

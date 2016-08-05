@@ -66,13 +66,19 @@ const char pal_pwm_list[] = "0";
 const char pal_tach_list[] = "0...11";
 
 char * key_list[] = {
-"test", // TODO: test kv store
+"peb_sensor_health",
+"pdpb_sensor_health",
+"fcb_sensor_health",
+"system_identify",
 /* Add more Keys here */
 LAST_KEY /* This is the last key of the list */
 };
 
 char * def_val_list[] = {
-  "0", /* test */
+  "1", /* peb_sensor_health */
+  "1", /* pdbb_sensor_health */
+  "1", /* fcb_sensor_health */
+  "off", /* "system_identify */
   /* Add more def values for the correspoding keys*/
   LAST_KEY /* Same as last entry of the key_list */
 };
@@ -272,14 +278,8 @@ pal_set_rst_btn(uint8_t slot, uint8_t status) {
 
 // Update the LED for the given slot with the status
 int
-pal_set_led(uint8_t slot, uint8_t status) {
+pal_set_led(uint8_t led, uint8_t status) {
 
-  return 0;
-}
-
-// Update Heartbeet LED
-int
-pal_set_hb_led(uint8_t status) {
   char path[64] = {0};
   char *val;
 
@@ -289,12 +289,19 @@ pal_set_hb_led(uint8_t status) {
     val = "0";
   }
 
-  sprintf(path, GPIO_VAL, GPIO_HB_LED);
+  sprintf(path, GPIO_VAL, led);
   if (write_device(path, val)) {
     return -1;
   }
 
   return 0;
+}
+
+// Update Heartbeat LED
+int
+pal_set_hb_led(uint8_t status) {
+
+  return pal_set_led(LED_HB, status);
 }
 
 // Update the Identification LED for the given slot with the status
@@ -400,10 +407,20 @@ pal_get_fru_sdr_path(uint8_t fru, char *path) {
 int
 pal_get_fru_sensor_list(uint8_t fru, uint8_t **sensor_list, int *cnt) {
 
+  uint8_t sw = 0;
+
   switch(fru) {
     case FRU_PEB:
-      *sensor_list = (uint8_t *) peb_sensor_list;
-      *cnt = peb_sensor_cnt;
+      while (lightning_pcie_switch(fru, &sw) < 0);
+
+      if (sw == PCIE_SW_PMC) {
+        *sensor_list = (uint8_t *) peb_sensor_pmc_list;
+        *cnt = peb_sensor_pmc_cnt;
+      } else if (sw == PCIE_SW_PLX) {
+        *sensor_list = (uint8_t *) peb_sensor_plx_list;
+        *cnt = peb_sensor_plx_cnt;
+      } else
+        return -1;
       break;
     case FRU_PDPB:
       *sensor_list = (uint8_t *) pdpb_sensor_list;
@@ -430,7 +447,11 @@ pal_sensor_sdr_init(uint8_t fru, sensor_info_t *sinfo) {
 
 int
 pal_sensor_read(uint8_t fru, uint8_t sensor_num, void *value) {
-  int ret;
+  return lightning_sensor_read(fru, sensor_num, value);
+}
+
+int
+pal_sensor_read_raw(uint8_t fru, uint8_t sensor_num, void *value) {
   return lightning_sensor_read(fru, sensor_num, value);
 }
 
@@ -499,78 +520,76 @@ set_key_value(char *key, char *value) {
 }
 
 int
-pal_get_key_value(char *key, char *value) {
-
-  int ret;
-  int i;
-
-  i = 0;
-  while(strcmp(key_list[i], LAST_KEY)) {
-
-    if (!strcmp(key, key_list[i])) {
-      // Key is valid
-      if ((ret = get_key_value(key, value)) < 0 ) {
-#ifdef DEBUG
-        syslog(LOG_WARNING, "pal_get_key_value: get_key_value failed. %d", ret);
-#endif
-        return ret;
-      }
-      return ret;
-    }
-    i++;
-  }
-
-  return -1;
-}
-
-int
 pal_set_def_key_value() {
 
   int ret;
   int i;
-  char kpath[64] = {0};
+  int fru;
+  char key[MAX_KEY_LEN] = {0};
+  char kpath[MAX_KEY_PATH_LEN] = {0};
 
   i = 0;
   while(strcmp(key_list[i], LAST_KEY)) {
 
-  sprintf(kpath, KV_STORE, key_list[i]);
+    memset(key, 0, MAX_KEY_LEN);
+    memset(kpath, 0, MAX_KEY_PATH_LEN);
 
-  if (access(kpath, F_OK) == -1) {
-      if ((ret = set_key_value(key_list[i], def_val_list[i])) < 0) {
+    sprintf(kpath, KV_STORE, key_list[i]);
+
+    if (access(kpath, F_OK) == -1) {
+
+      if ((ret = kv_set(key_list[i], def_val_list[i])) < 0) {
 #ifdef DEBUG
-        syslog(LOG_WARNING, "pal_set_def_key_value: set_key_value failed. %d", ret);
+          syslog(LOG_WARNING, "pal_set_def_key_value: kv_set failed. %d", ret);
 #endif
       }
     }
+
     i++;
   }
 
   return 0;
 }
 
-int
-pal_set_key_value(char *key, char *value) {
-
+static int
+pal_key_check(char *key) {
   int ret;
   int i;
 
   i = 0;
   while(strcmp(key_list[i], LAST_KEY)) {
 
-    if (!strcmp(key, key_list[i])) {
-      // Key is valid
-      if ((ret = set_key_value(key, value)) < 0) {
-#ifdef DEBUG
-        syslog(LOG_WARNING, "pal_set_key_value: set_key_value failed. %d", ret);
-#endif
-        return ret;
-      }
-      return ret;
-    }
+    // If Key is valid, return success
+    if (!strcmp(key, key_list[i]))
+      return 0;
+
     i++;
   }
 
+#ifdef DEBUG
+  syslog(LOG_WARNING, "pal_key_check: invalid key - %s", key);
+#endif
   return -1;
+}
+
+int
+pal_set_key_value(char *key, char *value) {
+
+  // Check is key is defined and valid
+  if (pal_key_check(key))
+    return -1;
+
+  return kv_set(key, value);
+}
+
+int
+pal_get_key_value(char *key, char *value) {
+
+  // Check is key is defined and valid
+  if (pal_key_check(key))
+    return -1;
+
+  return kv_get(key, value);
 }
 
 int
@@ -682,11 +701,59 @@ msleep(int msec) {
 int
 pal_set_sensor_health(uint8_t fru, uint8_t value) {
 
+  char key[MAX_KEY_LEN] = {0};
+  char cvalue[MAX_VALUE_LEN] = {0};
+
+  switch(fru) {
+    case FRU_PEB:
+      sprintf(key, "peb_sensor_health");
+      break;
+    case FRU_PDPB:
+      sprintf(key, "pdpb_sensor_health");
+      break;
+    case FRU_FCB:
+      sprintf(key, "fcb_sensor_health");
+      break;
+
+    default:
+      return -1;
+  }
+
+  sprintf(cvalue, (value > 0) ? "1": "0");
+
+  return pal_set_key_value(key, cvalue);
+
   return 0;
 }
 
 int
 pal_get_fru_health(uint8_t fru, uint8_t *value) {
+
+  char cvalue[MAX_VALUE_LEN] = {0};
+  char key[MAX_KEY_LEN] = {0};
+  int ret;
+
+  switch(fru) {
+    case FRU_PEB:
+      sprintf(key, "peb_sensor_health");
+      break;
+    case FRU_PDPB:
+      sprintf(key, "pdpb_sensor_health");
+      break;
+    case FRU_FCB:
+      sprintf(key, "fcb_sensor_health");
+      break;
+
+    default:
+      return -1;
+  }
+
+  ret = pal_get_key_value(key, cvalue);
+  if (ret) {
+    return ret;
+  }
+
+  *value = atoi(cvalue);
 
   return 0;
 }
@@ -900,4 +967,12 @@ pal_update_ts_sled() {
 
 int
 pal_handle_dcmi(uint8_t fru, uint8_t *tbuf, uint8_t tlen, uint8_t *rbuf, uint8_t *rlen) {
+}
+
+int
+pal_is_fru_ready(uint8_t fru, uint8_t *status) {
+
+  *status = 1;
+
+  return 0;
 }

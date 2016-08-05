@@ -603,7 +603,7 @@ _update_bic_main(uint8_t slot_id, char *path) {
   int i = 0;
   int ret;
   uint8_t xbuf[256] = {0};
-
+  uint32_t offset = 0, last_offset = 0, dsize;
   // Open the file exclusively for read
   fd = open(path, O_RDONLY, 0666);
   if (fd < 0) {
@@ -614,23 +614,34 @@ _update_bic_main(uint8_t slot_id, char *path) {
   fstat(fd, &buf);
   size = buf.st_size;
 printf("size of file is %d bytes\n", size);
+  dsize = size/20;
 
   // Open the i2c driver
   ifd = i2c_open(get_ipmb_bus_id(slot_id));
   if (ifd < 0) {
-printf("ifd error\n");
-    goto error_exit;
-  }
-
-  // Enable Bridge-IC update
-  if (!_is_bic_update_ready(slot_id)) {
-    if (_enable_bic_update(slot_id)) {
-      printf("enabel_bic_update failed\n");
-      goto error_exit;
-    }
+    printf("ifd error\n");
+    goto error_exit2;
   }
 
   // Kill ipmb daemon for this slot
+  sprintf(cmd, "ps | grep -v 'grep' | grep 'ipmbd %d' |awk '{print $1}'| xargs kill", get_ipmb_bus_id(slot_id));
+  system(cmd);
+  printf("killed ipmbd for this slot %x..\n",slot_id);
+
+  // Restart ipmb daemon with "bicup" for bic update
+  memset(cmd, 0, sizeof(cmd));
+  sprintf(cmd, "/usr/local/bin/ipmbd %d bicup", get_ipmb_bus_id(slot_id));
+  system(cmd);
+  printf("start ipmbd bicup for this slot %x..\n",slot_id);
+  sleep(1);
+
+  // Enable Bridge-IC update
+  if (!_is_bic_update_ready(slot_id)) {
+      _enable_bic_update(slot_id);
+  }
+
+  // Kill ipmb daemon "bicup" for this slot
+  memset(cmd, 0, sizeof(cmd));
   sprintf(cmd, "ps | grep -v 'grep' | grep 'ipmbd %d' |awk '{print $1}'| xargs kill", get_ipmb_bus_id(slot_id));
   system(cmd);
   printf("killed ipmbd for this slot..\n");
@@ -740,10 +751,20 @@ printf("i2c_io failed\n");
 
     xcount = read(fd, xbuf, BIC_PKT_MAX);
     if (xcount <= 0) {
+#ifdef DEBUG
       printf("read returns %d\n", xcount);
+#endif
       break;
     }
+#ifdef DEBUG
     printf("read returns %d bytes\n", xcount);
+#endif
+
+    offset += xcount;
+    if((last_offset + dsize) <= offset) {
+       printf("updated bic: %d %%\n", offset/dsize*5);
+       last_offset += dsize;
+    }
 
     tbuf[0] = xcount + 3;
     tbuf[1] = BIC_CMD_DATA;
@@ -803,6 +824,7 @@ error_exit:
   sprintf(cmd, "/usr/local/bin/ipmbd %d", get_ipmb_bus_id(slot_id));
   system(cmd);
 
+error_exit2:
   if (fd > 0) {
     close(fd);
   }
@@ -826,6 +848,7 @@ bic_update_fw(uint8_t slot_id, uint8_t comp, char *path) {
   uint32_t gcksum;
   uint8_t *tbuf = NULL;
 
+  printf("updating fw on slot %d:\n", slot_id);
   // Handle Bridge IC firmware separately as the process differs significantly from others
   if (comp == UPDATE_BIC) {
    return  _update_bic_main(slot_id, path);
@@ -858,7 +881,11 @@ bic_update_fw(uint8_t slot_id, uint8_t comp, char *path) {
     system(cmd);
   }
   stat(path, &st);
-  dsize = st.st_size/100;
+  if (comp == UPDATE_BIOS) {
+    dsize = st.st_size/100;
+  } else {
+    dsize = st.st_size/20;
+  }
   // Write chunks of binary data in a loop
   offset = 0;
   last_offset = 0;
@@ -894,7 +921,17 @@ bic_update_fw(uint8_t slot_id, uint8_t comp, char *path) {
     // Update counter
     offset += count;
     if((last_offset + dsize) <= offset) {
-       printf("updated fw: %d %%\n", offset/dsize);
+       switch(comp) {
+         case UPDATE_BIOS:
+           printf("updated bios: %d %%\n", offset/dsize);
+           break;
+         case UPDATE_CPLD:
+           printf("updated cpld: %d %%\n", offset/dsize*5);
+           break;
+         default:
+           printf("updated bic boot loader: %d %%\n", offset/dsize*5);
+           break;
+       }
        last_offset += dsize;
     }
   }
@@ -1319,3 +1356,4 @@ bic_get_sys_guid(uint8_t slot_id, uint8_t *guid) {
 
   return ret;
 }
+

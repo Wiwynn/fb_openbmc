@@ -37,6 +37,16 @@
 #define MAX_NUM_SLOTS 4
 #define HB_TIMESTAMP_COUNT (60 * 60)
 
+enum led_state {
+  LED_OFF = 0,
+  LED_ON = 1,
+};
+
+enum inverse_led_state {
+  LED_ON_N = 0,
+  LED_OFF_N = 1,
+};
+
 // Helper function for msleep
 void
 msleep(int msec) {
@@ -50,6 +60,78 @@ msleep(int msec) {
   }
 }
 
+// Thread for handling the Power and System Identify LED
+static void *
+id_led_handler() {
+
+  int ret;
+  char state[8];
+
+  while (1) {
+
+    memset(state, 0, sizeof(state));
+    // Check if the user enabled system identify
+    ret = pal_get_key_value("system_identify", state);
+    if (ret)
+      goto err;
+
+    if (!strcmp(state, "on")) {
+
+      // 0.9s ON
+      pal_set_led(LED_DR_LED1, LED_ON);
+      msleep(900);
+
+      // 0.1s OFF
+      pal_set_led(LED_DR_LED1, LED_OFF);
+      msleep(100);
+      continue;
+
+    } else if (!strcmp(state, "off")) {
+
+      printf("on\n");
+      pal_set_led(LED_DR_LED1, LED_ON);
+    }
+
+err:
+    sleep(1);
+  }
+
+}
+
+// Thread for handling the Enclosure LED
+static void *
+encl_led_handler() {
+
+  int ret;
+  uint8_t peb_hlth;
+  uint8_t pdpb_hlth;
+  uint8_t fcb_hlth;
+
+  while (1) {
+
+    // Get health status for all the fru and then update the ENCL_LED status
+    ret = pal_get_fru_health(FRU_PEB, &peb_hlth);
+    if (ret)
+      goto err;
+
+    ret = pal_get_fru_health(FRU_PDPB, &pdpb_hlth);
+    if (ret)
+      goto err;
+
+    ret = pal_get_fru_health(FRU_FCB, &fcb_hlth);
+    if (ret)
+      goto err;
+
+    if (!peb_hlth | !pdpb_hlth | !fcb_hlth)
+      pal_set_led(LED_ENCLOSURE, LED_ON_N);
+    else
+      pal_set_led(LED_ENCLOSURE, LED_OFF_N);
+
+err:
+    sleep(1);
+  }
+
+}
 // Thread for monitoring debug card hotswap
 static void *
 debug_card_handler() {
@@ -92,6 +174,7 @@ debug_card_handler() {
       if (pos == UART_POS_BMC) {
         // TODO: Add support to reset BMC
         syslog(LOG_CRIT, "Reset Button pressed for BMC");
+        system("reboot");
       } else {
         // TODO: Add support to reset PCIe SW
         syslog(LOG_CRIT, "Reset Button pressed for PCIe Switch");
@@ -104,7 +187,7 @@ debug_card_handler() {
       goto debug_card_out;
     }
     if (!btn) {
-      syslog(LOG_WARNING, "UART Channel button pressed\n");
+      syslog(LOG_CRIT, "UART Channel button pressed\n");
 
       // Wait for the button to be released
       for (i = 0; i < BTN_MAX_SAMPLES; i++) {
@@ -134,6 +217,11 @@ debug_card_handler() {
       if (ret) {
         goto debug_card_out;
       }
+
+      // Display Post code 0xFF for 1 secound on UART button press event
+      system("/usr/local/bin/post_led.sh 255");
+      msleep(1000);
+      system("/usr/local/bin/post_led.sh 0");
     }
 debug_card_out:
     msleep(500);
@@ -146,6 +234,8 @@ main (int argc, char * const argv[]) {
   int rc;
   int pid_file;
   pthread_t tid_debug_card;
+  pthread_t tid_encl_led;
+  pthread_t tid_id_led;
 
   pid_file = open("/var/run/front-paneld.pid", O_CREAT | O_RDWR, 0666);
   rc = flock(pid_file, LOCK_EX | LOCK_NB);
@@ -159,13 +249,24 @@ main (int argc, char * const argv[]) {
    openlog("front-paneld", LOG_CONS, LOG_DAEMON);
   }
 
-
   if (pthread_create(&tid_debug_card, NULL, debug_card_handler, NULL) < 0) {
     syslog(LOG_WARNING, "pthread_create for debug card error\n");
     exit(1);
   }
 
+  if (pthread_create(&tid_encl_led, NULL, encl_led_handler, NULL) < 0) {
+    syslog(LOG_WARNING, "pthread_create for encl led error\n");
+    exit(1);
+  }
+
+  if (pthread_create(&tid_id_led, NULL, id_led_handler, NULL) < 0) {
+    syslog(LOG_WARNING, "pthread_create for system identify led error\n");
+    exit(1);
+  }
+
   pthread_join(tid_debug_card, NULL);
+  pthread_join(tid_encl_led, NULL);
+  pthread_join(tid_id_led, NULL);
 
   return 0;
 }

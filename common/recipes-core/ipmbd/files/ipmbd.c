@@ -881,6 +881,12 @@ main(int argc, char * const argv[]) {
 	bic_up_flag = 0;
   }
 
+  if( (argc == 3) && !(strcmp(argv[2] ,"bicup")) ){
+	bic_up_flag = 1;
+  }else{
+	bic_up_flag = 0;
+  }
+
   pthread_mutex_init(&m_i2c, NULL);
 
   // Create Message Queues for Request Messages and Response Messages
@@ -967,4 +973,3 @@ cleanup:
 
   return 0;
 }
-

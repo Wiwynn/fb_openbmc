@@ -74,8 +74,7 @@
 #define AST_SCU_BASE 0x1e6e2000
 #define PIN_CTRL1_OFFSET 0x80
 #define PIN_CTRL2_OFFSET 0x84
-#define AST_WDT_BASE 0x1e785000
-#define WDT_OFFSET 0x10
+#define WDT_OFFSET 0x3C
 
 #define UART1_TXD (1 << 22)
 #define UART2_TXD (1 << 30)
@@ -98,6 +97,7 @@ const static uint8_t gpio_rst_btn[] = { 0, 57, 56, 59, 58 };
 const static uint8_t gpio_led[] = { 0, 97, 96, 99, 98 };
 const static uint8_t gpio_id_led[] = { 0, 41, 40, 43, 42 };
 const static uint8_t gpio_prsnt[] = { 0, 61, 60, 63, 62 };
+const static uint8_t gpio_bic_ready[] = { 0, 107, 106, 109, 108 };
 const static uint8_t gpio_power[] = { 0, 27, 25, 31, 29 };
 const static uint8_t gpio_12v[] = { 0, 117, 116, 119, 118 };
 const char pal_fru_list[] = "all, slot1, slot2, slot3, slot4, spb, nic";
@@ -173,6 +173,55 @@ char * def_val_list[] = {
   /* Add more def values for the correspoding keys*/
   LAST_KEY /* Same as last entry of the key_list */
 };
+
+struct power_coeff {
+  float ein;
+  float coeff;
+};
+/* Quanta BMC correction table */
+struct power_coeff power_table[] = {
+  {51.0,  0.98},
+  {115.0, 0.9775},
+  {178.0, 0.9755},
+  {228.0, 0.979},
+  {290.0, 0.98},
+  {353.0, 0.977},
+  {427.0, 0.977},
+  {476.0, 0.9765},
+  {526.0, 0.9745},
+  {598.0, 0.9745},
+  {0.0,   0.0}
+};
+
+/* Adjust power value */
+static void
+power_value_adjust(float *value)
+{
+    float x0, x1, y0, y1, x;
+    int i;
+    x = *value;
+    x0 = power_table[0].ein;
+    y0 = power_table[0].coeff;
+    if (x0 > *value) {
+      *value = x * y0;
+      return;
+    }
+    for (i = 0; power_table[i].ein > 0.0; i++) {
+       if (*value < power_table[i].ein)
+         break;
+      x0 = power_table[i].ein;
+      y0 = power_table[i].coeff;
+    }
+    if (power_table[i].ein <= 0.0) {
+      *value = x * y0;
+      return;
+    }
+   //if value is bwtween x0 and x1, use linear interpolation method.
+   x1 = power_table[i].ein;
+   y1 = power_table[i].coeff;
+   *value = (y0 + (((y1 - y0)/(x1 - x0)) * (x - x0))) * x;
+   return;
+}
 
 // Helper Functions
 static int
@@ -615,6 +664,38 @@ pal_is_fru_prsnt(uint8_t fru, uint8_t *status) {
 
   return 0;
 }
+int
+pal_is_fru_ready(uint8_t fru, uint8_t *status) {
+  int val;
+  char path[64] = {0};
+
+  switch (fru) {
+    case FRU_SLOT1:
+    case FRU_SLOT2:
+    case FRU_SLOT3:
+    case FRU_SLOT4:
+      sprintf(path, GPIO_VAL, gpio_bic_ready[fru]);
+
+      if (read_device(path, &val)) {
+        return -1;
+      }
+
+      if (val == 0x0) {
+        *status = 1;
+      } else {
+        *status = 0;
+      }
+      break;
+   case FRU_SPB:
+   case FRU_NIC:
+     *status = 1;
+     break;
+   default:
+      return -1;
+  }
+
+  return 0;
+}
 
 int
 pal_is_server_12v_on(uint8_t slot_id, uint8_t *status) {
@@ -789,6 +870,7 @@ pal_set_server_power(uint8_t slot_id, uint8_t cmd) {
 
 int
 pal_sled_cycle(void) {
+  pal_update_ts_sled();
   // Remove the adm1275 module as the HSC device is busy
   system("rmmod adm1275");
 
@@ -1343,9 +1425,6 @@ pal_sensor_sdr_init(uint8_t fru, sensor_info_t *sinfo) {
     case FRU_SLOT3:
     case FRU_SLOT4:
       pal_is_fru_prsnt(fru, &status);
-      if (status) {
-        pal_is_server_12v_on(fru, &status);
-      }
       break;
     case FRU_SPB:
     case FRU_NIC:
@@ -1427,12 +1506,19 @@ pal_sensor_read_raw(uint8_t fru, uint8_t sensor_num, void *value) {
       return -1;
     if(pal_get_server_power(fru, &status) < 0)
       return -1;
+    // This check helps interpret the IPMI packet loss scenario
     if(status == SERVER_POWER_ON)
       return -1;
     strcpy(str, "NA");
   }
-  else
+  else {
+    // On successful sensor read
+    if(fru == FRU_SPB && sensor_num == SP_SENSOR_HSC_IN_POWER) {
+      power_value_adjust(value);
+    }
     sprintf(str, "%.2f",*((float*)value));
+  }
+
   if(edb_cache_set(key, str) < 0) {
 #ifdef DEBUG
      syslog(LOG_WARNING, "pal_sensor_read_raw: cache_set key = %s, str = %s failed.", key, str);
@@ -1440,7 +1526,7 @@ pal_sensor_read_raw(uint8_t fru, uint8_t sensor_num, void *value) {
     return -1;
   }
   else {
-    return 0;
+    return ret;
   }
 }
 
@@ -1460,6 +1546,17 @@ pal_sensor_threshold_flag(uint8_t fru, uint8_t snr_num, uint16_t *flag) {
         *flag = GETMASK(SENSOR_VALID);
       break;
     case FRU_SPB:
+      /*
+       * TODO: This is a HACK (t11229576)
+       */
+      switch(snr_num) {
+        case SP_SENSOR_P12V_SLOT1:
+        case SP_SENSOR_P12V_SLOT2:
+        case SP_SENSOR_P12V_SLOT3:
+        case SP_SENSOR_P12V_SLOT4:
+          *flag = GETMASK(SENSOR_VALID);
+          break;
+      }
     case FRU_NIC:
       break;
   }
@@ -1740,7 +1837,7 @@ pal_is_bmc_por(void) {
   }
 
   scu_reg = mmap(NULL, PAGE_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, scu_fd,
-             AST_WDT_BASE);
+             AST_SCU_BASE);
   scu_wdt = (char*)scu_reg + WDT_OFFSET;
 
   wdt = *(volatile uint32_t*) scu_wdt;
@@ -1748,7 +1845,7 @@ pal_is_bmc_por(void) {
   munmap(scu_reg, PAGE_SIZE);
   close(scu_fd);
 
-  if (wdt & 0xff00) {
+  if (wdt & 0x6) {
     return 0;
   } else {
     return 1;
@@ -1953,9 +2050,10 @@ int
 pal_parse_sel(uint8_t fru, uint8_t snr_num, uint8_t *event_data,
     char *error_log) {
 
-  char *ed = event_data;
+  char *ed = &event_data[3];
   char temp_log[128] = {0};
   uint8_t temp;
+  uint8_t sen_type = event_data[0];
 
   switch(snr_num) {
     case SYSTEM_EVENT:
@@ -2077,9 +2175,12 @@ pal_parse_sel(uint8_t fru, uint8_t snr_num, uint8_t *event_data,
 
     case MEMORY_ECC_ERR:
       sprintf(error_log, "");
-      if ((ed[0] & 0x0F) == 0x0)
-        strcat(error_log, "Correctable");
-      else if ((ed[0] & 0x0F) == 0x1)
+      if ((ed[0] & 0x0F) == 0x0) {
+        if (sen_type == 0x0C)
+          strcat(error_log, "Correctable");
+        else if (sen_type == 0x10)
+          strcat(error_log, "Correctable ECC error Logging Disabled");
+      } else if ((ed[0] & 0x0F) == 0x1)
         strcat(error_log, "Uncorrectable");
       else if ((ed[0] & 0x0F) == 0x5)
         strcat(error_log, "Correctable ECC error Logging Limit Reached");
@@ -2131,6 +2232,15 @@ pal_parse_sel(uint8_t fru, uint8_t snr_num, uint8_t *event_data,
         strcat(error_log, "SOC MEMHOT");
       else
         strcat(error_log, "Unknown");
+      break;
+
+    case SPS_FW_HEALTH:
+      sprintf(error_log, "");
+      if (event_data[0] == 0xDC && ed[1] == 0x06) {
+        strcat(error_log, "FW UPDATE");
+        return 1;
+      } else
+         strcat(error_log, "Unknown");
       break;
 
     default:

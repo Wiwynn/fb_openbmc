@@ -81,7 +81,6 @@ enum {
 enum {
   PDPB_SENSOR_P12V = 0x4B,
   PDPB_SENSOR_P3V3 = 0x4C,
-  PDPB_SENSOR_P2V5 = 0x4D,
   PDPB_SENSOR_P12V_SSD = 0x4E,
   PDPB_SENSOR_LEFT_REAR_TEMP = 0x4F,
   PDPB_SENSOR_LEFT_FRONT_TEMP = 0x50,
@@ -117,13 +116,17 @@ enum {
   FCB_SENSOR_BJT_TEMP_2 = 0x61,
 };
 
-extern const uint8_t peb_sensor_list[];
+extern const uint8_t peb_sensor_pmc_list[];
+
+extern const uint8_t peb_sensor_plx_list[];
 
 extern const uint8_t pdpb_sensor_list[];
 
 extern const uint8_t fcb_sensor_list[];
 
-extern size_t peb_sensor_cnt;
+extern size_t peb_sensor_pmc_cnt;
+
+extern size_t peb_sensor_plx_cnt;
 
 extern size_t pdpb_sensor_cnt;
 
