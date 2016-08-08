@@ -24,7 +24,7 @@
 /* Uncommit the following line to enable JTAG in u-boot */
 //#define CONFIG_ASPEED_ENABLE_JTAG
 
-#define CONFIG_IDENT_STRING " fbtp-v0.2"
+#define CONFIG_IDENT_STRING " fbtp-v0.3"
 #define CONFIG_FBTP 1
 #define CONFIG_AST_FPGA_VER 4 /* for arm1176 */
 #define CONFIG_ARCH_ASPEED
