@@ -13,6 +13,7 @@ PV = "v2016.07"
 
 SRC_URI = "file://u-boot-v2016.07 \
            file://fw_env.config \
+           file://fw_env.config.full \
           "
 
 S = "${WORKDIR}/u-boot-${PV}"
