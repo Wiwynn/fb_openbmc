@@ -75,3 +75,16 @@ config SYS_SOC
 config SYS_CONFIG_NAME
   default "fbtp"
 endif
+
+if TARGET_FBTTN
+config SYS_CPU
+  default "arm1176"
+config SYS_BOARD
+  default "ast-g5"
+config SYS_VENDOR
+  default "aspeed"
+config SYS_SOC
+  default "aspeed"
+config SYS_CONFIG_NAME
+  default "fbttn"
+endif
