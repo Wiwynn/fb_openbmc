@@ -14,7 +14,7 @@ ME_UTIL_LOG="/tmp/me-util.log"
 #echo "parameter 1      ==> $1"
 #echo "parameter 2      ==> $2"
 
-if [ $1 = "time" ]; then
+if [ "$1" = "time" ]; then
   now=$(date)
   echo "Crash Dump generated at $now"
   exit 0
