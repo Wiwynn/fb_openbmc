@@ -6,7 +6,7 @@ PROVIDES = "virtual/bootloader"
 LICENSE = "GPLv2+"
 LIC_FILES_CHKSUM = "file://Licenses/README;md5=a2c678cfd4a4d97135585cad908541c6"
 
-DEPENDS += "dtc-native"
+DEPENDS += "dtc-native verified-boot"
 
 SRCREV = "44d5a2f4ff45bbaafff0c3bccc8a9f7509a5dffb"
 PV = "v2016.07"
@@ -19,6 +19,7 @@ SRC_URI = "file://u-boot-v2016.07 \
 S = "${WORKDIR}/u-boot-${PV}"
 
 inherit uboot-config deploy
+require recipes-bsp/verified-boot/verified-boot.inc
 
 EXTRA_OEMAKE = 'CROSS_COMPILE=${TARGET_PREFIX} CC="${TARGET_PREFIX}gcc ${TOOLCHAIN_OPTIONS}" V=1'
 EXTRA_OEMAKE += 'HOSTCC="${BUILD_CC} ${BUILD_CFLAGS} ${BUILD_LDFLAGS}"'
@@ -55,10 +56,10 @@ UBOOT_ELF_SYMLINK ?= "u-boot-${MACHINE}.${UBOOT_ELF_SUFFIX}"
 # should be packaged along with the u-boot binary as well as placed in the
 # deploy directory.  For those versions they can set the following variables
 # to allow packaging the SPL.
-SPL_BINARY ?= ""
-SPL_BINARYNAME ?= "${@os.path.basename(d.getVar("SPL_BINARY", True))}"
-SPL_IMAGE ?= "${SPL_BINARYNAME}-${MACHINE}-${PV}-${PR}"
-SPL_SYMLINK ?= "${SPL_BINARYNAME}-${MACHINE}"
+SPL_BINARY ?= "spl/u-boot-spl.${UBOOT_SUFFIX}"
+SPL_BINARYNAME ?= "u-boot-spl.${UBOOT_SUFFIX}"
+SPL_IMAGE ?= "u-boot-spl-${MACHINE}-${PV}-${PR}.${UBOOT_SUFFIX}"
+SPL_SYMLINK ?= "u-boot-spl-${MACHINE}"
 
 # Additional environment variables or a script can be installed alongside
 # u-boot to be used automatically on boot.  This file, typically 'uEnv.txt'
@@ -103,6 +104,21 @@ do_compile () {
         done
         unset  i
     else
+        UBOOT_CONFIGNAME=${UBOOT_MACHINE}
+        UBOOT_CONFIGNAME=${UBOOT_CONFIGNAME/_config/_defconfig}
+
+        if [ "x${ROM_BOOT}" != "x" ] ; then
+            sed -i "s/^# CONFIG_SPL=/CONFIG_SPL=/g" configs/${UBOOT_CONFIGNAME}
+        else
+            sed -i "s/^CONFIG_SPL=/# CONFIG_SPL=/g" configs/${UBOOT_CONFIGNAME}
+        fi
+
+        if [ "x${VERIFIED_BOOT}" != "x" ] ; then
+            sed -i "s/^# CONFIG_SPL_FIT_SIGNATURE=/CONFIG_SPL_FIT_SIGNATURE=/g" configs/${UBOOT_CONFIGNAME}
+        else
+            sed -i "s/^CONFIG_SPL_FIT_SIGNATURE=/# CONFIG_SPL_FIT_SIGNATURE=/g" configs/${UBOOT_CONFIGNAME}
+        fi
+
         oe_runmake ${UBOOT_MACHINE}
         oe_runmake ${UBOOT_MAKE_TARGET}
     fi
@@ -180,7 +196,8 @@ do_install () {
                 unset  j
             done
             unset  i
-        else
+        elif [ "x${ROM_BOOT}" != "x" ] ; then
+            # Only install a SPL if ROM_BOOT is configured.
             install ${S}/${SPL_BINARY} ${D}/boot/${SPL_IMAGE}
             ln -sf ${SPL_IMAGE} ${D}/boot/${SPL_BINARYNAME}
         fi
@@ -274,7 +291,7 @@ do_deploy () {
                  unset  j
              done
              unset  i
-         else
+         elif [ "x${ROM_BOOT}" != "x" ] ; then
              install ${S}/${SPL_BINARY} ${DEPLOYDIR}/${SPL_IMAGE}
              rm -f ${DEPLOYDIR}/${SPL_BINARYNAME} ${DEPLOYDIR}/${SPL_SYMLINK}
              ln -sf ${SPL_IMAGE} ${DEPLOYDIR}/${SPL_BINARYNAME}
@@ -293,4 +310,3 @@ do_deploy () {
 }
 
 addtask deploy before do_build after do_compile
-
