@@ -5,5 +5,10 @@
 # Machine Selection
 MACHINE ??= "wedge100"
 
+# U-Boot Selection
+PREFERRED_VERSION_u-boot = "v2013.07"
+PREFERRED_VERSION_u-boot-mkimage = "v2013.07"
+PREFERRED_VERSION_u-boot-fw-utils = "v2013.07"
+
 # OpenBMC distro settings
 DISTRO ?= "openbmc-fb"
