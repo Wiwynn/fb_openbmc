@@ -101,6 +101,21 @@ enum {
   PDPB_SENSOR_FLASH_TEMP_12,
   PDPB_SENSOR_FLASH_TEMP_13,
   PDPB_SENSOR_FLASH_TEMP_14 = 0x71,
+  PDPB_SENSOR_AMB_TEMP_0 = 0x73,
+  PDPB_SENSOR_AMB_TEMP_1,
+  PDPB_SENSOR_AMB_TEMP_2,
+  PDPB_SENSOR_AMB_TEMP_3,
+  PDPB_SENSOR_AMB_TEMP_4,
+  PDPB_SENSOR_AMB_TEMP_5,
+  PDPB_SENSOR_AMB_TEMP_6,
+  PDPB_SENSOR_AMB_TEMP_7,
+  PDPB_SENSOR_AMB_TEMP_8,
+  PDPB_SENSOR_AMB_TEMP_9,
+  PDPB_SENSOR_AMB_TEMP_10,
+  PDPB_SENSOR_AMB_TEMP_11,
+  PDPB_SENSOR_AMB_TEMP_12,
+  PDPB_SENSOR_AMB_TEMP_13,
+  PDPB_SENSOR_AMB_TEMP_14 = 0x81,
 };
 
 // Sensors under FCB
@@ -120,7 +135,9 @@ extern const uint8_t peb_sensor_pmc_list[];
 
 extern const uint8_t peb_sensor_plx_list[];
 
-extern const uint8_t pdpb_sensor_list[];
+extern const uint8_t pdpb_u2_sensor_list[];
+
+extern const uint8_t pdpb_m2_sensor_list[];
 
 extern const uint8_t fcb_sensor_list[];
 
@@ -128,7 +145,9 @@ extern size_t peb_sensor_pmc_cnt;
 
 extern size_t peb_sensor_plx_cnt;
 
-extern size_t pdpb_sensor_cnt;
+extern size_t pdpb_u2_sensor_cnt;
+
+extern size_t pdpb_m2_sensor_cnt;
 
 extern size_t fcb_sensor_cnt;
 
