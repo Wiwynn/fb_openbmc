@@ -48,22 +48,30 @@
 #define GPIO_DEBUG_UART_COUNT 125
 #define GPIO_BMC_UART_SWITCH 123
 
+#define GPIO_RESET_PCIE_SWITCH 8
+
 #define GPIO_HB_LED 115
+#define GPIO_BMC_SELF_TRAY 108
+#define GPIO_PEER_BMC_HB 117
 
 #define I2C_DEV_FAN "/dev/i2c-5"
 #define I2C_ADDR_FAN 0x2d
 #define FAN_REGISTER_H 0x80
 #define FAN_REGISTER_L 0x81
+#define I2C_ADDR_FAN_LED 0x60
 
 #define LARGEST_DEVICE_NAME 120
 #define PWM_DIR "/sys/devices/platform/ast_pwm_tacho.0"
 #define PWM_UNIT_MAX 96
 
 const char pal_fru_list[] = "all, peb, pdpb, fcb";
+const char pal_fru_list_wo_all[] = "peb, pdpb, fcb";
 size_t pal_pwm_cnt = 1;
 size_t pal_tach_cnt = 12;
 const char pal_pwm_list[] = "0";
 const char pal_tach_list[] = "0...11";
+/* A mapping tabel for fan id to pwm id.  */
+uint8_t fanid2pwmid_mapping[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 char * key_list[] = {
 "peb_sensor_health",
@@ -130,6 +138,31 @@ write_device(const char *device, const char *value) {
   if (rc < 0) {
 #ifdef DEBUG
     syslog(LOG_INFO, "failed to write device %s", device);
+#endif
+    return ENOENT;
+  } else {
+    return 0;
+  }
+}
+
+static int
+read_device_hex(const char *device, int *value) {
+  FILE *fp;
+  int rc;
+
+  fp = fopen(device, "r");
+  if (!fp) {
+#ifdef DEBUG
+    syslog(LOG_INFO, "failed to open device %s", device);
+#endif
+    return errno;
+  }
+
+  rc = fscanf(fp, "%x", value);
+  fclose(fp);
+  if (rc != 1) {
+#ifdef DEBUG
+    syslog(LOG_INFO, "failed to read device %s", device);
 #endif
     return ENOENT;
   } else {
@@ -456,12 +489,72 @@ pal_sensor_sdr_init(uint8_t fru, sensor_info_t *sinfo) {
 
 int
 pal_sensor_read(uint8_t fru, uint8_t sensor_num, void *value) {
-  return lightning_sensor_read(fru, sensor_num, value);
+
+  char key[MAX_KEY_LEN] = {0};
+  char str[MAX_VALUE_LEN] = {0};
+  int ret;
+
+  switch(fru) {
+    case FRU_PEB:
+      sprintf(key, "peb_sensor%d", sensor_num);
+      break;
+    case FRU_PDPB:
+      sprintf(key, "pdpb_sensor%d", sensor_num);
+      break;
+    case FRU_FCB:
+      sprintf(key, "fcb_sensor%d", sensor_num);
+      break;
+  }
+  ret = edb_cache_get(key, str);
+  if(ret < 0) {
+#ifdef DEBUG
+    syslog(LOG_WARNING, "pal_sensor_read: cache_get %s failed.", key);
+#endif
+    return ret;
+  }
+  if(strcmp(str, "NA") == 0)
+    return -1;
+  *((float*)value) = atof(str);
+  return ret;
 }
 
 int
 pal_sensor_read_raw(uint8_t fru, uint8_t sensor_num, void *value) {
-  return lightning_sensor_read(fru, sensor_num, value);
+
+  char key[MAX_KEY_LEN] = {0};
+  char str[MAX_VALUE_LEN] = {0};
+  int ret;
+
+  switch(fru) {
+    case FRU_PEB:
+      sprintf(key, "peb_sensor%d", sensor_num);
+      break;
+    case FRU_PDPB:
+      sprintf(key, "pdpb_sensor%d", sensor_num);
+      break;
+    case FRU_FCB:
+      sprintf(key, "fcb_sensor%d", sensor_num);
+      break;
+  }
+
+  ret = lightning_sensor_read(fru, sensor_num, value);
+  if(ret < 0) {
+    strcpy(str, "NA");
+  }
+  else {
+    // On successful sensor read
+    sprintf(str, "%.2f", *((float*)value));
+  }
+
+  if(edb_cache_set(key, str) < 0) {
+#ifdef DEBUG
+      syslog(LOG_WARNING, "pal_sensor_read_raw: cache_set key = %s, str = %s failed.", key, str);
+#endif
+    return -1;
+  }
+  else {
+    return ret;
+  }
 }
 
 int
@@ -909,61 +1002,15 @@ pal_set_fan_speed(uint8_t fan, uint8_t pwm) {
 
 int
 pal_get_fan_speed(uint8_t fan, int *rpm) {
-  int dev;
+
   int ret;
-  int rpm_h;
-  int rpm_l;
-  int bank;
-  int cnt;
+  float value;
 
-  if (fan >= pal_tach_cnt) {
-    syslog(LOG_INFO, "pal_set_fan_speed: fan number is invalid - %d", fan);
-    return -1;
-  }
+  ret = pal_sensor_read(FRU_FCB, FCB_SENSOR_FAN1_FRONT_SPEED + fan, &value);
+  if (ret == 0)
+    *rpm = (int) value;
 
-  dev = open(I2C_DEV_FAN, O_RDWR);
-  if (dev < 0) {
-    syslog(LOG_ERR, "get_fan_speed: open() failed");
-    close(dev);
-    return -1;
-  }
-
-  /* Assign the i2c device address */
-  ret = ioctl(dev, I2C_SLAVE, I2C_ADDR_FAN);
-  if (ret < 0) {
-    syslog(LOG_ERR, "get_fan_speed: ioctl() assigning i2c addr failed");
-    close(dev);
-    return -1;
-  }
-
-  /* Read the Bank Register and set it to 0 */
-  bank = i2c_smbus_read_byte_data(dev, 0xFF);
-  if (bank != 0x0) {
-    syslog(LOG_INFO, "read_nct7904_value: Bank Register set to %d", bank);
-    if (i2c_smbus_write_byte_data(dev, 0xFF, 0) < 0) {
-      syslog(LOG_ERR, "read_nct7904_value: i2c_smbus_write_byte_data: "
-          "selecting Bank 0 failed");
-      return -1;
-    }
-  }
-
-  rpm_h = i2c_smbus_read_byte_data(dev, FAN_REGISTER_H + fan*2 /* offset */);
-  rpm_l = i2c_smbus_read_byte_data(dev, FAN_REGISTER_L + fan*2 /* offset */);
-
-  close(dev);
-
-  /*
-   * cnt[12:5] = 8 LSB bits from rpm_h
-   *  cnt[4:0] = 5 LSB bits from rpm_l
-   */
-  cnt = 0;
-  cnt = ((rpm_h & 0xFF) << 5) | (rpm_l & 0x1F);
-  if (cnt == 0x1fff || cnt == 0)
-    *rpm = 0;
-  else
-    *rpm = 1350000 / cnt;
-
-  return 0;
+  return ret;
 }
 
 void
@@ -982,6 +1029,197 @@ int
 pal_is_fru_ready(uint8_t fru, uint8_t *status) {
 
   *status = 1;
+
+  return 0;
+}
+
+int
+pal_get_pwm_value(uint8_t fan_num, uint8_t *value) {
+  char path[64] = {0};
+  char device_name[64] = {0};
+  int val = 0;
+  int pwm_enable = 0;
+
+  if(fan_num >= 0 && fan_num <= 11)
+    snprintf(device_name, LARGEST_DEVICE_NAME, "pwm%d_falling", fanid2pwmid_mapping[fan_num]);
+  else {
+    syslog(LOG_INFO, "pal_get_pwm_value: fan number is invalid - %d", fan_num);
+    return -1;
+  }
+
+  snprintf(path, LARGEST_DEVICE_NAME, "%s/%s", PWM_DIR, device_name);
+
+  if (read_device_hex(path, &val)) {
+    syslog(LOG_INFO, "pal_get_pwm_value: read %s failed", path);
+    return -1;
+  }
+
+  // Need check pwmX_en to determine the PWM is 0 or 100.
+  if(val == 0) {
+    snprintf(device_name, LARGEST_DEVICE_NAME, "pwm%d_en", fanid2pwmid_mapping[fan_num]);
+    snprintf(path, LARGEST_DEVICE_NAME, "%s/%s", PWM_DIR, device_name);
+    if (read_device(path, &pwm_enable)) {
+      syslog(LOG_INFO, "pal_get_pwm_value: read %s failed", path);
+      return -1;
+    }
+
+    if(pwm_enable)
+      *value = 100;
+    else
+      *value = 0;
+  } else {
+    *value = (100 * val) / PWM_UNIT_MAX;
+  }
+
+  return 0;
+}
+
+int
+pal_set_fan_led(uint8_t num, uint8_t operation) {
+
+  int dev, ret, res;
+  int led_offset;
+  uint8_t reg, data;
+
+  if(num > MAX_FAN_LED_NUM) {
+    syslog(LOG_ERR, "%s: Wrong LED ID\n", __func__);
+    return -1;
+  }
+
+  dev = open(I2C_DEV_FAN, O_RDWR);
+  if(dev < 0) {
+    syslog(LOG_ERR, "%s: open() failed\n", __func__);
+    return -1;
+  }
+
+  ret = ioctl(dev, I2C_SLAVE, I2C_ADDR_FAN_LED);
+  if(ret < 0) {
+    syslog(LOG_ERR, "%s: ioctl() assigned i2c addr failed\n", __func__);
+    close(dev);
+    return -1;
+  }
+
+  led_offset = num;
+  if(num < 4) {
+    reg = REG_LS0;
+  } else {
+    reg = REG_LS1;
+    led_offset -= 4;
+  }
+
+  //Read the input register
+  res = i2c_smbus_read_byte_data(dev, reg);
+  if(res < 0) {
+    close(dev);
+    syslog(LOG_ERR, "%s: i2c_smbus_read_byte_data failed\n", __func__);
+    return -1;
+  }
+
+  data = res & ~(3 << (led_offset << 1));
+
+  switch(operation) {
+    case FAN_LED_ON:
+      break;
+    case FAN_LED_OFF:
+      data |= (1 << (led_offset << 1));
+      break;
+    case FAN_LED_BLINK_PWM0_RATE:
+      data |= (2 << (led_offset << 1));
+      break;
+    case FAN_LED_BLINK_PWM1_RATE:
+      data |= (3 << (led_offset << 1));
+      break;
+    default:
+      break;
+  }
+
+  res = i2c_smbus_write_byte_data(dev, reg, data);
+  if(res < 0) {
+    close(dev);
+    syslog(LOG_ERR, "%s: i2c_smbus_write_byte_data failed\n", __func__);
+    return -1;
+  }
+  close(dev);
+  return 0;
+}
+
+int
+pal_fan_dead_handle(int fan_num) {
+  int fan_base = 1;
+  int ret;
+
+  /* Because two fans map to one LED, and fan ID start at 1 */
+  ret = pal_set_fan_led( ((fan_num - fan_base) / 2), FAN_LED_OFF);
+
+  if(ret < 0) {
+    syslog(LOG_ERR, "%s: pal_set_fan_led failed\n", __func__);
+    return -1;
+  }
+
+  return 0;
+}
+
+int
+pal_fan_recovered_handle(int fan_num) {
+  int fan_base = 1;
+  int ret;
+
+  /* Because two fans map to one LED, and fan ID start at 1 */
+  ret = pal_set_fan_led( ((fan_num - fan_base) / 2), FAN_LED_ON);
+
+  if(ret < 0) {
+    syslog(LOG_ERR, "%s: pal_set_fan_led failed\n", __func__);
+    return -1;
+  }
+
+  return 0;
+}
+
+// Reset PCIe Switch
+int
+pal_reset_pcie_switch() {
+
+  char path[64] = {0};
+
+  sprintf(path, GPIO_VAL, GPIO_RESET_PCIE_SWITCH);
+
+  if (write_device(path, "0"))
+    return -1;
+
+  msleep(100);
+
+  if (write_device(path, "1"))
+    return -1;
+
+  return 0;
+}
+
+int
+pal_peer_tray_detection(uint8_t *value) {
+
+  char path[64] = {0};
+  int val;
+
+  sprintf(path, GPIO_VAL, GPIO_PEER_BMC_HB);
+  if (read_device(path, &val))
+    return -1;
+
+  *value = (uint8_t) val;
+
+  return 0;
+}
+
+int
+pal_self_tray_location(uint8_t *value) {
+
+  char path[64] = {0};
+  int val;
+
+  sprintf(path, GPIO_VAL, GPIO_BMC_SELF_TRAY);
+  if (read_device(path, &val))
+    return -1;
+
+  *value = (uint8_t) val;
 
   return 0;
 }

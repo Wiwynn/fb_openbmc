@@ -24,11 +24,14 @@
 #include <errno.h>
 #include <syslog.h>
 #include <stdint.h>
+#include <time.h>
+#include <sys/time.h>
 #include <openbmc/pal.h>
 
 static void
 print_usage_help(void) {
   printf("Usage: fpc-util [ bmc, switch ] --uart\n");
+  printf("       fpc-util switch --reset\n");
   printf("       fpc-util --identify [on, off]\n");
 }
 
@@ -77,6 +80,14 @@ main(int argc, char **argv) {
       }
     }
     return 0;
+
+  // Perform PCIe Switch Reset
+  } else if ((pos == UART_POS_PCIE_SW) && (!strcmp(argv[2], "--reset"))) {
+    ret = pal_reset_pcie_switch();
+    if (ret) {
+      printf("Operation failed.");
+      return -1;
+    }
 
   // Set the system_identify key to on or off value
   } else if (id_led &&
