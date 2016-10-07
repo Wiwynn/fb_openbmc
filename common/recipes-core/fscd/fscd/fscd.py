@@ -284,7 +284,7 @@ def main():
 
     last = time.time()
     dead_fans = set()
-    pwr_status = machine.read_power()
+    pwr_status = False
     while True:
         last_dead_fans = dead_fans.copy()
         if wdfile:
@@ -292,6 +292,7 @@ def main():
             wdfile.flush()
 
         time.sleep(interval)
+        speeds = machine.read_speed()
         if fanpower:
             status = machine.read_power()
             if status == 0:
@@ -299,10 +300,9 @@ def main():
                 continue
             else:
                 if pwr_status == False:
-                    time.sleep(interval)
                     pwr_status = True
+                    contiune
         sensors = machine.read_sensors()
-        speeds = machine.read_speed()
         fan_fail = False
         now = time.time()
         dt = now - last
