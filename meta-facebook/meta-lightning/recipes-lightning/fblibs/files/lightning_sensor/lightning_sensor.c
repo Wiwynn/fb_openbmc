@@ -69,6 +69,8 @@
 #define PDPB_TMP75_U49_DEVICE I2C_BUS_PDPB_DIR "6-004b"
 #define PDPB_TMP75_U51_DEVICE I2C_BUS_PDPB_DIR "6-004c"
 
+#define FAN_REGISTER 0x80
+
 enum temp_sensor_type {
   LOCAL_SENSOR = 0,
   REMOTE_SENSOR,
@@ -94,6 +96,7 @@ enum nct7904_registers {
   NCT7904_VSEN7 = 0x4C,
   NCT7904_VSEN9 = 0x50,
   NCT7904_3VDD = 0x5C,
+  NCT7904_MONITOR_FLAG = 0xBA,
   NCT7904_BANK_SEL = 0xFF,
 };
 
@@ -256,6 +259,18 @@ const uint8_t fcb_sensor_list[] = {
   FCB_SENSOR_HSC_IN_POWER,
   FCB_SENSOR_BJT_TEMP_1,
   FCB_SENSOR_BJT_TEMP_2,
+  FCB_SENSOR_FAN1_FRONT_SPEED,
+  FCB_SENSOR_FAN1_REAR_SPEED,
+  FCB_SENSOR_FAN2_FRONT_SPEED,
+  FCB_SENSOR_FAN2_REAR_SPEED,
+  FCB_SENSOR_FAN3_FRONT_SPEED,
+  FCB_SENSOR_FAN3_REAR_SPEED,
+  FCB_SENSOR_FAN4_FRONT_SPEED,
+  FCB_SENSOR_FAN4_REAR_SPEED,
+  FCB_SENSOR_FAN5_FRONT_SPEED,
+  FCB_SENSOR_FAN5_REAR_SPEED,
+  FCB_SENSOR_FAN6_FRONT_SPEED,
+  FCB_SENSOR_FAN6_REAR_SPEED,
 };
 
 static sensor_info_t g_sinfo[MAX_NUM_FRUS][MAX_SENSOR_NUM] = {0};
@@ -268,6 +283,7 @@ static void
 assign_sensor_threshold(uint8_t fru, uint8_t snr_num, float ucr, float unc,
     float unr, float lcr, float lnc, float lnr, float pos_hyst, float neg_hyst) {
 
+  int ret;
   switch(fru) {
     case FRU_PEB:
       peb_sensor_threshold[snr_num][UCR_THRESH] = ucr;
@@ -306,6 +322,9 @@ static void
 sensor_thresh_array_init() {
 
   static bool init_done = false;
+  uint8_t ssd_sku = 0;
+  uint8_t ssd_vendor = 0;
+  int ret;
 
   if (init_done)
     return;
@@ -373,11 +392,49 @@ sensor_thresh_array_init() {
       55, 50, 0, 5, 10, 0, 0, 0);
 
   // PDPB SSD and AMBIENT TEMP SENSORS
+  ret = lightning_ssd_sku(&ssd_sku);
+  if (ret < 0) {
+    syslog(LOG_DEBUG, "%s() get SSD SKU failed", __func__);
+  }
+  ret = lightning_ssd_vendor(&ssd_vendor);
+  if (ret < 0) {
+    syslog(LOG_DEBUG, "%s() get SSD vendor failed", __func__);
+  }
+  
   for (i = 0; i < lightning_flash_cnt; i++) {
-    assign_sensor_threshold(FRU_PDPB, PDPB_SENSOR_FLASH_TEMP_0 + i,
-        70, 67, 0, 5, 10, 0, 0, 0);
-    assign_sensor_threshold(FRU_PDPB, PDPB_SENSOR_AMB_TEMP_0 + i,
-        0, 0, 0, 0, 0, 0, 0, 0);
+    if(ssd_sku == U2_SKU) {
+      // Intel threshold
+      if (ssd_vendor == INTEL) 
+        assign_sensor_threshold(FRU_PDPB, PDPB_SENSOR_FLASH_TEMP_0 + i,
+            70, 68, 0, 5, 10, 0, 0, 0);
+      // Samsung threshold
+      else if(ssd_vendor == SAMSUNG)
+        assign_sensor_threshold(FRU_PDPB, PDPB_SENSOR_FLASH_TEMP_0 + i,
+            82, 78, 0, 5, 10, 0, 0, 0);
+      // Default threshold
+      else
+        assign_sensor_threshold(FRU_PDPB, PDPB_SENSOR_FLASH_TEMP_0 + i,
+            80, 78, 0, 5, 10, 0, 0, 0);
+      
+    } else if (ssd_sku == M2_SKU) {
+      // Seagate threshold
+      if(ssd_vendor == SEAGATE) 
+        assign_sensor_threshold(FRU_PDPB, PDPB_SENSOR_FLASH_TEMP_0 + i,
+            80, 78, 0, 5, 10, 0, 0, 0);
+      // Default threshold
+      else
+        assign_sensor_threshold(FRU_PDPB, PDPB_SENSOR_FLASH_TEMP_0 + i,
+            80, 78, 0, 5, 10, 0, 0, 0);
+
+      // AMBIENT SENSORS
+      assign_sensor_threshold(FRU_PDPB, PDPB_SENSOR_AMB_TEMP_0 + i,
+          65, 60, 0, 5, 10, 0, 0, 0);
+    } else {
+      // Default threshold
+      assign_sensor_threshold(FRU_PDPB, PDPB_SENSOR_FLASH_TEMP_0 + i,
+            80, 78, 0, 5, 10, 0, 0, 0);
+    }
+
   }
 
   // FCB Volt Sensors
@@ -403,6 +460,32 @@ sensor_thresh_array_init() {
       55, 50, 0, 5, 10, 0, 0, 0);
   assign_sensor_threshold(FRU_FCB, FCB_SENSOR_BJT_TEMP_2,
       55, 50, 0, 5, 10, 0, 0, 0);
+
+  // FCB Fan Speed
+  assign_sensor_threshold(FRU_FCB, FCB_SENSOR_FAN1_FRONT_SPEED,
+      0, 0, 0, 400, 0, 0, 0, 0);
+  assign_sensor_threshold(FRU_FCB, FCB_SENSOR_FAN1_REAR_SPEED,
+      0, 0, 0, 400, 0, 0, 0, 0);
+  assign_sensor_threshold(FRU_FCB, FCB_SENSOR_FAN2_FRONT_SPEED,
+      0, 0, 0, 400, 0, 0, 0, 0);
+  assign_sensor_threshold(FRU_FCB, FCB_SENSOR_FAN2_REAR_SPEED,
+      0, 0, 0, 400, 0, 0, 0, 0);
+  assign_sensor_threshold(FRU_FCB, FCB_SENSOR_FAN3_FRONT_SPEED,
+      0, 0, 0, 400, 0, 0, 0, 0);
+  assign_sensor_threshold(FRU_FCB, FCB_SENSOR_FAN3_REAR_SPEED,
+      0, 0, 0, 400, 0, 0, 0, 0);
+  assign_sensor_threshold(FRU_FCB, FCB_SENSOR_FAN4_FRONT_SPEED,
+      0, 0, 0, 400, 0, 0, 0, 0);
+  assign_sensor_threshold(FRU_FCB, FCB_SENSOR_FAN4_REAR_SPEED,
+      0, 0, 0, 400, 0, 0, 0, 0);
+  assign_sensor_threshold(FRU_FCB, FCB_SENSOR_FAN5_FRONT_SPEED,
+      0, 0, 0, 400, 0, 0, 0, 0);
+  assign_sensor_threshold(FRU_FCB, FCB_SENSOR_FAN5_REAR_SPEED,
+      0, 0, 0, 400, 0, 0, 0, 0);
+  assign_sensor_threshold(FRU_FCB, FCB_SENSOR_FAN6_FRONT_SPEED,
+      0, 0, 0, 400, 0, 0, 0, 0);
+  assign_sensor_threshold(FRU_FCB, FCB_SENSOR_FAN6_REAR_SPEED,
+      0, 0, 0, 400, 0, 0, 0, 0);
 
   init_done = true;
 }
@@ -497,7 +580,7 @@ read_flash_temp(uint8_t flash_num, float *value) {
   ret = lightning_ssd_sku(&sku);
 
   if (ret < 0) {
-    syslog(LOG_ERR, "%s(): lightning_ssd_sku failed", __func__);
+    syslog(LOG_DEBUG, "%s(): lightning_ssd_sku failed", __func__);
     return -1;
   }
   if (sku == U2_SKU) 
@@ -505,7 +588,7 @@ read_flash_temp(uint8_t flash_num, float *value) {
   else if (sku == M2_SKU)
     return lightning_m2_flash_temp_read(lightning_flash_list[flash_num], value);
   else {
-    syslog(LOG_ERR, "%s(): unknown ssd sku", __func__);
+    syslog(LOG_DEBUG, "%s(): unknown ssd sku", __func__);
     return -1;
   }
 }
@@ -689,6 +772,10 @@ read_nct7904_value(uint8_t reg, char *device, uint8_t addr, float *value) {
   int res_h;
   int res_l;
   int bank;
+  int retry;
+  uint8_t peer_tray_exist;
+  uint8_t location;
+  uint8_t monitor_flag;
   uint16_t res;
   float multipler;
 
@@ -711,7 +798,37 @@ read_nct7904_value(uint8_t reg, char *device, uint8_t addr, float *value) {
     if (i2c_smbus_write_byte_data(dev, NCT7904_BANK_SEL, 0) < 0) {
       syslog(LOG_ERR, "read_nct7904_value: i2c_smbus_write_byte_data: "
           "selecting Bank 0 failed");
+      close(dev);
       return -1;
+    }
+  }
+
+  if (peer_tray_exist) {
+  /* Determine this tray located on upper or lower tray; 0:Upper, 1:Lower*/
+    ret = pal_self_tray_location(&location);
+    if(ret < 0) {
+      syslog(LOG_ERR, "read_nct7904_value: pal_self_tray_location failed");
+      return -1;
+    }
+    retry = 0;
+    while(retry < MAX_RETRY_TIMES) {
+      monitor_flag = i2c_smbus_read_byte_data(dev, NCT7904_MONITOR_FLAG);
+
+      if (UPPER_TRAY == location) {
+        /* BMC can query sensor only when peer BMC's queries are done. */
+        if (LOWER_TRAY_DONE == monitor_flag) {
+          break;
+        } else {
+          retry++;
+        }
+      } else if (LOWER_TRAY == location) {
+        if (UPPER_TRAY_DONE == monitor_flag) {
+          break;
+        } else {
+          retry++;
+        }
+      }
+      msleep(100);
     }
   }
 
@@ -721,14 +838,51 @@ read_nct7904_value(uint8_t reg, char *device, uint8_t addr, float *value) {
   /* Read the LSB byte for the value */
   res_l = i2c_smbus_read_byte_data(dev, reg + 1);
 
+  if((res_h == -1) || (res_l == -1)) {
+    syslog(LOG_DEBUG, "%s() i2c_smbus_read_byte_data failed, high byte: 0x%x, low byte: 0x%x", __func__, res_h, res_l);
+    return -1;
+  }
+  
+  /* Modify the monitor_flag when the last sensor query finish in this query interval */
+  if (FAN_REGISTER+2 == reg) {
+
+    if (location == UPPER_TRAY) {
+
+      if (i2c_smbus_write_byte_data(dev, NCT7904_MONITOR_FLAG, UPPER_TRAY_DONE) < 0) {
+        syslog(LOG_ERR, "read_nct7904_value: i2c_smbus_write_byte_data: "
+            "upper tray monitor failed");
+        close(dev);
+        return -1;
+      }
+
+    } else {
+
+      if (i2c_smbus_write_byte_data(dev, NCT7904_MONITOR_FLAG, LOWER_TRAY_DONE) < 0) {
+        syslog(LOG_ERR, "read_nct7904_value: i2c_smbus_write_byte_data: "
+            "lower tray monitor failed");
+        close(dev);
+        return -1;
+      }
+
+    }
+  }
+
   close(dev);
 
   /*
-   * Result is 11 bits
+   * Fan speed reading is 13 bits
+   * res[12:5] = res_h[7:0]
+   * res[4:0]  = res_l[4:0]
+   *
+   * Other reading is 11 bits
    * res[10:3] = res_h[7:0]
    * res[2:0] = res_l[2:0]
    */
-  res = (res_h << 3) | (res_l & 0x7);
+  if (reg >= FAN_REGISTER && reg <= FAN_REGISTER+22) {
+    res = ((res_h & 0xFF) << 5) | (res_l & 0x1F);
+  } else {
+    res = ((res_h & 0xFF) << 3) | (res_l & 0x7);
+  }
 
   switch(reg) {
     case NCT7904_TEMP_CH1:
@@ -751,7 +905,15 @@ read_nct7904_value(uint8_t reg, char *device, uint8_t addr, float *value) {
       break;
   }
 
-  *value = (float) (res * multipler);
+  if (reg >= FAN_REGISTER && reg <= FAN_REGISTER+22) {
+    /* fan speed reading */
+    if (res == 0x1fff || res == 0)
+      *value = 0;
+    else
+      *value = (float) (1350000 / res);
+  } else {
+    *value = (float) (res * multipler);
+  }
 
   return 0;
 }
@@ -955,7 +1117,20 @@ lightning_sensor_units(uint8_t fru, uint8_t sensor_num, char *units) {
         case FCB_SENSOR_BJT_TEMP_2:
           sprintf(units, "C");
           break;
-
+        case FCB_SENSOR_FAN1_FRONT_SPEED:
+        case FCB_SENSOR_FAN1_REAR_SPEED:
+        case FCB_SENSOR_FAN2_FRONT_SPEED:
+        case FCB_SENSOR_FAN2_REAR_SPEED:
+        case FCB_SENSOR_FAN3_FRONT_SPEED:
+        case FCB_SENSOR_FAN3_REAR_SPEED:
+        case FCB_SENSOR_FAN4_FRONT_SPEED:
+        case FCB_SENSOR_FAN4_REAR_SPEED:
+        case FCB_SENSOR_FAN5_FRONT_SPEED:
+        case FCB_SENSOR_FAN5_REAR_SPEED:
+        case FCB_SENSOR_FAN6_FRONT_SPEED:
+        case FCB_SENSOR_FAN6_REAR_SPEED:
+          sprintf(units, "RPM");
+          break;
         default:
           sprintf(units, "");
           break;
@@ -1122,6 +1297,42 @@ lightning_sensor_name(uint8_t fru, uint8_t sensor_num, char *name) {
         case FCB_SENSOR_BJT_TEMP_2:
           sprintf(name, "FCB_BJT_TEMP_2");
           break;
+        case FCB_SENSOR_FAN1_FRONT_SPEED:
+          sprintf(name, "FAN1_FRONT_SPEED");
+          break;
+        case FCB_SENSOR_FAN1_REAR_SPEED:
+          sprintf(name, "FAN1_REAR_SPEED");
+          break;
+        case FCB_SENSOR_FAN2_FRONT_SPEED:
+          sprintf(name, "FAN2_FRONT_SPEED");
+          break;
+        case FCB_SENSOR_FAN2_REAR_SPEED:
+          sprintf(name, "FAN2_REAR_SPEED");
+          break;
+        case FCB_SENSOR_FAN3_FRONT_SPEED:
+          sprintf(name, "FAN3_FRONT_SPEED");
+          break;
+        case FCB_SENSOR_FAN3_REAR_SPEED:
+          sprintf(name, "FAN3_REAR_SPEED");
+          break;
+        case FCB_SENSOR_FAN4_FRONT_SPEED:
+          sprintf(name, "FAN4_FRONT_SPEED");
+          break;
+        case FCB_SENSOR_FAN4_REAR_SPEED:
+          sprintf(name, "FAN4_REAR_SPEED");
+          break;
+        case FCB_SENSOR_FAN5_FRONT_SPEED:
+          sprintf(name, "FAN5_FRONT_SPEED");
+          break;
+        case FCB_SENSOR_FAN5_REAR_SPEED:
+          sprintf(name, "FAN5_REAR_SPEED");
+          break;
+        case FCB_SENSOR_FAN6_FRONT_SPEED:
+          sprintf(name, "FAN6_FRONT_SPEED");
+          break;
+        case FCB_SENSOR_FAN6_REAR_SPEED:
+          sprintf(name, "FAN6_REAR_SPEED");
+          break;
         default:
           sprintf(name, "");
           break;
@@ -1192,7 +1403,7 @@ lightning_sensor_read(uint8_t fru, uint8_t sensor_num, void *value) {
           return read_flash_temp(sensor_num - PDPB_SENSOR_FLASH_TEMP_0, (float*) value);
         }
 
-if (sensor_num >= PDPB_SENSOR_AMB_TEMP_0 &&
+ if (sensor_num >= PDPB_SENSOR_AMB_TEMP_0 &&
             sensor_num < (PDPB_SENSOR_AMB_TEMP_0 + lightning_flash_cnt)) {
           return read_m2_amb_temp(sensor_num - PDPB_SENSOR_AMB_TEMP_0, (float*) value);
         }
@@ -1260,13 +1471,36 @@ if (sensor_num >= PDPB_SENSOR_AMB_TEMP_0 &&
           return read_hsc_value(HSC_OUT_CURR, I2C_DEV_FCB, I2C_ADDR_FCB_HSC, HSC_ADM1276, (float*) value);
         case FCB_SENSOR_HSC_IN_POWER:
           return read_hsc_value(HSC_IN_POWER, I2C_DEV_FCB, I2C_ADDR_FCB_HSC, HSC_ADM1276, (float*) value);
-
         case FCB_SENSOR_BJT_TEMP_1:
           return read_nct7904_value(NCT7904_TEMP_CH1, I2C_DEV_FCB, I2C_ADDR_NCT7904, (float*) value);
-          break;
         case FCB_SENSOR_BJT_TEMP_2:
           return read_nct7904_value(NCT7904_TEMP_CH2, I2C_DEV_FCB, I2C_ADDR_NCT7904, (float*) value);
-          break;
+
+        // Fan Speed
+        case FCB_SENSOR_FAN6_FRONT_SPEED:
+          return read_nct7904_value(FAN_REGISTER, I2C_DEV_FCB, I2C_ADDR_NCT7904, (float*) value);
+        case FCB_SENSOR_FAN6_REAR_SPEED:
+          return read_nct7904_value(FAN_REGISTER+2, I2C_DEV_FCB, I2C_ADDR_NCT7904, (float*) value);
+        case FCB_SENSOR_FAN5_FRONT_SPEED:
+          return read_nct7904_value(FAN_REGISTER+4, I2C_DEV_FCB, I2C_ADDR_NCT7904, (float*) value);
+        case FCB_SENSOR_FAN5_REAR_SPEED:
+          return read_nct7904_value(FAN_REGISTER+6, I2C_DEV_FCB, I2C_ADDR_NCT7904, (float*) value);
+        case FCB_SENSOR_FAN4_FRONT_SPEED:
+          return read_nct7904_value(FAN_REGISTER+8, I2C_DEV_FCB, I2C_ADDR_NCT7904, (float*) value);
+        case FCB_SENSOR_FAN4_REAR_SPEED:
+          return read_nct7904_value(FAN_REGISTER+10, I2C_DEV_FCB, I2C_ADDR_NCT7904, (float*) value);
+        case FCB_SENSOR_FAN3_FRONT_SPEED:
+          return read_nct7904_value(FAN_REGISTER+12, I2C_DEV_FCB, I2C_ADDR_NCT7904, (float*) value);
+        case FCB_SENSOR_FAN3_REAR_SPEED:
+          return read_nct7904_value(FAN_REGISTER+14, I2C_DEV_FCB, I2C_ADDR_NCT7904, (float*) value);
+        case FCB_SENSOR_FAN2_FRONT_SPEED:
+          return read_nct7904_value(FAN_REGISTER+16, I2C_DEV_FCB, I2C_ADDR_NCT7904, (float*) value);
+        case FCB_SENSOR_FAN2_REAR_SPEED:
+          return read_nct7904_value(FAN_REGISTER+18, I2C_DEV_FCB, I2C_ADDR_NCT7904, (float*) value);
+        case FCB_SENSOR_FAN1_FRONT_SPEED:
+          return read_nct7904_value(FAN_REGISTER+20, I2C_DEV_FCB, I2C_ADDR_NCT7904, (float*) value);
+        case FCB_SENSOR_FAN1_REAR_SPEED:
+          return read_nct7904_value(FAN_REGISTER+22, I2C_DEV_FCB, I2C_ADDR_NCT7904, (float*) value);
         default:
           return -1;
       }
