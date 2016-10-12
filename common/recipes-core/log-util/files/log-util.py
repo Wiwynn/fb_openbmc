@@ -90,7 +90,7 @@ def log_main():
 
             for log in syslog:
                 # Print only critical logs
-                if not (re.search(r' bmc [a-z]*.crit ', log)):
+                if not (re.search(r' bmc [a-z]*.crit ', log) or re.search(r'log-util:', log)):
                     continue
 
                 # Find the FRU number
@@ -112,9 +112,13 @@ def log_main():
                     newlog = newlog + log
 
             # Dump the new log in a tmp file
+            if fru == 'all':
+                temp = 'all'
+            else:
+                temp = 'FRU: ' + fru[4]
             tmpfd = open('%s.tmp' % logfile, 'w')
             time = datetime.now()
-            newlog = newlog + time.strftime('%b %d %H:%M:%S') + ' log-util: User cleared ' + '\"' + fru + '\"' + ' logs\n'
+            newlog = newlog + time.strftime('%b %d %H:%M:%S') + ' log-util: User cleared ' + temp + ' logs\n'
             tmpfd.write(newlog)
             tmpfd.close()
             # Rename the tmp file to original syslog file
@@ -125,7 +129,7 @@ def log_main():
 
             for log in syslog:
                 # Print only critical logs
-                if not (re.search(r' bmc [a-z]*.crit ', log)):
+                if not (re.search(r' bmc [a-z]*.crit ', log) or re.search(r'log-util:', log)):
                     continue
 
                 # Find the FRU number
@@ -140,6 +144,11 @@ def log_main():
                 fruname = frulist[int(fru_num)]
 
                 # Print only if the argument fru matches the log fru
+                if re.search(r'log-util:', log):
+                   if re.search(r'all logs', log) or fru == fruname:
+                     print (log)
+                     continue
+
                 if fru != 'all' and fru != fruname:
                     continue
 
@@ -164,7 +173,20 @@ def log_main():
                     )
 
     if cmd == cmdlist[1]:
-       pal_log_clear(fru)
+        if fru == 'all':
+           for i in range (1, len(frulist)):
+               fruname = frulist[i] + '_sensor_health'
+               pal_set_key_value(fruname)
+           for i in range (1, len(frulist)):
+               fruname = frulist[i] + '_sel_error'
+               pal_set_key_value(fruname)
+        else:
+           fruname = fru + '_sensor_health'
+           pal_set_key_value(fruname)
+           if fru != 'nic' and fru != 'spb':
+               fruname = fru + '_sel_error'
+               pal_set_key_value(fruname)
+
 
 if __name__ == '__main__':
     log_main()

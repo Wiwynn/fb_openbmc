@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/bin/sh
 #
 # Copyright 2014-present Facebook. All Rights Reserved.
 #
@@ -17,13 +17,12 @@
 # 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
 #
-import bottle
-import rest_usb2i2c_reset
 
-boardApp = bottle.Bottle()
+CMD='/sys/class/i2c-adapter/i2c-12/12-0031/usb2cp2112_rst_n'
 
-# Disable the endpoint in BMC until we root cause cp2112 issues.
-# Handler to reset usb-to-i2c
-#@boardApp.route('/api/sys/usb2i2c_reset')
-#def rest_usb2i2c_reset_hdl():
-#    return rest_usb2i2c_reset.set_usb2i2c()
+echo -n "Reset CP2112 Switch ... "
+echo 0 > $CMD
+usleep 50000
+echo 1 > $CMD
+
+echo "Done"
