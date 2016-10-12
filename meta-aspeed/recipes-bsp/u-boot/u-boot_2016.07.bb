@@ -105,7 +105,7 @@ do_compile () {
         unset  i
     else
         UBOOT_CONFIGNAME=${UBOOT_MACHINE}
-        UBOOT_CONFIGNAME=${UBOOT_CONFIGNAME/_config/_defconfig}
+        UBOOT_CONFIGNAME=$(echo ${UBOOT_CONFIGNAME} | sed -e 's/_config/_defconfig/')
 
         if [ "x${ROM_BOOT}" != "x" ] ; then
             sed -i "s/^# CONFIG_SPL=/CONFIG_SPL=/g" configs/${UBOOT_CONFIGNAME}
