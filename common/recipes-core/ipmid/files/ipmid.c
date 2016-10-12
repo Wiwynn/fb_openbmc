@@ -35,6 +35,7 @@
 #include <sys/un.h>
 #include <openbmc/ipmi.h>
 #include <openbmc/pal.h>
+#include <sys/reboot.h>
 
 #define SIZE_IANA_ID 3
 #define SIZE_GUID 16
@@ -238,7 +239,7 @@ app_get_device_id (unsigned char *response, unsigned char *res_len)
   int fv_major = 0x01, fv_minor = 0x03;
   char buffer[32];
 
-  fp = popen("cat /etc/issue","r");
+  fp = fopen("/etc/issue","r");
   if (fp != NULL)
   {
      if (fgets(buffer, sizeof(buffer), fp))
@@ -272,7 +273,7 @@ app_get_device_id (unsigned char *response, unsigned char *res_len)
 static void
 app_cold_reset(void)
 {
-  system("/sbin/reboot");
+  reboot(RB_AUTOBOOT);
 }
 
 
@@ -1831,8 +1832,8 @@ main (void)
   int *p_s2;
   int rc = 0;
 
-  daemon(1, 1);
-  openlog("ipmid", LOG_CONS, LOG_DAEMON);
+  //daemon(1, 1);
+  //openlog("ipmid", LOG_CONS, LOG_DAEMON);
 
 
   plat_fruid_init();

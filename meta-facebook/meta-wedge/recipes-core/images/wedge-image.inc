@@ -15,8 +15,6 @@ FLASH_ROOTFS_OFFSET = "4608"
 
 # Include modules in rootfs
 IMAGE_INSTALL += " \
-  dbus \
-  glib-2.0 \
   packagegroup-openbmc-base \
   packagegroup-openbmc-net \
   packagegroup-openbmc-python \
