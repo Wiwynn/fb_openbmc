@@ -24,6 +24,7 @@
  * MA 02111-1307 USA
  */
 
+#include <compiler.h>
 #include <errno.h>
 #include <env_flags.h>
 #include <fcntl.h>
