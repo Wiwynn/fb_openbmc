@@ -1252,12 +1252,6 @@ lightning_sensor_name(uint8_t fru, uint8_t sensor_num, char *name) {
         break;
       }
 
-      if (sensor_num >= PDPB_SENSOR_AMB_TEMP_0 &&
-          sensor_num < (PDPB_SENSOR_AMB_TEMP_0 + lightning_flash_cnt)) {
-        sprintf(name, "M.2_Amb_TEMP_%d", sensor_num - PDPB_SENSOR_AMB_TEMP_0);
-        break;
-      }
-
       switch(sensor_num) {
         case PDPB_SENSOR_LEFT_REAR_TEMP:
           sprintf(name, "LEFT_REAR_TEMP");
@@ -1525,3 +1519,4 @@ lightning_sensor_read(uint8_t fru, uint8_t sensor_num, void *value) {
       break;
   }
 }
+
