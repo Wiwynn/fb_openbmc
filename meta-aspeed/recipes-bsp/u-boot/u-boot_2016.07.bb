@@ -6,7 +6,7 @@ PROVIDES = "virtual/bootloader"
 LICENSE = "GPLv2+"
 LIC_FILES_CHKSUM = "file://Licenses/README;md5=a2c678cfd4a4d97135585cad908541c6"
 
-DEPENDS += "dtc-native verified-boot"
+DEPENDS += "dtc-native"
 
 SRCREV = "44d5a2f4ff45bbaafff0c3bccc8a9f7509a5dffb"
 PV = "v2016.07"
@@ -14,12 +14,13 @@ PV = "v2016.07"
 SRC_URI = "file://u-boot-v2016.07 \
            file://fw_env.config \
            file://fw_env.config.full \
+           file://certificate-store.dts \
           "
 
 S = "${WORKDIR}/u-boot-${PV}"
 
 inherit uboot-config deploy
-require recipes-bsp/verified-boot/verified-boot.inc
+require verified-boot.inc
 
 EXTRA_OEMAKE = 'CROSS_COMPILE=${TARGET_PREFIX} CC="${TARGET_PREFIX}gcc ${TOOLCHAIN_OPTIONS}" V=1'
 EXTRA_OEMAKE += 'HOSTCC="${BUILD_CC} ${BUILD_CFLAGS} ${BUILD_LDFLAGS}"'
@@ -72,6 +73,32 @@ UBOOT_ENV_BINARY ?= "${UBOOT_ENV}.${UBOOT_ENV_SUFFIX}"
 UBOOT_ENV_IMAGE ?= "${UBOOT_ENV}-${MACHINE}-${PV}-${PR}.${UBOOT_ENV_SUFFIX}"
 UBOOT_ENV_SYMLINK ?= "${UBOOT_ENV}-${MACHINE}.${UBOOT_ENV_SUFFIX}"
 
+do_configure () {
+  if [ "x${VERIFIED_BOOT}" = "x" ]
+  then
+      return
+  fi
+
+  # Check that the required VERIFIED_BOOT_KEYNAME path exists.
+  if [ ! -d "${VERIFIED_BOOT_KEYS}" ]
+  then
+      echo "Cannot find VERIFIED_BOOT_KEYS directory: ${VERIFIED_BOOT_KEYS}"
+      echo "To use verified-boot, please configure a keydir and keypair."
+      exit 1
+  fi
+
+  KEYPAIR="${VERIFIED_BOOT_KEYS}/${VERIFIED_BOOT_KEYNAME}.key"
+  if [ ! -f "${KEYPAIR}" ]
+  then
+      echo "Cannot find configured keypair: ${KEYPAIR}"
+      echo "To use verified-boot please configure a keydir and keypair."
+      exit 1
+  fi
+
+  # Remove any artifacts from previous configure/compiles.
+  rm -f ${CERTIFICATE_STORE}
+}
+
 do_compile () {
     if [ "${@bb.utils.contains('DISTRO_FEATURES', 'ld-is-gold', 'ld-is-gold', '', d)}" = "ld-is-gold" ] ; then
         sed -i 's/$(CROSS_COMPILE)ld$/$(CROSS_COMPILE)ld.bfd/g' config.mk
@@ -85,6 +112,30 @@ do_compile () {
     then
         echo ${UBOOT_LOCALVERSION} > ${B}/.scmversion
         echo ${UBOOT_LOCALVERSION} > ${S}/.scmversion
+    fi
+
+    if [ "x${VERIFIED_BOOT}" != "x" ]
+    then
+        # Install the empty certificate store into the image output.
+        # This empty store will have public keys injected when the firmware is
+        # compiled (mkimage stage).
+        dtc ${WORKDIR}/certificate-store.dts -o ${CERTIFICATE_STORE} -O dtb
+
+        # Create a 'placebo' FIT configuration and compile to a semi-blank FIT.
+        # This FIT will be signed, the keys will be extracted, and it will be deleted.
+        # If the u-boot mkimage tool could create DTBs will public keys this step
+        # would not be required.
+        touch ${WORKDIR}/placebo
+        fitimage_emit_placebo ${WORKDIR}/placebo.its
+        mkimage -f ${WORKDIR}/placebo.its ${WORKDIR}/placebo.fit
+
+        # Using the placebo FIT, which requested signing of from the configured key,
+        # extract the public keys into the DTB.
+        # This process could be improved with direct DTB writing.
+        mkimage -k "${VERIFIED_BOOT_KEYS}" -r -K ${CERTIFICATE_STORE} -F ${WORKDIR}/placebo.fit
+
+        # Clean up the resultant FIT.
+        rm -f ${WORKDIR}/placebo ${WORKDIR}/placebo.fit
     fi
 
     if [ "x${UBOOT_CONFIG}" != "x" ]
@@ -104,23 +155,29 @@ do_compile () {
         done
         unset  i
     else
+        UBOOT_EXTRA_MAKE=""
         UBOOT_CONFIGNAME=${UBOOT_MACHINE}
         UBOOT_CONFIGNAME=$(echo ${UBOOT_CONFIGNAME} | sed -e 's/_config/_defconfig/')
 
         if [ "x${ROM_BOOT}" != "x" ] ; then
-            sed -i "s/^# CONFIG_SPL=/CONFIG_SPL=/g" configs/${UBOOT_CONFIGNAME}
+            uboot_option_on CONFIG_SPL configs/${UBOOT_CONFIGNAME}
         else
-            sed -i "s/^CONFIG_SPL=/# CONFIG_SPL=/g" configs/${UBOOT_CONFIGNAME}
+            uboot_option_off CONFIG_SPL configs/${UBOOT_CONFIGNAME}
         fi
 
         if [ "x${VERIFIED_BOOT}" != "x" ] ; then
-            sed -i "s/^# CONFIG_SPL_FIT_SIGNATURE=/CONFIG_SPL_FIT_SIGNATURE=/g" configs/${UBOOT_CONFIGNAME}
+            uboot_option_on CONFIG_SPL_FIT_SIGNATURE configs/${UBOOT_CONFIGNAME}
+            uboot_option_on CONFIG_OF_CONTROL configs/${UBOOT_CONFIGNAME}
+            uboot_option_on CONFIG_OF_EMBED configs/${UBOOT_CONFIGNAME}
+            UBOOT_EXTRA_MAKE="EXT_DTB=${CERTIFICATE_STORE}"
         else
-            sed -i "s/^CONFIG_SPL_FIT_SIGNATURE=/# CONFIG_SPL_FIT_SIGNATURE=/g" configs/${UBOOT_CONFIGNAME}
+            uboot_option_off CONFIG_SPL_FIT_SIGNATURE configs/${UBOOT_CONFIGNAME}
+            uboot_option_off CONFIG_OF_CONTROL configs/${UBOOT_CONFIGNAME}
+            uboot_option_off CONFIG_OF_EMBED configs/${UBOOT_CONFIGNAME}
         fi
 
-        oe_runmake ${UBOOT_MACHINE}
-        oe_runmake ${UBOOT_MAKE_TARGET}
+        oe_runmake ${UBOOT_EXTRA_MAKE} ${UBOOT_MACHINE}
+        oe_runmake ${UBOOT_EXTRA_MAKE} ${UBOOT_MAKE_TARGET}
     fi
 
 }
