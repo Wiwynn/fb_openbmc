@@ -1,20 +1,118 @@
 #!/bin/bash
 
-max_proc_id=35
-max_mc_idx=20
-max_retry=4
-ME_COLD_RESET_DELAY=5;
-
+PROGRAM=$0
 ME_UTIL="/usr/local/bin/me-util"
-ME_UTIL_LOG="/tmp/me-util.log"
+PECI_UTIL="/usr/local/bin/peci-util"
+CMD_DIR="/etc/peci"
+INTERFACE="ME_INTERFACE"
 
-#echo "crash dump for Broadwell-DE, version 0.01.01, 2015/07/29"
-#echo "script name is   ==> $0"
-#echo "whole parameter  ==> $#"
-#echo "parameter 1      ==> $1"
-#echo "parameter 2      ==> $2"
+function print_help_msg {
+  echo "$PROGRAM 48 coreid  ==> for CPU 1 CoreID"
+  echo "$PROGRAM 49 coreid  ==> for CPU 2 CoreID"
+  echo "$PROGRAM 48 msr     ==> for CPU 1 MSR"
+  echo "$PROGRAM 49 msr     ==> for CPU 2 MSR"
+  echo "$PROGRAM pcie       ==> for PCIe"
+}
 
-if [ "$1" = "time" ]; then
+# read command from stdin
+function execute_via_me {
+  # if ME_UTIL cannot be executed, return
+  [ -x $ME_UTIL ] || \
+    return
+
+  # Adapt command to ME-UTIL format
+  cat | \
+    sed 's/^0x/0xb8 0x40 0x57 0x01 0x00 0x/g' $1 | \
+      $ME_UTIL --file /dev/stdin | \
+        sed 's/^57 01 00 //g'
+}
+
+# read command from stdin
+function execute_via_peci {
+  # if PECI_UTIL cannot be executed, return
+  [ -x $PECI_UTIL ] || \
+    return
+
+  cat | \
+    $PECI_UTIL --file /dev/stdin
+}
+
+# read command from stdin
+function execute_cmd {
+  if [ "$INTERFACE" == "PECI_INTERFACE" ]; then
+    cat | execute_via_peci
+    return
+  fi
+  
+  RES=$($ME_UTIL 0x18 0x01)
+  RET=$?
+  # if ME has response and in operational mode, PECI through ME
+  if [ "$RET" -eq "0" ] && [ "${RES:6:1}" == "0" ]; then
+    cat | execute_via_me
+  # else use wired PECI directly
+  else
+    echo "Use BMC wired PECI interface due to ME abnormal"
+    INTERFACE="PECI_INTERFACE"
+    cat | execute_via_peci
+  fi
+}
+
+# ARG: Bus[8], Device[5], Function[3], Register[12]
+function PCI_Config_Addr {
+  RESULT=0
+  # BUS
+  RESULT=$((RESULT | (($1 & 0xFF) << 20) ))
+  # DEV
+  RESULT=$((RESULT | (($2 & 0x1F) << 15) ))
+  # FUN
+  RESULT=$((RESULT | (($3 & 0x7) << 12) ))
+  # REG
+  RESULT=$((RESULT | (($4 & 0xFFF) << 0) ))
+  printf "0x%x 0x%x 0x%x 0x%x"\
+    $(( RESULT & 0xFF )) \
+    $(( (RESULT >> 8) & 0xFF )) \
+    $(( (RESULT >> 16) & 0xFF )) \
+    $(( (RESULT >> 24) & 0xFF ))
+  return 0
+}
+
+function pcie_dump {
+  # CPU and PCH
+  [ -r $CMD_DIR/crashdump_pcie ] && \
+    cat $CMD_DIR/crashdump_pcie | execute_cmd
+  
+  # Buses
+  RES=$(echo "0x30 0x06 0x05 0x61 0x00 0xcc 0x20 0x04 0x00" | execute_cmd)
+  echo "Get CPUBUSNO: $RES"
+  # Completion Code
+  CC=$(echo $RES| awk '{print $1;}')
+  # Root port buses
+  ROOT_BUSES=$(echo $RES | awk '{printf "0x%s 0x%s 0x%s", $3, $4, $5;}')
+
+  # Success
+  if [ "$CC" == "40" ]; then
+    for ROOT in $ROOT_BUSES; do
+      for DEV in {0..3}; do
+        echo "Find Root Port Bus $ROOT Dev $DEV..."
+        RES=$(echo "0x30 0x06 0x05 0x61 0x00 $(PCI_Config_Addr $ROOT $DEV 0x00 0x18)" | execute_cmd)
+        echo "$RES"
+        CC=$(echo $RES| awk '{print $1;}')
+        SECONDARY_BUS=0x$(echo $RES| awk '{print $3;}')
+        SUBORDINATE_BUS=0x$(echo $RES| awk '{print $4;}')
+        if [ "$CC" == "40" ] && [ "$SECONDARY_BUS" != "0x00" ] && [ "$SUBORDINATE_BUS" != "0x00" ]; then
+          for (( BUS=$SECONDARY_BUS; BUS<=$SUBORDINATE_BUS; BUS++ )); do
+            BUS_MS_NIBBLE=$(printf "%x" $((BUS >> 4)) )
+            BUS_LS_NIBBLE=$(printf "%x" $((BUS & 0xF)) )
+            [ -r $CMD_DIR/crashdump_pcie_bus ] && \
+              sed "s/<BUSM>/$BUS_MS_NIBBLE/g; s/<BUSL>/$BUS_LS_NIBBLE/g" $CMD_DIR/crashdump_pcie_bus | execute_cmd
+          done
+        fi
+      done
+    done
+  fi
+}
+
+if [ "$#" -eq 1 ] && [ $1 = "time" ]; then
   now=$(date)
   echo "Crash Dump generated at $now"
   exit 0
@@ -22,419 +120,49 @@ fi
 
 echo ""
 
+
+if [ "$#" -eq 1 ] && [ $1 = "pcie" ]; then
+
+  pcie_dump
+  
+  exit 0
+fi
+
 if [ "$#" -ne 2 ]; then
 
-	echo "$0 48 coreid  ==> for CPU 1 CoreID"
-	echo "$0 49 coreid  ==> for CPU 2 CoreID"
-	echo "$0 48 tor     ==> for CPU 1 TOR"
-	echo "$0 49 tor     ==> for CPU 2 TOR"
-	echo "$0 48 msr     ==> for CPU 1 MSR"
-	echo "$0 49 msr     ==> for CPU 2 MSR"
+  print_help_msg
 
-	exit 1
+  exit 1
 
 elif [ "$1" -ne 48 ] && [ "$1" -ne 49 ]; then
 
-	echo "$0  48 coreid  ==> for CPU 1 CoreID"
-	echo "$0  49 coreid  ==> for CPU 2 CoreID"
-	echo "$0  48 tor     ==> for CPU 1 TOR"
-	echo "$0  49 tor     ==> for CPU 2 TOR"
-	echo "$0  48 msr     ==> for CPU 1 MSR"
-	echo "$0  49 msr     ==> for CPU 2 MSR"
+  print_help_msg
 
-	exit 1
+  exit 1
 
 elif [ "$2" = "coreid" ]; then
 
-  echo ""
-  echo "CPU COREID DUMP:"
-  echo "================"
-  echo ""
+  if [ "$1" -eq 48 ]; then
+    [ -r $CMD_DIR/crashdump_p0_coreid ] && \
+      cat $CMD_DIR/crashdump_p0_coreid | execute_cmd
+  elif [ "$1" -eq 49 ]; then
+    [ -r $CMD_DIR/crashdump_p1_coreid ] && \
+      cat $CMD_DIR/crashdump_p1_coreid | execute_cmd
+  fi
 
-	#PECI RdPkgConfig() "CPUID Read"
-	echo "< CPUID Read >"
-  cmdout=$($ME_UTIL 0xB8 0x40 0x57 0x01 0x00 $1 0x05 0x05 0xa1 0x00 0x00 0x00 0x00)
-  head -n 1 $ME_UTIL_LOG
-
-	#PECI RdPkgConfig() "CPU Microcode Update Revision Read"
-	echo "< CPU Microcode Update Revision Read >"
-  cmdout=$($ME_UTIL 0xB8 0x40 0x57 0x01 0x00 $1 0x05 0x05 0xa1 0x00 0x00 0x04 0x00)
-  head -n 1 $ME_UTIL_LOG
-
-	#PECI RdPkgConfig() "MCA ERROR SOURCE LOG Read"
-	echo "< MCA ERROR SOURCE LOG Read -- The socket which MCA_ERR_SRC_LOG[30]=0 is the socket that asserted IERR first >"
-  cmdout=$($ME_UTIL 0xB8 0x40 0x57 0x01 0x00 $1 0x05 0x05 0xa1 0x00 0x00 0x05 0x00)
-  head -n 1 $ME_UTIL_LOG
-
-	#PECI RdPkgConfig() "Core ID IERR"
-	#echo "< Core ID IERR -- determine whether a core in the failing socket asserted an IERR, completion data[3]=1 if a core caused the IERR, data[2:0] is the core ID, and save the value for matching purpose >"
-	#ipmitool -H $1 -U $user -P $passwd -b 6 -t 0x2c raw 0x2E 0x40 0x57 0x01 0x00 $2 0x05 0x05 0xa1 0x00 0x27 0x08 0x08
-
-	if [ "$1" -eq 48 ]; then
-
-		printf "********************************************************\n"
-		printf "*                   IERRLOGGINGREG                     *\n"
-		printf "********************************************************\n"
-
-    cmdout=$($ME_UTIL 0xB8 0x44 0x57 0x01 0x00 0x40 0xA4 0x50 0x18 0x00 0x03)
-    head -n 1 $ME_UTIL_LOG
-
-		printf "********************************************************\n"
-		printf "*                   MCERRLOGGINGREG                    *\n"
-		printf "********************************************************\n"
-
-    cmdout=$($ME_UTIL 0xB8 0x44 0x57 0x01 0x00 0x40 0xA8 0x50 0x18 0x00 0x03)
-    head -n 1 $ME_UTIL_LOG
-
-	elif [ "$1" -eq 49 ]; then
-
-		printf "********************************************************\n"
-		printf "*                   IERRLOGGINGREG                     *\n"
-		printf "********************************************************\n"
-
-    cmdout=$($ME_UTIL 0xB8 0x44 0x57 0x01 0x00 0x41 0xA4 0x50 0x18 0x00 0x03)
-    head -n 1 $ME_UTIL_LOG
-
-		printf "********************************************************\n"
-		printf "*                   MCERRLOGGINGREG                    *\n"
-		printf "********************************************************\n"
-
-    cmdout=$($ME_UTIL 0xB8 0x44 0x57 0x01 0x00 0x41 0xA8 0x50 0x18 0x00 0x03)
-    head -n 1 $ME_UTIL_LOG
-
-	fi
-
-	exit 1
-
-elif [ "$2" = "tor" ]; then
-	CboIndex=0
-	TorArrayIndex=0
-	param=0
-	param0=0
-	param1=0
-	BankNumber=0
-	wfc=186
-	rfc=72
-
-	while [ "$CboIndex" -le 13 ]
-	do
-		TorArrayIndex=0
-		while [ "$TorArrayIndex" -le 19 ]
-		do
-			BankNumber=0
-			while [ "$BankNumber" -le 2 ]
-			do
-				param=$(($BankNumber + $(($TorArrayIndex << 2)) + $(($CboIndex << 7))))
-				param0=$(($param & 255))
-				param1=$(($param >> 8))
-				#echo "< CboIndex=$CboIndex, TorArrayIndex=$TorArrayIndex, BankNumber=$BankNumber Read >"
-				#echo "$BankNumber $TorArrayIndex $CboIndex $1 05 05 a1 00 27 $param"
-				#printf "%.2x %.2x %.2x %.2x 05 05 a1 00 27 %.4x %.2x" $BankNumber $TorArrayIndex $CboIndex $1 $param $wfc
-				#ipmitool -H -U $user -P $passwd -b 6 -t 0x2c raw 0x2E 0x40 0x57 0x01 0x00 $2 0x05 0x05 0xa1 0x00 0x27 $param0 $param1
-				cmdout=$($ME_UTIL 0xB8 0x40 0x57 0x01 0x00 $1 0x05 0x05 0xa1 0x00 0x27 $param0 $param1)
-				head -n 1 $ME_UTIL_LOG
-				#printf " %.2x\n" $rfc
-
-				BankNumber=$(($BankNumber+1))
-			done
-
-			TorArrayIndex=$(($TorArrayIndex+1))
-		done
-
-		CboIndex=$(($CboIndex+1))
-	done
-
-	exit 1
+  exit 0
 
 elif [ "$2" = "msr" ]; then
 
-	MC_index=0
-	MSR_offset=0
-	IA32_MC_CTL_base=0x0400
-	IA32_MC_CTL2_base=0x0280
-	IA32_MC_STATUS_base=0x0401
-	IA32_MC_ADDR_base=0x0402
-	IA32_MC_MISC_base=0x0403
-	IA32_MCG_CAP=0x0179
-	IA32_MCG_STATUS=0x017A
-	IA32_MCG_CONTAIN=0x0178
+  if [ "$1" -eq 48 ]; then
+    [ -r $CMD_DIR/crashdump_p0_msr ] && \
+      cat $CMD_DIR/crashdump_p0_msr | execute_cmd
+  elif [ "$1" -eq 49 ]; then
+    [ -r $CMD_DIR/crashdump_p1_msr ] && \
+      cat $CMD_DIR/crashdump_p1_msr | execute_cmd
+  fi
 
-	ProcessorID=0
-	retry=0
-	return=0
-	response=0
-	comp=1
-
-  echo ""
-  echo "MSR DUMP:"
-  echo "========="
-  echo ""
-
-	while [ "$MC_index" -le $max_mc_idx ]
-	do
-
-		printf "********************************************************\n"
-		printf "*                    MC index %02u                       *\n" $MC_index
-		printf "********************************************************\n"
-
-		printf "   <<< IA32_MC%u_CTL, ProcessorID from 0 to %u >>> \n" $MC_index $max_proc_id
-
-		ProcessorID=0
-		retry=0
-		while [ "$ProcessorID" -le $max_proc_id ]
-		do
-			param=$(($IA32_MC_CTL_base + $MSR_offset))
-			param0=$(($param & 255))
-			param1=$(($param >> 8))
-			#echo "< MC_index=$MC_index, MSR_offset=$MSR_offset ProcessorID=$ProcessorID Read >"
-			#printf "[issue] %.2x %.4x %.2x %.2x %.2x %.2x %s %s\n" $MC_index $MSR_offset $ProcessorID $param $param0 $param1 $user $passwd
-			#printf "[issue] ProcessorID=%u MSR_Address=0x%.4x IA32_MC%u_CTL MSR_offset=0x%.4x\n" $ProcessorID $param $MC_index $MSR_offset
-			#printf "[issue] ipmitool -H %s -U %s -P %s -b 6 -t 0x2c raw 0x2E 0x40 0x57 0x01 0x00 0x%.2x 0x05 0x09 0xb1 0x00 0x%.2x 0x%.2x 0x%.2x\n" $1 $user $passwd $2  $ProcessorID $param0 $param1
-			cmdout=$($ME_UTIL 0xB8 0x40 0x57 0x01 0x00 $1 0x05 0x09 0xb1 0x00 $ProcessorID $param0 $param1)
-      response=$(head -n 1 $ME_UTIL_LOG)
-			comp=$?
-			return=$(echo $response | cut -d ' ' -f 4)
-
-			if ( ( [ "$return" = "80" ] || [ "$return" = "81" ] || [ "$return" = "82" ] || [ $comp != 0 ] ) &&  [ "$retry" -lt $max_retry ] ); then
-				#echo "retry command: ipmitool -H $1 -U $user -P $passwd -b 6 -t 0x2c raw 0x2E 0x40 0x57 0x01 0x00 $2 0x05 0x09 0xb1 0x00 $ProcessorID $param0 $param1"
-				retry=$(($retry+1))
-				sleep 1
-			else
-				echo "$response"
-				ProcessorID=$(($ProcessorID+1))
-				retry=0
-			fi
-		done
-
-
-
-		printf "   <<< IA32_MC%u_CTL2, ProcessorID from 0 to %u >>> \n" $MC_index $max_proc_id
-
-		ProcessorID=0
-		retry=0
-		while [ "$ProcessorID" -le $max_proc_id ]
-		do
-			param=$(($IA32_MC_CTL2_base + $MC_index))
-			param0=$(($param & 255))
-			param1=$(($param >> 8))
-			#echo "< MC_index=$MC_index, ProcessorID=$ProcessorID Read >"
-			#printf "[issue] %.2x %.2x %.2x %.2x %.2x %s %s\n" $MC_index $ProcessorID $param $param0 $param1 $user $passwd
-			#printf "[issue] ProcessorID=%u MSR_Address=0x%.4x IA32_MC%u_CTL2 MC_index=0x%.4x\n" $ProcessorID $param $MC_index $MC_index
-			#printf "[issue] ipmitool -H %s -U %s -P %s -b 6 -t 0x2c raw 0x2E 0x40 0x57 0x01 0x00 0x%.2x 0x05 0x09 0xb1 0x00 0x%.2x 0x%.2x 0x%.2x\n" $1 $user $passwd $2  $ProcessorID $param0 $param1
-			cmdout=$($ME_UTIL 0xB8 0x40 0x57 0x01 0x00 $1 0x05 0x09 0xb1 0x00 $ProcessorID $param0 $param1)
-      response=$(head -n 1 $ME_UTIL_LOG)
-			comp=$?
-			return=$(echo $response | cut -d ' ' -f 4)
-
-			if ( ( [ "$return" = "80" ] || [ "$return" = "81" ] || [ "$return" = "82" ] || [ $comp != 0 ] ) &&  [ "$retry" -lt $max_retry ] ); then
-				#echo "retry command: ipmitool -H $1 -U $user -P $passwd -b 6 -t 0x2c raw 0x2E 0x40 0x57 0x01 0x00 $2 0x05 0x09 0xb1 0x00 $ProcessorID $param0 $param1"
-				retry=$(($retry+1))
-				sleep 1
-			else
-				echo "$response"
-				ProcessorID=$(($ProcessorID+1))
-				retry=0
-			fi
-		done
-
-
-
-		printf "   <<< IA32_MC%u_STATUS, ProcessorID from 0 to %u >>> \n" $MC_index $max_proc_id
-
-		ProcessorID=0
-		retry=0
-		while [ "$ProcessorID" -le $max_proc_id ]
-		do
-			param=$(($IA32_MC_STATUS_base + $MSR_offset))
-			param0=$(($param & 255))
-			param1=$(($param >> 8))
-			#echo "< MC_index=$MC_index, MSR_offset=$MSR_offset ProcessorID=$ProcessorID Read >"
-			#printf "[issue] %.2x %.4x %.2x %.2x %.2x %.2x %s %s\n" $MC_index $MSR_offset $ProcessorID $param $param0 $param1 $user $passwd
-			#printf "[issue] ProcessorID=%u MSR_Address=0x%.4x IA32_MC%u_STATUS MSR_offset=0x%.4x\n" $ProcessorID $param $MC_index $MSR_offset
-			#printf "[issue] ipmitool -H %s -U %s -P %s -b 6 -t 0x2c raw 0x2E 0x40 0x57 0x01 0x00 0x%.2x 0x05 0x09 0xb1 0x00 0x%.2x 0x%.2x 0x%.2x\n" $1 $user $passwd $2  $ProcessorID $param0 $param1
-			cmdout=$($ME_UTIL 0xB8 0x40 0x57 0x01 0x00 $1 0x05 0x09 0xb1 0x00 $ProcessorID $param0 $param1)
-      response=$(head -n 1 $ME_UTIL_LOG)
-			comp=$?
-			return=$(echo $response | cut -d ' ' -f 4)
-
-			if ( ( [ "$return" = "80" ] || [ "$return" = "81" ] || [ "$return" = "82" ] || [ $comp != 0 ] ) &&  [ "$retry" -lt $max_retry ] ); then
-				#echo "retry command: ipmitool -H $1 -U $user -P $passwd -b 6 -t 0x2c raw 0x2E 0x40 0x57 0x01 0x00 $2 0x05 0x09 0xb1 0x00 $ProcessorID $param0 $param1"
-				retry=$(($retry+1))
-				sleep 1
-			else
-				echo "$response"
-				ProcessorID=$(($ProcessorID+1))
-				retry=0
-			fi
-		done
-
-
-
-		printf "   <<< IA32_MC%u_ADDR, ProcessorID from 0 to %u >>> \n" $MC_index $max_proc_id
-
-		ProcessorID=0
-		retry=0
-		while [ "$ProcessorID" -le $max_proc_id ]
-		do
-			param=$(($IA32_MC_ADDR_base + $MSR_offset))
-			param0=$(($param & 255))
-			param1=$(($param >> 8))
-			#echo "< MC_index=$MC_index, MSR_offset=$MSR_offset ProcessorID=$ProcessorID Read >"
-			#printf "[issue] %.2x %.4x %.2x %.2x %.2x %.2x %s %s\n" $MC_index $MSR_offset $ProcessorID $param $param0 $param1 $user $passwd
-			#printf "[issue] ProcessorID=%u MSR_Address=0x%.4x IA32_MC%u_ADDR MSR_offset=0x%.4x\n" $ProcessorID $param $MC_index $MSR_offset
-			#printf "[issue] ipmitool -H %s -U %s -P %s -b 6 -t 0x2c raw 0x2E 0x40 0x57 0x01 0x00 0x%.2x 0x05 0x09 0xb1 0x00 0x%.2x 0x%.2x 0x%.2x\n" $1 $user $passwd $2  $ProcessorID $param0 $param1
-			cmdout=$($ME_UTIL 0xB8 0x40 0x57 0x01 0x00 $1 0x05 0x09 0xb1 0x00 $ProcessorID $param0 $param1)
-      response=$(head -n 1 $ME_UTIL_LOG)
-			comp=$?
-			return=$(echo $response | cut -d ' ' -f 4)
-
-			if ( ( [ "$return" = "80" ] || [ "$return" = "81" ] || [ "$return" = "82" ] || [ $comp != 0 ] ) &&  [ "$retry" -lt $max_retry ] ); then
-				#echo "retry command: ipmitool -H $1 -U $user -P $passwd -b 6 -t 0x2c raw 0x2E 0x40 0x57 0x01 0x00 $2 0x05 0x09 0xb1 0x00 $ProcessorID $param0 $param1"
-				retry=$(($retry+1))
-				sleep 1
-			else
-				echo "$response"
-				ProcessorID=$(($ProcessorID+1))
-				retry=0
-			fi
-		done
-
-
-
-		printf "   <<< IA32_MC%u_MISC, ProcessorID from 0 to %u >>> \n" $MC_index $max_proc_id
-
-		ProcessorID=0
-		retry=0
-		while [ "$ProcessorID" -le $max_proc_id ]
-		do
-			param=$(($IA32_MC_MISC_base + $MSR_offset))
-			param0=$(($param & 255))
-			param1=$(($param >> 8))
-			#echo "< MC_index=$MC_index, MSR_offset=$MSR_offset ProcessorID=$ProcessorID Read >"
-			#printf "[issue] %.2x %.4x %.2x %.2x %.2x %.2x %s %s\n" $MC_index $MSR_offset $ProcessorID $param $param0 $param1 $user $passwd
-			#printf "[issue] ProcessorID=%u MSR_Address=0x%.4x IA32_MC%u_MISC MSR_offset=0x%.4x\n" $ProcessorID $param $MC_index $MSR_offset
-			#printf "[issue] ipmitool -H %s -U %s -P %s -b 6 -t 0x2c raw 0x2E 0x40 0x57 0x01 0x00 0x%.2x 0x05 0x09 0xb1 0x00 0x%.2x 0x%.2x 0x%.2x\n" $1 $user $passwd $2  $ProcessorID $param0 $param1
-			cmdout=$($ME_UTIL 0xB8 0x40 0x57 0x01 0x00 $1 0x05 0x09 0xb1 0x00 $ProcessorID $param0 $param1)
-      response=$(head -n 1 $ME_UTIL_LOG)
-			comp=$?
-			return=$(echo $response | cut -d ' ' -f 4)
-
-			if ( ( [ "$return" = "80" ] || [ "$return" = "81" ] || [ "$return" = "82" ] || [ $comp != 0 ] ) &&  [ "$retry" -lt $max_retry ] ); then
-				#echo "retry command: ipmitool -H $1 -U $user -P $passwd -b 6 -t 0x2c raw 0x2E 0x40 0x57 0x01 0x00 $2 0x05 0x09 0xb1 0x00 $ProcessorID $param0 $param1"
-				retry=$(($retry+1))
-				sleep 1
-			else
-				echo "$response"
-				ProcessorID=$(($ProcessorID+1))
-				retry=0
-			fi
-		done
-
-
-		MC_index=$(($MC_index+1))
-		MSR_offset=$(($MSR_offset+4))
-
-
-#		printf "********************************************************\n"
-#		printf "*             ME Cold Reset, and wait for %u sec        *\n" $ME_COLD_RESET_DELAY
-#		printf "********************************************************\n"
-
-#		ipmitool -H $1 -U $user -P $passwd -b 6 -t 0x2c raw 0x6 0x2
-
-#		sleep $ME_COLD_RESET_DELAY
-
-	done
-
-
-
-#	printf "   <<< IA32_MCG_CAP, ProcessorID from 0 to %u  >>> \n" $max_proc_id
-#
-#	ProcessorID=0
-#	retry=0
-#	while [ "$ProcessorID" -le $max_proc_id ]
-#	do
-#		param=$(($IA32_MCG_CAP))
-#		param0=$(($param & 255))
-#		param1=$(($param >> 8))
-#		#echo "< ProcessorID=$ProcessorID Read >"
-#		#printf "[issue] %.2x %.2x %.2x %.2x %s %s\n" $ProcessorID $param $param0 $param1 $user $passwd
-#		#printf "[issue] ProcessorID=%u MSR_Address=0x%.4x IA32_MCG_CAP\n" $ProcessorID $param
-#		#printf "[issue] ipmitool -H %s -U %s -P %s -b 6 -t 0x2c raw 0x2E 0x40 0x57 0x01 0x00 0x%.2x 0x05 0x09 0xb1 0x00 0x%.2x 0x%.2x 0x%.2x\n" $1 $user $passwd $2  $ProcessorID $param0 $param1
-#		response=$(ipmitool -H $1 -U $user -P $passwd -b 6 -t 0x2c raw 0x2E 0x40 0x57 0x01 0x00 $2 0x05 0x09 0xb1 0x00 $ProcessorID $param0 $param1)
-#		comp=$?
-#		return=$(echo $response | cut -d ' ' -f 4)
-#
-#		if ( ( [ "$return" = "80" ] || [ "$return" = "81" ] || [ "$return" = "82" ] || [ $comp != 0 ] ) &&  [ "$retry" -lt $max_retry ] ); then
-#			#echo "retry command: ipmitool -H $1 -U $user -P $passwd -b 6 -t 0x2c raw 0x2E 0x40 0x57 0x01 0x00 $2 0x05 0x09 0xb1 0x00 $ProcessorID $param0 $param1"
-#			retry=$(($retry+1))
-#			sleep 1
-#		else
-#			echo "$response"
-#			ProcessorID=$(($ProcessorID+1))
-#			retry=0
-#		fi
-#	done
-
-	printf "   <<< IA32_MCG_STATUS, ProcessorID from 0 to %u  >>> \n" $max_proc_id
-
-	ProcessorID=0
-	retry=0
-	while [ "$ProcessorID" -le $max_proc_id ]
-	do
-		param=$(($IA32_MCG_STATUS))
-		param0=$(($param & 255))
-		param1=$(($param >> 8))
-		#echo "< ProcessorID=$ProcessorID Read >"
-		#printf "[issue] %.2x %.2x %.2x %.2x %s %s\n" $ProcessorID $param $param0 $param1 $user $passwd
-		#printf "[issue] ProcessorID=%u MSR_Address=0x%.4x IA32_MCG_STATUS\n" $ProcessorID $param
-		#printf "[issue] ipmitool -H %s -U %s -P %s -b 6 -t 0x2c raw 0x2E 0x40 0x57 0x01 0x00 0x%.2x 0x05 0x09 0xb1 0x00 0x%.2x 0x%.2x 0x%.2x\n" $1 $user $passwd $2  $ProcessorID $param0 $param1
-		cmdout=$($ME_UTIL 0xB8 0x40 0x57 0x01 0x00 $1 0x05 0x09 0xb1 0x00 $ProcessorID $param0 $param1)
-    response=$(head -n 1 $ME_UTIL_LOG)
-		comp=$?
-		return=$(echo $response | cut -d ' ' -f 4)
-
-		if ( ( [ "$return" = "80" ] || [ "$return" = "81" ] || [ "$return" = "82" ] || [ $comp != 0 ] ) &&  [ "$retry" -lt $max_retry ] ); then
-			#echo "retry command: ipmitool -H $1 -U $user -P $passwd -b 6 -t 0x2c raw 0x2E 0x40 0x57 0x01 0x00 $2 0x05 0x09 0xb1 0x00 $ProcessorID $param0 $param1"
-			retry=$(($retry+1))
-			sleep 1
-		else
-			echo "$response"
-			ProcessorID=$(($ProcessorID+1))
-			retry=0
-		fi
-	done
-
-
-
-#	printf "   <<< IA32_MCG_CONTAIN, ProcessorID from 0 to %u  >>> \n" $max_proc_id
-#
-#	ProcessorID=0
-#	retry=0
-#	while [ "$ProcessorID" -le $max_proc_id ]
-#	do
-#		param=$(($IA32_MCG_CONTAIN))
-#		param0=$(($param & 255))
-#		param1=$(($param >> 8))
-#		#echo "< ProcessorID=$ProcessorID Read >"
-#		#printf "[issue] %.2x %.2x %.2x %.2x %s %s\n" $ProcessorID $param $param0 $param1 $user $passwd
-#		#printf "[issue] ProcessorID=%u MSR_Address=0x%.4x IA32_MCG_CONTAIN\n" $ProcessorID $param
-#		#printf "[issue] ipmitool -H %s -U %s -P %s -b 6 -t 0x2c raw 0x2E 0x40 0x57 0x01 0x00 0x%.2x 0x05 0x09 0xb1 0x00 0x%.2x 0x%.2x 0x%.2x\n" $1 $user $passwd $2  $ProcessorID $param0 $param1
-#		response=$(ipmitool -H $1 -U $user -P $passwd -b 6 -t 0x2c raw 0x2E 0x40 0x57 0x01 0x00 $2 0x05 0x09 0xb1 0x00 $ProcessorID $param0 $param1)
-#		comp=$?
-#		return=$(echo $response | cut -d ' ' -f 4)
-#
-#		if ( ( [ "$return" = "80" ] || [ "$return" = "81" ] || [ "$return" = "82" ] || [ $comp != 0 ] ) &&  [ "$retry" -lt $max_retry ] ); then
-#			#echo "retry command: ipmitool -H $1 -U $user -P $passwd -b 6 -t 0x2c raw 0x2E 0x40 0x57 0x01 0x00 $2 0x05 0x09 0xb1 0x00 $ProcessorID $param0 $param1"
-#			retry=$(($retry+1))
-#			sleep 1
-#		else
-#			echo "$response"
-#	        ProcessorID=$(($ProcessorID+1))
-#			retry=0
-#		fi
-#	done
-
-	exit 1
+  exit 0
 
 fi
 
