@@ -9,7 +9,6 @@ COMPATIBLE_MACHINE = "aspeed"
 do_compile[depends] = "libgcc:do_populate_sysroot"
 
 inherit kernel
-require recipes-kernel/linux/linux-yocto.inc
 require recipes-bsp/u-boot/verified-boot.inc
 
 do_configure[prefuncs] += "configure_spi_layout"
