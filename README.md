@@ -58,7 +58,7 @@ The build process automatically fetches all necessary packages and build the com
 * wedge-image-wedge.cpio.lzma.u-boot - This is the rootfs for the board
 * flash-wedge - This is the complete flash image including u-boot, kernel, and the rootfs.
 
-# How can I contribute
+## How can I contribute
 
 If you have an application that can be used by different BMCs, you can contribute your application to the OpenBMC common layer.
 
