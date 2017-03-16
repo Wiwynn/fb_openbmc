@@ -26,14 +26,14 @@ BMC SoC layer and board specific layer are grouped together based on the vendor/
 
 * Step 1 - Clone Yocto repository.
 ```
-$ git clone -b fido https://git.yoctoproject.org/git/poky
+$ git clone -b krogoth https://git.yoctoproject.org/git/poky
 ```
 
 * Step 2 - Clone Openembedded and OpenBMC repositories, in the new created `poky` directory,
 ```
 $ cd poky
-$ git clone -b fido https://github.com/openembedded/meta-openembedded.git
-$ git clone git@github.com:facebook/openbmc.git meta-openbmc
+$ git clone -b krogoth https://github.com/openembedded/meta-openembedded.git
+$ git clone -b helium git@github.com:facebook/openbmc.git meta-openbmc
 ```
 
 * Step 3 - Initialize a build directory. In `poky` directory,
