@@ -50,6 +50,19 @@ config SYS_CONFIG_NAME
   default "fbwedge100"
 endif
 
+if TARGET_FBBACKPACK
+config SYS_CPU
+  default "arm926ejs"
+config SYS_BOARD
+  default "ast-g4"
+config SYS_VENDOR
+  default "aspeed"
+config SYS_SOC
+  default "aspeed"
+config SYS_CONFIG_NAME
+  default "fbbackpack"
+endif
+
 if TARGET_FBCMM
 config SYS_CPU
   default "arm1176"
