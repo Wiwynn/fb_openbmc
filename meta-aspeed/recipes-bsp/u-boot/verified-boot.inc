@@ -85,14 +85,8 @@ fitimage_emit_section_firmware() {
             arch = "${UBOOT_ARCH}";
             os = "u-boot";
             compression = "none";
-            load = <${LOAD_ADDRESS}>;
-            entry = <${ENTRY_POINT}>;
             hash@1 {
                 algo = "${VERIFIED_BOOT_HASH_ALGORITHM}";
-            };
-            signature@1 {
-                algo = "${VERIFIED_BOOT_ALGORITHM}";
-                key-name-hint = "${VERIFIED_BOOT_KEYNAME}";
             };
         };
 EOF
@@ -179,6 +173,10 @@ fitimage_emit_section_firmware_config() {
         conf@1 {
             description = "${conf_desc}";
             ${firmware_line}
+            signature@1 {
+                algo = "${VERIFIED_BOOT_ALGORITHM}";
+                key-name-hint = "${VERIFIED_BOOT_KEYNAME}";
+            };
         };
 EOF
 }
