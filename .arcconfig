@@ -6,6 +6,9 @@
   "phutil_libraries" : {
      "bmc-arcanist" : "facebook/arcanist/"
   },
+ "events.listeners": [
+   "YoctoDiffCreatedListener"
+ ],
   "lint_engine" : "FacebookBmcLintEngine",
   "git.default-relative-commit" : "HEAD^"
 }
