@@ -12,8 +12,6 @@ VERIFIED_BOOT = '${@bb.utils.contains("IMAGE_FEATURES", "verified-boot", "True",
 VERIFIED_BOOT_ALGORITHM ??= "sha256,rsa4096"
 VERIFIED_BOOT_HASH_ALGORITHM ??= "sha256"
 VERIFIED_BOOT_KEYNAME ??= "subordinate"
-CERTIFICATE_STORE_SOURCE ??= ""
-CERTIFICATE_STORE ?= "certificate-store.dtb"
 
 # Emit the fitImage ITS header
 # $1 - FIT source file
