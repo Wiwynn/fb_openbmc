@@ -35,7 +35,7 @@ PACKAGECONFIG[openssl] = ",,openssl-native"
 # Allow setting an additional version string that will be picked up by the
 # u-boot build system and appended to the u-boot version.  If the .scmversion
 # file already exists it will not be overwritten.
-UBOOT_LOCALVERSION ?= ""
+UBOOT_LOCALVERSION ?= " "
 
 # Some versions of u-boot use .bin and others use .img.  By default use .bin
 # but enable individual recipes to change this value.
@@ -88,10 +88,36 @@ do_compile () {
     unset CFLAGS
     unset CPPFLAGS
 
+    # found out the source dir
+    dir=$(pwd)
+    while [ -n "$dir" -a "$dir" != "/" -a ! -d "$dir/meta-openbmc/.git" ]; do
+        dir=$(dirname $dir)
+    done
+
+    if [ -d "$dir/meta-openbmc/.git" ]; then
+        srcdir="$dir/meta-openbmc"
+        srcdir_git="${srcdir}/.git"
+        version=$(git --git-dir=${srcdir_git} --work-tree=${srcdir} describe --tags --dirty --always 2> /dev/null)
+    else
+        version=""
+    fi
+
+    print_version="${MACHINE}"
+    if [[ $version == ${MACHINE}-v* ]]; then
+      print_version=" ${version} "
+    elif [[ $version == "" ]]; then
+      print_version=" ${MACHINE}-v0.0 "
+    else
+      sha=$(git --git-dir=${srcdir_git} --work-tree=${srcdir} rev-parse --short HEAD 2> /dev/null)
+      print_version=" ${MACHINE}-${sha} "
+    fi
+
     if [ ! -e ${B}/.scmversion -a ! -e ${S}/.scmversion ]
     then
         echo ${UBOOT_LOCALVERSION} > ${B}/.scmversion
+        echo ${print_version} >> ${B}/.scmversion
         echo ${UBOOT_LOCALVERSION} > ${S}/.scmversion
+        echo ${print_version} >> ${S}/.scmversion
     fi
 
     if [ "x${UBOOT_CONFIG}" != "x" ]
