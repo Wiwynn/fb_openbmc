@@ -20,11 +20,13 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 SRC_URI += "file://dump.sh \
             file://crashdump_coreid \
             file://crashdump_msr \
+            file://autodump.sh \
            "
 
 S = "${WORKDIR}"
 
 binfiles += "dump.sh \
+             autodump.sh \
             "
 
 pkgdir = "me-util"
