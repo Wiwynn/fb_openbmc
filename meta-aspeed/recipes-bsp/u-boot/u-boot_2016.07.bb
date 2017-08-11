@@ -26,6 +26,9 @@ require verified-boot.inc
 EXTRA_OEMAKE = 'CROSS_COMPILE=${TARGET_PREFIX} CC="${TARGET_PREFIX}gcc ${TOOLCHAIN_OPTIONS}" V=1'
 EXTRA_OEMAKE += 'HOSTCC="${BUILD_CC} ${BUILD_CFLAGS} ${BUILD_LDFLAGS}"'
 
+# Improve code quality.
+EXTRA_OEMAKE += 'KCFLAGS="-Werror"'
+
 PACKAGECONFIG ??= "openssl"
 # u-boot will compile its own tools during the build, with specific
 # configurations (aka when CONFIG_FIT_SIGNATURE is enabled) openssl is needed as
