@@ -159,7 +159,7 @@ do_compile () {
         fi
 
         oe_runmake O=default ${UBOOT_MACHINE}
-        DTC_FLAGS="-S 3200" oe_runmake O=default ${UBOOT_MAKE_TARGET}
+        DTC_FLAGS="-S 5120" oe_runmake O=default ${UBOOT_MAKE_TARGET}
 
         # Finally, the verified-boot builds a second 'recovery' U-Boot.
         if [ "x${VERIFIED_BOOT}" != "x" ] ; then
