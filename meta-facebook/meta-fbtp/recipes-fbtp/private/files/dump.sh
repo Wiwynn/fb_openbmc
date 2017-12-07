@@ -12,6 +12,7 @@ function print_help_msg {
   echo "$PROGRAM 48 msr     ==> for CPU 1 MSR"
   echo "$PROGRAM 49 msr     ==> for CPU 2 MSR"
   echo "$PROGRAM pcie       ==> for PCIe"
+  echo "$PROGRAM dwr        ==> for DWR check"
 }
 
 # read command from stdin
@@ -51,7 +52,7 @@ function execute_cmd {
     cat | execute_via_me
   # else use wired PECI directly
   else
-    echo "Use BMC wired PECI interface due to ME abnormal"
+  #  echo "Use BMC wired PECI interface due to ME abnormal"
     INTERFACE="PECI_INTERFACE"
     cat | execute_via_peci
   fi
@@ -112,6 +113,39 @@ function pcie_dump {
   fi
 }
 
+function dwr_dump {
+
+  echo
+  echo DWR assert check:
+  echo =================
+  echo
+
+  # Get biosscratchpad7[26]: DWR assert check
+  RES=$(echo "0x30 0x06 0x05 0x61 0x00 0xbc 0x20 0x04 0x00" | execute_cmd)
+
+  echo "< Get biosscratchpad7[26]: DWR assert check >"
+  echo "$RES"
+  echo
+
+  # Completion Code
+  CC=$(echo $RES| awk '{print $1;}')
+  DWR=0x$(echo $RES| awk '{print $5;}')
+
+  # Success
+  if [ "$CC" == "40" ]; then
+    if [ $((DWR & 0x04)) == 4 ]; then
+      echo "Auto Dump in DWR mode"
+      return 2
+    else
+      echo "Auto Dump in non-DWR mode"
+      return 1
+    fi
+  else
+    echo "get DWR mode fail"
+    return 0
+  fi
+}
+
 if [ "$#" -eq 1 ] && [ $1 = "time" ]; then
   now=$(date)
   echo "Crash Dump generated at $now"
@@ -126,6 +160,13 @@ if [ "$#" -eq 1 ] && [ $1 = "pcie" ]; then
   pcie_dump
   
   exit 0
+fi
+
+if [ "$#" -eq 1 ] && [ $1 = "dwr" ]; then
+
+  dwr_dump
+
+  exit $?
 fi
 
 if [ "$#" -ne 2 ]; then
