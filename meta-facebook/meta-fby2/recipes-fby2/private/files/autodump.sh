@@ -35,6 +35,11 @@ else
   touch $PID_FILE
 fi
 
+# Set crashdump timestamp
+sys_runtime=$(awk '{print $1}' /proc/uptime)
+sys_runtime=$(printf "%0.f" $sys_runtime)
+echo $((sys_runtime+630)) > /tmp/cache_store/fru${SLOT_NUM}_crashdump
+
 DUMP_SCRIPT="/usr/local/bin/dump.sh"
 CRASHDUMP_FILE="/mnt/data/crashdump_$SLOT_NAME"
 
