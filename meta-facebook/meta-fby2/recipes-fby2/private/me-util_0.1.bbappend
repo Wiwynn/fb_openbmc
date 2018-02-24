@@ -30,6 +30,7 @@ binfiles += "dump.sh \
             "
 
 pkgdir = "me-util"
+RDEPENDS_${PN} += "bash"
 
 do_install() {
   dst="${D}/usr/local/fbpackages/${pkgdir}"
