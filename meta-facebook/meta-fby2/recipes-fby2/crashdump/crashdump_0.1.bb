@@ -14,13 +14,18 @@
 # Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
+SUMMARY = "Crashdump utility"
+DESCRIPTION = "Util for generating crashdumps"
+SECTION = "base"
+PR = "r1"
+LICENSE = "GPLv2"
+LIC_FILES_CHKSUM = "file://COPYING;md5=eb723b61539feef013de476e68b5c50a"
 
-FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
-
-SRC_URI += "file://dump.sh \
+SRC_URI = "file://dump.sh \
             file://crashdump_coreid \
             file://crashdump_msr \
             file://autodump.sh \
+            file://COPYING \
            "
 
 S = "${WORKDIR}"
@@ -29,7 +34,7 @@ binfiles += "dump.sh \
              autodump.sh \
             "
 
-pkgdir = "me-util"
+pkgdir = "crashdump"
 RDEPENDS_${PN} += "bash"
 
 do_install() {
@@ -47,7 +52,7 @@ do_install() {
 
 FBPACKAGEDIR = "${prefix}/local/fbpackages"
 
-FILES_${PN} = "${FBPACKAGEDIR}/me-util ${prefix}/local/bin "
+FILES_${PN} = "${FBPACKAGEDIR}/crashdump ${prefix}/local/bin "
 
 INHIBIT_PACKAGE_DEBUG_SPLIT = "1"
 INHIBIT_PACKAGE_STRIP = "1"
