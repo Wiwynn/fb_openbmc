@@ -13,7 +13,7 @@ inherit kernel
 # Do not install kernel in rootfs
 do_install[postfuncs] += "remove_kernel_image_from_rootfs"
 remove_kernel_image_from_rootfs() {
-    rm -rf ${D}/boot/uImage*
+    rm -rf ${D}/boot/${KERNEL_IMAGETYPE}*
 }
 
 pkg_postinst_kernel-image() {
