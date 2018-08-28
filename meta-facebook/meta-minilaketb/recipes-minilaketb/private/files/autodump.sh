@@ -6,19 +6,10 @@ case $SLOT_NAME in
     slot1)
       SLOT_NUM=1
       ;;
-    slot2)
-      SLOT_NUM=2
-      ;;
-    slot3)
-      SLOT_NUM=3
-      ;;
-    slot4)
-      SLOT_NUM=4
-      ;;
     *)
       N=${0##*/}
       N=${N#[SK]??}
-      echo "Usage: $N {slot1|slot2|slot3|slot4}"
+      echo "Usage: $N {slot1}"
       exit 1
       ;;
 esac
