@@ -142,6 +142,7 @@ fitimage_emit_section_ramdisk() {
             description = "RAMDISK";
             data = /incbin/("${IMAGE_RAMDISK}");
             type = "ramdisk";
+            os = "linux";
             arch = "${UBOOT_ARCH}";
             compression = "${IMAGE_COMPRESSION}";
             hash@1 {

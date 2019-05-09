@@ -275,6 +275,11 @@ config FIT_ENABLE_SHA256_SUPPORT
 	  SHA256 variant is supported: SHA512 and others are not currently
 	  supported in U-Boot.
 
+config SPL_TINY_FIT
+	bool "Only only basic FIT library functions within SPL"
+	depends on FIT
+	depends on SPL
+
 config FIT_SIGNATURE
 	bool "Enable signature verification of FIT uImages"
 	depends on DM
@@ -472,6 +477,7 @@ config SYS_EXTRA_OPTIONS
 	  new boards should not use this option.
 
 config SYS_TEXT_BASE
+	depends on !TARGET_FBTP
 	depends on !NIOS2 && !XTENSA
 	depends on !EFI_APP
 	default 0x80800000 if ARCH_OMAP2PLUS || ARCH_K3
