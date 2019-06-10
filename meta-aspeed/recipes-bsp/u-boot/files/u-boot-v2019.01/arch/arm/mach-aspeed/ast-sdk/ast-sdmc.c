@@ -27,10 +27,10 @@
 #include <common.h>
 #include <asm/processor.h>
 #include <asm/io.h>
-#include <asm/arch/platform.h>
+#include <asm/arch/ast-sdk/platform.h>
 
-#include <asm/arch/regs-sdmc.h>
-#include <asm/arch/ast-sdmc.h>
+#include <asm/arch/ast-sdk/regs-sdmc.h>
+#include <asm/arch/ast-sdk/ast-sdmc.h>
 
 //#define AST_SDMC_LOCK
 

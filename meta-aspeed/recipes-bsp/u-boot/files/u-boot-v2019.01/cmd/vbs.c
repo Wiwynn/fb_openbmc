@@ -10,8 +10,8 @@
 #include <tpm-v1.h>
 
 #include <asm/io.h>
-#include <asm/arch/ast_scu.h>
-#include <asm/arch/vbs.h>
+#include <asm/arch/ast-sdk/ast_scu.h>
+#include <asm/arch/ast-sdk/vbs.h>
 
 extern int get_tpm(struct udevice **devp);
 

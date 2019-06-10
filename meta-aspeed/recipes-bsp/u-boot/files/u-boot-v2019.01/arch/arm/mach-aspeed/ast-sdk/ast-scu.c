@@ -35,13 +35,14 @@
  *    1. 2012/08/15 Ryan Chen Create
  *
  ******************************************************************************/
+#define DEBUG
 #include <common.h>
 #include <asm/processor.h>
 #include <asm/io.h>
-#include <asm/arch/regs-scu.h>
-#include <asm/arch/ast_scu.h>
-#include <asm/arch/platform.h>
-#include <asm/arch/aspeed.h>
+#include <asm/arch/ast-sdk/regs-scu.h>
+#include <asm/arch/ast-sdk/ast_scu.h>
+#include <asm/arch/ast-sdk/platform.h>
+#include <asm/arch/ast-sdk/aspeed.h>
 
 /* #define ASPEED_SCU_LOCK */
 
@@ -49,13 +50,13 @@ static inline u32 ast_scu_read(u32 reg)
 {
 	u32 val = readl(AST_SCU_BASE + reg);
 
-	//debug("ast_scu_read : reg = 0x%08x, val = 0x%08x\n", reg, val);
+	debug("ast_scu_read : reg = 0x%08x, val = 0x%08x\n", reg, val);
 	return val;
 }
 
 static inline void ast_scu_write(u32 val, u32 reg)
 {
-	//debug("ast_scu_write : reg = 0x%08x, val = 0x%08x\n", reg, val);
+	debug("ast_scu_write : reg = 0x%08x, val = 0x%08x\n", reg, val);
 
 	writel(SCU_PROTECT_UNLOCK, AST_SCU_BASE);
 	writel(val, AST_SCU_BASE + reg);
@@ -64,6 +65,7 @@ static inline void ast_scu_write(u32 val, u32 reg)
 #endif
 }
 
+#if 0
 /* SoC mapping Table */
 struct soc_id {
 	const char *name;
@@ -101,7 +103,9 @@ static struct soc_id soc_map_table[] = {
 	SOC_ID("AST2520-A1", 0x04010203),
 	SOC_ID("AST2530-A1", 0x04010403),
 };
+#endif
 
+#if 0
 void ast_wdt_reset(u32 timeout_micro, u32 reset_mask)
 {
 	/* set the reload value */
@@ -111,7 +115,9 @@ void ast_wdt_reset(u32 timeout_micro, u32 reset_mask)
 	writel(0xA50000FF, AST_WDT_BASE + 0x18);
 	writel(reset_mask, AST_WDT_BASE + 0x0C);
 }
+#endif
 
+#if 0
 void ast_scu_init_eth(u8 num)
 {
 /* Set MAC delay Timing */
@@ -158,6 +164,7 @@ void ast_scu_init_eth(u8 num)
 #endif
 	}
 }
+#endif
 
 /* 0: disable spi
  * 1: enable spi master
@@ -328,6 +335,7 @@ u32 ast_get_ahbclk(void)
 
 #endif /* AST_SOC_G5 */
 
+#if 0
 u32 ast_get_apbclk(void)
 {
 	ulong h_pll = ast_get_h_pll_clk();
@@ -339,7 +347,9 @@ u32 ast_get_apbclk(void)
 	ulong apb_div = 4 + 4 * SCU_GET_PCLK_DIV(ast_scu_read(AST_SCU_CLK_SEL));
 	return h_pll / apb_div;
 }
+#endif
 
+#if 0
 void ast_scu_show_system_info(void)
 {
 
@@ -371,7 +381,9 @@ void ast_scu_show_system_info(void)
 #endif
 	return;
 }
+#endif
 
+#if 0 // no dedicated NIC
 void ast_scu_multi_func_eth(u8 num)
 {
 	switch (num) {
@@ -422,6 +434,7 @@ void ast_scu_multi_func_eth(u8 num)
 		break;
 	}
 }
+#endif
 
 void ast_scu_multi_func_romcs(u8 num)
 {
@@ -429,6 +442,7 @@ void ast_scu_multi_func_romcs(u8 num)
 		      SCU_FUN_PIN_ROMCS(num), AST_SCU_FUN_PIN_CTRL3);
 }
 
+#if 0
 u32 ast_scu_revision_id(void)
 {
 	int i;
@@ -479,7 +493,8 @@ void ast_scu_sys_rest_info(void)
 		printf("RST : CLK en\n");
 	}
 }
-
+#endif
+// shall be able to removed with hardcoded value 0, or with switch sdmc
 u32 ast_scu_get_vga_memsize(void)
 {
 	u32 size = 0;
@@ -504,6 +519,7 @@ u32 ast_scu_get_vga_memsize(void)
 	return size;
 }
 
+#if 0 // used only in getcpuinfo
 void ast_scu_get_who_init_dram(void)
 {
 	switch (SCU_VGA_DRAM_INIT_MASK(ast_scu_read(AST_SCU_VGA0))) {
@@ -546,3 +562,5 @@ void ast_scu_enable_i2c(u8 bus_num)
 #endif
 	}
 }
+
+#endif

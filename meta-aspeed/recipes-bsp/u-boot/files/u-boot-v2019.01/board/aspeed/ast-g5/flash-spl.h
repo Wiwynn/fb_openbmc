@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: GPL-2.0+
  */
 
-#include <common.h>
 
 #define AST_FMC_WP_ON    0
 #define AST_FMC_WP_OFF   2

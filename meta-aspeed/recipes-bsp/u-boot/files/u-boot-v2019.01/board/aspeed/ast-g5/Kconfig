@@ -1,22 +1,3 @@
-if TARGET_AST_G5
-
-config SYS_ARCH
-	default "arm"
-
-config SYS_CPU
-	default "arm1176"
-
-config SYS_BOARD
-	default "ast-g5"
-
-config SYS_VENDOR
-	default "aspeed"
-
-config SYS_SOC
-	default "aspeed"
-
-endif
-
 config ASPEED_TPM
 	bool "Perform TPM provisioning"
 	default n

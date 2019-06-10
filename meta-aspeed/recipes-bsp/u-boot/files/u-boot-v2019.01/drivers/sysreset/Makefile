@@ -3,7 +3,7 @@
 # (C) Copyright 2016 Cadence Design Systems Inc.
 
 obj-$(CONFIG_SYSRESET) += sysreset-uclass.o
-obj-$(CONFIG_ARCH_ASPEED_GOOGLE) += sysreset_ast.o
+obj-$(CONFIG_ARCH_ASPEED) += sysreset_ast.o
 obj-$(CONFIG_ARCH_ROCKCHIP) += sysreset_rockchip.o
 obj-$(CONFIG_ARCH_STI) += sysreset_sti.o
 obj-$(CONFIG_SANDBOX) += sysreset_sandbox.o

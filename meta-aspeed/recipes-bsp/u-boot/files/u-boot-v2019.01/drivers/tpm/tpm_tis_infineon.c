@@ -18,7 +18,7 @@
  *
  * Version: 2.1.1
  */
-
+#define DEBUG
 #include <common.h>
 #include <dm.h>
 #include <fdtdec.h>
@@ -599,6 +599,7 @@ static int tpm_tis_i2c_probe(struct udevice *dev)
 	struct tpm_chip_priv *uc_priv = dev_get_uclass_priv(dev);
 	struct tpm_chip *chip = dev_get_priv(dev);
 
+	debug("probing... %s\n", __func__);
 	chip->chip_type = dev_get_driver_data(dev);
 
 	/* TODO: These need to be checked and tuned */

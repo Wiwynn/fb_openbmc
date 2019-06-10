@@ -201,16 +201,12 @@
 #define CONFIG_SPL_DISPLAY_PRINT
 #endif
 
-#ifndef CONFIG_SPL_FRAMEWORK
-#define CONFIG_SPL_FRAMEWORK
-#endif
+//#define CONFIG_SPL_FRAMEWORK
 #define CONFIG_SPL_MAX_FOOTPRINT  0x15000
 
 /* During an SPL build the base is 0x0. */
-#ifndef CONFIG_SYS_TEXT_BASE
-#define CONFIG_SYS_TEXT_BASE      0x00000000
-#endif
-#define CONFIG_SPL_TEXT_BASE      CONFIG_SYS_TEXT_BASE
+// 2019.04 or 07 version this will go to Kconfig
+#define CONFIG_SPL_TEXT_BASE     0x00000000
 
 /* Grow the stack down from 0x6000 to an expected max of 12kB. */
 #define CONFIG_SPL_STACK          (CONFIG_SYS_SRAM_BASE + 0x6000)
@@ -238,8 +234,8 @@
 /* This is a U-Boot build */
 
 /* During the U-Boot build the base address is the SPL FIT start address. */
-#undef  CONFIG_SYS_TEXT_BASE
-#define CONFIG_SYS_TEXT_BASE    CONFIG_SYS_UBOOT_START
+//#undef  CONFIG_SYS_TEXT_BASE
+//#define CONFIG_SYS_TEXT_BASE    CONFIG_SYS_UBOOT_START
 #endif
 #endif
 

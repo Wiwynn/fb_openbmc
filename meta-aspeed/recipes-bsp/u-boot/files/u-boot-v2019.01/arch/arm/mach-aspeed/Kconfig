@@ -1,13 +1,10 @@
-if ARCH_ASPEED_GOOGLE
+if ARCH_ASPEED
 
 config SYS_ARCH
 	default "arm"
 
 config SYS_SOC
-	default "aspeed_google"
-
-config SYS_TEXT_BASE
-	default 0x00000000
+	default "aspeed"
 
 config ASPEED_AST2500
 	bool "Support Aspeed AST2500 SoC"
@@ -18,6 +15,8 @@ config ASPEED_AST2500
 	  It is used as Board Management Controller on many server boards,
 	  which is enabled by support of LPC and eSPI peripherals.
 
-source "arch/arm/mach-aspeed_google/ast2500/Kconfig"
+config ARCH_AST2500
+	bool "TEMP used to migrate from ASPEED AST2500 SDK to upstream"
 
+source "arch/arm/mach-aspeed/ast2500/Kconfig"
 endif

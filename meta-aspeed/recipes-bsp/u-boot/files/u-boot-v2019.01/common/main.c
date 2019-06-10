@@ -12,6 +12,7 @@
 #include <console.h>
 #include <version.h>
 
+extern int watchdog_init(u32 timeout_sec);
 /*
  * Board-specific Platform code can reimplement show_boot_progress () if needed
  */
@@ -20,7 +21,6 @@ __weak void show_boot_progress(int val) {}
 /*
  * Custom tests need the watchdog re-initialized.
  */
-void watchdog_init(void);
 
 static void run_preboot_environment_command(void)
 {
@@ -61,7 +61,7 @@ void main_loop(void)
 	mtest = env_get("do_mtest");
 	if(!(strcmp(mtest,"obmtest"))) {
 		run_command(mtest,0);
-		watchdog_init(); // Cover the time consumed by mtest
+		watchdog_init(CONFIG_ASPEED_WATCHDOG_TIMEOUT); // Cover the time consumed by mtest
 	}
 #endif /* CONFIG_CMD_MEMTEST2 */
 

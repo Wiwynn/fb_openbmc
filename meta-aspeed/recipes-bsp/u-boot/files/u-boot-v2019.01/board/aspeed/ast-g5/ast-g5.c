@@ -6,37 +6,21 @@
  * as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  */
-
+#define DEBUG
 #include <common.h>
 #include <netdev.h>
 #include <malloc.h>
 #include <image.h>
 
-#include <asm/arch/ast_scu.h>
-#include <asm/arch/ast-sdmc.h>
-#include <asm/arch/vbs.h>
+#include <asm/arch/ast-sdk/ast_scu.h>
+#include <asm/arch/ast-sdk/ast-sdmc.h>
+#include <asm/arch/ast-sdk/vbs.h>
 #include <asm/io.h>
 
 #include "tpm-spl.h"
+#include "util.h"
 
 DECLARE_GLOBAL_DATA_PTR;
-
-void watchdog_init(void)
-{
-#ifdef CONFIG_ASPEED_ENABLE_WATCHDOG
-  u32 reload = AST_WDT_CLK * CONFIG_ASPEED_WATCHDOG_TIMEOUT;
-  u32 reset_mask = 0x3; /* SoC | Clear after | Enable */
-  /* Some boards may request the reset to trigger the EXT reset GPIO.
-   * On Linux this is defined as WDT_CTRL_B_EXT.
-   */
-#ifdef CONFIG_ASPEED_WATCHDOG_TRIGGER_GPIO
-  __raw_writel(AST_SCU_BASE + 0xA8, __raw_readl(AST_SCU_BASE + 0xA8) | 0x4);
-  reset_mask |= 0x08; /* Ext */
-#endif
-  ast_wdt_reset(reload, reset_mask);
-  printf("Watchdog: %us\n", CONFIG_ASPEED_WATCHDOG_TIMEOUT);
-#endif
-}
 
 static void vboot_check_enforce(void)
 {
@@ -610,7 +594,7 @@ static void disable_snoop_interrupt(void)
 
 int board_init(void)
 {
-	watchdog_init();
+	watchdog_init(CONFIG_ASPEED_WATCHDOG_TIMEOUT);
 	vboot_check_enforce();
 
 #if defined(CONFIG_FBTP) || defined(CONFIG_PWNEPTUNE)

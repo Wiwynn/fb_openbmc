@@ -4,14 +4,16 @@
  * SPDX-License-Identifier: GPL-2.0+
  */
 
-#include "flash-spl.h"
 
+#include <common.h>
 #include <malloc.h>
+#include <timer.h>
 
-#include <asm/arch/ast_g5_platform.h>
-#include <asm/arch-aspeed/ast_scu.h>
-#include <asm/arch-aspeed/regs-scu.h>
+#include <asm/arch/ast-sdk/ast_g5_platform.h>
+#include <asm/arch/ast-sdk/ast_scu.h>
+#include <asm/arch/ast-sdk/regs-scu.h>
 
+#include "flash-spl.h"
 #define AST_FMC_WRITE_ENABLE 0x800f0000
 #define AST_FMC_STATUS_RESET 0x000b0641
 #define AST_FMC_CE1_CONTROL  0x14
@@ -287,16 +289,24 @@ int ast_fmc_spi_check(bool should_lock) {
   u32 function_size;
   uchar *buffer;
   int cs0_status, cs1_status;
+  int ret;
 
   heaptimer_t timer_fp;
   heapstatus_t spi_check;
 
-  timer_init();
+  ret = dm_timer_init();
+  if (ret) {
+     debug("timer init failed (%d)\n", ret);
+  }
   fmc_enable_write();
 
   /* Place a timer function into SRAM */
   function_size = (u32) ((uchar*) heaptimer_end - (uchar*) heaptimer);
   buffer = (uchar*) malloc(function_size);
+  if (!buffer) {
+	  debug("malloc buffer failed\n");
+	  return AST_FMC_ERROR;
+  }
   memcpy(buffer, (uchar*)heaptimer, function_size);
   timer_fp = (heaptimer_t)buffer;
 

@@ -16,11 +16,19 @@
  * (easy to change)
  */
 #define CONFIG_AST_FPGA_VER 4
-#define CONFIG_ARCH_ASPEED
-#define CONFIG_ARCH_AST2500
+/*
+ * TODO:
+ * 1. define CONFIG_ARCH_ASPEED in defconfig
+ * 2. replace CONFIG_ARCH_AST2500 with CONFOG_ASPEED_AST2500 in defconfig
+ * 3. define CONFIG_SYS_I2C_ASPEED in defconfig
+ * and move it to Kconfig
+ */
+#define CONFIG_SYS_I2C_ASPEED
+
 #define CONFIG_ARCH_CPU_INIT
 
-#include <asm/arch/platform.h>
+
+#include <asm/arch/ast-sdk/platform.h>
 
 /* new */
 #define CONFIG_SYS_DCACHE_OFF 1

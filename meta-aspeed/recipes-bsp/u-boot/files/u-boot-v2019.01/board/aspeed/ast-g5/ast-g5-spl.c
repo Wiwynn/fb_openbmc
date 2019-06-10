@@ -15,13 +15,14 @@
 #include <image.h>
 #include <linux/libfdt.h>
 
-#include <asm/arch/aspeed.h>
-#include <asm/arch/ast_scu.h>
-#include <asm/arch/vbs.h>
+#include <asm/arch/ast-sdk/aspeed.h>
+#include <asm/arch/ast-sdk/ast_scu.h>
+#include <asm/arch/ast-sdk/vbs.h>
 #include <asm/io.h>
 
 #include "flash-spl.h"
 #include "tpm-spl.h"
+#include "util.h"
 
 /* Size of RW environment parsable by ROM. */
 #define AST_ROM_ENV_MAX     0x200
@@ -380,6 +381,7 @@ void vboot_reset(struct vbs *vbs) {
   int tpm_status = ast_tpm_provision(vbs);
   if (tpm_status == VBS_ERROR_TPM_SETUP) {
     /* The TPM was not reset correctly */
+    debug("TPM was not reset correctly, cur->rom_handoff=%d\n", current->rom_handoff);
     if (current->rom_handoff != VBS_HANDOFF_TPM_SETUP) {
       vbs->rom_handoff = VBS_HANDOFF_TPM_SETUP;
       vboot_jump(0x0, vbs);
@@ -480,10 +482,10 @@ void board_init_f(ulong bootflag)
   gd->malloc_base = CONFIG_SYS_SPL_MALLOC_START;
   gd->malloc_limit = CONFIG_SYS_SPL_MALLOC_SIZE;
 
-#ifdef CONFIG_ASPEED_ENABLE_WATCHDOG
-  ast_wdt_reset(120 * AST_WDT_CLK, 0x3 | 0x08);
-#endif
-
+//#ifdef CONFIG_ASPEED_ENABLE_WATCHDOG
+//  ast_wdt_reset(120 * AST_WDT_CLK, 0x3 | 0x08);
+//#endif
+	watchdog_init(120);
   /*
    * This will never be relocated, so jump directly to the U-boot.
    */

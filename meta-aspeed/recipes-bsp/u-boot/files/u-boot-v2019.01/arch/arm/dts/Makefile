@@ -574,7 +574,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
 	mt7623n-bananapi-bpi-r2.dtb \
 	mt7629-rfb.dtb
 
-dtb-$(CONFIG_TARGET_FBTP) += aspeed-g5-tpm.dtb
+dtb-$(CONFIG_TARGET_FBTP) += fbtp.dtb
 dtb-$(CONFIG_TARGET_FBAL) += aspeed-g5-tpm.dtb
 dtb-$(CONFIG_TARGET_FBEP) += aspeed-g5-tpm.dtb
 dtb-$(CONFIG_TARGET_FBY2) += aspeed-g5-fby2-tpm.dtb

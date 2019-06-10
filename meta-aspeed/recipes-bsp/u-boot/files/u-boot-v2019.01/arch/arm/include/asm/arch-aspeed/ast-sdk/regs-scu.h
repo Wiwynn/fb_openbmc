@@ -13,7 +13,7 @@
 #ifndef __AST_REGS_SCU_H
 #define __AST_REGS_SCU_H                     1
 
-#include <asm/arch/aspeed.h>
+#include <asm/arch/ast-sdk/aspeed.h>
 
 /* Begin: double-check */
 #define SCU_I2C_MIN_BUS_NUM			1

@@ -405,11 +405,6 @@ config ARCH_AT91
 	bool "Atmel AT91"
 	select SPL_BOARD_INIT if SPL && !TARGET_SMARTWEB
 
-config TARGET_AST2400
-	bool "Support ast2400/ast1400/ast1250"
-	select CPU_ARM926EJS
-	select SUPPORT_SPL
-
 config TARGET_EDB93XX
 	bool "Support edb93xx"
 	select CPU_ARM920T
@@ -423,91 +418,6 @@ config TARGET_GPLUGD
 	bool "Support gplugd"
 	select CPU_ARM926EJS
 
-config TARGET_AST2400
-	bool "Support ast2400"
-	select CPU_ARM926EJS
-
-config TARGET_FBYOSEMITE
-	bool "Support Facebook's OpenBMC Yosemite"
-	select CPU_ARM926EJS
-  select SUPPORT_SPL
-
-config TARGET_FBLIGHTNING
-	bool "Support Facebook's OpenBMC Lightning"
-	select CPU_ARM926EJS
-        select SUPPORT_SPL
-
-config TARGET_FBWEDGE
-	bool "Support Facebook's OpenBMC Wedge TOR"
-	select CPU_ARM926EJS
-
-config TARGET_FBWEDGE100
-	bool "Support Facebook's OpenBMC Wedge100 TOR"
-	select CPU_ARM926EJS
-
-config TARGET_FBWEDGE400
-       bool "Support Facebook's OpenBMC Wedge400 TOR"
-	select CPU_ARM1176
-	select SUPPORT_SPL
-
-config TARGET_FBMINIPACK
-       bool "Support Facebook's OpenBMC Minipack"
-	select CPU_ARM1176
-	select SUPPORT_SPL
-
-config TARGET_FBBACKPACK
-	bool "Support Facebook's OpenBMC Backpack"
-	select CPU_ARM926EJS
-
-config TARGET_FBCMM
-	bool "Support Facebook's OpenBMC CMM"
-	select CPU_ARM1176
-	select SUPPORT_SPL
-
-config TARGET_FBYAMP
-	bool "Support Facebook's OpenBMC YAMP"
-	select CPU_ARM1176
-	select SUPPORT_SPL
-
-config TARGET_FBTP
-	bool "Support Facebook's OpenBMC TP"
-	select CPU_ARM1176
-	select SUPPORT_SPL
-
-config TARGET_FBAL
-	bool "Support Facebook's OpenBMC Angels Landing"
-	select CPU_ARM1176
-	select SUPPORT_SPL
-
-config TARGET_FBEP
-	bool "Support Facebook's OpenBMC Emerald Pools"
-	select CPU_ARM1176
-	select SUPPORT_SPL
-
-config TARGET_FBTTN
-	bool "Support Facebook's OpenBMC TTN"
-	select CPU_ARM1176
-	select SUPPORT_SPL
-
-config TARGET_FBY2
-	bool "Support Facebook's OpenBMC Y2"
-	select CPU_ARM1176
-	select SUPPORT_SPL
-
-config TARGET_FBY3
-	bool "Support Facebook's OpenBMC Y3"
-	select CPU_ARM1176
-	select SUPPORT_SPL
-
-config TARGET_MINILAKETB
-	bool "Support Facebook's OpenBMC MINILAKETB"
-	select CPU_ARM1176
-	select SUPPORT_SPL
-
-config TARGET_PWNEPTUNE
-	bool "Support Portwell's Neptune"
-	select CPU_ARM1176
-	select SUPPORT_SPL
 
 config ARCH_DAVINCI
 	bool "TI DaVinci"
@@ -1482,19 +1392,11 @@ config TARGET_THUNDERX_88XX
 	select PL01X_SERIAL
 	select SYS_CACHE_SHIFT_7
 
-config ARCH_ASPEED_GOOGLE
-	bool "Google Support Aspeed SoCs"
+config ARCH_ASPEED
+	bool "Support Aspeed SoCs"
 	select DM
 	select OF_CONTROL
 	imply CMD_DM
-
-config TARGET_AST_G5
-       bool "Support Apseed fifth generation SoCs"
-       select CPU_ARM1176
-
-config TARGET_AST_G4
-       bool "Support Aspeed fourth generation SoCs"
-       select CPU_ARM926EJS
 
 endchoice
 
@@ -1508,7 +1410,7 @@ config TI_SECURE_DEVICE
 	  authenticated) and the code. See the doc/README.ti-secure
 	  file for further details.
 
-source "arch/arm/mach-aspeed_google/Kconfig"
+source "arch/arm/mach-aspeed/Kconfig"
 
 source "arch/arm/mach-at91/Kconfig"
 
@@ -1605,9 +1507,6 @@ source "arch/arm/cpu/armv8/zynqmp/Kconfig"
 source "arch/arm/cpu/armv8/Kconfig"
 
 source "arch/arm/mach-imx/Kconfig"
-
-source "board/aspeed/Kconfig"
-source "board/fb-obmc/Kconfig"
 
 source "board/bosch/shc/Kconfig"
 source "board/CarMediaLab/flea3/Kconfig"

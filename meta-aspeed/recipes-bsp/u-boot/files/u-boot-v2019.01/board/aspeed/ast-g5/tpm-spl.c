@@ -3,11 +3,11 @@
  *
  * SPDX-License-Identifier: GPL-2.0+
  */
-
+#define DEBUG
 #include <common.h>
 #include <dm.h>
 
-#include <asm/arch/vbs.h>
+#include <asm/arch/ast-sdk/vbs.h>
 
 #include "tpm-spl.h"
 
@@ -17,7 +17,7 @@ static int get_tpm(struct udevice **devp)
 
 	rc = uclass_first_device_err(UCLASS_TPM, devp);
 	if (rc) {
-		printf("Could not find TPM (ret=%d)\n", rc);
+		printf("SPL Could not find TPM (ret=%d)\n", rc);
 		return CMD_RET_FAILURE;
 	}
 
@@ -38,13 +38,12 @@ int ast_tpm_provision(struct vbs *vbs) {
   /* Get the TPM device handler */
   err = get_tpm(&dev);
   if (err) {
-	  return err;
+	  debug("get tpm failed (%d)\n", err);
+	  return VBS_ERROR_TPM_NOT_ENABLED;
   }
 
-  /* The TPM lib may need to retry commands. */
-  timer_init();
-
-  /* The Infineon TPM needs 30ms */
+  /* The Infineon TPM needs 35ms */
+  debug("start udelay 35ms\n");
   udelay(35 * 1000);
 
   /* The SPL should init (software-only setup), startup-clear, and test. */
@@ -57,6 +56,7 @@ int ast_tpm_provision(struct vbs *vbs) {
   result = tpm_startup(dev, TPM_ST_CLEAR);
   if (result) {
     /* If this returns invalid postinit (38) then the TPM was not reset. */
+    debug("TPM startup failed (%d)\n", result);
     set_tpm_error(vbs, result);
     return VBS_ERROR_TPM_SETUP;
   }
@@ -72,6 +72,7 @@ int ast_tpm_provision(struct vbs *vbs) {
     }
     /* The TPM could have asked for a retry or is still self-testing. */
     if (result < TPM_NON_FATAL) {
+      debug("TPM continue_self_test failed (%d)\n", result);
       set_tpm_error(vbs, result);
       return VBS_ERROR_TPM_SETUP;
     }

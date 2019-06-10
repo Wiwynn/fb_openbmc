@@ -477,7 +477,6 @@ config SYS_EXTRA_OPTIONS
 	  new boards should not use this option.
 
 config SYS_TEXT_BASE
-	depends on !TARGET_FBTP
 	depends on !NIOS2 && !XTENSA
 	depends on !EFI_APP
 	default 0x80800000 if ARCH_OMAP2PLUS || ARCH_K3

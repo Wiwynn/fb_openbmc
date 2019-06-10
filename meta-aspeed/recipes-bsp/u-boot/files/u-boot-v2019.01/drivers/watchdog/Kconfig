@@ -78,7 +78,7 @@ config WDT_ARMADA_37XX
 config WDT_ASPEED
 	bool "Aspeed ast2400/ast2500 watchdog timer support"
 	depends on WDT
-	default y if ARCH_ASPEED_GOOGLE
+	default y if ARCH_ASPEED
 	help
 	  Select this to enable watchdog timer for Aspeed ast2500/ast2400 devices.
 	  The watchdog timer is stopped when initialized. It performs reset, either

@@ -33,8 +33,6 @@
 
 static ulong timestamp;
 static ulong lastdec;
-static void reset_timer_masked (void);
-static ulong get_timer_masked (void);
 
 int timer_init (void)
 {
@@ -88,14 +86,14 @@ void __udelay (unsigned long usec)
 	}
 }
 
-static void reset_timer_masked (void)
+void reset_timer_masked (void)
 {
 	/* reset time */
 	lastdec = READ_TIMER;  /* capure current decrementer value time */
 	timestamp = 0;	       /* start "advancing" time stamp from 0 */
 }
 
-static ulong get_timer_masked (void)
+ulong get_timer_masked (void)
 {
 	ulong now = READ_TIMER;	/* current tick value */
 
