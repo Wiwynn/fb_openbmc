@@ -9,7 +9,7 @@ DEPENDS += "flex-native bison-native"
 
 SRCREV = "44d5a2f4ff45bbaafff0c3bccc8a9f7509a5dffb"
 PV = "v2019.01"
-
+DEFAULT_PREFERENCE = "-1"
 SRC_URI = "file://u-boot-v2019.01 \
            file://fw_env.config \
           "
@@ -32,4 +32,3 @@ do_install () {
 }
 
 BBCLASSEXTEND = "native nativesdk"
-

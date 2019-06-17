@@ -46,3 +46,5 @@ SYSROOT_DIRS_append_class-cross = " ${bindir_cross}"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 BBCLASSEXTEND = "cross"
 
+DEFAULT_PREFERENCE = "-1"
+
