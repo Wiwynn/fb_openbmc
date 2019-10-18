@@ -6,7 +6,7 @@ PROVIDES = "virtual/bootloader"
 LICENSE = "GPLv2+"
 LIC_FILES_CHKSUM = "file://Licenses/README;md5=30503fd321432fc713238f582193b78e"
 
-DEPENDS += "dtc-native bc-native"
+DEPENDS += "dtc-native bc-native bison-native"
 
 SRCREV = "44d5a2f4ff45bbaafff0c3bccc8a9f7509a5dffb"
 PV = "v2019.01"
