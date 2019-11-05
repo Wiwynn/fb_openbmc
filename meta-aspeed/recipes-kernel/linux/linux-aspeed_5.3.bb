@@ -1,7 +1,7 @@
 SRC_URI = "file://linux-aspeed-5.3 \
           "
 
-LINUX_VERSION ?= "5.3.0"
+LINUX_VERSION ?= "5.3.8"
 LINUX_VERSION_EXTENSION ?= "-aspeed"
 
 PR = "r1"
