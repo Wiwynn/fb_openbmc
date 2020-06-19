@@ -1,4 +1,4 @@
-require u-boot-aspeed.inc
+require u-boot-common.inc
 require u-boot-tools.inc
 
 PV = "v2019.04"

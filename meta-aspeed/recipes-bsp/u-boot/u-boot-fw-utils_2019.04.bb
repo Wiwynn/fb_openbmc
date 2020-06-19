@@ -1,4 +1,4 @@
-require u-boot-aspeed.inc
+require u-boot-common.inc
 
 PV = "v2019.04"
 SRC_URI = "file://u-boot-v2019.04 \
