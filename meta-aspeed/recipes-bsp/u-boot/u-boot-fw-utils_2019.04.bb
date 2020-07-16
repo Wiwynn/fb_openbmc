@@ -3,6 +3,7 @@ require u-boot-common.inc
 PV = "v2019.04"
 SRC_URI = "file://u-boot-v2019.04 \
            file://fw_env.config \
+           file://fw_env.config.64k \
           "
 SUMMARY = "U-Boot bootloader fw_printenv/setenv utilities"
 DEPENDS += "mtd-utils"
@@ -13,6 +14,8 @@ EXTRA_OEMAKE_class-cross = 'HOSTCC="${CC} ${CFLAGS} ${LDFLAGS}" V=1'
 
 inherit uboot-config
 
+# default fw_env config file to be installed 
+FW_ENV_CONFIG_FILE ??= "fw_env.config"
 do_compile () {
 	oe_runmake ${UBOOT_MACHINE}
 	oe_runmake envtools
@@ -23,7 +26,8 @@ do_install () {
 	install -d ${D}${sysconfdir}
 	install -m 755 ${S}/tools/env/fw_printenv ${D}${base_sbindir}/fw_printenv
 	install -m 755 ${S}/tools/env/fw_printenv ${D}${base_sbindir}/fw_setenv
-	install -m 0644 ${WORKDIR}/fw_env.config ${D}${sysconfdir}/fw_env.config
+  bbdebug 1 "install ${FW_ENV_CONFIG_FILE}"
+	install -m 0644 ${WORKDIR}/${FW_ENV_CONFIG_FILE} ${D}${sysconfdir}/fw_env.config
 }
 
 do_install_class-cross () {
