@@ -8,12 +8,16 @@ PE = "1"
 
 PV = "v2019.01"
 DEFAULT_PREFERENCE = "-1"
-SRC_URI = "file://u-boot-v2019.01 \
+
+# Use openbmc-uboot clone
+SRCBRANCH = "openbmc/helium/v2019.01"
+SRCREV = "AUTOINC"
+
+SRC_URI = "git://github.com/facebook/openbmc-uboot.git;branch=${SRCBRANCH};protocol=https \
            file://fw_env.config \
-           file://fw_env.config.full \
           "
 
-S = "${WORKDIR}/u-boot-${PV}"
+S = "${WORKDIR}/git"
 
 # Improve code quality.
 EXTRA_OEMAKE += 'KCFLAGS="-Werror"'

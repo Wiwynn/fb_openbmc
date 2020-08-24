@@ -1,3 +1,20 @@
+# Copyright 2019-present Facebook. All Rights Reserved.
+#
+# This program file is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program in a file named COPYING; if not, write to the
+# Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor,
+# Boston, MA 02110-1301 USA
+
 SUMMARY = "Universal Boot Loader for embedded devices"
 HOMEPAGE = "http://www.denx.de/wiki/U-Boot/WebHome"
 SECTION = "bootloader"
@@ -8,15 +25,17 @@ LIC_FILES_CHKSUM = "file://Licenses/README;md5=30503fd321432fc713238f582193b78e"
 
 DEPENDS += "dtc-native bc-native bison-native"
 
-SRCREV = "44d5a2f4ff45bbaafff0c3bccc8a9f7509a5dffb"
-PV = "v2019.01"
-DEFAULT_PREFERENCE = "-1"
-SRC_URI = "file://u-boot-v2019.01 \
+SRCBRANCH = "openbmc/helium/v2019.01"
+SRCREV = "AUTOINC"
+
+SRC_URI = "git://github.com/facebook/openbmc-uboot.git;branch=${SRCBRANCH};protocol=https \
            file://fw_env.config \
            file://fw_env.config.full \
           "
 
-S = "${WORKDIR}/u-boot-${PV}"
+PV = "v2019.01"
+DEFAULT_PREFERENCE = "-1"
+S = "${WORKDIR}/git"
 
 FILES_${PN} = "${sysconfdir}"
 
