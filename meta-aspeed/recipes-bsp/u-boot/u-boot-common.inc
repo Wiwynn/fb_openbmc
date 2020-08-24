@@ -10,12 +10,10 @@ LICENSE = "GPLv2+"
 LIC_FILES_CHKSUM = "file://Licenses/README;md5=30503fd321432fc713238f582193b78e"
 PE = "1"
 
-# We use the revision in order to avoid having to fetch it from the
-# repo during parse
-# SRCREV = "e5aee22e4be75e75a854ab64503fc80598bc2004"
+SRC_URI = "git://github.com/facebook/openbmc-uboot.git;branch=${SRCBRANCH};protocol=https"
+SRCREV = "AUTOINC"
+S = "${WORKDIR}/git"
 
-
-S = "${WORKDIR}/u-boot-${PV}"
 # Improve code quality.
 EXTRA_OEMAKE += 'KCFLAGS="-Werror"'
 
