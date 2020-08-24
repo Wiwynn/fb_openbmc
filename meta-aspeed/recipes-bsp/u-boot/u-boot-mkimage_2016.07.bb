@@ -5,14 +5,15 @@ SECTION = "bootloader"
 
 DEPENDS = "openssl"
 
-SRCREV = "44d5a2f4ff45bbaafff0c3bccc8a9f7509a5dffb"
-PV = "v2016.07"
+SRCBRANCH = "openbmc/helium/v2016.07"
+SRCREV = "AUTOINC"
 
-SRC_URI = "file://u-boot-v2016.07 \
+SRC_URI = "git://github.com/facebook/openbmc-uboot.git;branch=${SRCBRANCH};protocol=https \
            file://fw_env.config \
           "
 
-S = "${WORKDIR}/u-boot-${PV}"
+PV = "v2016.07"
+S = "${WORKDIR}/git"
 
 EXTRA_OEMAKE_class-target = 'CROSS_COMPILE="${TARGET_PREFIX}" CC="${CC} ${CFLAGS} ${LDFLAGS}" HOSTCC="${BUILD_CC} ${BUILD_CFLAGS} ${BUILD_LDFLAGS}" STRIP=true V=1'
 EXTRA_OEMAKE_class-native = 'CC="${BUILD_CC} ${BUILD_CFLAGS} ${BUILD_LDFLAGS}" HOSTCC="${BUILD_CC} ${BUILD_CFLAGS} ${BUILD_LDFLAGS}" STRIP=true V=1'
@@ -30,4 +31,3 @@ do_install () {
 }
 
 BBCLASSEXTEND = "native nativesdk"
-

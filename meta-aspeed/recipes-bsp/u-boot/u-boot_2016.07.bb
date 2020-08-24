@@ -8,15 +8,14 @@ LIC_FILES_CHKSUM = "file://Licenses/README;md5=a2c678cfd4a4d97135585cad908541c6"
 
 DEPENDS += "dtc-native bc-native"
 
-SRCREV = "44d5a2f4ff45bbaafff0c3bccc8a9f7509a5dffb"
-PV = "v2016.07"
+SRCBRANCH = "openbmc/helium/v2016.07"
+SRCREV = "AUTOINC"
 
-SRC_URI = "file://u-boot-v2016.07 \
+SRC_URI = "git://github.com/facebook/openbmc-uboot.git;branch=${SRCBRANCH};protocol=https \
            file://fw_env.config \
            file://fw_env.config.full \
           "
 
-S = "${WORKDIR}/u-boot-${PV}"
 def release_patches(d):
     distro = d.getVar('DISTRO_CODENAME', True)
     if distro == 'warrior':
@@ -26,6 +25,7 @@ SRC_URI += '${@release_patches(d)}'
 
 
 PV = "v2016.07"
+S = "${WORKDIR}/git"
 
 FILES_${PN} = "${sysconfdir}"
 
@@ -91,10 +91,34 @@ UBOOT_ENV_BINARY ?= "${UBOOT_ENV}.${UBOOT_ENV_SUFFIX}"
 UBOOT_ENV_IMAGE ?= "${UBOOT_ENV}-${MACHINE}-${PV}-${PR}.${UBOOT_ENV_SUFFIX}"
 UBOOT_ENV_SYMLINK ?= "${UBOOT_ENV}-${MACHINE}.${UBOOT_ENV_SUFFIX}"
 
+patch_mtdparts_for_oss () {
+    #
+    # Customize flash layout so /mnt/data won't be mounted in oss build.
+    # NOTE:
+    #   - "env" must be the second partition because fw-util assumes env
+    #     is located at /dev/mtd1 and writes uboot environment variables
+    #     into the partition.
+    #   - <mtd-id> field is different cross different kernel versions:
+    #     it is "spi0.0/spi0.1" in kernel 4.1 and "bmc/2nd-bmc" in kernel
+    #     4.18 or higher versions.
+    #   - fill-up size tag "-" can only be used for the last partition.
+    #   - Minipack is installed with 64MB instead of 32MB flashes.
+    #
+    sed -i 's/root=\/dev\/ram rw\"/root=\/dev\/ram rw mtdparts=bmc:32M@0x0(flash0),0x20000@0x60000(env);2nd-bmc:-(flash1) dual_flash=1\"/g' include/configs/fbcmm.h
+    sed -i 's/root=\/dev\/ram rw\"/root=\/dev\/ram rw mtdparts=bmc:32M@0x0(flash0),0x20000@0x60000(env);2nd-bmc:-(flash1) dual_flash=1\"/g' include/configs/fbyamp.h
+    sed -i 's/root=\/dev\/ram rw\"/root=\/dev\/ram rw mtdparts=bmc:64M@0x0(flash0),0x20000@0x60000(env);2nd-bmc:-(flash1) dual_flash=1\"/g' include/configs/fbminipack.h
+    sed -i 's/root=\/dev\/ram rw\"/root=\/dev\/ram rw mtdparts=spi0.0:32M@0x0(flash0),0x20000@0x60000(env);spi0.1:-(flash1) dual_flash=1\"/g' include/configs/fbwedge100.h
+    sed -i 's/root=\/dev\/ram rw\"/root=\/dev\/ram rw mtdparts=spi0.0:32M@0x0(flash0),0x20000@0x60000(env);spi0.1:-(flash1) dual_flash=1\"/g' include/configs/fbwedge.h
+    sed -i 's/root=\/dev\/ram rw\"/root=\/dev\/ram rw mtdparts=spi0.0:32M@0x0(flash0),0x20000@0x60000(env);spi0.1:-(flash1) dual_flash=1\"/g' include/configs/fbbackpack.h
+
+}
+
 do_compile () {
     if [ "${@bb.utils.contains('DISTRO_FEATURES', 'ld-is-gold', 'ld-is-gold', '', d)}" = "ld-is-gold" ] ; then
         sed -i 's/$(CROSS_COMPILE)ld$/$(CROSS_COMPILE)ld.bfd/g' config.mk
     fi
+
+    patch_mtdparts_for_oss
 
     unset LDFLAGS
     unset CFLAGS
