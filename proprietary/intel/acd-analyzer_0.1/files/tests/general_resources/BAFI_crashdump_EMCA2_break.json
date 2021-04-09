@@ -1,0 +1,37 @@
+{
+    "First_Error_Occurred_On_Socket": "0",
+    "socket0": {
+        "Error_Information": [
+            "S0.MCERR.Global IEH/UBOX (IOMCA), bank 6 MCACOD: 0xe0b MSCOD: 0x00"
+        ],
+        "FRU": [
+            {
+                "Bus": "0x4a",
+                "Device": "0x2",
+                "Function": "0x0"
+            }
+        ],
+        "PPIN": "0x23f167a4e0238d99",
+        "CorrectableMemoryErrors": {},
+        "UncorrectableMemoryErrors": {},
+        "PcieAerUncorrectable": {
+            "B03_D02_F0_0x104": "completition_timeout"
+        },
+        "PcieAerCorrectable": {
+            "B03_D02_F0_0x110": "receiver_error"
+        },
+        "PackageThermalStatus": {}
+    },
+    "socket1": {
+        "Error_Information": [
+            "S1.FirstMCERR != MCE bank#, manual review required"
+        ],
+        "FRU": {},
+        "PPIN": "0x23fda8a5ba30022a",
+        "CorrectableMemoryErrors": {},
+        "UncorrectableMemoryErrors": {},
+        "PcieAerCorrectable": {},
+        "PcieAerUncorrectable": {},
+        "PackageThermalStatus": {}
+    }
+}

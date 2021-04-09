@@ -2,7 +2,7 @@
  *
  * INTEL CONFIDENTIAL
  *
- * Copyright 2020 Intel Corporation.
+ * Copyright 2021 Intel Corporation.
  *
  * This software and the related documents are Intel copyrighted materials, and
  * your use of them is governed by the express license under which they were
@@ -34,4 +34,4 @@ class Summary
     std::map<uint32_t, TscData> tsc;
     std::map<std::string, std::array<uint64_t, 2>> memoryMap;
     std::map<uint32_t, PackageThermStatus> thermStatus;
-};
+};

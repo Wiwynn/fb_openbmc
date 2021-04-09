@@ -1,0 +1,116 @@
+{
+    "MCA": {
+        "socket0": [
+            {
+                "Address": "0x00000000",
+                "Bank": "3 (MLC)",
+                "CTL": "0x0000001f",
+                "Core": 17,
+                "Misc": "0x00000000",
+                "Status": "0xbe00000000800400",
+                "Status_decoded": {
+                    "ADDRV": "0x1",
+                    "CORRECTED_ERROR_COUNT": "0x00",
+                    "CORR_ERR_STATUS_IND": "0x0",
+                    "CORR_ERR_STATUS_IND_decoded": "No hardware status tracking is provided for the structure reporting this event",
+                    "EN": "0x1",
+                    "MCACOD": "0x400",
+                    "MCACOD_decoded": "Watchdog Timer (3-strike timeout) Error",
+                    "MISCV": "0x1",
+                    "MSCOD": "0x80",
+                    "MSCOD_decoded": "MLC Watchdog timer (3 strike) Error",
+                    "OVERFLOW": "0x0",
+                    "PCC": "0x1",
+                    "RESERVED0": "0x0",
+                    "RESERVED1": "0x0",
+                    "UC": "0x1",
+                    "VALID": "0x1"
+                },
+                "Thread": 0
+            },
+            {
+                "Address": "0xe1000000",
+                "Bank": "9 (CHA_A)",
+                "CTL": "0xffb7fdff",
+                "Core": 0,
+                "Misc": "0x207aa600c00086",
+                "Status": "0xfe200000000c110a",
+                "Status_decoded": {
+                    "ADDRV": "0x1",
+                    "AR": "0x0",
+                    "CORRECTED_ERROR_COUNT": "0x00",
+                    "CORR_ERR_STATUS_IND": "0x1",
+                    "CORR_ERR_STATUS_IND_decoded": "Green - The current status is green (below threshold) for the structure posting the event",
+                    "EN": "0x1",
+                    "MCACOD": "0x110a",
+                    "MCACOD_decoded": "Cache_Hierarchy_Error|GENERIC_ERROR|GENERIC_ERROR_TRANSACTION_TYPE|LEVEL_2 (L3/LLC cache)",
+                    "MISCV": "0x1",
+                    "MSCOD": "0x0c",
+                    "MSCOD_decoded": "TOR_TIMEOUT_OriginalReq[PRd]_TorID[21]",
+                    "OTHER_INFO": "0x0",
+                    "OVERFLOW": "0x1",
+                    "PCC": "0x1",
+                    "S": "0x0",
+                    "UC": "0x1",
+                    "VALID": "0x1"
+                },
+                "Thread": 0
+            }
+        ]
+    },
+    "TOR": {
+        "socket0": [
+            {
+                "Decoded": {
+                    "BDF": "Please refer to system address map",
+                    "ErrorSubType": "Type 2: PCIe* MMIO access cause TOR timeout.",
+                    "ErrorType": "TOR Timeout Error",
+                    "Port": "PCI4"
+                },
+                "Details": {
+                    "Address": "0xe1000000",
+                    "CHA": "0xc",
+                    "CoreId": "0x11",
+                    "IDX": "0x15",
+                    "InPipe": "0x0",
+                    "LLC": "0x8",
+                    "LLC_decoded": "LLC_I",
+                    "Request": "0x207",
+                    "Request_decoded": "PRd",
+                    "Retry": "0x0",
+                    "SAD": "0x3",
+                    "SAD_decoded": "MMIO Partial Read",
+                    "Target": "0x18",
+                    "Target_decoded": "PCI4",
+                    "ThreadId": "0x0",
+                    "TorFSMState": "0x0"
+                },
+                "First_IERR": false,
+                "First_MCERR": true
+            }
+        ]
+    },
+    "_total_time": "1.1548s",
+    "summary": {
+        "socket0": [
+            {
+                "MCE": [
+                    "bank 3 (MLC), MCACOD_decoded: Watchdog Timer (3-strike timeout) Error, MSCOD_decoded: MLC Watchdog timer (3 strike) Error",
+                    "bank 9 (CHA_A), MCACOD_decoded: Cache_Hierarchy_Error|GENERIC_ERROR|GENERIC_ERROR_TRANSACTION_TYPE|LEVEL_2 (L3/LLC cache), MSCOD_decoded: TOR_TIMEOUT_OriginalReq[PRd]_TorID[21]"
+                ]
+            },
+            {
+                "Errors_Per_Socket": "IntMSMI, IntCATERR, FirstIERR = CHA17, bank 11, FirstMCERR = CHA12, bank 9"
+            },
+            {
+                "First_MCERR": {
+                    "Address": "0xe1000000",
+                    "BDF": "Please refer to system address map",
+                    "ErrorSubType": "Type 2: PCIe* MMIO access cause TOR timeout.",
+                    "ErrorType": "TOR Timeout Error",
+                    "Port": "PCI4"
+                }
+            }
+        ]
+    }
+}

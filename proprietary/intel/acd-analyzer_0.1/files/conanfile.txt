@@ -1,5 +1,5 @@
 [requires]
-jsonformoderncpp/3.6.1@vthiery/stable
+nlohmann_json/3.9.1
 
 [generators]
 cmake

@@ -2,7 +2,7 @@
  *
  * INTEL CONFIDENTIAL
  *
- * Copyright 2020 Intel Corporation.
+ * Copyright 2021 Intel Corporation.
  *
  * This software and the related documents are Intel copyrighted materials, and
  * your use of them is governed by the express license under which they were
@@ -24,7 +24,7 @@
 
 #include <tor_defs.hpp>
 
-const std::array<const char*, 27> CPX_PORT_ID = {
+const std::array<const char*, 32> CPX_PORT_ID = {
     "KTI0",
     "KTI1",
     "KTI2",
@@ -52,6 +52,11 @@ const std::array<const char*, 27> CPX_PORT_ID = {
     "PCI4",
     "not implemented",
     "UBOX",
+    "not implemented",
+    "not implemented",
+    "not implemented",
+    "not implemented",
+    "not implemented",
 };
 
 const std::array<const char*, 16> CPX_LLCS = {
@@ -89,32 +94,106 @@ const std::map<uint8_t, uint8_t> CpxfirstErrorCha = {
     {0x0fc, 60}, {0x0fd, 61}, {0x0fe, 62}, {0x0ff, 63}
 };
 
-const std::map<uint8_t, const char*> CpxfirstError = {
-    {0x002, "UPI 0"},  {0x003, "UPI 1"}, {0x006, "UPI 2"},  {0x007, "UPI 3"},
-    {0x00a, "UPI 4"},  {0x00b, "UPI 5"}, {0x044, "PCU"},    {0x060, "IMC 0"},
-    {0x062, "M2MEM0"}, {0x064, "IMC 1"}, {0x066, "M2MEM1"}, {0x0a0, "IIO0"},
-    {0x0a1, "IIO0"},   {0x0a2, "IIO0"},  {0x0a3, "IIO0"},   {0x0a4, "IIO1"},
-    {0x0a5, "IIO1"},   {0x0a6, "IIO1"},  {0x0a7, "IIO1"},   {0x0a8, "IIO2"},
-    {0x0a9, "IIO2"},   {0x0aa, "IIO2"},  {0x0ab, "IIO2"},   {0x0ac, "CBDMA"},
-    {0x0ad, "CBDMA"},  {0x0ae, "CBDMA"}, {0x0af, "CBDMA"},  {0x0b0, "MCP0"},
-    {0x0b1, "MCP0"},   {0x0b2, "MCP0"},  {0x0b3, "MCP0"},   {0x0b4, "MCP1"},
-    {0x0b5, "MCP1"},   {0x0b6, "MCP1"},  {0x0b7, "MCP1"},   {0x0c0, "CHA0"},
-    {0x0c1, "CHA1"},   {0x0c2, "CHA2"},  {0x0c3, "CHA3"},   {0x0c4, "CHA4"},
-    {0x0c5, "CHA5"},   {0x0c6, "CHA6"},  {0x0c7, "CHA7"},   {0x0c8, "CHA8"},
-    {0x0c9, "CHA9"},   {0x0ca, "CHA10"}, {0x0cb, "CHA11"},  {0x0cc, "CHA12"},
-    {0x0cd, "CHA13"},  {0x0ce, "CHA14"}, {0x0cf, "CHA15"},  {0x0d0, "CHA16"},
-    {0x0d1, "CHA17"},  {0x0d2, "CHA18"}, {0x0d3, "CHA19"},  {0x0d4, "CHA20"},
-    {0x0d5, "CHA21"},  {0x0d6, "CHA22"}, {0x0d7, "CHA23"},  {0x0d8, "CHA24"},
-    {0x0d9, "CHA25"},  {0x0da, "CHA26"}, {0x0db, "CHA27"},  {0x0dc, "CHA28"},
-    {0x0dd, "CHA29"},  {0x0de, "CHA30"}, {0x0df, "CHA31"},  {0x0e0, "CHA32"},
-    {0x0e1, "CHA33"},  {0x0e2, "CHA34"}, {0x0e3, "CHA35"},  {0x0e4, "CHA36"},
-    {0x0e5, "CHA37"},  {0x0e6, "CHA38"}, {0x0e7, "CHA39"},  {0x0e8, "CHA40"},
-    {0x0e9, "CHA41"},  {0x0ea, "CHA42"}, {0x0eb, "CHA43"},  {0x0ec, "CHA44"},
-    {0x0ed, "CHA45"},  {0x0ee, "CHA46"}, {0x0ef, "CHA47"},  {0x0f0, "CHA48"},
-    {0x0f1, "CHA49"},  {0x0f2, "CHA50"}, {0x0f3, "CHA51"},  {0x0f4, "CHA52"},
-    {0x0f5, "CHA53"},  {0x0f6, "CHA54"}, {0x0f7, "CHA55"},  {0x0f8, "CHA56"},
-    {0x0f9, "CHA57"},  {0x0fa, "CHA58"}, {0x0fb, "CHA59"},  {0x0fc, "CHA60"},
-    {0x0fd, "CHA61"},  {0x0fe, "CHA62"}, {0x0ff, "CHA63"}
+const std::map<uint16_t, const char*> CpxfirstError = {
+    {0x002, "UPI 0, bank 5"},
+    {0x003, "UPI 1, bank 12"},
+    {0x006, "UPI 2, bank 19"},
+    {0x007, "UPI 3, bank 20"},
+    {0x00a, "UPI 4, bank 21"},
+    {0x00b, "UPI 5, bank 22"},
+    {0x044, "PCU, bank 4"},
+    {0x060, "IMC 0, bank 13, 14, 17"},
+    {0x062, "M2MEM0, bank 7"},
+    {0x064, "IMC 1, bank 15, 16, 18"},
+    {0x066, "M2MEM1, bank 8"},
+    {0x0a0, "IIO0, bank 6"},
+    {0x0a1, "IIO0, bank 6"},
+    {0x0a2, "IIO0, bank 6"},
+    {0x0a3, "IIO0, bank 6"},
+    {0x0a4, "IIO1, bank 6"},
+    {0x0a5, "IIO1, bank 6"},
+    {0x0a6, "IIO1, bank 6"},
+    {0x0a7, "IIO1, bank 6"},
+    {0x0a8, "IIO2, bank 6"},
+    {0x0a9, "IIO2, bank 6"},
+    {0x0aa, "IIO2, bank 6"},
+    {0x0ab, "IIO2, bank 6"},
+    {0x0ac, "CBDMA, bank 6"},
+    {0x0ad, "CBDMA, bank 6"},
+    {0x0ae, "CBDMA, bank 6"},
+    {0x0af, "CBDMA, bank 6"},
+    {0x0b0, "MCP0, bank 6"},
+    {0x0b1, "MCP0, bank 6"},
+    {0x0b2, "MCP0, bank 6"},
+    {0x0b3, "MCP0, bank 6"},
+    {0x0b4, "MCP1, bank 6"},
+    {0x0b5, "MCP1, bank 6"},
+    {0x0b6, "MCP1, bank 6"},
+    {0x0b7, "MCP1, bank 6"},
+    {0x0c0, "CHA0, bank 9"},
+    {0x0c1, "CHA1, bank 10"},
+    {0x0c2, "CHA2, bank 11"},
+    {0x0c3, "CHA3, bank 9"},
+    {0x0c4, "CHA4, bank 10"},
+    {0x0c5, "CHA5, bank 11"},
+    {0x0c6, "CHA6, bank 9"},
+    {0x0c7, "CHA7, bank 10"},
+    {0x0c8, "CHA8, bank 11"},
+    {0x0c9, "CHA9, bank 9"},
+    {0x0ca, "CHA10, bank 10"},
+    {0x0cb, "CHA11, bank 11"},
+    {0x0cc, "CHA12, bank 9"},
+    {0x0cd, "CHA13, bank 10"},
+    {0x0ce, "CHA14, bank 11"},
+    {0x0cf, "CHA15, bank 9"},
+    {0x0d0, "CHA16, bank 10"},
+    {0x0d1, "CHA17, bank 11"},
+    {0x0d2, "CHA18, bank 9"},
+    {0x0d3, "CHA19, bank 10"},
+    {0x0d4, "CHA20, bank 11"},
+    {0x0d5, "CHA21, bank 9"},
+    {0x0d6, "CHA22, bank 10"},
+    {0x0d7, "CHA23, bank 11"},
+    {0x0d8, "CHA24, bank 9"},
+    {0x0d9, "CHA25, bank 10"},
+    {0x0da, "CHA26, bank 11"},
+    {0x0db, "CHA27, bank 9"},
+    {0x0dc, "CHA28"},
+    {0x0dd, "CHA29"},
+    {0x0de, "CHA30"},
+    {0x0df, "CHA31"},
+    {0x0e0, "CHA32"},
+    {0x0e1, "CHA33"},
+    {0x0e2, "CHA34"},
+    {0x0e3, "CHA35"},
+    {0x0e4, "CHA36"},
+    {0x0e5, "CHA37"},
+    {0x0e6, "CHA38"},
+    {0x0e7, "CHA39"},
+    {0x0e8, "CHA40"},
+    {0x0e9, "CHA41"},
+    {0x0ea, "CHA42"},
+    {0x0eb, "CHA43"},
+    {0x0ec, "CHA44"},
+    {0x0ed, "CHA45"},
+    {0x0ee, "CHA46"},
+    {0x0ef, "CHA47"},
+    {0x0f0, "CHA48"},
+    {0x0f1, "CHA49"},
+    {0x0f2, "CHA50"},
+    {0x0f3, "CHA51"},
+    {0x0f4, "CHA52"},
+    {0x0f5, "CHA53"},
+    {0x0f6, "CHA54"},
+    {0x0f7, "CHA55"},
+    {0x0f8, "CHA56"},
+    {0x0f9, "CHA57"},
+    {0x0fa, "CHA58"},
+    {0x0fb, "CHA59"},
+    {0x0fc, "CHA60"},
+    {0x0fd, "CHA61"},
+    {0x0fe, "CHA62"},
+    {0x0ff, "CHA63"}
 };
 
 const std::map<uint32_t, const char*> CpxOpCodeDecode = {
@@ -189,36 +268,3 @@ const std::map<uint32_t, const char*> CpxOpCodeDecode = {
     {0x00d, "KNonSnpRd"},
     {0x00f, "Slot0LLCTRL"}
 };
-
-struct CpxTORData
-{
-    union
-    {
-        struct
-        {
-            uint32_t master_valid : 1, valid : 1, retry : 1, in_pipe : 1,
-                cha_inside : 5, tor : 5, core_id : 6, thread_id : 1,
-                request_opCode : 11;
-        };
-        uint32_t subindex0;
-    };
-    union
-    {
-        struct
-        {
-            uint32_t addr_lo : 14, fsm : 6, target : 5, sad : 3, lcs : 4;
-        };
-        uint32_t subindex1;
-    };
-    union
-    {
-        uint32_t address;
-        uint32_t subindex2;
-    };
-
-    uint32_t cha;
-    uint32_t idx;
-};
-
-using CpxTOR =
-    std::map<uint32_t, std::pair<SocketCtx, std::vector<CpxTORData>>>;

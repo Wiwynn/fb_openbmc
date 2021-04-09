@@ -3,6 +3,159 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.46] - 2021-04-01
+### Added
+
+### Changed
+- **[SPR]** first error bank numeration
+
+### Removed
+
+### Fixed
+- **[ICX]** memory error decoding in triage information
+
+## [1.45] - 2021-03-17
+### Added
+- **[ICX]** correctable and uncorrectable memory error decoding
+- **[ICX]** silkscreen_map (if not provided in the argument) by default taken in priority from:
+   - /var/bafi/default_silkscreen_map.json (LINUX) or
+   C:\temp\bafi\default_silkscreen_map.json (WINDOWS)
+   - default_silkscreen_map.json located in bafi binary directory
+- **[General]** memory errors, package thermal status in triage information
+- **[General]** silkscreen map file parameter in bafi_excel_summary.py
+
+### Changed
+- **[General]** triage outputs every socket information
+
+### Removed
+
+### Fixed
+
+## [1.40] - 2021-02-01 (Initial Eaglestream release)
+### Added
+- **[SPR]** Eaglestream crashdump rev 0.3 support
+- **[ICX-D]** ICX-D crashdump support
+
+### Changed
+
+### Removed
+
+### Fixed
+
+## [1.15] - 2021-01-26
+### Added
+- **[General]** devices_log_converter.py which enables to parse pci_devices or
+lspci format
+- **[General]** device map (if not provied in the argument) by default taken in priority from:
+   - /var/bafi/default_device_map.json (LINUX) or
+   C:\temp\bafi\default_device_map.json (WINDOWS)
+   - default_device_map.json located in bafi binary directory
+- **[General]** CHA misc decoding
+
+### Changed
+
+### Removed
+
+### Fixed
+- **[SKX]** FirstIERR and FirstMCERR not parsing correctly
+
+## [1.14] - 2020-12-31
+### Added
+
+### Changed
+- **[General]** changes MCA_ERR_SRC_LOG register from uncore to metadata
+
+### Removed
+
+### Fixed
+- **[General]** missing MCACOD decoded info in summary for DCU and PCU banks
+- **[CLX]** missing MCA section details
+- **[CLX]** missing FirstIERR and FirstMCERR in Errors_Per_Socket
+
+## [1.13] - 2020-12-21
+### Added
+- **[General]** specifying output path for cscript_map_converter.py using -o flag
+- **[SKX]** Parsing CHA registers for SKX, CLX and CPX
+
+### Changed
+
+### Removed
+
+### Fixed
+
+## [1.1] - 2020-10-13
+### Added
+- **[General]** printing PCIe AER information for every socket in error triage
+- **[General]** bafi_excel_summary.py script to create triage report from multiple files
+in csv format
+- **[General]** printing type of support for each CPU using -v flag (release or engineering)
+
+### Changed
+
+### Removed
+
+### Fixed
+- -t and -d flags combination
+
+## [1.05] - 2020-09-28
+### Added
+
+### Changed
+
+### Removed
+
+### Fixed
+- TORdump address map to crashdump system address
+
+## [1.0] - 2020-09-18
+### Added
+- -d flag which enables to analyze multiple crashdumps contained in a current
+folder
+- -t flag which prints out error triage information
+- multiple flags usage
+
+### Changed
+- binary name (crashdump_analyzer.exe -> bafi.exe)
+
+### Removed
+
+### Fixed
+
+## [0.96] - 2020-08-13
+### Added
+- Linux /proc/iomem text format support in cscript_map_converter.py
+- -r flag which enables to print output in one line
+
+### Changed
+- Json keys don't contain dots anymore, changed to underscores
+
+### Removed
+
+### Fixed
+- Fixed bug to support Purley ACD rev0.6 crashdump.json
+
+## [0.95] - 2020-08-07
+### Added
+- TSC comparison between all sockets
+- Version information
+
+### Changed
+
+### Removed
+
+### Fixed
+
+## [0.9] - 2020-07-31
+### Added
+- Purley crashdump CPU support
+- I/O Errors section in summary if first MCERR is UBOX error
+
+### Changed
+
+### Removed
+
+### Fixed
+
 ## [0.6] - 2020-06-19
 ### Added
 - MCA CHA banks address decoding
@@ -98,3 +251,4 @@ distinction
 ### Removed
 
 ### Fixed
+

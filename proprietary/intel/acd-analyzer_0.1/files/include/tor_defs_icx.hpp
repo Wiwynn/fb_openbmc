@@ -2,7 +2,7 @@
  *
  * INTEL CONFIDENTIAL
  *
- * Copyright 2020 Intel Corporation.
+ * Copyright 2021 Intel Corporation.
  *
  * This software and the related documents are Intel copyrighted materials, and
  * your use of them is governed by the express license under which they were
@@ -24,7 +24,7 @@
 
 #include <tor_defs.hpp>
 
-const std::array<const char*, 27> ICX_PORT_ID = {
+const std::array<const char*, 32> ICX_PORT_ID = {
     "UPI0",
     "UPI1",
     "UPI2",
@@ -52,6 +52,11 @@ const std::array<const char*, 27> ICX_PORT_ID = {
     "not implemented",
     "not implemented",
     "UBOX",
+    "not implemented",
+    "not implemented",
+    "not implemented",
+    "not implemented",
+    "not implemented",
 };
 
 const std::array<const char*, 16> ICX_LLCS = {
@@ -84,7 +89,7 @@ const std::map<uint8_t, uint8_t> IcxfirstErrorCha = {
     {0x63, 35}, {0x64, 36}, {0x65, 37}
 };
 
-const std::map<uint8_t, const char*> IcxfirstError = {
+const std::map<uint16_t, const char*> IcxfirstError = {
     {0x00, "Core0, bank 0-3"},
     {0x01, "Core1, bank 0-3"},
     {0x02, "Core2, bank 0-3"},
@@ -180,121 +185,148 @@ const std::map<uint8_t, const char*> IcxfirstError = {
 
 const std::map<uint32_t, const char*> IcxOpCodeDecode = {
     {0x107, "PRd"},
-    {0x11e, "RdCurr"},
-    {0x505, "KInvXtoI"},
-    {0x002, "RspDataM"},
-    {0x148, "Invd"},
-    {0x18c, "WbStoI"},
-    {0x102, "DRd"},
-    {0x40c, "KEvctCln"},
-    {0x104, "DRd_Opt"},
-    {0x149, "WbInvd"},
-    {0x023, "RspIFwdFE"},
-    {0x11c, "CLWB"},
-    {0x500, "KRdCur"},
-    {0x180, "CLDemote"},
-    {0x404, "KWbIDataPtl"},
-    {0x003, "RspIFwdM"},
-    {0x504, "KRdInvOwn"},
-    {0x01d, "GsrIsInMstate"},
-    {0x008, "Cmp_FwdInvItoE"},
-    {0x188, "ItoM"},
-    {0x181, "ItoMWr_NS"},
-    {0x408, "KWbPushMtoI"},
-    {0x01b, "Victim"},
-    {0x106, "DRdPTE"},
     {0x111, "CRd_Pref"},
-    {0x009, "Cmp_PullData"},
-    {0x00c, "DataC_Cmp"},
+    {0x13c, "CLCleanse"},
+    {0x1d8, "EOI"},
     {0x199, "PrefCode"},
-    {0x19d, "MemPushWr_NS"},
-    {0x116, "WCiLF_NS"},
-    {0x103, "SetMonitor"},
-    {0x110, "RFO_Pref"},
-    {0x502, "KRdData"},
-    {0x18b, "ItoMWr_WT"},
-    {0x101, "CRd"},
-    {0x10c, "WCiLF"},
-    {0x1a4, "WbPushHint"},
-    {0x004, "PullData"},
-    {0x01e, "DataNC"},
-    {0x010, "FakeCycle"},
-    {0x18d, "MemPushWr"},
-    {0x100, "RFO"},
-    {0x40d, "KNonSnpRd"},
-    {0x187, "WbEFtoE"},
-    {0x507, "KInvItoE"},
-    {0x11f, "RFOWr"},
-    {0x50f, "KInvItoM"},
-    {0x705, "SnpInvItoE"},
-    {0x1c0, "SpCyc"},
-    {0x113, "DRd_NS"},
-    {0x10d, "WCiL"},
-    {0x40b, "KWbFlush"},
-    {0x025, "FwdCnflt"},
-    {0x702, "SnpData"},
-    {0x033, "RspIFwdMPtl"},
     {0x114, "DRd_Opt_Pref"},
-    {0x704, "SnpInvOwn"},
-    {0x501, "KRdCode"},
-    {0x701, "SnpCode"},
-    {0x406, "KWbEDataPtl"},
+    {0x189, "ItoMWr"},
+    {0x1d0, "NOP"},
+    {0x19d, "MemPushWr_NS"},
+    {0x148, "LLCInv"},
+    {0x1a8, "ItoMCacheNear"},
+    {0x116, "WCiLF_NS"},
     {0x118, "CLFlush"},
-    {0x400, "KWbIData"},
-    {0x001, "RspS"},
+    {0x108, "Enqueue"},
+    {0x103, "SetMonitor"},
     {0x19a, "PrefData"},
-    {0x1d8, "CBO_EOI"},
-    {0x026, "RspV"},
-    {0x000, "RspI"},
+    {0x1da, "IntPhy"},
+    {0x10e, "UCRdF"},
+    {0x110, "RFO_Pref"},
     {0x185, "WbMtoE"},
+    {0x181, "ItoMWr_NS"},
     {0x1de, "SplitLock"},
     {0x14b, "LLCWB"},
-    {0x1d5, "PortOut"},
+    {0x101, "CRd"},
+    {0x18c, "WbStoI"},
     {0x198, "PrefRFO"},
-    {0x403, "KNonSnpWr"},
-    {0x184, "WbMtoI"},
-    {0x007, "Cmp_FwdCode"},
-    {0x1d4, "IntA"},
-    {0x109, "PCommit"},
-    {0x703, "SnpDataMigratory"},
-    {0x032, "RspNack"},
-    {0x006, "Cmp"},
-    {0x139, "PMSeqInvd"},
-    {0x031, "LLCVictim"},
-    {0x1d1, "ClrMonitor"},
-    {0x402, "KWbEData"},
-    {0x1df, "Lock"},
-    {0x105, "CRd_UC"},
-    {0x186, "WbEFtoI"},
-    {0x10e, "UCRdF"},
-    {0x13c, "CLCleanse"},
-    {0x401, "KWbSData"},
-    {0x407, "KNonSnpWrPtl"},
-    {0x020, "DataC"},
-    {0x030, "TOR_TimeOut"},
-    {0x00b, "Cmp_FwdInvOwn"},
-    {0x1a8, "ItoMCacheNear"},
-    {0x197, "ItoMWR_WT_NS"},
-    {0x1da, "IntPhy"},
-    {0x115, "WCiL_NS"},
-    {0x1d9, "IntLog"},
+    {0x1a4, "WbPushHint"},
     {0x11a, "CLFlush_Opt"},
-    {0x503, "KRdDataMigratory"},
-    {0x189, "ItoMWr"},
+    {0x102, "DRd"},
+    {0x184, "WbMtoI"},
+    {0x115, "WCiL_NS"},
+    {0x104, "DRd_Opt"},
+    {0x1d4, "IntA"},
+    {0x113, "DRd_NS"},
+    {0x109, "PCommit"},
     {0x1a9, "RdCurrCacheNear"},
     {0x10f, "WiL"},
+    {0x11c, "CLWB"},
+    {0x149, "LLCWBInv"},
     {0x1dc, "PortIn"},
-    {0x112, "DRd_Pref"},
-    {0x005, "PullDataBogus"},
-    {0x700, "SnpCur"},
-    {0x027, "RspVFwdV"},
+    {0x1db, "IntPriUp"},
+    {0x18d, "MemPushWr"},
+    {0x100, "RFO"},
+    {0x180, "CLDemote"},
+    {0x1df, "Lock"},
+    {0x1d5, "PortOut"},
     {0x195, "WbOtoE"},
-    {0x50c, "KRdInvOwnE"},
+    {0x11e, "RdCurr"},
+    {0x187, "WbEFtoE"},
+    {0x1d1, "ClrMonitor"},
+    {0x11f, "RFOWr"},
     {0x194, "WbOtoI"},
     {0x18a, "SpecItoM"},
+    {0x188, "ItoM"},
+    {0x197, "ItoMWR_WT_NS"},
     {0x1d3, "Unlock"},
-    {0x1db, "IntPriUp"},
-    {0x024, "RspSFwdFE"}
+    {0x18b, "ItoMWr_WT"},
+    {0x10c, "WCiLF"},
+    {0x1c0, "SpCyc"},
+    {0x112, "DRd_Pref"},
+    {0x186, "WbEFtoI"},
+    {0x10d, "WCiL"},
+    {0x105, "CRd_UC"},
+    {0x1d9, "IntLog"},
+    {0x106, "DRdPTE"},
+    {0x50d, "RSVD13"},
+    {0x50a, "RSVD10"},
+    {0x50b, "RSVD11"},
+    {0x505, "InvXtoI"},
+    {0x503, "RdDataMig"},
+    {0x50f, "InvItoM"},
+    {0x500, "RdCur"},
+    {0x50c, "RdInv"},
+    {0x50e, "RSVD14"},
+    {0x508, "RSVD8"},
+    {0x509, "RSVD9"},
+    {0x502, "RdData"},
+    {0x504, "RdInvOwn"},
+    {0x506, "PushHint"},
+    {0x507, "InvItoE"},
+    {0x501, "RdCode"},
+    {0x40a, "RSVD10"},
+    {0x40e, "RSVD14"},
+    {0x40b, "WbFlush"},
+    {0x40c, "EvctCln"},
+    {0x406, "WbMtoEPtl"},
+    {0x40d, "NonSnpRd"},
+    {0x403, "NonSnpWr"},
+    {0x401, "WbMtoS"},
+    {0x409, "RSVD9"},
+    {0x408, "WbPushMtoI"},
+    {0x404, "WbMtoIPtl"},
+    {0x402, "WbMtoE"},
+    {0x407, "NonSnpWrPtl"},
+    {0x405, "RSVD5"},
+    {0x400, "WbMtoI"},
+    {0x70e, "RSVD14"},
+    {0x70d, "SnpFInv"},
+    {0x702, "SnpData"},
+    {0x704, "SnpInvOwn"},
+    {0x70b, "SnpFDataMig"},
+    {0x700, "SnpCur"},
+    {0x70a, "SnpFData"},
+    {0x701, "SnpCode"},
+    {0x703, "SnpDataMig"},
+    {0x70c, "SnpFInvOwn"},
+    {0x709, "SnpFCode"},
+    {0x708, "SnpFCur"},
+    {0x705, "SnpInv"},
+    {0x706, "RSVD6"},
+    {0x707, "RSVD7"},
+    {0x14, "GNTE_CMP_RSPI"},
+    {0x18, "GNTE_CMP_RSPI_PULLDATA"},
+    {0x9, "CMP_PULLDATA"},
+    {0x33, "RSPIFWDMPTL"},
+    {0x1d, "GSRISINMSTATE"},
+    {0x23, "RSPIFWDFE"},
+    {0x5, "PULLDATABOGUS"},
+    {0x20, "DATAC"},
+    {0x1b, "VICTIM"},
+    {0x1e, "DATANC"},
+    {0x27, "RSPVFWDV"},
+    {0x34, "PULLDATAPTL"},
+    {0x26, "RSPV"},
+    {0x6, "CMP"},
+    {0xb, "CMP_FWDINVOWN"},
+    {0x7, "CMP_FWDCODE"},
+    {0x30, "TOR_TIMEOUT"},
+    {0x3, "RSPIFWDM"},
+    {0x1, "RSPS"},
+    {0xc, "DATAC_CMP"},
+    {0x32, "RSPNACK"},
+    {0x8, "CMP_FWDINVITOE"},
+    {0xd, "DATAC_CMP_RSPI"},
+    {0x0, "RSPI"},
+    {0x4, "PULLDATA"},
+    {0x10, "FAKECYCLE"},
+    {0x25, "FWDCNFLT"},
+    {0x2, "RSPDATAM"},
+    {0x24, "RSPSFWDFE"},
+    {0x31, "LLCVICTIM"},
+    {0x17, "GNTE_CMP_PULLDATA"},
+    {0x13, "GNTE_CMP"}
 };
 
 union PackageThermStatus
@@ -311,159 +343,3 @@ union PackageThermStatus
     };
     uint32_t package_therm_status;
 };
-
-struct IcxTORData
-{
-    union
-    {
-        struct
-        {
-            uint32_t reserved0 : 2, valid : 1, reserved1 : 2, retry : 1,
-                reserved2 : 1, in_pipe : 1, reserved3 : 24;
-        };
-        uint32_t tordump0_subindex0;
-    };
-    union
-    {
-        struct
-        {
-            uint32_t reserved4 : 29, address_8_6 : 3;
-        };
-        uint32_t tordump1_subindex0;
-    };
-    union
-    {
-        struct
-        {
-            uint32_t address_16_9 : 8, reserved5 : 24;
-        };
-        uint32_t tordump2_subindex0;
-    };
-    union
-    {
-        struct
-        {
-            uint32_t reserved6 : 8, thread_id : 3, reserved7 : 21;
-        };
-        uint32_t tordump0_subindex1;
-    };
-    union
-    {
-        struct
-        {
-            uint32_t reserved8 : 29, address_19_17 : 3;
-        };
-        uint32_t tordump1_subindex1;
-    };
-    union
-    {
-        struct
-        {
-            uint32_t address_27_20 : 8, reserved9 : 24;
-        };
-        uint32_t tordump2_subindex1;
-    };
-    union
-    {
-        struct
-        {
-            uint32_t reserved10 : 7, target : 5, reserved11 : 6, sad : 3,
-                reserved12 : 11;
-        };
-        uint32_t tordump0_subindex2;
-    };
-    union
-    {
-        struct
-        {
-            uint32_t reserved13 : 29, address_30_28 : 3;
-        };
-        uint32_t tordump1_subindex2;
-    };
-    union
-    {
-        struct
-        {
-            uint32_t address_38_31 : 8, reserved14 : 24;
-        };
-        uint32_t tordump2_subindex2;
-    };
-    union
-    {
-        struct
-        {
-            uint32_t reserved15 : 21, core_id : 6, reserved16 : 5;
-        };
-        uint32_t tordump0_subindex3;
-    };
-    union
-    {
-        struct
-        {
-            uint32_t reserved17 : 29, address_41_39 : 3;
-        };
-        uint32_t tordump1_subindex3;
-    };
-    union
-    {
-        struct
-        {
-            uint32_t address_49_42 : 8, reserved18 : 24;
-        };
-        uint32_t tordump2_subindex3;
-    };
-    union
-    {
-        struct
-        {
-            uint32_t reserved19 : 17, request_opCode : 11, reserved20 : 4;
-        };
-        uint32_t tordump0_subindex4;
-    };
-    union
-    {
-        struct
-        {
-            uint32_t reserved21 : 29, address_51_50 : 2, reserved22 : 1;
-        };
-        uint32_t tordump1_subindex4;
-    };
-    union
-    {
-        struct
-        {
-            uint32_t reserved23 : 32;
-        };
-        uint32_t tordump2_subindex4;
-    };
-    union
-    {
-        struct
-        {
-            uint32_t reserved24 : 3, lcs : 4, reserved25 : 25;
-        };
-        uint32_t tordump0_subindex7;
-    };
-    union
-    {
-        struct
-        {
-            uint32_t reserved26 : 1, fsm : 5, reserved27 : 26;
-        };
-        uint32_t tordump1_subindex7;
-    };
-    union
-    {
-        struct
-        {
-            uint32_t reserved28 : 32;
-        };
-        uint32_t tordump2_subindex7;
-    };
-
-    uint32_t cha;
-    uint32_t idx;
-};
-
-using IcxTOR =
-    std::map<uint32_t, std::pair<SocketCtx, std::vector<IcxTORData>>>;

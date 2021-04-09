@@ -1,0 +1,140 @@
+{
+    "MCA": {
+        "socket0": [
+            {
+                "Address": "0x00000000",
+                "Bank": "4 (PCU)",
+                "CTL": "0x00000007",
+                "Core": 0,
+                "Misc": "0x00000000",
+                "Status": "0xba000000b0000402",
+                "Status_decoded": {
+                    "ADDRV": "0x0",
+                    "CORRECTED_ERROR_COUNT": "0x00",
+                    "CORR_ERR_STS_IND": "0x0",
+                    "CORR_ERR_STS_IND_decoded": "No hardware status tracking is provided for the structure reporting this event",
+                    "EN": "0x1",
+                    "ENH_MCA_AVAIL0": "0x0",
+                    "ENH_MCA_AVAIL1": "0x0",
+                    "MCACOD": "0x402",
+                    "MCACOD_decoded": "PCU",
+                    "MISCV": "0x1",
+                    "MSEC_FW": "0xb0",
+                    "MSEC_FW_decoded": "DISPATCHER_RUN_BUSY_TIMEOUT ; Dispatcher timed out",
+                    "MSEC_HW": "0x0",
+                    "MSEC_UC": "0x0",
+                    "OVERFLOW": "0x0",
+                    "PCC": "0x1",
+                    "UC": "0x1",
+                    "VALID": "0x1"
+                },
+                "Thread": 0
+            }
+        ],
+        "socket1": [
+            {
+                "Address": "0x00000000",
+                "Bank": "4 (PCU)",
+                "CTL": "0x00000007",
+                "Core": 0,
+                "Misc": "0x00000000",
+                "Status": "0xba000000b0000402",
+                "Status_decoded": {
+                    "ADDRV": "0x0",
+                    "CORRECTED_ERROR_COUNT": "0x00",
+                    "CORR_ERR_STS_IND": "0x0",
+                    "CORR_ERR_STS_IND_decoded": "No hardware status tracking is provided for the structure reporting this event",
+                    "EN": "0x1",
+                    "ENH_MCA_AVAIL0": "0x0",
+                    "ENH_MCA_AVAIL1": "0x0",
+                    "MCACOD": "0x402",
+                    "MCACOD_decoded": "PCU",
+                    "MISCV": "0x1",
+                    "MSEC_FW": "0xb0",
+                    "MSEC_FW_decoded": "DISPATCHER_RUN_BUSY_TIMEOUT ; Dispatcher timed out",
+                    "MSEC_HW": "0x0",
+                    "MSEC_UC": "0x0",
+                    "OVERFLOW": "0x0",
+                    "PCC": "0x1",
+                    "UC": "0x1",
+                    "VALID": "0x1"
+                },
+                "Thread": 0
+            }
+        ]
+    },
+    "TOR": {
+        "socket0": [
+            {
+                "Decoded": null,
+                "Details": {
+                    "Address": "0x7710e080 (TSEG)",
+                    "CHA": "0x7",
+                    "CoreId": "0x9",
+                    "IDX": "0x1",
+                    "InPipe": "0x0",
+                    "LLC": "0x3",
+                    "LLC_decoded": "SF_H",
+                    "Request": "0x100",
+                    "Request_decoded": "RFO",
+                    "Retry": "0x0",
+                    "SAD": "0x0",
+                    "SAD_decoded": "HOM",
+                    "Target": "0x4",
+                    "Target_decoded": "IMC0",
+                    "ThreadId": "0x1",
+                    "TorFSMState": "0x7"
+                },
+                "First_IERR": false,
+                "First_MCERR": false
+            }
+        ],
+        "socket1": []
+    },
+    "_total_time": "0.760s",
+    "summary": {
+        "socket0": [
+            {
+                "MCE": [
+                    "bank 4 (PCU), MCACOD_decoded: PCU, MSEC_FW_decoded: DISPATCHER_RUN_BUSY_TIMEOUT ; Dispatcher timed out"
+                ]
+            },
+            {
+                "PCIe_AER_Correctable_errors": {
+                    "B00_D03_F0_0x158": "receiver_error, replay_num_rollover, replay_timer_timeout",
+                    "B03_D04_F0_0x110": "receiver_error",
+                    "B04_D02_F0_0x110": "receiver_error"
+                }
+            },
+            {
+                "TSC": [
+                    "pcu_first_ierr_tsc_cfg: 0x2dd3ff8c24 (Occurred first between all TSCs)",
+                    "pcu_first_mcerr_tsc_cfg: 0x00000000",
+                    "IERR occurred: true",
+                    "MCERR occurred: false"
+                ]
+            },
+            {
+                "Errors_Per_Socket": "IntCATERR, ExtCATERR, FirstIERR = Chassis_Punit_FSM, bank 4, FirstMCERR = Chassis_Punit_FSM, bank 4"
+            }
+        ],
+        "socket1": [
+            {
+                "MCE": [
+                    "bank 4 (PCU), MCACOD_decoded: PCU, MSEC_FW_decoded: DISPATCHER_RUN_BUSY_TIMEOUT ; Dispatcher timed out"
+                ]
+            },
+            {
+                "TSC": [
+                    "pcu_first_ierr_tsc_cfg: 0x00000000",
+                    "pcu_first_mcerr_tsc_cfg: 0x12d83d13754",
+                    "IERR occurred: false",
+                    "MCERR occurred: true"
+                ]
+            },
+            {
+                "Errors_Per_Socket": "IntCATERR, ExtCATERR, FirstIERR = Chassis_Punit_FSM, bank 4, FirstMCERR = Chassis_Punit_FSM, bank 4"
+            }
+        ]
+    }
+}

@@ -2,7 +2,7 @@
  *
  * INTEL CONFIDENTIAL
  *
- * Copyright 2020 Intel Corporation.
+ * Copyright 2021 Intel Corporation.
  *
  * This software and the related documents are Intel copyrighted materials, and
  * your use of them is governed by the express license under which they were
@@ -22,16 +22,17 @@
 
 #include <mca_cpx.hpp>
 #include <mca_icx.hpp>
+#include <mca_skx.hpp>
+#include <mca_spr.hpp>
 
 std::shared_ptr<McaDecoder> mcaDecoderFactory(const MCAData& mca,
                                               const std::string& cpuType)
 {
-    if (cpuType == "CPX")
+    if (cpuType == "CPX" || cpuType == "CLX")
     {
         if (mca.cbo)
         {
-            // CBO banks decoding for CPX not yet implemented
-            return nullptr;
+            return std::make_shared<CpxMcaBankCbo>(mca);
         }
         switch (mca.bank)
         {
@@ -127,5 +128,119 @@ std::shared_ptr<McaDecoder> mcaDecoderFactory(const MCAData& mca,
                 return std::make_shared<IcxMcaBankImc>(mca);
         }
     }
+    else if (cpuType == "SKX")
+    {
+        if (mca.cbo)
+        {
+            return std::make_shared<SkxMcaBankCbo>(mca);
+        }
+        switch (mca.bank)
+        {
+            case 0:
+                return std::make_shared<SkxMcaBankIfu>(mca);
+            case 1:
+                return std::make_shared<SkxMcaBankDcu>(mca);
+            case 3:
+                return std::make_shared<SkxMcaBankMlc>(mca);
+            case 4:
+                return std::make_shared<SkxMcaBankPcu>(mca);
+            case 5:
+                return std::make_shared<SkxMcaBankUpi>(mca);
+            case 6:
+                return std::make_shared<SkxMcaBankIio>(mca);
+            case 7:
+                return std::make_shared<SkxMcaBankM2m>(mca);
+            case 8:
+                return std::make_shared<SkxMcaBankM2m>(mca);
+            case 9:
+                return std::make_shared<SkxMcaBankCha>(mca);
+            case 10:
+                return std::make_shared<SkxMcaBankCha>(mca);
+            case 11:
+                return std::make_shared<SkxMcaBankCha>(mca);
+            case 12:
+                return std::make_shared<SkxMcaBankUpi>(mca);
+            case 13:
+                return std::make_shared<SkxMcaBankImc>(mca);
+            case 14:
+                return std::make_shared<SkxMcaBankImc>(mca);
+            case 15:
+                return std::make_shared<SkxMcaBankImc>(mca);
+            case 16:
+                return std::make_shared<SkxMcaBankImc>(mca);
+            case 17:
+                return std::make_shared<SkxMcaBankImc>(mca);
+            case 18:
+                return std::make_shared<SkxMcaBankImc>(mca);
+            case 19:
+                return std::make_shared<SkxMcaBankUpi>(mca);
+        }
+    }
+    else if (cpuType == "SPR")
+    {
+        if (mca.cbo)
+        {
+            return std::make_shared<SprMcaBankCbo>(mca);
+        }
+        switch (mca.bank)
+        {
+            case 0:
+                return std::make_shared<SprMcaBankIfu>(mca);
+            case 1:
+                return std::make_shared<SprMcaBankDcu>(mca);
+            case 2:
+                return std::make_shared<SprMcaBankDtlb>(mca);
+            case 3:
+                return std::make_shared<SprMcaBankMlc>(mca);
+            case 4:
+                return std::make_shared<SprMcaBankPcu>(mca);
+            case 5:
+                return std::make_shared<SprMcaBankUpi>(mca);
+            case 6:
+                return std::make_shared<SprMcaBankIio>(mca);
+            case 7:
+                return std::make_shared<SprMcaBankUpi>(mca);
+            case 8:
+                return std::make_shared<SprMcaBankUpi>(mca);
+            case 9:
+                return std::make_shared<SprMcaBankCha>(mca);
+            case 10:
+                return std::make_shared<SprMcaBankCha>(mca);
+            case 11:
+                return std::make_shared<SprMcaBankCha>(mca);
+            case 12:
+                return std::make_shared<SprMcaBankM2m>(mca);
+            case 13:
+                return std::make_shared<SprMcaBankImc>(mca);
+            case 14:
+                return std::make_shared<SprMcaBankImc>(mca);
+            case 15:
+                return std::make_shared<SprMcaBankImc>(mca);
+            case 16:
+                return std::make_shared<SprMcaBankM2m>(mca);
+            case 17:
+                return std::make_shared<SprMcaBankImc>(mca);
+            case 18:
+                return std::make_shared<SprMcaBankImc>(mca);
+            case 19:
+                return std::make_shared<SprMcaBankImc>(mca);
+            case 20:
+                return std::make_shared<SprMcaBankM2m>(mca);
+            case 21:
+                return std::make_shared<SprMcaBankImc>(mca);
+            case 22:
+                return std::make_shared<SprMcaBankImc>(mca);
+            case 23:
+                return std::make_shared<SprMcaBankImc>(mca);
+            case 24:
+                return std::make_shared<SprMcaBankM2m>(mca);
+            case 25:
+                return std::make_shared<SprMcaBankImc>(mca);
+            case 26:
+                return std::make_shared<SprMcaBankImc>(mca);
+            case 27:
+                return std::make_shared<SprMcaBankImc>(mca);
+        }
+    }
     return nullptr;
-};
+};

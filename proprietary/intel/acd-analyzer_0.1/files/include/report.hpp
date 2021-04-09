@@ -2,7 +2,7 @@
  *
  * INTEL CONFIDENTIAL
  *
- * Copyright 2020 Intel Corporation.
+ * Copyright 2021 Intel Corporation.
  *
  * This software and the related documents are Intel copyrighted materials, and
  * your use of them is governed by the express license under which they were
@@ -17,456 +17,359 @@
  ******************************************************************************/
 
 #pragma once
-#include <array>
-#include <map>
 #include <nlohmann/json.hpp>
-#include <optional>
-#include <sstream>
 #include <string>
-#include <tuple>
-#include <vector>
+#include <regex>
 
-#include <aer.hpp>
-#include <mca_defs.hpp>
-#include <summary.hpp>
+#include <pcilookup.hpp>
+#include <generic_report.hpp>
 #include <tor_defs.hpp>
+#include <tor_defs_icx.hpp>
+#include <tor_defs_cpx.hpp>
+#include <tor_defs_skx.hpp>
+#include <tor_defs_spr.hpp>
 #include <utils.hpp>
+#include <tor_whitley.hpp>
 
 using json = nlohmann::json;
 
-class Report
+template <typename T>
+class Report : public GenericReport
 {
   public:
     Report() = delete;
-    Report(Summary& summary) : summary(summary) {};
+    Report(Summary& summary, T& tor, std::string cpu_type, json deviceMapFile, json silkscreenMapFile, const json& input) :
+           GenericReport(summary), tor(tor), input(input) {
+        Cpu = cpu_type;
+        deviceMap = deviceMapFile;
+        silkscreenMap = silkscreenMapFile;
 
-    [[nodiscard]] json createGenericReport() {
-        json report;
+        if (Cpu == "ICX")
+        {
+            PORT_ID = ICX_PORT_ID;
+            LLCS = ICX_LLCS;
+            FirstErrorCha = IcxfirstErrorCha;
+            FirstError = IcxfirstError;
+            OpCodeDecode = IcxOpCodeDecode;
+        }
+        else if (Cpu == "CPX" || Cpu == "CLX")
+        {
+            PORT_ID = CPX_PORT_ID;
+            LLCS = CPX_LLCS;
+            FirstErrorCha = CpxfirstErrorCha;
+            FirstError = CpxfirstError;
+            OpCodeDecode = CpxOpCodeDecode;
+        }
+        else if (Cpu == "SKX")
+        {
+            PORT_ID = SKX_PORT_ID;
+            LLCS = SKX_LLCS;
+            FirstErrorCha = SkxfirstErrorCha;
+            FirstError = SkxfirstError;
+            OpCodeDecode = SkxOpCodeDecode;
+        }
+        else if (Cpu == "SPR")
+        {
+            PORT_ID = SPR_PORT_ID;
+            LLCS = SPR_LLCS;
+            FirstErrorCha = SprfirstErrorCha;
+            FirstError = SprfirstError;
+            OpCodeDecode = SprOpCodeDecode;
+        }
+    };
+
+    [[nodiscard]] json createJSONReport() {
+        json report = createGenericReport();
+        json& torReport = report["TOR"];
         json& summaryReport = report["summary"];
-        json& mcaReport = report["MCA"];
-
-        for (auto const& [socketId, socketMcasData] : summary.mca)
+        auto cpuSections = prepareJson(input);
+        for (auto const& [socketId, reportData] : tor)
         {
-            std::vector<std::array<std::string, 3>> mceSummary;
             std::string socket = "socket" + std::to_string(socketId);
-            json& mcaEntry = mcaReport[socket];
-            mcaEntry = json::array();
-            for (auto const& mcaData : socketMcasData)
+            auto ctxSocket = reportData.first;
+            auto tors = reportData.second;
+            json& summaryEntry = summaryReport[socket];
+            json& socketEntry = torReport[socket];
+            json errorsPerSocket;
+            json uboxAdditionalInformation;
+            json thermalStatus;
+            json firstMcerr;
+            socketEntry = json::array();
+            errorsPerSocket["Errors_Per_Socket"] =
+                createSummaryString(ctxSocket, FirstError, Cpu, summaryEntry);
+            std::regex uboxMCERR("FirstMCERR = .*, bank 6");
+            std::regex uboxMCE("UBOX");
+            if(std::regex_search(
+                std::string(errorsPerSocket["Errors_Per_Socket"]), uboxMCERR))
             {
-                auto entry = createMcaEntry(mcaData);
-                if (entry.empty())
+                for (auto const& bankError : summaryEntry[0]["MCE"])
                 {
-                    continue;
+                    if (std::regex_search(std::string(bankError), uboxMCE))
+                    {
+                        std::size_t left = std::string(bankError).find("Bus");
+                        if (left > std::string(bankError).size())
+                            continue;
+
+                        std::size_t right = std::string(bankError).find(" from");
+                        uboxAdditionalInformation["IO_Errors"].push_back(
+                            std::string(bankError).substr(left, right - left));
+                        auto bdfObj = nlohmann::ordered_json::object();
+                        getBdfFromIoErrorsSection(std::string(bankError).
+                            substr(left, right - left), bdfObj);
+                        showBdfDescription(deviceMap, bdfObj);
+                        if (bdfObj.contains("Description"))
+                        {
+                            uboxAdditionalInformation["IO_Errors"].push_back(
+                                std::string(bdfObj["Description"]));
+                        }
+                    }
                 }
-                std::array<std::string, 3> summaryData = {"", "", ""};
-                summaryData[0] = entry["Bank"];
-                if (entry["Status.decoded"].contains("MCACOD.decoded"))
-                {
-                    summaryData[1] = "MCACOD.decoded: " +
-                        std::string(entry["Status.decoded"]["MCACOD.decoded"]);
-                }
-                if (entry["Status.decoded"].contains("MSCOD.decoded"))
-                {
-                    summaryData[2] = "MSCOD.decoded: " +
-                        std::string(entry["Status.decoded"]["MSCOD.decoded"]);
-                }
-                if (entry["Status.decoded"].contains("INSTANCE_ID.decoded"))
-                {
-                    summaryData[2] = "INSTANCE_ID.decoded: " +
-                        std::string(
-                            entry["Status.decoded"]["INSTANCE_ID.decoded"]);
-                }
-                if (entry["Status.decoded"].contains("MSEC_FW.decoded"))
-                {
-                    summaryData[2] = "MSEC_FW.decoded: " +
-                        std::string(entry["Status.decoded"]["MSEC_FW.decoded"]);
-                }
-                mceSummary.push_back(summaryData);
-                mcaEntry.push_back(entry);
             }
-            if (mceSummary.size() > 0)
-            {
-                json mceSummaryEntry;
-                mceSummaryEntry["MCE"] = createMceSummaryString(mceSummary);
-                summaryReport[socket].push_back(mceSummaryEntry);
-            }
-        }
+            summaryEntry.push_back(errorsPerSocket);
+            if (!uboxAdditionalInformation.empty())
+                summaryEntry.push_back(uboxAdditionalInformation);
 
-        for (auto const& [socketId, socketAerData] : summary.uncAer)
-        {
-            if (socketAerData.size() > 0)
+            auto packageThermStatus = createThermStatusString(socketId);
+            if (packageThermStatus)
             {
-                std::string socket = "socket" + std::to_string(socketId);
-                json aerEntry;
-                json& entry = aerEntry["PCIe AER Uncorrectable errors"];
-                for (auto const& aerData : socketAerData)
+                thermalStatus["Package_Therm_Status"] = *packageThermStatus;
+                summaryEntry.push_back(thermalStatus);
+            }
+            for (auto& torEntry : tors)
+            {
+                json entry;
+                json& details = entry["Details"];
+                if (Cpu == "ICX")
                 {
-                    entry[aerData.address] = createUncAerString(aerData);
+                    torEntry.core_id = torEntry.core_id1;
+                    torEntry.thread_id = torEntry.thread_id1;
+                    torEntry.request_opCode = torEntry.request_opCode1;
+                    torEntry.in_pipe = torEntry.in_pipe1;
+                    torEntry.retry = torEntry.retry1;
+                    torEntry.fsm = torEntry.fsm1;
+                    torEntry.lcs = torEntry.lcs1;
+                    torEntry.target = torEntry.target1;
+                    torEntry.sad = torEntry.sad1;
                 }
-                summaryReport[socket].push_back(aerEntry);
-            }
-        }
 
-        for (auto const& [socketId, socketAerData] : summary.corAer)
-        {
-            if (socketAerData.size() > 0)
-            {
-                std::string socket = "socket" + std::to_string(socketId);
-                json aerEntry;
-                json& entry = aerEntry["PCIe AER Correctable errors"];
-                for (auto const& aerData : socketAerData)
+                if (Cpu == "SPR")
                 {
-                    entry[aerData.address] = createCorAerString(aerData);
+                    torEntry.core_id = torEntry.core_id2_2_0 |
+                     torEntry.core_id2_6_3 << 3;
+                    torEntry.thread_id = torEntry.thread_id2;
+                    torEntry.request_opCode = torEntry.request_opCode2_6_0 |
+                     torEntry.request_opCode2_10_7 << 7;
+                    torEntry.in_pipe = torEntry.in_pipe2;
+                    torEntry.retry = torEntry.retry2;
+                    torEntry.fsm = torEntry.fsm2;
+                    torEntry.lcs = torEntry.lcs2;
+                    torEntry.target = torEntry.target2;
+                    torEntry.sad = torEntry.sad2;
                 }
-                summaryReport[socket].push_back(aerEntry);
+                details["CoreId"] =
+                    int_to_hex(static_cast<uint8_t>(torEntry.core_id));
+                details["ThreadId"] =
+                    int_to_hex(static_cast<uint8_t>(torEntry.thread_id));
+                details["CHA"] = int_to_hex(static_cast<uint8_t>(torEntry.cha));
+                details["IDX"] = int_to_hex(static_cast<uint8_t>(torEntry.idx));
+                details["Request"] =
+                    int_to_hex(static_cast<uint16_t>(torEntry.request_opCode));
+                auto requestDecoded = getDecoded(
+                    OpCodeDecode,
+                    static_cast<uint32_t>(torEntry.request_opCode));
+                if (requestDecoded)
+                {
+                    details["Request_decoded"] = *requestDecoded;
+                }
+                uint64_t address = getAddress(torEntry);
+                auto addressMapped = mapToMemory(address);
+                if (addressMapped)
+                {
+                    details["Address"] = int_to_hex(address) + " ("
+                        + *addressMapped + ")";
+                }
+                else
+                {
+                    details["Address"] = int_to_hex(address);
+                }
+                details["InPipe"] =
+                    int_to_hex(static_cast<uint8_t>(torEntry.in_pipe));
+                details["Retry"] =
+                    int_to_hex(static_cast<uint8_t>(torEntry.retry));
+                details["TorFSMState"] =
+                    int_to_hex(static_cast<uint8_t>(torEntry.fsm));
+                details["LLC"] = int_to_hex(static_cast<uint8_t>(torEntry.lcs));
+                if (static_cast<uint8_t>(torEntry.lcs) < LLCS.size())
+                {
+                    details["LLC_decoded"] = LLCS[torEntry.lcs];
+                }
+                details["Target"] =
+                    int_to_hex(static_cast<uint8_t>(torEntry.target));
+                if (static_cast<uint8_t>(torEntry.target) < PORT_ID.size())
+                {
+                    details["Target_decoded"] = PORT_ID[torEntry.target];
+                }
+                details["SAD"] = int_to_hex(static_cast<uint8_t>(torEntry.sad));
+                if (static_cast<uint8_t>(torEntry.sad) < SAD_RESULT.size())
+                {
+                    details["SAD_decoded"] = SAD_RESULT[torEntry.sad];
+                }
+
+                json& decoded = entry["Decoded"];
+
+                if (torEntry.sad == static_cast<uint8_t>(SadValues::CFG))
+                {
+                    decoded["ErrorType"] = "TOR Timeout Error";
+                    decoded["ErrorSubType"] =
+                        "Type 1: PCIe* MMCFG access cause TOR Timeout";
+                    if (static_cast<uint8_t>(torEntry.target) <
+                        PORT_ID.size())
+                    {
+                        decoded["Port"] = PORT_ID[torEntry.target];
+                    }
+                    decoded["BDF"] =
+                        BDFtoString(getBDFFromAddress(getAddress(torEntry)));
+                    auto bdfObj = nlohmann::ordered_json::object();
+                    getBdfFromFirstMcerrSection(decoded["BDF"], bdfObj);
+                    if (bdfObj.contains("Bus"))
+                        showBdfDescription(deviceMap, bdfObj);
+                    if (bdfObj.contains("Description"))
+                        decoded["Description"] = bdfObj["Description"];
+                }
+                else if (torEntry.sad ==
+                         static_cast<uint8_t>(SadValues::MMIOPartialRead))
+                {
+                    decoded["ErrorType"] = "TOR Timeout Error";
+                    decoded["ErrorSubType"] =
+                        "Type 2: PCIe* MMIO access cause TOR timeout.";
+                    if (static_cast<uint8_t>(torEntry.target) <
+                        PORT_ID.size())
+                    {
+                        decoded["Port"] = PORT_ID[torEntry.target];
+                    }
+                    decoded["BDF"] =
+                        BDFtoString(PciBdfLookup::lookup(getAddress(torEntry)));
+                    auto bdfObj = nlohmann::ordered_json::object();
+                    getBdfFromFirstMcerrSection(decoded["BDF"], bdfObj);
+                    if (bdfObj.contains("Bus"))
+                        showBdfDescription(deviceMap, bdfObj);
+                    if (bdfObj.contains("Description"))
+                        decoded["Description"] = bdfObj["Description"];
+                }
+                else if (torEntry.sad == static_cast<uint8_t>(SadValues::IO))
+                {
+                    decoded["ErrorType"] = "TOR Timeout Error";
+                    decoded["ErrorSubType"] =
+                        "Type 3: I/O Port in access cause TOR timeout.";
+                    if (static_cast<uint8_t>(torEntry.target) <
+                        PORT_ID.size())
+                    {
+                        decoded["Port"] = PORT_ID[torEntry.target];
+                    }
+                    decoded["BDF"] =
+                        BDFtoString(PciBdfLookup::lookup(getAddress(torEntry)));
+                    auto bdfObj = nlohmann::ordered_json::object();
+                    getBdfFromFirstMcerrSection(decoded["BDF"], bdfObj);
+                    if (bdfObj.contains("Bus"))
+                        showBdfDescription(deviceMap, bdfObj);
+                    if (bdfObj.contains("Description"))
+                        decoded["Description"] = bdfObj["Description"];
+                }
+                auto firstMcerrCha = getFirstErrorCha(
+                    FirstErrorCha, ctxSocket.mcerr.firstMcerrSrcIdCha);
+                if (Cpu == "SPR")
+                    firstMcerrCha = getFirstErrorCha(
+                    FirstErrorCha, ctxSocket.mcerrSpr.firstMcerrSrcIdCha);
+                if (firstMcerrCha == static_cast<uint8_t>(torEntry.cha) &&
+                    (ctxSocket.mcerr.firstMcerrValid ||
+                    ctxSocket.mcerrSpr.firstMcerrValid))
+                {
+                    firstMcerr["First_MCERR"] = entry["Decoded"];
+                    firstMcerr["First_MCERR"]["Address"] = details["Address"];
+                    if (!entry["Decoded"].empty())
+                    {
+                        summaryEntry.push_back(firstMcerr);
+                    }
+                    entry["First_MCERR"] = true;
+                }
+                else
+                {
+                    entry["First_MCERR"] = false;
+                }
+                auto firstIerrCha = getFirstErrorCha(
+                    FirstErrorCha, ctxSocket.ierr.firstIerrSrcIdCha);
+                if (Cpu == "SPR")
+                    firstIerrCha = getFirstErrorCha(
+                    FirstErrorCha, ctxSocket.ierrSpr.firstIerrSrcIdCha);
+                if (firstIerrCha == static_cast<uint8_t>(torEntry.cha) &&
+                    (ctxSocket.ierr.firstIerrValid ||
+                    ctxSocket.ierrSpr.firstIerrValid))
+                {
+                    entry["First_IERR"] = true;
+                }
+                else
+                {
+                    entry["First_IERR"] = false;
+                }
+                socketEntry.push_back(entry);
             }
-        }
-
-        for (auto const& [socketId, socketTscData] : summary.tsc)
-        {
-            json tscEntry;
-            std::string socket = "socket" + std::to_string(socketId);
-            auto tscData = json::array();
-            if (socketTscData.pcu_first_ierr_tsc_cfg != 0 ||
-                socketTscData.pcu_first_mcerr_tsc_cfg != 0)
+            for (auto const& [cpu, cpuSection] : cpuSections)
             {
-                json entry1 = "pcu_first_ierr_tsc_cfg: " +
-                    int_to_hex(socketTscData.pcu_first_ierr_tsc_cfg);
-                tscData.push_back(entry1);
-
-                json entry2 = "pcu_first_mcerr_tsc_cfg: " +
-                    int_to_hex(socketTscData.pcu_first_mcerr_tsc_cfg);
-                tscData.push_back(entry2);
-
-                std::stringstream ss1;
-                ss1 << "IERR occured: " << std::boolalpha
-                    << socketTscData.ierr_on_socket;
-                json entry3 = ss1.str();
-                tscData.push_back(entry3);
-
-                std::stringstream ss2;
-                ss2 << "MCERR occured: " << std::boolalpha
-                    << socketTscData.mcerr_on_socket;
-                json entry4 = ss2.str();
-                tscData.push_back(entry4);
-
-                std::stringstream ss3;
-                ss3 << "IERR occured first: " << std::boolalpha
-                    << socketTscData.ierr_occured_first;
-                json entry5 = ss3.str();
-                tscData.push_back(entry5);
-
-                std::stringstream ss4;
-                ss4 << "MCERR occured first: " << std::boolalpha
-                    << socketTscData.mcerr_occured_first;
-                json entry6 = ss4.str();
-                tscData.push_back(entry6);
-
-                tscEntry["TSC"] = tscData;
-                summaryReport[socket].push_back(tscEntry);
+                if (std::string(cpu) == "cpu" + std::to_string(socketId))
+                {
+                    auto memoryErrors = decodeRetryLog(cpuSection, silkscreenMap, std::to_string(socketId));
+                    if (memoryErrors != nullptr)
+                        summaryEntry.push_back(memoryErrors);
+                }
             }
         }
         return report;
     }
 
-    Summary& summary;
+  private :
+    std::string Cpu;
+    json deviceMap;
+    json silkscreenMap;
+    const json& input;
+    std::array<const char*, 32> PORT_ID;
+    std::array<const char*, 16> LLCS;
+    std::map<uint8_t, uint8_t> FirstErrorCha;
+    std::map<uint16_t, const char*> FirstError;
+    std::map<uint32_t, const char*> OpCodeDecode;
 
-  protected:
-    [[nodiscard]] json createMcaEntry(MCAData mcaData)
+    [[nodiscard]] uint64_t getAddress(const TORDataGeneric& torEntry)
     {
-        auto bankDecoder = mcaDecoderFactory(mcaData, summary.cpuType);
-        json entry;
-        if (!bankDecoder)
+        if (Cpu == "ICX")
         {
-            return entry;
+        return static_cast<uint64_t>(torEntry.address_8_6) << 6 |
+               static_cast<uint64_t>(torEntry.address_16_9) << 9 |
+               static_cast<uint64_t>(torEntry.address_19_17) << 17 |
+               static_cast<uint64_t>(torEntry.address_27_20) << 20 |
+               static_cast<uint64_t>(torEntry.address_30_28) << 28 |
+               static_cast<uint64_t>(torEntry.address_38_31) << 31 |
+               static_cast<uint64_t>(torEntry.address_41_39) << 39 |
+               static_cast<uint64_t>(torEntry.address_49_42) << 42 |
+               static_cast<uint64_t>(torEntry.address_51_50) << 50;
         }
-        entry = bankDecoder->decode();
-        // decode CHA bank address according to memory map
-        if (mcaData.cbo)
+        else if (Cpu == "SPR")
         {
-            auto addressMapped = mapToMemory(mcaData.address);
-            if (addressMapped)
-            {
-                std::stringstream ss;
-                ss << entry["Address"].get<std::string>() << " (" <<
-                    *addressMapped << ")";
-                entry["Address"] = ss.str();
-            }
-        }
-        return entry;
-    }
-
-    [[nodiscard]] std::optional<std::string> mapToMemory(uint64_t address)
-    {
-        for (auto const& [name, limits] : summary.memoryMap)
-        {
-            if (address >= limits[0] && address <= limits[1])
-            {
-                return name;
-            }
-        }
-        return {};
-    }
-
-    [[nodiscard]] std::optional<uint8_t> getFirstErrorCha(
-        std::map<uint8_t, uint8_t> decodingTable, uint32_t toDecode)
-    {
-        const auto& item = decodingTable.find(toDecode);
-        if (item != decodingTable.cend())
-        {
-            return item->second;
-        }
-        return {};
-    }
-
-    [[nodiscard]] std::string
-        BDFtoString(const std::tuple<uint8_t, uint8_t, uint8_t>& bdf)
-    {
-        auto& [bus, dev, func] = bdf;
-        if (bus == 0 && dev == 0 && func == 0)
-        {
-            return "Please refer to system address map";
-        }
-        std::stringstream ss;
-        ss << "Bus: " << int_to_hex(bus, false) << ", ";
-        ss << "Device: " << int_to_hex(dev, false) << ", ";
-        ss << "Function: " << int_to_hex(func, false);
-        return ss.str();
-    }
-
-    [[nodiscard]] std::tuple<uint8_t, uint8_t, uint8_t>
-        getBDFFromAddress(uint32_t address)
-    {
-        BDFFormatter bdf;
-        bdf.address = address;
-        return std::make_tuple(static_cast<uint8_t>(bdf.bus),
-            static_cast<uint8_t>(bdf.dev), static_cast<uint8_t>(bdf.func));
-    }
-
-    [[nodiscard]] std::string createSummaryString(SocketCtx ctx,
-        const std::map<uint8_t, const char*> firstErrorTable)
-    {
-        std::stringstream ss;
-        auto firstIerrSrc = getDecoded(firstErrorTable,
-            static_cast<uint8_t>(ctx.ierr.firstIerrSrcIdCha));
-        auto firstMcerrSrc = getDecoded(firstErrorTable,
-            static_cast<uint8_t>(ctx.mcerr.firstMcerrSrcIdCha));
-        if (ctx.mcerrErr.value == 0)
-        {
-            ss << "PCU_CR_MCA_ERR_SRC_LOG = N/A, ";
+            return ((static_cast<uint64_t>(torEntry.address_0_0_spr) |
+               static_cast<uint64_t>(torEntry.address_10_1_spr) << 1 |
+               static_cast<uint64_t>(torEntry.address_11_11_spr) << 11 |
+               static_cast<uint64_t>(torEntry.address_21_12_spr) << 12 |
+               static_cast<uint64_t>(torEntry.address_22_22_spr) << 22 |
+               static_cast<uint64_t>(torEntry.address_32_23_spr) << 23 |
+               static_cast<uint64_t>(torEntry.address_33_33_spr) << 33 |
+               static_cast<uint64_t>(torEntry.address_34_34_spr) << 34) << 17) +
+               ((static_cast<uint64_t>(torEntry.set_0_0) |
+               static_cast<uint64_t>(torEntry.set_10_1) << 1) << 6);
         }
         else
         {
-            if (ctx.mcerrErr.msmi_internal)
-            {
-                ss << "IntMSMI, ";
-            }
-            if (ctx.mcerrErr.msmi_external)
-            {
-                ss << "ExtMSMI, ";
-            }
-            if (ctx.mcerrErr.caterr_interal)
-            {
-                ss << "IntCATERR, ";
-            }
-            if (ctx.mcerrErr.caterr_external)
-            {
-                ss << "ExtCATERR, ";
-            }
+            return static_cast<uint64_t>(torEntry.address) << 14 |
+               static_cast<uint64_t>(torEntry.addr_lo);
         }
-        if (firstIerrSrc && ctx.ierr.firstIerrValid)
-        {
-            ss << "FirstIERR = " << *firstIerrSrc << ", ";
-        }
-        else if (ctx.ierr.firstIerrValid)
-        {
-            ss << "FirstIERR = N/A, ";
-        }
-        else
-        {
-            ss << "FirstIERR = 0x0, ";
-        }
-        if (firstMcerrSrc && ctx.mcerr.firstMcerrValid)
-        {
-            ss << "FirstMCERR = " << *firstMcerrSrc;
-        }
-        else if (ctx.mcerr.firstMcerrValid)
-        {
-            ss << "FirstMCERR = N/A";
-        }
-        else
-        {
-            ss << "FirstMCERR = 0x0";
-        }
-        return ss.str();
     }
 
-    [[nodiscard]] std::string createUncAerString(UncAerData aerData)
-    {
-        std::stringstream ss;
-        if (aerData.data_link_protocol_error)
-        {
-            ss << "data_link_protocol_error, ";
-        }
-        if (aerData.surprise_down_error)
-        {
-            ss << "surprise_down_error, ";
-        }
-        if (aerData.poisoned_tlp)
-        {
-            ss << "poisoned_tlp, ";
-        }
-        if (aerData.flow_control_protocol_error)
-        {
-            ss << "flow_control_protocol_error, ";
-        }
-        if (aerData.completition_timeout)
-        {
-            ss << "completition_timeout, ";
-        }
-        if (aerData.completer_abort)
-        {
-            ss << "completer_abort, ";
-        }
-        if (aerData.unexpected_completition)
-        {
-            ss << "unexpected_completition, ";
-        }
-        if (aerData.receiver_buffer_overflow)
-        {
-            ss << "receiver_buffer_overflow, ";
-        }
-        if (aerData.malformed_tlp)
-        {
-            ss << "malformed_tlp, ";
-        }
-        if (aerData.ecrc_error)
-        {
-            ss << "ecrc_error, ";
-        }
-        if (aerData.received_an_unsupported_request)
-        {
-            ss << "received_an_unsupported_request, ";
-        }
-        if (aerData.acs_violation)
-        {
-            ss << "acs_violation, ";
-        }
-        if (aerData.uncorrectable_internal_error)
-        {
-            ss << "uncorrectable_internal_error, ";
-        }
-        if (aerData.mc_blocked_tlp)
-        {
-            ss << "mc_blocked_tlp, ";
-        }
-        if (aerData.atomic_egress_blocked)
-        {
-            ss << "atomic_egress_blocked, ";
-        }
-        if (aerData.tlp_prefix_blocked)
-        {
-            ss << "tlp_prefix_blocked, ";
-        }
-        if (aerData.poisoned_tlp_egress_blocked)
-        {
-            ss << "poisoned_tlp_egress_blocked, ";
-        }
-
-        std::string output = ss.str();
-        output.erase(output.end() - 2, output.end());
-        return output;
-    }
-
-    [[nodiscard]] std::string createCorAerString(CorAerData aerData)
-    {
-        std::stringstream ss;
-        if (aerData.receiver_error)
-        {
-            ss << "receiver_error, ";
-        }
-        if (aerData.bad_tlp)
-        {
-            ss << "bad_tlp, ";
-        }
-        if (aerData.bad_dllp)
-        {
-            ss << "bad_dllp, ";
-        }
-        if (aerData.replay_num_rollover)
-        {
-            ss << "replay_num_rollover, ";
-        }
-        if (aerData.replay_timer_timeout)
-        {
-            ss << "replay_timer_timeout, ";
-        }
-        if (aerData.advisory_non_fatal_error)
-        {
-            ss << "advisory_non_fatal_error, ";
-        }
-        if (aerData.correctable_internal_error)
-        {
-            ss << "correctable_internal_error, ";
-        }
-        if (aerData.header_log_overflow_error)
-        {
-            ss << "header_log_overflow_error, ";
-        }
-
-        std::string output = ss.str();
-        output.erase(output.end() - 2, output.end());
-        return output;
-    }
-
-    [[nodiscard]] json createMceSummaryString(
-        std::vector<std::array<std::string, 3>> mceSummaryData)
-    {
-        auto mcaEntry = json::array();
-        for (auto const& mcaData : mceSummaryData)
-        {
-            std::stringstream ss;
-            ss << "bank " << mcaData[0];
-            if (mcaData[1] != "")
-            {
-                ss << ", " << mcaData[1];
-            }
-            if (mcaData[2] != "")
-            {
-                ss << ", " << mcaData[2];
-            }
-            mcaEntry.push_back(ss.str());
-        }
-        return mcaEntry;
-    }
-
-    [[nodiscard]] std::optional<std::string> createThermStatusString(
-        uint32_t socketId)
-    {
-        std::stringstream ss;
-        if (summary.thermStatus.find(socketId) == summary.thermStatus.end())
-        {
-            return {};
-        }
-        ss << "PROCHOT_LOG=";
-        ss << int_to_hex(bool(summary.thermStatus[socketId].prochot_log));
-        ss << ", PROCHOT_STATUS=";
-        ss << int_to_hex(bool(summary.thermStatus[socketId].prochot_status));
-        ss << ", PMAX_LOG=";
-        ss << int_to_hex(bool(summary.thermStatus[socketId].pmax_log));
-        ss << ", PMAX_STATUS=";
-        ss << int_to_hex(bool(summary.thermStatus[socketId].pmax_status));
-        ss << ", OUT_OF_SPEC_LOG=";
-        ss << int_to_hex(bool(summary.thermStatus[socketId].out_of_spec_log));
-        ss << ", OUT_OF_SPEC_STATUS=";
-        ss << int_to_hex(bool(
-            summary.thermStatus[socketId].out_of_spec_status));
-        ss << ", THERMAL_MONITOR_LOG=";
-        ss << int_to_hex(bool(
-            summary.thermStatus[socketId].thermal_monitor_log));
-        ss << ", THERMAL_MONITOR_STATUS=";
-        ss << int_to_hex(bool(
-            summary.thermStatus[socketId].thermal_monitor_status));
-        return ss.str();
-    }
-};
+    const T& tor;
+};

@@ -2,7 +2,7 @@
  *
  * INTEL CONFIDENTIAL
  *
- * Copyright 2020 Intel Corporation.
+ * Copyright 2021 Intel Corporation.
  *
  * This software and the related documents are Intel copyrighted materials, and
  * your use of them is governed by the express license under which they were
@@ -28,7 +28,6 @@
 #define BMC_PATH "/var/bafi/"
 #endif
 
-const std::string MEMORY_MAP_FILENAME = "default_memory_map.json";
 const std::string LOCAL_PATH = ".";
 
 class PciBdfLookup {
@@ -66,36 +65,35 @@ public:
     return std::make_tuple(0, 0, 0);
   }
 
-  PciBdfLookup(char *memoryMapFileLocation) {
-    std::ifstream i(memoryMapFileLocation);
+  PciBdfLookup(char *mapFileLocation) {
+    std::ifstream i(mapFileLocation);
     if (!i.good()) {
-      std::cerr << "File '" << memoryMapFileLocation << "' not found.\n";
+      std::cerr << "File '" << mapFileLocation << "' not found.\n";
       return;
     }
     json memoryMap = json::parse(i, nullptr, false);
 
     if (memoryMap.is_discarded()) {
-      std::cerr << "File '" << memoryMapFileLocation
+      std::cerr << "File '" << mapFileLocation
                 << "' is not a valid JSON file\n";
       return;
     }
 
     if (!PciBdfLookup::from_json(memoryMap)) {
-      std::cerr << "Failed to load " << memoryMapFileLocation << " file"
+      std::cerr << "Failed to load " << mapFileLocation << " file"
                 << std::endl;
       return;
     }
     memorymapExistence = true;
   }
 
-  PciBdfLookup(char *binaryLocation, bool) {
+  PciBdfLookup(char *binaryLocation, bool, std::string fileName) {
     std::ifstream i;
-    json memoryMap;
 
-    i.open((BMC_PATH + MEMORY_MAP_FILENAME).c_str());
+    i.open((BMC_PATH + fileName).c_str());
     if (i.good()) {
-      memoryMap = json::parse(i, nullptr, false);
-      if (!memoryMap.is_discarded() && from_json(memoryMap)) {
+      lookupMap = json::parse(i, nullptr, false);
+      if (!lookupMap.is_discarded() && from_json(lookupMap)) {
         memorymapExistence = true;
       }
     } else {
@@ -104,27 +102,27 @@ public:
           0, pathToBinaryLocation.find_last_of(OS_SEP));
       if (pathWithoutBinary != LOCAL_PATH &&
           pathToBinaryLocation != pathWithoutBinary) {
-        std::string memoryMapPath =
-            pathWithoutBinary + OS_SEP + MEMORY_MAP_FILENAME;
-        i.open(memoryMapPath);
+        std::string mapPath =
+            pathWithoutBinary + OS_SEP + fileName;
+        i.open(mapPath);
         if (i.good()) {
-          memoryMap = json::parse(i, nullptr, false);
-          if (!memoryMap.is_discarded() && from_json(memoryMap)) {
+          lookupMap = json::parse(i, nullptr, false);
+          if (!lookupMap.is_discarded() && from_json(lookupMap)) {
             memorymapExistence = true;
           }
         }
       } else {
-        i.open(MEMORY_MAP_FILENAME.c_str());
+        i.open(fileName.c_str());
         if (i.good()) {
-          memoryMap = json::parse(i, nullptr, false);
-          if (!memoryMap.is_discarded() && from_json(memoryMap)) {
+          lookupMap = json::parse(i, nullptr, false);
+          if (!lookupMap.is_discarded() && from_json(lookupMap)) {
             memorymapExistence = true;
           }
         }
       }
     }
-    if (memorymapExistence == false) {
-      memorymap = {
+    if (memorymapExistence == false && lookupMap == NULL) {
+          lookupMap = {
           {0x00000001, 0x00000002, 0x1, 0x0, 0x0},
           /*
           Examples of other memory map entries
@@ -145,9 +143,10 @@ public:
     uint8_t dev;
     uint8_t func;
   };
+  json lookupMap;
   static std::vector<mmioItem> memorymap;
   static bool memorymapExistence;
 };
-
+json lookupMap = NULL;
 std::vector<PciBdfLookup::mmioItem> PciBdfLookup::memorymap = {};
 bool PciBdfLookup::memorymapExistence = false;

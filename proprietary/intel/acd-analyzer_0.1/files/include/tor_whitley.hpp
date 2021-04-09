@@ -2,7 +2,7 @@
  *
  * INTEL CONFIDENTIAL
  *
- * Copyright 2020 Intel Corporation.
+ * Copyright 2021 Intel Corporation.
  *
  * This software and the related documents are Intel copyrighted materials, and
  * your use of them is governed by the express license under which they were
@@ -32,6 +32,7 @@
 #include <mca_defs.hpp>
 #include <tor_defs_cpx.hpp>
 #include <tor_defs_icx.hpp>
+#include <tor_defs_skx.hpp>
 #include <utils.hpp>
 
 using json = nlohmann::json;
@@ -48,9 +49,98 @@ union Version
     uint32_t version;
 };
 
+union Retry_rd_err_log
+{
+    struct
+    {
+        uint32_t valid: 1, uc: 1, over: 1, mode: 4, reserved: 25;
+    };
+    uint32_t retry_rd_err_log;
+};
+
+union Retry_rd_err_log_address1
+{
+    struct
+    {
+        uint32_t reserved1: 6, rank: 3, subrank: 2, reserved2: 1,
+        bank_group: 3, bank_address: 2, reserved3: 14; 
+    };
+    uint32_t retry_rd_err_log_address1;
+};
+
+std::array<std::string, 4> imcChannels = {
+    "B30_D26_F0_",
+    "B30_D27_F0_",
+    "B30_D28_F0_",
+    "B30_D29_F0_"
+};
+
+std::array<std::string, 4> offsets = {
+    "0x22C60",
+    "0x22E54",
+    "0x26C60",
+    "0x26E54"
+};
+
+const std::map<std::string, const char*> ImcChannel = {
+    {"B30_D26_F0_0x22C60", "IMC 0, Channel 0"},
+    {"B30_D26_F0_0x22E54", "IMC 0, Channel 0"},
+    {"B30_D26_F0_0x22C58", "IMC 0, Channel 0"},
+    {"B30_D26_F0_0x22E58", "IMC 0, Channel 0"},
+    {"B30_D26_F0_0x26C60", "IMC 0, Channel 1"},
+    {"B30_D26_F0_0x26E54", "IMC 0, Channel 1"},
+    {"B30_D26_F0_0x26C58", "IMC 0, Channel 1"},
+    {"B30_D26_F0_0x26E58", "IMC 0, Channel 1"},
+    {"B30_D27_F0_0x22C60", "IMC 1, Channel 0"},
+    {"B30_D27_F0_0x22E54", "IMC 1, Channel 0"},
+    {"B30_D27_F0_0x22C58", "IMC 1, Channel 0"},
+    {"B30_D27_F0_0x22E58", "IMC 1, Channel 0"},
+    {"B30_D27_F0_0x26C60", "IMC 1, Channel 1"},
+    {"B30_D27_F0_0x26E54", "IMC 1, Channel 1"},
+    {"B30_D27_F0_0x26C58", "IMC 1, Channel 1"},
+    {"B30_D27_F0_0x26E58", "IMC 1, Channel 1"},
+    {"B30_D28_F0_0x22C60", "IMC 2, Channel 0"},
+    {"B30_D28_F0_0x22E54", "IMC 2, Channel 0"},
+    {"B30_D28_F0_0x22C58", "IMC 2, Channel 0"},
+    {"B30_D28_F0_0x22E58", "IMC 2, Channel 0"},
+    {"B30_D28_F0_0x26C60", "IMC 2, Channel 1"},
+    {"B30_D28_F0_0x26E54", "IMC 2, Channel 1"},
+    {"B30_D28_F0_0x26C58", "IMC 2, Channel 1"},
+    {"B30_D28_F0_0x26E58", "IMC 2, Channel 1"},
+    {"B30_D29_F0_0x22C60", "IMC 3, Channel 0"},
+    {"B30_D29_F0_0x22E54", "IMC 3, Channel 0"},
+    {"B30_D29_F0_0x22C58", "IMC 3, Channel 0"},
+    {"B30_D29_F0_0x22E58", "IMC 3, Channel 0"},
+    {"B30_D29_F0_0x26C60", "IMC 3, Channel 1"},
+    {"B30_D29_F0_0x26E54", "IMC 3, Channel 1"},
+    {"B30_D29_F0_0x26C58", "IMC 3, Channel 1"},
+    {"B30_D29_F0_0x26E58", "IMC 3, Channel 1"}
+};
+
+const std::map<uint8_t, const char*> Mode = {
+    {0x0, "sddc 2LM"},
+    {0x1, "sddc 1LM"},
+    {0x2, "sddc +1 2LM"},
+    {0x3, "sddc +1 1LM"},
+    {0x4, "adddc 2LM"},
+    {0x5, "adddc 1LM"},
+    {0x6, "adddc +1 2LM"},
+    {0x7, "adddc +1 1LM"},
+    {0x8, "read is from ddrt dimm"},
+    {0x9, "x8 sddc"},
+    {0xA, "x8 sddc +1"},
+    {0xB, "not a valid ecc mode"}
+};
+
+const std::map<std::string, std::reference_wrapper<const json>>
+ prepareJson(const json& input);
+
 const std::map<uint16_t, const char*> decodedCpuId = {
     {0x1A, "ICX"},
-    {0x34, "CPX"}
+    {0x1B, "ICX"},
+    {0x34, "CPX"},
+    {0x2C, "CLX"},
+    {0x1C, "SPR"},
 };
 
 [[nodiscard]] std::optional<std::reference_wrapper<const json>>
@@ -83,57 +173,14 @@ const std::map<uint16_t, const char*> decodedCpuId = {
     return allCpuSections;
 }
 
-[[nodiscard]] std::map<std::string, std::array<uint64_t, 2>> getMemoryMap(
-    const std::map<std::string, std::reference_wrapper<const json>> cpuSections)
-{
-    // map is the same for all CPUs, so if once creted other CPUs can be skipped
-    bool mapCreated = false;
-    std::map<std::string, std::array<uint64_t, 2>> memoryMap;
-    for (auto const& [cpu, cpuSection] : cpuSections)
-    {
-        if (mapCreated)
-        {
-            break;
-        }
-        if  (cpuSection.get().find("address_map") == cpuSection.get().cend())
-        {
-            continue;
-        }
-        for (auto const& [name, value] : cpuSection.get()["address_map"].items())
-        {
-            if (name == "_version")
-            {
-                continue;
-            }
-            if (checkInproperValue(value))
-            {
-                continue;
-            }
-            uint64_t uintValue;
-            if (!str2uint(value, uintValue))
-            {
-                continue;
-            }
-            if (name.find("_BASE") != std::string::npos)
-            {
-                auto shortName = name.substr(0, name.find("_BASE"));
-                memoryMap[shortName][0] = uintValue;
-            }
-            else if (name.find("_LIMIT") != std::string::npos)
-            {
-                auto shortName = name.substr(0, name.find("_LIMIT"));
-                memoryMap[shortName][1] = uintValue;
-            }
-        }
-        mapCreated = true;
-    }
-    return memoryMap;
-}
-
 [[nodiscard]] std::optional<std::reference_wrapper<const json>>
     getProperRootNode(const json& input)
 {
     if (input.find("METADATA") != input.cend())
+    {
+        return input;
+    }
+    else if (input.find("sys_info") != input.cend())
     {
         return input;
     }
@@ -155,11 +202,18 @@ const std::map<uint16_t, const char*> decodedCpuId = {
 [[nodiscard]] std::string getCpuId(const json& input)
 {
     Version decodedVersion;
+    if (input.contains("metadata")){
+        if (!input["metadata"].contains("_version")){
+            return "SKX";
+        }
+    }
+
     if (!input["METADATA"].contains("_version") ||
         !str2uint(input["METADATA"]["_version"], decodedVersion.version))
     {
         return {};
     }
+
     auto cpuId = getDecoded(decodedCpuId,
         static_cast<uint16_t>(decodedVersion.cpu_id));
 
@@ -187,6 +241,119 @@ const std::map<uint16_t, const char*> decodedCpuId = {
     return cpus;
 }
 
+[[nodiscard]] json decodeRetryLog(const json& input, json silkscreenMap, std::string socketId)
+{
+    Retry_rd_err_log decodedErrLog;
+    Retry_rd_err_log_address1 decodedErrLogAddress;
+    json memoryErrors;
+    if (input.find("uncore") != input.cend())
+    {
+        for (auto channel : imcChannels)
+        {
+            for (auto offset : offsets)
+            {
+                std::string reg = channel + offset;
+                if (input["uncore"].find(reg) != input["uncore"].cend())
+                {
+                    std::stringstream ss;
+                    if (!str2uint(input["uncore"][reg], decodedErrLog.retry_rd_err_log))
+                    {
+                        continue;
+                    }
+                    if (!decodedErrLog.valid)
+                    {
+                        continue;
+                    }
+                    std::optional<std::string> imcChannel = getDecoded(ImcChannel, reg);
+                    if (!imcChannel)
+                    {
+                        continue;
+                    }
+                    std::optional<std::string> mode = getDecoded(Mode,
+                        static_cast<uint8_t>(decodedErrLog.mode));
+                    if (!mode)
+                    {
+                        continue;
+                    }
+                    if (reg.find("C60"))
+                    {
+                        reg.replace(15, 3, "C58");
+                    }
+                    else if (reg.find("E54"))
+                    {
+                        reg.replace(15, 3, "E58");
+                    }
+                    if (input["uncore"].find(reg) != input["uncore"].cend())
+                    {
+                        if (str2uint(input["uncore"][reg], decodedErrLogAddress.retry_rd_err_log_address1))
+                        {
+                            std::string imcInfo = *imcChannel;
+                            std::size_t pos = imcInfo.find("IMC ");
+                            std::string imc = imcInfo.substr(pos + 4, 1);
+                            pos = imcInfo.find("Channel ");
+                            std::string channel = imcInfo.substr(pos + 8, 1);
+
+                            std::string bankAddress = std::to_string(
+                            static_cast<uint8_t>(decodedErrLogAddress.bank_address << 3 
+                            & decodedErrLogAddress.bank_group));
+
+                            std::string bankGroup = std::to_string(
+                            static_cast<uint8_t>(decodedErrLogAddress.bank_group));
+
+                            std::string rank = std::to_string(
+                            static_cast<uint8_t>(decodedErrLogAddress.rank));
+
+                            std::string subRank = std::to_string(
+                            static_cast<uint8_t>(decodedErrLogAddress.subrank));
+
+                            std::string dimm = std::to_string(
+                            static_cast<uint8_t>(decodedErrLogAddress.rank >> 2 & 0b00000001));
+
+                            if (silkscreenMap != NULL)
+                            {
+                                for (const auto [slotKey, slotVal] : silkscreenMap["MemoryLocationPcb"].items())
+                                {
+                                    if (slotVal["Socket"] != std::stoi(socketId))
+                                    {
+                                        continue;
+                                    }
+                                    if (slotVal["IMC"] != std::stoi(imc))
+                                    {
+                                        continue;
+                                    }
+                                    if (slotVal["Channel"] != std::stoi(channel))
+                                    {
+                                        continue;
+                                    }
+                                    if (slotVal["Slot"] != std::stoi(dimm))
+                                    {
+                                        continue;
+                                    }
+                                    ss << std::string(slotVal["SlotName"]) << ", ";
+                                }
+                            }
+                            ss << *imcChannel << ", ";
+                            ss << "Bank: " << bankAddress << ", ";
+                            ss << "Bank group: " << bankGroup << ", ";
+                            ss << "Rank: " << rank << ", ";
+                            ss << "Sub-Rank: " << subRank << ", ";
+                            ss << "DIMM: " << dimm << ", ";
+                            ss << "Mode: " << *mode;
+                        }
+                    }
+                    if (decodedErrLog.uc)
+                        memoryErrors["Memory errors"]["Uncorrectable"]
+                        .push_back(ss.str());
+                    else
+                        memoryErrors["Memory errors"]["Correctable"]
+                        .push_back(ss.str());
+                }
+            }
+        }
+    }
+    return memoryErrors;
+}
+
 [[nodiscard]] std::optional<std::reference_wrapper<const json>>
     getProcessorsSection(const json& input)
 {
@@ -203,12 +370,92 @@ const std::map<uint16_t, const char*> decodedCpuId = {
     return {};
 }
 
-class Cpu
+[[nodiscard]] const std::map<std::string, std::reference_wrapper<const json>>
+    prepareJson(const json& input)
+{
+    std::vector<std::string> cpus = findCpus(input);
+    std::optional processorsSection = getProcessorsSection(input);
+    auto cpuSections = getAllCpuSections(*processorsSection, cpus);
+    return cpuSections;
+}
+
+[[nodiscard]] std::optional<std::reference_wrapper<const json>>
+    getMetadataSection(const json& input)
+{
+    const auto& metadataSection = input.find("METADATA");
+    if (metadataSection != input.cend())
+    {
+        return *metadataSection;
+    }
+    const auto& metadataSection1 = input.find("metadata");
+    if (metadataSection1 != input.cend())
+    {
+        return *metadataSection1;
+    }
+    return {};
+}
+
+class WhitleyCpu
 {
   public:
+    [[nodiscard]] std::map<std::string, std::array<uint64_t, 2>>
+    getMemoryMap(const json& input)
+    {
+        // map is the same for all CPUs, so if once created other CPUs can be
+        // skipped
+        bool mapCreated = false;
+        std::map<std::string, std::array<uint64_t, 2>> memoryMap;
+        auto cpuSections = prepareJson(input);
+        for (auto const& [cpu, cpuSection] : cpuSections)
+        {
+            if (mapCreated)
+            {
+                break;
+            }
+            if  (cpuSection.get().find("address_map") ==
+                cpuSection.get().cend())
+            {
+                continue;
+            }
+            for (auto const& [name, value] :
+                cpuSection.get()["address_map"].items())
+            {
+                if (name == "_version")
+                {
+                    continue;
+                }
+                if (checkInproperValue(value))
+                {
+                    continue;
+                }
+                uint64_t uintValue;
+                if (!str2uint(value, uintValue))
+                {
+                    continue;
+                }
+                if (name.find("_BASE") != std::string::npos)
+                {
+                    auto shortName = name.substr(0, name.find("_BASE"));
+                    memoryMap[shortName][0] = uintValue;
+                }
+                else if (name.find("_LIMIT") != std::string::npos)
+                {
+                    auto shortName = name.substr(0, name.find("_LIMIT"));
+                    memoryMap[shortName][1] = uintValue;
+                }
+            }
+            mapCreated = true;
+        }
+        return memoryMap;
+    }
+
     [[nodiscard]] std::optional<std::string>
         getUncoreData(const json& input, std::string varName)
     {
+        if (input.find("uncore") == input.cend())
+        {
+            return {};
+        }
         if (input["uncore"].find(varName) == input["uncore"].cend())
         {
             return {};
@@ -222,6 +469,30 @@ class Cpu
             return {};
         }
         return input["uncore"][varName].get<std::string>();
+    }
+
+    [[nodiscard]] std::optional<std::string>
+        getSysInfoData(const json& input, std::string socket,
+                       std::string varName)
+    {
+        if (input.contains("METADATA"))
+        {
+            if (input["METADATA"].contains(socket))
+            {
+                if (input["METADATA"][socket].find(varName) !=
+                 input["METADATA"][socket].cend())
+                {
+                    if (input["METADATA"][socket][varName]
+                    .is_string() && !checkInproperValue(
+                    input["METADATA"][socket][varName]))
+                    {
+                        return input["METADATA"][socket][varName]
+                        .get<std::string>();
+                    }
+                }
+            }
+        }
+        return {};
     }
 
     [[nodiscard]] std::optional<MCAData> parseBigCoreMca(
@@ -377,7 +648,8 @@ class Cpu
         {
             return {};
         }
-        if (mcData.find(ctl) == mcData.cend() || checkInproperValue(mcData[ctl]))
+        if (mcData.find(ctl) == mcData.cend() ||
+            checkInproperValue(mcData[ctl]))
         {
             mc.ctl = 0;
         }
@@ -385,7 +657,8 @@ class Cpu
         {
             return {};
         }
-        if (mcData.find(addr) == mcData.cend() || checkInproperValue(mcData[addr]))
+        if (mcData.find(addr) == mcData.cend() ||
+            checkInproperValue(mcData[addr]))
         {
             mc.address = 0;
         }
@@ -394,7 +667,8 @@ class Cpu
             return {};
         }
 
-        if (mcData.find(misc) == mcData.cend() || checkInproperValue(mcData[misc]))
+        if (mcData.find(misc) == mcData.cend() ||
+            checkInproperValue(mcData[misc]))
         {
             mc.misc = 0;
         }
@@ -409,6 +683,10 @@ class Cpu
         parseCoreMcas(std::reference_wrapper<const json> input)
     {
         std::vector<MCAData> allCoreMcas;
+        if (input.get().find("MCA") == input.get().cend())
+        {
+            return allCoreMcas;
+        }
         for (auto const& [core, threads] : input.get()["MCA"].items())
         {
             if (!startsWith(core, "core"))
@@ -490,6 +768,14 @@ class Cpu
         std::reference_wrapper<const json> input)
     {
         std::vector<MCAData> output;
+        if (input.get().find("MCA") == input.get().cend())
+        {
+            return output;
+        }
+        if (input.get()["MCA"].find("uncore") == input.get()["MCA"].cend())
+        {
+            return output;
+        }
         for (auto const& [mcSection, mcData] :
                 input.get()["MCA"]["uncore"].items())
         {
@@ -570,7 +856,8 @@ class Cpu
         }
         if (firstMcerrTimestampSocket.second != 0)
         {
-            output.at(firstMcerrTimestampSocket.first).mcerr_occured_first = true;
+            output.at(firstMcerrTimestampSocket.first).mcerr_occured_first = 
+                true;
         }
         return output;
     }
@@ -670,614 +957,3 @@ class Cpu
     }
 
 };
-
-class IcxCpu final : public Cpu
-{
-  public:
-    // indexes for ierr and mcerr tsc information
-    TscVariablesNames tscVariables = {
-        "B31_D30_F4_0xF0",
-        "B31_D30_F4_0xF4",
-        "B31_D30_F4_0xF8",
-        "B31_D30_F4_0xFC",
-    };
-    // index for PACKAGE_THERM_STATUS
-    static constexpr const char* package_therm_status_varname = "RDIAMSR_0x1B1";
-    // indexes for IERR, MCERR and MCERR source
-    static constexpr const char* ierr_varname = "B30_D00_F0_0xA4";
-    static constexpr const char* mcerr_varname = "B30_D00_F0_0xA8";
-    static constexpr const char* mca_err_src_varname = "B31_D30_F2_0xEC";
-    // bigcore MCAs indexes
-    static constexpr const char* bigcore_mc0 = "ifu_cr_mc0";
-    static constexpr const char* bigcore_mc1 = "dcu_cr_mc1";
-    static constexpr const char* bigcore_mc2 = "dtlb_cr_mc2";
-    static constexpr const char* bigcore_mc3 = "ml2_cr_mc3";
-    // indexes and masks of uncorrectable and correctable AER erros to decode
-    static constexpr const char* unc_err_index = "0x104";
-    static const uint32_t unc_err_mask = 0x7FFF030;
-    static constexpr const char* cor_err_index = "0x110";
-    static const uint32_t cor_err_mask = 0xF1C1;
-    // index and bit mask of uncorrectable AER that requires different decoding
-    // rules
-    static constexpr const char* unc_spec_err_index = "B00_D03_F0_0x14C";
-    static const uint32_t unc_spec_err_mask = 0x47FF030;
-    // index and bit mask of correctable AER that requires different decoding
-    // rule
-    static constexpr const char* cor_spec_err_index = "B00_D03_F0_0x158";
-    static const uint32_t cor_spec_err_mask = 0x31C1;
-    // index that should be excluded from decoding
-    static constexpr const char* exclude_index_1 = "B30_";
-    static constexpr const char* exclude_index_2 = "B31_";
-
-    std::string bigcore_mcas[4] = {bigcore_mc0, bigcore_mc1, bigcore_mc2,
-                                   bigcore_mc3};
-
-    [[nodiscard]] std::map<uint32_t, TscData> getTscData(
-        const std::map<std::string, std::reference_wrapper<const json>>
-        cpuSections)
-    {
-        return getTscDataForProcessorType(cpuSections, tscVariables);
-    }
-
-    [[nodiscard]] std::optional<std::map<uint32_t, PackageThermStatus>>
-        getThermData( const std::map<std::string,
-        std::reference_wrapper<const json>> cpuSections)
-    {
-        return getThermDataForProcessorType(cpuSections,
-            package_therm_status_varname);
-    }
-
-    [[nodiscard]] UncAer analyzeUncAer(
-        const std::map<std::string, std::reference_wrapper<const json>>
-            cpuSections)
-    {
-        UncAer output;
-        for (auto const& [cpu, cpuSection] : cpuSections)
-        {
-            uint32_t socketId;
-            if (!str2uint(cpu.substr(3), socketId, decimal))
-            {
-                continue;
-            }
-            auto allUncErr = parseUncErrSts(cpuSection);
-            output.insert({socketId, allUncErr});
-        }
-        return output;
-    }
-
-    [[nodiscard]] std::vector<UncAerData> parseUncErrSts(const json& input)
-    {
-        std::vector<UncAerData> allUncErrs;
-        for (const auto [pciKey, pciVal] : input["uncore"].items())
-        {
-            uint32_t temp;
-            if (checkInproperValue(pciVal) || pciVal == "0x0")
-            {
-                continue;
-            }
-            // do not decode excluded registers
-            else if (startsWith(pciKey, exclude_index_1) ||
-                     startsWith(pciKey, exclude_index_2))
-            {
-                continue;
-            }
-            else if (pciKey == unc_spec_err_index)
-            {
-                if (!str2uint(pciVal, temp))
-                {
-                    continue;
-                }
-                // apply a mask to fit decoding rules for this register
-                temp = temp & unc_spec_err_mask;
-            }
-            else if (pciKey.find(unc_err_index) != std::string::npos)
-            {
-                if (!str2uint(pciVal, temp))
-                {
-                    continue;
-                }
-                // apply a mask to fit decoding rules for this registers
-                temp = temp & unc_err_mask;
-            }
-            else
-            {
-                continue;
-            }
-            UncAerData uncErr;
-            uncErr.error_status = temp;
-            if (uncErr.error_status != 0)
-            {
-                uncErr.address = pciKey;
-                allUncErrs.push_back(uncErr);
-            }
-        }
-        return allUncErrs;
-    }
-
-    [[nodiscard]] CorAer analyzeCorAer(
-        const std::map<std::string, std::reference_wrapper<const json>>
-        cpuSections)
-    {
-        CorAer output;
-        for (auto const& [cpu, cpuSection] : cpuSections)
-        {
-            uint32_t socketId;
-            if (!str2uint(cpu.substr(3), socketId, decimal))
-            {
-                continue;
-            }
-            auto allCorErr = parseCorErrSts(cpuSection);
-            output.insert({socketId, allCorErr});
-        }
-        return output;
-    }
-
-    [[nodiscard]] std::vector<CorAerData> parseCorErrSts(const json& input)
-    {
-        std::vector<CorAerData> allCorErrs;
-        for (const auto [pciKey, pciVal] : input["uncore"].items())
-        {
-            uint32_t temp;
-            if (checkInproperValue(pciVal) || pciVal == "0x0")
-            {
-                continue;
-            }
-            // do not decode excluded registers
-            else if (startsWith(pciKey, exclude_index_1) ||
-                     startsWith(pciKey, exclude_index_2))
-            {
-                continue;
-            }
-            else if (pciKey == cor_spec_err_index)
-            {
-                if (!str2uint(pciVal, temp))
-                {
-                    continue;
-                }
-                // apply a mask to fit decoding rules
-                temp = temp & cor_spec_err_mask;
-            }
-            else if (pciKey.find(cor_err_index) != std::string::npos)
-            {
-                if (!str2uint(pciVal, temp))
-                {
-                    continue;
-                }
-                temp = temp & cor_err_mask;
-            }
-            else
-            {
-                continue;
-            }
-            CorAerData corErr;
-            corErr.error_status = temp;
-            if (corErr.error_status != 0)
-            {
-                corErr.address = pciKey;
-                allCorErrs.push_back(corErr);
-            }
-        }
-        return allCorErrs;
-    }
-
-    [[nodiscard]] MCA analyzeMca(
-        const std::map<std::string, std::reference_wrapper<const json>>
-        cpuSections)
-    {
-        MCA output;
-        std::vector<MCAData> allMcs;
-        for (auto const& [cpu, cpuSection] : cpuSections)
-        {
-            uint32_t socketId;
-            if (!str2uint(cpu.substr(3), socketId, decimal))
-            {
-                continue;
-            }
-            std::vector<MCAData> bigCoreMcas =
-                parseAllBigcoreMcas(cpuSection, bigcore_mcas);
-            std::vector<MCAData> uncoreMcas = parseUncoreMcas(cpuSection);
-            std::vector<MCAData> coreMcas = parseCoreMcas(cpuSection);
-            std::vector<MCAData> allMcas;
-            allMcas.reserve(bigCoreMcas.size() + uncoreMcas.size() +
-                            coreMcas.size());
-            allMcas.insert(allMcas.begin(), bigCoreMcas.begin(),
-                           bigCoreMcas.end());
-            allMcas.insert(allMcas.begin(), uncoreMcas.begin(),
-                           uncoreMcas.end());
-            allMcas.insert(allMcas.begin(), coreMcas.begin(), coreMcas.end());
-            output.insert({socketId, allMcas});
-        }
-        return output;
-    }
-
-    [[nodiscard]] std::tuple<uint32_t, uint32_t, uint32_t> divideTordumps(
-        const json& inputData)
-    {
-        uint32_t tordumpParsed0, tordumpParsed1, tordumpParsed2;
-        std::string input = inputData;
-        while (input.length() < 26)
-        {
-            input.insert(2, "0");
-        }
-        std::string tordump0 = input.substr(input.length() - 8, 8);
-        std::string tordump1 = input.substr(input.length() - 16, 8);
-        std::string tordump2 = input.substr(input.length() - 24, 8);
-        if (!str2uint(tordump0, tordumpParsed0) ||
-            !str2uint(tordump1, tordumpParsed1) ||
-            !str2uint(tordump2, tordumpParsed2))
-        {
-            return std::make_tuple(0, 0, 0);
-        }
-        return std::make_tuple(tordumpParsed0, tordumpParsed1, tordumpParsed2);
-    }
-
-    [[nodiscard]] std::optional<IcxTORData> parseTorData(const json& index)
-    {
-        if (index.find("subindex0") == index.cend())
-        {
-            return {};
-        }
-        if (checkInproperValue(index["subindex0"]))
-        {
-            return {};
-        }
-        IcxTORData tor;
-        std::tie(tor.tordump0_subindex0, tor.tordump1_subindex0,
-            tor.tordump2_subindex0) = divideTordumps(index["subindex0"]);
-        if (!tor.valid)
-        {
-            return {};
-        }
-        std::tie(tor.tordump0_subindex1, tor.tordump1_subindex1,
-                    tor.tordump2_subindex1) =
-            divideTordumps(index["subindex1"]);
-        std::tie(tor.tordump0_subindex2, tor.tordump1_subindex2,
-                    tor.tordump2_subindex2) =
-            divideTordumps(index["subindex2"]);
-        std::tie(tor.tordump0_subindex3, tor.tordump1_subindex3,
-                    tor.tordump2_subindex3) =
-            divideTordumps(index["subindex3"]);
-        std::tie(tor.tordump0_subindex4, tor.tordump1_subindex4,
-                    tor.tordump2_subindex4) =
-            divideTordumps(index["subindex4"]);
-        std::tie(tor.tordump0_subindex7, tor.tordump1_subindex7,
-                    tor.tordump2_subindex7) =
-            divideTordumps(index["subindex7"]);
-        return tor;
-    }
-
-    [[nodiscard]] std::vector<IcxTORData> getTorsData(const json& input)
-    {
-        std::vector<IcxTORData> torsData;
-        if (input.find("TOR") == input.cend())
-        {
-            return torsData;
-        }
-        for (const auto& [chaItemKey, chaItemValue] : input["TOR"].items())
-        {
-            if (!startsWith(chaItemKey, "cha"))
-            {
-                continue;
-            }
-            for (const auto& [indexDataKey, indexDataValue] :
-                    chaItemValue.items())
-            {
-                std::optional<IcxTORData> tor = parseTorData(indexDataValue);
-                if (!tor)
-                {
-                    continue;
-                }
-                if (str2uint(chaItemKey.substr(3), tor->cha, decimal) &&
-                    str2uint(indexDataKey.substr(5), tor->idx, decimal))
-                {
-                    torsData.push_back(*tor);
-                }
-            }
-        }
-        return torsData;
-    }
-
-    [[nodiscard]] IcxTOR analyze(
-        const std::map<std::string, std::reference_wrapper<const json>>
-        cpuSections)
-    {
-        IcxTOR output;
-        for (auto const& [cpu, cpuSection] : cpuSections)
-        {
-            std::optional ierr = getUncoreData(cpuSection, ierr_varname);
-            std::optional mcerr = getUncoreData(cpuSection, mcerr_varname);
-            std::optional mcerrErrSrc =
-                getUncoreData(cpuSection, mca_err_src_varname);
-            std::vector<IcxTORData> tors = getTorsData(cpuSection);
-            uint32_t socketId;
-            if (!str2uint(cpu.substr(3), socketId, decimal))
-            {
-                continue;
-            }
-            SocketCtx ctx;
-            if (!ierr || !str2uint(*ierr, ctx.ierr.value))
-            {
-                ctx.ierr.value = 0;
-            }
-            if (!mcerr || !str2uint(*mcerr, ctx.mcerr.value))
-            {
-                ctx.mcerr.value = 0;
-            }
-            if (!mcerrErrSrc || !str2uint(*mcerrErrSrc, ctx.mcerrErr.value))
-            {
-                ctx.mcerrErr.value = 0;
-            }
-            std::pair<SocketCtx, std::vector<IcxTORData>> tempData(ctx, tors);
-            output.insert({socketId, tempData});
-        }
-        return output;
-    }
-};
-
-class CpxCpu final : public Cpu
-{
-  public:
-    // indexes for ierr and mcerr tsc information
-    TscVariablesNames tscVariables = {
-        "B01_D30_F4_0xF0",
-        "B01_D30_F4_0xF4",
-        "B01_D30_F4_0xF8",
-        "B01_D30_F4_0xFC",
-    };
-    // indexes for IERR, MCERR and MCERR source
-    static constexpr const char* ierr_varname = "B00_D08_F0_0xA4";
-    static constexpr const char* mcerr_varname = "B00_D08_F0_0xA8";
-    static constexpr const char* mca_err_src_varname = "B01_D30_F2_0xEC";
-    // indexes and bitmasks of uncorectable and corectable AER erros to decode
-    static constexpr const char* unc_err_index = "0x14C";
-    static const uint32_t unc_spec_err_mask = 0x3FF030;
-    static constexpr const char* cor_err_index = "0x158";
-    static const uint32_t cor_spec_err_mask = 0x31C1;
-    // decode only B*_D(0-3)_F* for CPX
-    static constexpr const char* decode_only_index_1 = "_D00_";
-    static constexpr const char* decode_only_index_2 = "_D01_";
-    static constexpr const char* decode_only_index_3 = "_D02_";
-    static constexpr const char* decode_only_index_4 = "_D03_";
-
-    [[nodiscard]] std::map<uint32_t, TscData> getTscData(
-        const std::map<std::string, std::reference_wrapper<const json>>
-        cpuSections)
-    {
-        return getTscDataForProcessorType(cpuSections, tscVariables);
-    }
-
-    [[nodiscard]] UncAer analyzeUncAer(
-        const std::map<std::string, std::reference_wrapper<const json>>
-        cpuSections)
-    {
-        UncAer output;
-        for (auto const& [cpu, cpuSection] : cpuSections)
-        {
-            uint32_t socketId;
-            if (!str2uint(cpu.substr(3), socketId, decimal))
-            {
-                continue;
-            }
-            auto allUncErr = parseUncErrSts(cpuSection);
-            output.insert({socketId, allUncErr});
-        }
-        return output;
-    }
-
-    [[nodiscard]] std::vector<UncAerData> parseUncErrSts(const json& input)
-    {
-        std::vector<UncAerData> allUncErrs;
-        for (const auto [pciKey, pciVal] : input["uncore"].items())
-        {
-            uint32_t temp;
-            if (checkInproperValue(pciVal) || pciVal == "0x0")
-            {
-                continue;
-            }
-            else if (pciKey.find(unc_err_index) != std::string::npos)
-            {
-                // decode only D00 - D03 indexes
-                if (pciKey.find(decode_only_index_1) == std::string::npos &&
-                    pciKey.find(decode_only_index_2) == std::string::npos &&
-                    pciKey.find(decode_only_index_3) == std::string::npos &&
-                    pciKey.find(decode_only_index_4) == std::string::npos)
-                {
-                    continue;
-                }
-                if (!str2uint(pciVal, temp))
-                {
-                    continue;
-                }
-                temp = temp & unc_spec_err_mask;
-            }
-            else
-            {
-                continue;
-            }
-            UncAerData uncErr;
-            uncErr.error_status = temp;
-            if (uncErr.error_status != 0)
-            {
-                uncErr.address = pciKey;
-                allUncErrs.push_back(uncErr);
-            }
-        }
-        return allUncErrs;
-    }
-
-    [[nodiscard]] CorAer analyzeCorAer(
-        const std::map<std::string, std::reference_wrapper<const json>>
-        cpuSections)
-    {
-        CorAer output;
-        for (auto const& [cpu, cpuSection] : cpuSections)
-        {
-            uint32_t socketId;
-            if (!str2uint(cpu.substr(3), socketId, decimal))
-            {
-                continue;
-            }
-            auto allCorErr = parseCorErrSts(cpuSection);
-            output.insert({socketId, allCorErr});
-        }
-        return output;
-    }
-
-    [[nodiscard]] std::vector<CorAerData> parseCorErrSts(const json& input)
-    {
-        std::vector<CorAerData> allCorErrs;
-        for (const auto [pciKey, pciVal] : input["uncore"].items())
-        {
-            uint32_t temp;
-            if (checkInproperValue(pciVal) || pciVal == "0x0")
-            {
-                continue;
-            }
-            else if (pciKey.find(cor_err_index) != std::string::npos)
-            {
-                // decode only D00 - D03 indexes
-                if (pciKey.find(decode_only_index_1) == std::string::npos &&
-                    pciKey.find(decode_only_index_2) == std::string::npos &&
-                    pciKey.find(decode_only_index_3) == std::string::npos &&
-                    pciKey.find(decode_only_index_4) == std::string::npos)
-                {
-                    continue;
-                }
-                if (!str2uint(pciVal, temp))
-                {
-                    continue;
-                }
-                temp = temp & cor_spec_err_mask;
-            }
-            else
-            {
-                continue;
-            }
-
-            CorAerData corErr;
-            corErr.error_status = temp;
-            if (corErr.error_status != 0)
-            {
-                corErr.address = pciKey;
-                allCorErrs.push_back(corErr);
-            }
-        }
-        return allCorErrs;
-    }
-
-    [[nodiscard]] MCA analyzeMca(
-        const std::map<std::string, std::reference_wrapper<const json>>
-        cpuSections)
-    {
-        MCA output;
-        std::vector<MCAData> allMcs;
-        for (auto const& [cpu, cpuSection] : cpuSections)
-        {
-            uint32_t socketId;
-            if (!str2uint(cpu.substr(3), socketId, decimal))
-            {
-                continue;
-            }
-            std::vector<MCAData> uncoreMcas = parseUncoreMcas(cpuSection);
-            std::vector<MCAData> coreMcas = parseCoreMcas(cpuSection);
-            std::vector<MCAData> allMcas;
-            allMcas.reserve(uncoreMcas.size() + coreMcas.size());
-            allMcas.insert(allMcas.begin(), uncoreMcas.begin(),
-                           uncoreMcas.end());
-            allMcas.insert(allMcas.begin(), coreMcas.begin(), coreMcas.end());
-            output.insert({socketId, allMcas});
-        }
-        return output;
-    }
-
-    [[nodiscard]] std::optional<CpxTORData> parseTorData(const json& index)
-    {
-        if (index.find("subindex0") == index.cend())
-        {
-            return {};
-        }
-        if (checkInproperValue(index["subindex0"]))
-        {
-            return {};
-        }
-        CpxTORData tor;
-        if (!str2uint(index["subindex0"], tor.subindex0) ||
-            !str2uint(index["subindex1"], tor.subindex1) ||
-            !str2uint(index["subindex2"], tor.subindex2))
-        {
-            return {};
-        }
-        if (!tor.valid)
-        {
-            return {};
-        }
-        return tor;
-    }
-
-    [[nodiscard]] std::vector<CpxTORData> getTorsData(const json& input)
-    {
-        std::vector<CpxTORData> torsData;
-        if (input.find("TOR") == input.cend())
-        {
-            return torsData;
-        }
-        for (const auto& [chaItemKey, chaItemValue] : input["TOR"].items())
-        {
-            if (!startsWith(chaItemKey, "cha"))
-            {
-                continue;
-            }
-            for (const auto& [indexDataKey, indexDataValue] :
-                    chaItemValue.items())
-            {
-                std::optional<CpxTORData> tor = parseTorData(indexDataValue);
-                if (!tor)
-                {
-                    continue;
-                }
-                if (str2uint(chaItemKey.substr(3), tor->cha, decimal) &&
-                    str2uint(indexDataKey.substr(5), tor->idx, decimal))
-                {
-                    torsData.push_back(*tor);
-                }
-            }
-        }
-        return torsData;
-    }
-
-    [[nodiscard]] CpxTOR analyze(
-        const std::map<std::string, std::reference_wrapper<const json>>
-        cpuSections)
-    {
-        CpxTOR output;
-        for (auto const& [cpu, cpuSection] : cpuSections)
-        {
-            std::optional ierr = getUncoreData(cpuSection, ierr_varname);
-            std::optional mcerr = getUncoreData(cpuSection, mcerr_varname);
-            std::optional mcerrErrSrc =
-                getUncoreData(cpuSection, mca_err_src_varname);
-            std::vector<CpxTORData> tors = getTorsData(cpuSection);
-            uint32_t socketId;
-            if (!str2uint(cpu.substr(3), socketId, decimal))
-            {
-                continue;
-            }
-            SocketCtx ctx;
-            if (!ierr || !str2uint(*ierr, ctx.ierr.value))
-            {
-                ctx.ierr.value = 0;
-            }
-            if (!mcerr || !str2uint(*mcerr, ctx.mcerr.value))
-            {
-                ctx.mcerr.value = 0;
-            }
-            if (!mcerrErrSrc || !str2uint(*mcerrErrSrc, ctx.mcerrErr.value))
-            {
-                ctx.mcerrErr.value = 0;
-            }
-            std::pair<SocketCtx, std::vector<CpxTORData>> tempData(ctx, tors);
-            output.insert({socketId, tempData});
-        }
-        return output;
-    }
-};

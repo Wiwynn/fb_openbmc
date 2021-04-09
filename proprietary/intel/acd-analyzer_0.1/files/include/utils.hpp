@@ -2,7 +2,7 @@
  *
  * INTEL CONFIDENTIAL
  *
- * Copyright 2020 Intel Corporation.
+ * Copyright 2021 Intel Corporation.
  *
  * This software and the related documents are Intel copyrighted materials, and
  * your use of them is governed by the express license under which they were
@@ -26,6 +26,8 @@
 #include <sstream>
 #include <stdio.h>
 #include <string>
+
+#include <nlohmann/json.hpp>
 
 [[nodiscard]] static const inline bool startsWith(const std::string &input,
                                                   std::string &&search) {
@@ -65,7 +67,7 @@ getDecoded(std::map<T, const char *> decodingTable, T toDecode) {
 }
 
 [[nodiscard]] bool checkInproperValue(const std::string &input) {
-  if (startsWith(input, "UA") || startsWith(input, "N/A")) {
+  if (startsWith(input, "UA") || startsWith(input, "N/A") || input == "") {
     return true;
   }
   return false;
@@ -82,4 +84,54 @@ getDecoded(std::map<T, const char *> decodingTable, T toDecode) {
     std::stringstream ss;
     ss << durationSeconds.count() << "." << durationMiliseconds.count() << "s";
     return ss.str();
+}
+
+void showBdfDescription(json deviceMap, nlohmann::ordered_json &bdfObject)
+{
+  if (deviceMap != NULL)
+  {
+    for (const auto [devKey, devVal] : deviceMap["devicesMap"].items())
+    {
+      if (devVal["bus"] == std::string(bdfObject["Bus"]) &&
+      devVal["device"] == std::string(bdfObject["Device"]) &&
+      devVal["function"] == std::string(bdfObject["Function"]))
+      {
+        bdfObject["Description"] = devVal["description"];
+      }
+    }
+  }
+}
+
+void getBdfFromFirstMcerrSection(std::string bdfString,
+                                  nlohmann::ordered_json &bdfObj)
+{
+  if (bdfString != "Please refer to system address map")
+  {
+    std::size_t left = bdfString.find("Bus");
+    std::size_t right = bdfString.find(",");
+    bdfObj["Bus"] = bdfString.substr(left, right).substr(5);
+    left = bdfString.find("Device");
+    right = bdfString.substr(right + 2).find(",");
+    bdfObj["Device"] = bdfString.substr(left, right).substr(8);
+    left = bdfString.find("Function");
+    bdfObj["Function"] =
+      bdfString.substr(left, bdfString.size()).substr(10);
+  }
+}
+
+void getBdfFromIoErrorsSection(std::string bdfString,
+                                nlohmann::ordered_json &bdfObj)
+{
+  if (bdfString != "Please refer to system address map")
+  {
+    std::size_t left = bdfString.find("Bus");
+    std::size_t right = bdfString.find("] ");
+    bdfObj["Bus"] = bdfString.substr(left, right).substr(4);
+    left = bdfString.find("Device");
+    right = bdfString.substr(right + 2).find("]");
+    bdfObj["Device"] = bdfString.substr(left, right).substr(7);
+    left = bdfString.find("Function");
+    bdfObj["Function"] = bdfString
+    .substr(left, bdfString.size() - left - 1).substr(9);
+  }
 }

@@ -2,7 +2,7 @@
 #
 # INTEL CONFIDENTIAL
 #
-# Copyright 2020 Intel Corporation.
+# Copyright 2021 Intel Corporation.
 #
 # This software and the related documents are Intel copyrighted materials, and
 # your use of them is governed by the express license under which they were
@@ -19,6 +19,7 @@
 import json
 import sys
 import re
+from argparse import ArgumentParser
 
 """
 
@@ -42,20 +43,22 @@ will be translated into:
 
 INCORRECT_DATA = ["00000fff", "00000000ffffffff"]
 BARS_TO_REMOVE = ["IO_BAR", "MEM_BAR"]
+ITP = 0
+IOMEM = 1
 
 
 def print_help():
     print("Usage:")
-    print("python3 csript_map_converter.py <cscript_memory_map_file_format> \n\n")
+    print("python3 csript_map_converter.py <cscript_memory_map_file_format> [-o output_path]\n\n")
 
 
 def transform_mem_map(memory_map_file):
     memory_map = {"memoryMap": []}
     with open(memory_map_file) as fh:
         for line in fh.readlines():
-            line_data = parse_line(line)
+            line_data, pattern = parse_line(line)
             if line_data:
-                extracted_data = extract_data(line_data)
+                extracted_data = extract_data(line_data, pattern)
                 if extracted_data:
                     memory_map["memoryMap"].append(extracted_data)
 
@@ -67,13 +70,18 @@ def parse_line(line):
     pattern_pci_resource_check = \
         re.compile('^\|([0-9a-fA-F]+)\|([0-9a-fA-F]+)\|([0-9a-fA-F]+)\|([0-9a-fA-F]+)\|.*\|(\w*)\|.*0x([0-9a-fA-F]+)-0x([0-9a-fA-F]+)\|')
     result_pci_resource_check = pattern_pci_resource_check.match(line)
+    pattern_iomem_check = \
+        re.compile('([0-9a-fA-F]+)\-([0-9a-fA-F]+)\:([0-9]+)\:([0-9a-fA-F]+)\:([0-9a-fA-F]+)\.([0-9a-fA-F]+)')
+    result_iomem_resource_check = pattern_iomem_check.match(line)
     if result_pci_resource_check:
-        return list(result_pci_resource_check.groups())
+        return list(result_pci_resource_check.groups()), ITP
+    elif result_iomem_resource_check:
+        return list(result_iomem_resource_check.groups()), IOMEM
     else:
-        return None
+        return None, None
 
 
-def extract_data(line_data):
+def extract_data(line_data, pattern):
     single_entry = {}
     # workaround for not valid entries in input file
     # - remove IO_BAR and MEM_BAR related entries
@@ -81,12 +89,18 @@ def extract_data(line_data):
     data = remove_incorrect_entries(line_data)
     if not data:
         pass
-    else:
+    elif pattern == ITP:
         single_entry["bus"] = hex(int(data[1], 16))
         single_entry["device"] = hex(int(data[2], 16))
         single_entry["function"] = hex(int(data[3], 16))
         single_entry["addressBase"] = hex(int(data[5], 16))
         single_entry["addressLimit"] = hex(int(data[6], 16))
+    elif pattern == IOMEM:
+        single_entry["bus"] = hex(int(data[3], 16))
+        single_entry["device"] = hex(int(data[4], 16))
+        single_entry["function"] = hex(int(data[5], 16))
+        single_entry["addressBase"] = hex(int(data[0], 16))
+        single_entry["addressLimit"] = hex(int(data[1], 16))
 
     return single_entry
 
@@ -100,18 +114,28 @@ def remove_incorrect_entries(data):
         return data
 
 
-def save_to_file(memory_map):
-    with open("default_memory_map.json", "w") as fh:
+def get_arguments():
+    parser = ArgumentParser(
+        epilog="Example usage: python3 cscript_map_converter.py C:\\temp\\memory_map_file.txt "
+               "-o C:\\temp\\output_data.json"
+    )
+    parser.add_argument("-o", "--output_file", type=str,
+                        help="output map file path, default - default_memory_map.json", default="default_memory_map.json")
+    parser.add_argument("memory_map_file", type=str,
+                        help="memory map file that will be converted to json format", default=None)
+
+    return parser.parse_args()
+
+
+def save_to_file(memory_map, file_path):
+    with open(file_path, "w") as fh:
         fh.write(json.dumps(memory_map, sort_keys=True, indent=4))
 
 
 def main():
-    if len(sys.argv) != 2:
-        print_help()
-        return 1
-    else:
-        memory_map = transform_mem_map(sys.argv[1])
-    save_to_file(memory_map)
+    args = get_arguments()
+    memory_map = transform_mem_map(args.memory_map_file)
+    save_to_file(memory_map, args.output_file)
     return 0
 
 
