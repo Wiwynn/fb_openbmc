@@ -70,7 +70,7 @@ static void coreMcaJsonCPX1(uint32_t u32CoreNum,
         if (sCoreMcaRawData[i].bInvalid)
         {
             cd_snprintf_s(jsonItemString, CORE_MCA_JSON_STRING_LEN,
-                          CORE_MCA_UA_DF, sCoreMcaRawData[i].cc,
+                          CORE_MCA_UA_DF_CPX, sCoreMcaRawData[i].cc,
                           sCoreMcaRawData[i].ret);
             cd_snprintf_s(jsonItemName, CORE_MCA_JSON_STRING_LEN,
                           CORE_MCA_REG_NAME, i, coreMcaRegNames[CORE_CTL]);
@@ -90,20 +90,38 @@ static void coreMcaJsonCPX1(uint32_t u32CoreNum,
         }
         else if (PECI_CC_UA(sCoreMcaRawData[i].cc))
         {
-            cd_snprintf_s(jsonItemString, CORE_MCA_JSON_STRING_LEN, CORE_MCA_UA,
+            cd_snprintf_s(jsonItemString, CORE_MCA_JSON_STRING_LEN,
+                          CORE_MCA_UA_CPX,
+                          sCoreMcaRawData[i].uRegData.sReg.u64CoreMcaCtl,
                           sCoreMcaRawData[i].cc);
             cd_snprintf_s(jsonItemName, CORE_MCA_JSON_STRING_LEN,
                           CORE_MCA_REG_NAME, i, coreMcaRegNames[CORE_CTL]);
             cJSON_AddStringToObject(coreMca, jsonItemName, jsonItemString);
+            cd_snprintf_s(jsonItemString, CORE_MCA_JSON_STRING_LEN,
+                          CORE_MCA_UA_CPX,
+                          sCoreMcaRawData[i].uRegData.sReg.u64CoreMcaStatus,
+                          sCoreMcaRawData[i].cc);
             cd_snprintf_s(jsonItemName, CORE_MCA_JSON_STRING_LEN,
                           CORE_MCA_REG_NAME, i, coreMcaRegNames[CORE_STATUS]);
             cJSON_AddStringToObject(coreMca, jsonItemName, jsonItemString);
+            cd_snprintf_s(jsonItemString, CORE_MCA_JSON_STRING_LEN,
+                          CORE_MCA_UA_CPX,
+                          sCoreMcaRawData[i].uRegData.sReg.u64CoreMcaAddr,
+                          sCoreMcaRawData[i].cc);
             cd_snprintf_s(jsonItemName, CORE_MCA_JSON_STRING_LEN,
                           CORE_MCA_REG_NAME, i, coreMcaRegNames[CORE_ADDR]);
             cJSON_AddStringToObject(coreMca, jsonItemName, jsonItemString);
+            cd_snprintf_s(jsonItemString, CORE_MCA_JSON_STRING_LEN,
+                          CORE_MCA_UA_CPX,
+                          sCoreMcaRawData[i].uRegData.sReg.u64CoreMcaMisc,
+                          sCoreMcaRawData[i].cc);
             cd_snprintf_s(jsonItemName, CORE_MCA_JSON_STRING_LEN,
                           CORE_MCA_REG_NAME, i, coreMcaRegNames[CORE_MISC]);
             cJSON_AddStringToObject(coreMca, jsonItemName, jsonItemString);
+            cd_snprintf_s(jsonItemString, CORE_MCA_JSON_STRING_LEN,
+                          CORE_MCA_UA_CPX,
+                          sCoreMcaRawData[i].uRegData.sReg.u64CoreMcaCtl2,
+                          sCoreMcaRawData[i].cc);
             cd_snprintf_s(jsonItemName, CORE_MCA_JSON_STRING_LEN,
                           CORE_MCA_REG_NAME, i, coreMcaRegNames[CORE_CTL2]);
             cJSON_AddStringToObject(coreMca, jsonItemName, jsonItemString);
@@ -215,11 +233,11 @@ int logCoreMcaCPX1(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
     for (uint32_t u32CoreNum = 0; (cpuInfo.coreMask >> u32CoreNum) != 0;
          u32CoreNum++)
     {
-        if (!(cpuInfo.coreMask & (1 << u32CoreNum)))
+        if (!CHECK_BIT(cpuInfo.coreMask, u32CoreNum))
         {
             continue;
         }
-        SCoreMcaRawData sCoreMcaRawData[LAST_CORE_MCA + 1] = {{0}};
+        SCoreMcaRawData sCoreMcaRawData[LAST_CORE_MCA + 1]{};
 
         // Read the Core MCA registers from the CPU
         for (uint32_t j = FIRST_CORE_MCA; j <= LAST_CORE_MCA; j++)
@@ -492,6 +510,7 @@ static const SCoreMcaLogVx sCoreMcaLogVx[] = {
     {crashdump::cpu::skx, logCoreMcaCPX1},
     {crashdump::cpu::icx, logCoreMcaICX1},
     {crashdump::cpu::icx2, logCoreMcaICX1},
+    {crashdump::cpu::icxd, logCoreMcaICX1},
 };
 
 /******************************************************************************
@@ -509,12 +528,6 @@ int logCoreMca(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
         return 1;
     }
 
-    if (!CHECK_BIT(cpuInfo.sectionMask, crashdump::MCA))
-    {
-        updateRecordEnable(pJsonChild, false);
-        return 0;
-    }
-
     for (uint32_t i = 0; i < (sizeof(sCoreMcaLogVx) / sizeof(SCoreMcaLogVx));
          i++)
     {
@@ -524,6 +537,6 @@ int logCoreMca(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
         }
     }
 
-    fprintf(stderr, "Cannot find version for %s\n", __FUNCTION__);
+    CRASHDUMP_PRINT(ERR, stderr, "Cannot find version for %s\n", __FUNCTION__);
     return 1;
 }

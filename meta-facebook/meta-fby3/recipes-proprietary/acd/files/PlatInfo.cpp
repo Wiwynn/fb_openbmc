@@ -157,6 +157,12 @@ int getSystemGuid(string &guid) {
   return 0;
 }
 
+int getPpinData(int cpu, char *ppin) {
+  cpu = cpu;
+  ppin = ppin;
+  return -1;
+}
+
 void platformInit(uint8_t fru) {
   node_bus_id = fru - 1;
 }

@@ -21,7 +21,9 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#ifndef IPMB_PECI_INTF
 #include <peci.h>
+#endif
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,8 +38,10 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <boost/asio/io_service.hpp>
 #include <filesystem>
 #include <fstream>
+#include <future>
 #include <regex>
 #ifdef USE_SYSTEMD
 #include <sdbusplus/asio/object_server.hpp>
@@ -71,8 +75,6 @@ extern "C" {
 extern int getSystemGuid(std::string &);
 extern void platformInit(uint8_t);
 
-cJSON* selectAndReadInputFile(crashdump::cpu::Model cpuModel, char** filename);
-
 namespace crashdump
 {
 static std::vector<crashdump::CPUInfo> cpuInfo;
@@ -80,7 +82,7 @@ static std::vector<crashdump::CPUInfo> cpuInfo;
 static boost::asio::io_service io;
 static std::shared_ptr<sdbusplus::asio::connection> conn;
 static std::shared_ptr<sdbusplus::asio::object_server> server;
-static std::shared_ptr<sdbusplus::asio::dbus_interface> onDemandLogIface;
+static std::shared_ptr<sdbusplus::asio::dbus_interface> logIface;
 static std::vector<
     std::pair<std::string, std::shared_ptr<sdbusplus::asio::dbus_interface>>>
     storedLogIfaces;
@@ -89,32 +91,42 @@ constexpr char const* crashdumpService = "com.intel.crashdump";
 constexpr char const* crashdumpPath = "/com/intel/crashdump";
 constexpr char const* crashdumpInterface = "com.intel.crashdump";
 constexpr char const* crashdumpOnDemandPath = "/com/intel/crashdump/OnDemand";
+constexpr char const* crashdumpTelemetryPath = "/com/intel/crashdump/Telemetry";
 constexpr char const* crashdumpStoredInterface = "com.intel.crashdump.Stored";
 constexpr char const* crashdumpDeleteAllInterface =
     "xyz.openbmc_project.Collection.DeleteAll";
 constexpr char const* crashdumpOnDemandInterface =
     "com.intel.crashdump.OnDemand";
+constexpr char const* crashdumpTelemetryInterface =
+    "com.intel.crashdump.Telemetry";
 constexpr char const* crashdumpRawPeciInterface =
     "com.intel.crashdump.SendRawPeci";
 #endif
-static const std::filesystem::path crashdumpDir = "/tmp/crashdumps";
-static const std::string crashdumpFileRoot{"ondemand_crashdump-"};
+static const std::filesystem::path crashdumpDir = "/tmp/crashdump/output";
+static const std::string crashdumpFileRoot{"crashdump_ondemand_"};
+static const std::string crashdumpTelemetryFileRoot{"telemetry_"};
 static const std::string crashdumpPrefix{"crashdump_"};
 
 constexpr char const* triggerTypeOnDemand = "On-Demand";
 constexpr int const vcuPeciWake = 5;
 
-static uint64_t tsToNanosecond(timespec* ts)
-{
-    return (ts->tv_sec * (uint64_t)1e9 + ts->tv_nsec);
-}
+static PlatformState platformState = {false, DEFAULT_VALUE, DEFAULT_VALUE,
+                                      DEFAULT_VALUE, DEFAULT_VALUE};
+
+const CrashdumpSection sectionNames[NUMBER_OF_SECTIONS] = {
+    {"uncore", UNCORE, record_type::uncoreStatusLog, logUncoreStatus},
+    {"TOR", TOR, record_type::torDump, logTorDump},
+    {"PM_info", PM_INFO, record_type::pmInfo, logPowerManagement},
+    {"address_map", ADDRESS_MAP, record_type::addressMap, logAddressMap},
+    {"big_core", BIG_CORE, record_type::coreCrashLog, nullptr},
+    {"MCA", MCA, record_type::mcaLog, nullptr},
+    {"METADATA", METADATA, record_type::metadata, nullptr}};
 
 static void logRunTime(cJSON* parent, timespec* start, char* key)
 {
     char timeString[64];
     timespec finish = {};
     uint64_t timeVal = 0;
-    cJSON* logSection = NULL;
 
     clock_gettime(CLOCK_MONOTONIC, &finish);
     uint64_t runTimeInNs = tsToNanosecond(&finish) - tsToNanosecond(start);
@@ -122,7 +134,7 @@ static void logRunTime(cJSON* parent, timespec* start, char* key)
     timeVal = runTimeInNs;
 
     // only log the last metaData run
-    logSection = cJSON_GetObjectItemCaseSensitive(parent, "_time");
+    cJSON_GetObjectItemCaseSensitive(parent, "_time");
 
     cd_snprintf_s(timeString, sizeof(timeString), "%.2fs",
                   (double)timeVal / 1e9);
@@ -180,10 +192,11 @@ static bool savePeciWake(std::vector<CPUInfo>& cpuInfo)
                              (uint8_t*)&peciRdValue, &cc);
         if (retval != PECI_CC_SUCCESS)
         {
-            fprintf(stderr,
-                    "Cannot read Wake_on_PECI-> addr: (0x%x), ret: (0x%x), \
+            CRASHDUMP_PRINT(
+                ERR, stderr,
+                "Cannot read Wake_on_PECI-> addr: (0x%x), ret: (0x%x), \
                         cc: (0x%x)\n",
-                    cpu.clientAddr, retval, cc);
+                cpu.clientAddr, retval, cc);
             cpu.initialPeciWake = UNKNOWN;
             continue;
         }
@@ -197,7 +210,6 @@ static bool setPeciWake(std::vector<CPUInfo>& cpuInfo, pwState desiredState)
     uint8_t cc = 0;
     EPECIStatus retval = PECI_CC_SUCCESS;
     int writeValue = OFF;
-    uint32_t peciRdValue = 0;
     for (CPUInfo& cpu : cpuInfo)
     {
         if ((cpu.initialPeciWake == ON) || (cpu.initialPeciWake == UNKNOWN))
@@ -207,10 +219,11 @@ static bool setPeciWake(std::vector<CPUInfo>& cpuInfo, pwState desiredState)
                                   writeValue, sizeof(uint32_t), &cc);
         if (retval != PECI_CC_SUCCESS)
         {
-            fprintf(stderr,
-                    "Cannot set Wake_on_PECI-> addr: (0x%x), ret: (0x%x), cc: "
-                    "(0x%x)\n",
-                    cpu.clientAddr, retval, cc);
+            CRASHDUMP_PRINT(
+                ERR, stderr,
+                "Cannot set Wake_on_PECI-> addr: (0x%x), ret: (0x%x), cc: "
+                "(0x%x)\n",
+                cpu.clientAddr, retval, cc);
         }
     }
     return true;
@@ -228,23 +241,50 @@ static bool checkPeciWake(std::vector<CPUInfo>& cpuInfo)
                              (uint8_t*)&peciRdValue, &cc);
         if (retval != PECI_CC_SUCCESS)
         {
-            fprintf(stderr,
-                    "Cannot read Wake_on_PECI-> addr: (0x%x), ret: (0x%x), \
+            CRASHDUMP_PRINT(
+                ERR, stderr,
+                "Cannot read Wake_on_PECI-> addr: (0x%x), ret: (0x%x), \
                         cc: (0x%x)\n",
-                    cpu.clientAddr, retval, cc);
+                cpu.clientAddr, retval, cc);
             continue;
         }
         if (peciRdValue != 1)
         {
-            fprintf(stderr, "Wake_on_PECI in OFF state: (0x%x)\n",
-                    cpu.clientAddr);
+            CRASHDUMP_PRINT(ERR, stderr, "Wake_on_PECI in OFF state: (0x%x)\n",
+                            cpu.clientAddr);
         }
     }
     return true;
 }
 
+void setResetDetected()
+{
+    if (!platformState.resetDetected)
+    {
+        platformState.resetDetected = true;
+        platformState.resetCpu = platformState.currentCpu;
+        platformState.resetSection = platformState.currentSection;
+    }
+}
+
+inline void clearResetDetected()
+{
+    platformState.resetDetected = false;
+    platformState.resetCpu = DEFAULT_VALUE;
+    platformState.resetSection = DEFAULT_VALUE;
+    platformState.currentSection = DEFAULT_VALUE;
+    platformState.currentCpu = DEFAULT_VALUE;
+}
+
+inline void updateCurrentSection(const CrashdumpSection& sectionName,
+                                 const CPUInfo& cpuInfo)
+{
+    platformState.currentSection = sectionName.section;
+    platformState.currentCpu = cpuInfo.clientAddr & 0xF;
+}
+
 static void loadInputFiles(std::vector<CPUInfo>& cpuInfo,
-                           InputFileInfo* inputFileInfo)
+                           InputFileInfo* inputFileInfo, bool isTelemetry)
 {
     int uniqueCount = 0;
     cJSON* defaultStateSection = NULL;
@@ -257,7 +297,7 @@ static void loadInputFiles(std::vector<CPUInfo>& cpuInfo,
         if (inputFileInfo->buffers[cpu.model] == NULL)
         {
             inputFileInfo->buffers[cpu.model] = selectAndReadInputFile(
-                cpu.model, &inputFileInfo->filenames[cpu.model]);
+                cpu.model, &inputFileInfo->filenames[cpu.model], isTelemetry);
             if (inputFileInfo->buffers[cpu.model] != NULL)
             {
                 uniqueCount++;
@@ -274,14 +314,13 @@ static void loadInputFiles(std::vector<CPUInfo>& cpuInfo,
         int defaultStateEnable = 1;
         if (defaultStateSection != NULL)
         {
-            strcmp_s(defaultStateSection->valuestring,
-                     sizeof(defaultStateSection->valuestring), "Enable",
-                     &defaultStateEnable);
+            strcmp_s(defaultStateSection->valuestring, CRASHDUMP_VALUE_LEN,
+                     "Enable", &defaultStateEnable);
         }
         else
         {
-            fprintf(stderr, "Missing \"DefaultState\" in %s\n",
-                    inputFileInfo->filenames[cpu.model]);
+            CRASHDUMP_PRINT(ERR, stderr, "Missing \"DefaultState\" in %s\n",
+                            inputFileInfo->filenames[cpu.model]);
         }
         if (defaultStateEnable == ENABLE)
         {
@@ -301,13 +340,55 @@ static void loadInputFiles(std::vector<CPUInfo>& cpuInfo,
     }
 }
 
-static bool getCoreMasks(std::vector<CPUInfo>& cpuInfo)
+static void getUPIDisable(std::vector<CPUInfo>& cpuInfo)
+{
+    uint8_t cc = 0;
+    EPECIStatus retval = PECI_CC_SUCCESS;
+    for (CPUInfo& cpu : cpuInfo)
+    {
+        switch (cpu.model)
+        {
+            case cpu::cpx:
+                // CAPID2 Local PCI B1:D30:F3 Reg 0x8C
+                uint32_t capid2;
+                retval = peci_RdPCIConfigLocal(cpu.clientAddr, 1, 30, 3, 0x8C,
+                                               sizeof(capid2),
+                                               (uint8_t*)&capid2, &cc);
+                cpu.capidRead.capid2Cc = cc;
+                cpu.capidRead.capid2Ret = retval;
+                if (retval != PECI_CC_SUCCESS)
+                {
+                    CRASHDUMP_PRINT(
+                        ERR, stderr,
+                        "Cannot find capid2! ret: (0x%x), cc: (0x%x)\n", retval,
+                        cc);
+                    cpu.capidRead.capid2 = 0;
+                    continue;
+                }
+                cpu.capidRead.capid2 = capid2;
+                break;
+            case cpu::clx:
+            case cpu::skx:
+            case cpu::icx:
+            case cpu::icx2:
+            default:
+                break;
+        }
+    }
+}
+
+static bool getCoreMasks(std::vector<CPUInfo>& cpuInfo,
+                         cpuid::cpuidState cpuState)
 {
     uint8_t cc = 0;
     EPECIStatus retval = PECI_CC_SUCCESS;
 
     for (CPUInfo& cpu : cpuInfo)
     {
+        if (cpu.coreMaskRead.coreMaskValid)
+        {
+            break;
+        }
         switch (cpu.model)
         {
             case cpu::cpx:
@@ -322,15 +403,19 @@ static bool getCoreMasks(std::vector<CPUInfo>& cpuInfo)
                 cpu.coreMaskRead.coreMaskRet = retval;
                 if (retval != PECI_CC_SUCCESS)
                 {
-                    fprintf(stderr,
-                            "Cannot find coreMask! ret: (0x%x), cc: (0x%x)\n",
-                            retval, cc);
-                    return false;
+                    CRASHDUMP_PRINT(
+                        ERR, stderr,
+                        "Cannot find coreMask! ret: (0x%x), cc: (0x%x)\n",
+                        retval, cc);
+                    break;
                 }
                 cpu.coreMask = coreMask;
+                cpu.coreMaskRead.coreMaskValid = true;
+                cpu.coreMaskRead.source = cpuState;
                 break;
             case cpu::icx:
             case cpu::icx2:
+            case cpu::icxd:
                 // RESOLVED_CORES Local PCI B14:D30:F3 Reg 0xD0 and 0xD4
                 uint32_t coreMask0;
                 retval = peci_RdPCIConfigLocal(cpu.clientAddr, 14, 30, 3, 0xD0,
@@ -340,10 +425,11 @@ static bool getCoreMasks(std::vector<CPUInfo>& cpuInfo)
                 cpu.coreMaskRead.coreMaskRet = retval;
                 if (retval != PECI_CC_SUCCESS)
                 {
-                    fprintf(stderr,
-                            "Cannot find coreMask0! ret: (0x%x), cc: (0x%x)\n",
-                            retval, cc);
-                    return false;
+                    CRASHDUMP_PRINT(
+                        ERR, stderr,
+                        "Cannot find coreMask0! ret: (0x%x), cc: (0x%x)\n",
+                        retval, cc);
+                    break;
                 }
                 uint32_t coreMask1;
                 retval = peci_RdPCIConfigLocal(cpu.clientAddr, 14, 30, 3, 0xD4,
@@ -353,14 +439,17 @@ static bool getCoreMasks(std::vector<CPUInfo>& cpuInfo)
                 cpu.coreMaskRead.coreMaskRet = retval;
                 if (retval != PECI_CC_SUCCESS)
                 {
-                    fprintf(stderr,
-                            "Cannot find coreMask1! ret: (0x%x), cc: (0x%x)\n",
-                            retval, cc);
-                    return false;
+                    CRASHDUMP_PRINT(
+                        ERR, stderr,
+                        "Cannot find coreMask1! ret: (0x%x), cc: (0x%x)\n",
+                        retval, cc);
+                    break;
                 }
                 cpu.coreMask = coreMask1;
                 cpu.coreMask <<= 32;
                 cpu.coreMask |= coreMask0;
+                cpu.coreMaskRead.coreMaskValid = true;
+                cpu.coreMaskRead.source = cpuState;
                 break;
             default:
                 return false;
@@ -369,13 +458,18 @@ static bool getCoreMasks(std::vector<CPUInfo>& cpuInfo)
     return true;
 }
 
-static bool getCHACounts(std::vector<CPUInfo>& cpuInfo)
+static bool getCHACounts(std::vector<CPUInfo>& cpuInfo,
+                         cpuid::cpuidState cpuState)
 {
     uint8_t cc = 0;
     EPECIStatus retval = PECI_CC_SUCCESS;
 
     for (CPUInfo& cpu : cpuInfo)
     {
+        if (cpu.chaCountRead.chaCountValid)
+        {
+            break;
+        }
         switch (cpu.model)
         {
             case cpu::cpx:
@@ -390,15 +484,19 @@ static bool getCHACounts(std::vector<CPUInfo>& cpuInfo)
                 cpu.chaCountRead.chaCountRet = retval;
                 if (retval != PECI_CC_SUCCESS)
                 {
-                    fprintf(stderr,
-                            "Cannot find chaMask! ret: (0x%x), cc: (0x%x)\n",
-                            retval, cc);
-                    return false;
+                    CRASHDUMP_PRINT(
+                        ERR, stderr,
+                        "Cannot find chaMask! ret: (0x%x), cc: (0x%x)\n",
+                        retval, cc);
+                    break;
                 }
                 cpu.chaCount = __builtin_popcount(chaMask);
+                cpu.chaCountRead.chaCountValid = true;
+                cpu.chaCountRead.source = cpuState;
                 break;
             case cpu::icx:
             case cpu::icx2:
+            case cpu::icxd:
                 // LLC_SLICE_EN Local PCI B14:D30:F3 Reg 0x9C and 0xA0
                 uint32_t chaMask0;
                 retval = peci_RdPCIConfigLocal(cpu.clientAddr, 14, 30, 3, 0x9C,
@@ -408,10 +506,11 @@ static bool getCHACounts(std::vector<CPUInfo>& cpuInfo)
                 cpu.chaCountRead.chaCountRet = retval;
                 if (retval != PECI_CC_SUCCESS)
                 {
-                    fprintf(stderr,
-                            "Cannot find chaMask0! ret: (0x%x),  cc: (0x%x)\n",
-                            retval, cc);
-                    return false;
+                    CRASHDUMP_PRINT(
+                        ERR, stderr,
+                        "Cannot find chaMask0! ret: (0x%x),  cc: (0x%x)\n",
+                        retval, cc);
+                    break;
                 }
                 uint32_t chaMask1;
                 retval = peci_RdPCIConfigLocal(cpu.clientAddr, 14, 30, 3, 0xA0,
@@ -421,13 +520,16 @@ static bool getCHACounts(std::vector<CPUInfo>& cpuInfo)
                 cpu.chaCountRead.chaCountRet = retval;
                 if (retval != PECI_CC_SUCCESS)
                 {
-                    fprintf(stderr,
-                            "Cannot find chaMask1! ret: (0x%x), cc: (0x%x)\n",
-                            retval, cc);
-                    return false;
+                    CRASHDUMP_PRINT(
+                        ERR, stderr,
+                        "Cannot find chaMask1! ret: (0x%x), cc: (0x%x)\n",
+                        retval, cc);
+                    break;
                 }
                 cpu.chaCount =
                     __builtin_popcount(chaMask0) + __builtin_popcount(chaMask1);
+                cpu.chaCountRead.chaCountValid = true;
+                cpu.chaCountRead.source = cpuState;
                 break;
             default:
                 return false;
@@ -442,7 +544,6 @@ static void getCPUID(CPUInfo& cpuInfo)
     CPUModel cpuModel{};
     uint8_t stepping = 0;
     EPECIStatus retval = PECI_CC_SUCCESS;
-
     retval = peci_GetCPUID(cpuInfo.clientAddr, &cpuModel, &stepping, &cc);
     cpuInfo.cpuidRead.cpuModel = cpuModel;
     cpuInfo.cpuidRead.stepping = stepping;
@@ -450,43 +551,45 @@ static void getCPUID(CPUInfo& cpuInfo)
     cpuInfo.cpuidRead.cpuidRet = retval;
     if (retval != PECI_CC_SUCCESS)
     {
-        fprintf(stderr, "Cannot get CPUID! ret: (0x%x), cc: (0x%x)\n", retval,
-                cc);
+        CRASHDUMP_PRINT(ERR, stderr,
+                        "Cannot get CPUID! ret: (0x%x), cc: (0x%x)\n", retval,
+                        cc);
     }
 }
 
 static void parseCPUInfo(CPUInfo& cpuInfo, cpuid::cpuidState cpuState)
 {
-    switch (cpuInfo.cpuidRead.cpuModel)
+    switch ((int)cpuInfo.cpuidRead.cpuModel)
     {
         case skx:
             if (cpuInfo.cpuidRead.stepping >= cpu::stepping::cpx)
             {
-                fprintf(stderr, "CPX detected (CPUID 0x%x)\n",
-                        cpuInfo.cpuidRead.cpuModel |
-                            cpuInfo.cpuidRead.stepping);
+                CRASHDUMP_PRINT(INFO, stderr, "CPX detected (CPUID 0x%x)\n",
+                                cpuInfo.cpuidRead.cpuModel |
+                                    cpuInfo.cpuidRead.stepping);
                 cpuInfo.model = cpu::cpx;
             }
             else if (cpuInfo.cpuidRead.stepping >= cpu::stepping::clx)
             {
-                fprintf(stderr, "CLX detected (CPUID 0x%x)\n",
-                        cpuInfo.cpuidRead.cpuModel |
-                            cpuInfo.cpuidRead.stepping);
+                CRASHDUMP_PRINT(INFO, stderr, "CLX detected (CPUID 0x%x)\n",
+                                cpuInfo.cpuidRead.cpuModel |
+                                    cpuInfo.cpuidRead.stepping);
                 cpuInfo.model = cpu::clx;
             }
             else
             {
-                fprintf(stderr, "SKX detected (CPUID 0x%x)\n",
-                        cpuInfo.cpuidRead.cpuModel |
-                            cpuInfo.cpuidRead.stepping);
+                CRASHDUMP_PRINT(INFO, stderr, "SKX detected (CPUID 0x%x)\n",
+                                cpuInfo.cpuidRead.cpuModel |
+                                    cpuInfo.cpuidRead.stepping);
                 cpuInfo.model = cpu::skx;
             }
             cpuInfo.cpuidRead.cpuidValid = true;
             cpuInfo.cpuidRead.source = cpuState;
             break;
         case icx:
-            fprintf(stderr, "ICX detected (CPUID 0x%x)\n",
-                    cpuInfo.cpuidRead.cpuModel | cpuInfo.cpuidRead.stepping);
+            CRASHDUMP_PRINT(INFO, stderr, "ICX detected (CPUID 0x%x)\n",
+                            cpuInfo.cpuidRead.cpuModel |
+                                cpuInfo.cpuidRead.stepping);
             if (cpuInfo.cpuidRead.stepping >= cpu::stepping::icx2)
             {
                 cpuInfo.model = cpu::icx2;
@@ -498,9 +601,18 @@ static void parseCPUInfo(CPUInfo& cpuInfo, cpuid::cpuidState cpuState)
             cpuInfo.cpuidRead.cpuidValid = true;
             cpuInfo.cpuidRead.source = cpuState;
             break;
+        case ICXD_MODEL:
+            CRASHDUMP_PRINT(INFO, stderr, "ICXD detected (CPUID 0x%x)\n",
+                            cpuInfo.cpuidRead.cpuModel |
+                                cpuInfo.cpuidRead.stepping);
+            cpuInfo.model = cpu::icxd;
+            cpuInfo.cpuidRead.cpuidValid = true;
+            cpuInfo.cpuidRead.source = cpuState;
+            break;
         default:
-            fprintf(stderr, "Unsupported CPUID 0x%x\n",
-                    cpuInfo.cpuidRead.cpuModel | cpuInfo.cpuidRead.stepping);
+            CRASHDUMP_PRINT(ERR, stderr, "Unsupported CPUID 0x%x\n",
+                            cpuInfo.cpuidRead.cpuModel |
+                                cpuInfo.cpuidRead.stepping);
             cpuInfo.cpuidRead.cpuidValid = false;
             break;
     }
@@ -548,6 +660,14 @@ static void initCPUInfo(std::vector<CPUInfo>& cpuInfo)
 {
     cpuInfo.reserve(MAX_CPUS);
     getClientAddrs(cpuInfo);
+    for (CPUInfo& cpu : cpuInfo)
+    {
+        cpu.coreMaskRead.coreMaskValid = false;
+        cpu.chaCountRead.chaCountValid = false;
+        cpu.cpuidRead.cpuidValid = false;
+        cpu.coreMaskRead.source = cpuid::INVALID;
+        cpu.chaCountRead.source = cpuid::INVALID;
+    }
 }
 
 static void getCPUData(std::vector<CPUInfo>& cpuInfo,
@@ -566,20 +686,9 @@ static void getCPUData(std::vector<CPUInfo>& cpuInfo,
     {
         overwriteCPUInfo(cpuInfo);
     }
-    for (CPUInfo& cpu : cpuInfo)
-    {
-        if (cpu.cpuidRead.cpuidValid)
-        {
-            if (PECI_CC_UA(cpu.coreMaskRead.coreMaskCc))
-            {
-                getCoreMasks(cpuInfo);
-            }
-            if (PECI_CC_UA(cpu.chaCountRead.chaCountCc))
-            {
-                getCHACounts(cpuInfo);
-            }
-        }
-    }
+    getCoreMasks(cpuInfo, cpuState);
+    getCHACounts(cpuInfo, cpuState);
+    getUPIDisable(cpuInfo);
 }
 
 static std::string newTimestamp(void)
@@ -627,8 +736,8 @@ static cJSON*
                   const std::function<int(crashdump::CPUInfo& cpuInfo, cJSON*)>
                       sectionLogFunc)
 {
-    fprintf(stderr, "Logging %s on PECI address %d\n", sectionName.c_str(),
-            cpuInfo.clientAddr);
+    CRASHDUMP_PRINT(INFO, stderr, "Logging %s on PECI address %d\n",
+                    sectionName.c_str(), cpuInfo.clientAddr);
 
     // Create an empty JSON object for this section if it doesn't already
     // exist
@@ -644,7 +753,8 @@ static cJSON*
     int ret = 0;
     if ((ret = sectionLogFunc(cpuInfo, logSectionJson)) != 0)
     {
-        fprintf(stderr, "Error %d during %s log\n", ret, sectionName.c_str());
+        CRASHDUMP_PRINT(ERR, stderr, "Error %d during %s log\n", ret,
+                        sectionName.c_str());
     }
 
     // Check if child data is added to the JSON section
@@ -657,19 +767,151 @@ static cJSON*
                                     crashdump::dbgStatusItemName,
                                     crashdump::dbgFailedStatus);
         }
-        else
-        {
-            // Otherwise delete it
-            cJSON_DeleteItemFromObjectCaseSensitive(parent,
-                                                    sectionName.c_str());
-            logSectionJson = NULL;
-        }
     }
     return logSectionJson;
 }
 
-static void cleanupInputFiles(std::vector<CPUInfo>& cpuInfo,
-                              InputFileInfo* inputFileInfo)
+static cJSON* addDisableSection(cJSON* parent, std::string sectionName)
+{
+    cJSON* logSection = NULL;
+    cJSON* logSectionJson = NULL;
+    logSection = cJSON_GetObjectItemCaseSensitive(parent, sectionName.c_str());
+    if (logSection == NULL)
+    {
+        cJSON_AddItemToObject(parent, sectionName.c_str(),
+                              logSectionJson = cJSON_CreateObject());
+        cJSON_AddBoolToObject(logSectionJson, RECORD_ENABLE, false);
+    }
+    return logSectionJson;
+}
+
+void fillSection(cJSON* cpu, CPUInfo& cpuInfo, CrashdumpSection sectionName,
+                 const std::function<int(crashdump::CPUInfo& cpuInfo, cJSON*)>
+                     sectionLogFunc,
+                 timespec* sectionStart, char* timeStr)
+{
+    cJSON* logSection = NULL;
+
+    if (CHECK_BIT(cpuInfo.sectionMask, sectionName.section))
+    {
+        updateCurrentSection(sectionName, cpuInfo);
+
+        logSection =
+            addSectionLog(cpu, cpuInfo, sectionName.name, sectionLogFunc);
+
+        // Do not log uncore version version here
+        if (sectionName.section != Section::UNCORE)
+        {
+            logCrashdumpVersion(logSection, cpuInfo, sectionName.record_type);
+        }
+
+        logRunTime(logSection, sectionStart, timeStr);
+    }
+    else
+    {
+        addDisableSection(cpu, sectionName.name);
+    }
+}
+
+void fillSectionWithChild(
+    cJSON* cpu, CPUInfo& cpuInfo, CrashdumpSection sectionName,
+    const std::function<int(crashdump::CPUInfo& cpuInfo, cJSON*)>
+        sectionLogFunc1,
+    const std::function<int(crashdump::CPUInfo& cpuInfo, cJSON*)>
+        sectionLogFunc2,
+    timespec* sectionStart, char* timeStr)
+{
+    cJSON* logSection = NULL;
+
+    if (CHECK_BIT(cpuInfo.sectionMask, sectionName.section))
+    {
+        updateCurrentSection(sectionName, cpuInfo);
+
+        addSectionLog(cpu, cpuInfo, sectionName.name, sectionLogFunc1);
+        logSection =
+            addSectionLog(cpu, cpuInfo, sectionName.name, sectionLogFunc2);
+        if (logSection)
+        {
+            logCrashdumpVersion(logSection, cpuInfo, sectionName.record_type);
+            logRunTime(logSection, sectionStart, timeStr);
+        }
+    }
+    else
+    {
+        addDisableSection(cpu, sectionName.name);
+    }
+}
+
+void fillMetaDataCPU(cJSON* crashlogData, CPUInfo cpuInfo,
+                     InputFileInfo* inputFileInfo)
+{
+    cJSON* logSection = NULL;
+    if (CHECK_BIT(cpuInfo.sectionMask, crashdump::METADATA))
+    {
+        updateCurrentSection(sectionNames[Section::METADATA], cpuInfo);
+
+        logSection =
+            addSectionLog(crashlogData, cpuInfo, "METADATA", logSysInfo);
+
+        if (!inputFileInfo->unique)
+        {
+            // Fill in Input File Info in METADATA cpu section
+            logSysInfoInputfile(cpuInfo, logSection, inputFileInfo);
+        }
+    }
+}
+
+void logInputFileVersion(cJSON* root, CPUInfo cpuInfo,
+                         InputFileInfo* inputFileInfo)
+{
+    cJSON* jsonVer = cJSON_GetObjectItemCaseSensitive(
+        cJSON_GetObjectItemCaseSensitive(inputFileInfo->buffers[cpuInfo.model],
+                                         "crash_data"),
+        "Version");
+
+    if ((jsonVer != NULL) && cJSON_IsString(jsonVer))
+    {
+        cJSON_AddStringToObject(root, "_input_file_ver", jsonVer->valuestring);
+    }
+    else
+    {
+        cJSON_AddStringToObject(root, "_input_file_ver", MD_NA);
+    }
+}
+
+void fillMetaDataCommon(cJSON* metaData, CPUInfo cpuInfo,
+                        InputFileInfo* inputFileInfo,
+                        const std::string& triggerType, std::string& timestamp,
+                        timespec* crashdumpStart, timespec* sectionStart,
+                        char* timeStr)
+{
+    if (CHECK_BIT(cpuInfo.sectionMask, crashdump::METADATA))
+    {
+        updateCurrentSection(sectionNames[Section::METADATA], cpuInfo);
+
+        // Fill in common System Info
+        logSysInfoCommon(metaData);
+
+        if (metaData != NULL)
+        {
+            logMetaDataCommon(metaData, timestamp, triggerType);
+            logCrashdumpVersion(metaData, cpuInfo, record_type::metadata);
+            logInputFileVersion(metaData, cpuInfo, inputFileInfo);
+            if (inputFileInfo->unique)
+            {
+                logSysInfoInputfile(cpuInfo, metaData, inputFileInfo);
+            }
+            logRunTime(metaData, sectionStart, timeStr);
+            logRunTime(metaData, crashdumpStart, "_total_time");
+        }
+    }
+    else
+    {
+        cJSON_AddBoolToObject(metaData, RECORD_ENABLE, false);
+    }
+}
+
+static void cleanupInputFiles(InputFileInfo* inputFileInfo)
 {
     for (int i = 0; i < NUMBER_OF_CPU_MODELS; i++)
     {
@@ -678,30 +920,166 @@ static void cleanupInputFiles(std::vector<CPUInfo>& cpuInfo,
     }
 }
 
+static void iterateByCPU(std::vector<crashdump::CPUInfo>& cpuInfo,
+                         cJSON* processors, cJSON* crashlogData,
+                         timespec& crashdumpStart, timespec& sectionStart,
+                         InputFileInfo& inputFileInfo)
+
+{
+    // Fill in the Crashdump data in the correct order (uncore to core) for
+    // each CPU
+    cJSON* cpu = NULL;
+
+    clock_gettime(CLOCK_MONOTONIC, &sectionStart);
+    clock_gettime(CLOCK_MONOTONIC, &crashdumpStart);
+
+    char timeStr[] = "_time";
+    for (size_t i = 0; i < NUMBER_OF_SECTIONS; i++)
+    {
+        for (size_t j = 0; j < cpuInfo.size(); j++)
+        {
+            // Create a section for this cpu
+            char cpuString[8];
+            cd_snprintf_s(cpuString, sizeof(cpuString), "cpu%d", j);
+
+            cpu = cJSON_GetObjectItemCaseSensitive(processors, cpuString);
+
+            if (cpu == NULL)
+            {
+                cJSON_AddItemToObject(processors, cpuString,
+                                      cpu = cJSON_CreateObject());
+            }
+            if (cpu != NULL)
+            {
+                if (cpuInfo[j].cpuidRead.cpuidValid)
+                {
+                    switch ((int)sectionNames[i].section)
+                    {
+                        case BIG_CORE:
+                            cpuInfo[j].launchDelay = calculateDelay(
+                                &crashdumpStart,
+                                getDelayFromInputFile(
+                                    cpuInfo[j],
+                                    sectionNames[Section::BIG_CORE].name));
+
+                            fillSectionWithChild(
+                                cpu, cpuInfo[j],
+                                sectionNames[Section::BIG_CORE], logCrashdump,
+                                logSqDump, &sectionStart, timeStr);
+
+                            break;
+
+                        case METADATA:
+                            fillMetaDataCPU(crashlogData, cpuInfo[j],
+                                            &inputFileInfo);
+                            break;
+
+                        case ADDRESS_MAP:
+                            fillSection(cpu, cpuInfo[j], sectionNames[i],
+                                        sectionNames[i].fptr, &sectionStart,
+                                        timeStr);
+                            break;
+
+                        case MCA:
+                            fillSectionWithChild(
+                                cpu, cpuInfo[j], sectionNames[i], logCoreMca,
+                                logUncoreMca, &sectionStart, timeStr);
+                            break;
+
+                        default:
+                            fillSection(cpu, cpuInfo[j], sectionNames[i],
+                                        sectionNames[i].fptr, &sectionStart,
+                                        timeStr);
+                            break;
+                    }
+                }
+            }
+        }
+    }
+}
+
+static void iterateBySections(std::vector<crashdump::CPUInfo>& cpuInfo,
+                              cJSON* processors, cJSON* crashlogData,
+                              timespec& crashdumpStart, timespec& sectionStart,
+                              InputFileInfo& inputFileInfo)
+{
+    // Fill in the Crashdump data in the correct order (uncore to core) for
+    // each CPU
+    cJSON* cpu = NULL;
+
+    clock_gettime(CLOCK_MONOTONIC, &sectionStart);
+    clock_gettime(CLOCK_MONOTONIC, &crashdumpStart);
+
+    char timeStr[] = "_time";
+    for (size_t i = 0; i < cpuInfo.size(); i++)
+    {
+        // Create a section for this cpu
+        char cpuString[8];
+        cd_snprintf_s(cpuString, sizeof(cpuString), "cpu%d", i);
+        cJSON_AddItemToObject(processors, cpuString,
+                              cpu = cJSON_CreateObject());
+
+        // Fill in the Core Crashdump
+        if (cpuInfo[i].cpuidRead.cpuidValid)
+        {
+            fillSection(cpu, cpuInfo[i], sectionNames[Section::UNCORE],
+                        logUncoreStatus, &sectionStart, timeStr);
+            fillSection(cpu, cpuInfo[i], sectionNames[Section::TOR], logTorDump,
+                        &sectionStart, timeStr);
+            fillSection(cpu, cpuInfo[i], sectionNames[Section::PM_INFO],
+                        logPowerManagement, &sectionStart, timeStr);
+            fillSection(cpu, cpuInfo[i], sectionNames[Section::ADDRESS_MAP],
+                        logAddressMap, &sectionStart, timeStr);
+            if (cpuInfo[i].cpuidRead.cpuModel == skx)
+            {
+                fillSectionWithChild(cpu, cpuInfo[i],
+                                     sectionNames[Section::MCA], logCoreMca,
+                                     logUncoreMca, &sectionStart, timeStr);
+                fillSectionWithChild(
+                    cpu, cpuInfo[i], sectionNames[Section::BIG_CORE],
+                    logCrashdump, logSqDump, &sectionStart, timeStr);
+            }
+            else
+            {
+                cpuInfo[i].launchDelay = calculateDelay(
+                    &crashdumpStart,
+                    getDelayFromInputFile(
+                        cpuInfo[i], sectionNames[Section::BIG_CORE].name));
+
+                fillSectionWithChild(
+                    cpu, cpuInfo[i], sectionNames[Section::BIG_CORE],
+                    logCrashdump, logSqDump, &sectionStart, timeStr);
+                fillSectionWithChild(cpu, cpuInfo[i],
+                                     sectionNames[Section::MCA], logCoreMca,
+                                     logUncoreMca, &sectionStart, timeStr);
+            }
+            fillMetaDataCPU(crashlogData, cpuInfo[i], &inputFileInfo);
+        }
+    }
+}
+
 void createCrashdump(std::vector<crashdump::CPUInfo>& cpuInfo,
                      std::string& crashdumpContents,
-                     const std::string& triggerType, std::string& timestamp)
+                     const std::string& triggerType, std::string& timestamp,
+                     bool isTelemetry)
 {
     cJSON* root = NULL;
     cJSON* crashlogData = NULL;
     cJSON* metaData = NULL;
     cJSON* processors = NULL;
-    cJSON* cpu = NULL;
-    cJSON* logSection = NULL;
     char* out = NULL;
-    int ret;
-    bool readChaCores = false;
     InputFileInfo inputFileInfo = {
         .unique = true, .filenames = {NULL}, .buffers = {NULL}};
 
-    fprintf(stderr, "Crashdump started...\n");
+    // Clear any resets that happened before the crashdump collection started
+    clearResetDetected();
+
+    CRASHDUMP_PRINT(INFO, stderr, "Crashdump started...\n");
     crashdump::getCPUData(cpuInfo, cpuid::EVENT);
     crashdump::savePeciWake(cpuInfo);
     crashdump::setPeciWake(cpuInfo, ON);
 
-#ifdef CRASHDUMP_INPUT_FILE
-    loadInputFiles(cpuInfo, &inputFileInfo);
-#endif
+    loadInputFiles(cpuInfo, &inputFileInfo, isTelemetry);
 
     // start the JSON tree for CPU dump
     root = cJSON_CreateObject();
@@ -722,127 +1100,28 @@ void createCrashdump(std::vector<crashdump::CPUInfo>& cpuInfo,
     // Include the version field
     logCrashdumpVersion(processors, cpuInfo[0], record_type::bmcAutonomous);
 
-    // Fill in the Crashdump data in the correct order (uncore to core) for
-    // each CPU
     struct timespec sectionStart, crashdumpStart;
 
-    clock_gettime(CLOCK_MONOTONIC, &sectionStart);
-    clock_gettime(CLOCK_MONOTONIC, &crashdumpStart);
+    if ((crashdump::cpu::icx == cpuInfo[0].model) ||
+        (crashdump::cpu::icx2 == cpuInfo[0].model) ||
+        (crashdump::cpu::icxd == cpuInfo[0].model))
+    {
+        iterateByCPU(cpuInfo, processors, crashlogData, crashdumpStart,
+                     sectionStart, inputFileInfo);
+    }
+    else
+    {
+        iterateBySections(cpuInfo, processors, crashlogData, crashdumpStart,
+                          sectionStart, inputFileInfo);
+    }
 
     char timeStr[] = "_time";
-    for (int i = 0; i < cpuInfo.size(); i++)
-    {
-        // Create a section for this cpu
-        char cpuString[8];
-        cd_snprintf_s(cpuString, sizeof(cpuString), "cpu%d", i);
-        cJSON_AddItemToObject(processors, cpuString,
-                              cpu = cJSON_CreateObject());
+    fillMetaDataCommon(metaData, cpuInfo[0], &inputFileInfo, triggerType,
+                       timestamp, &crashdumpStart, &sectionStart, timeStr);
 
-        // Fill in the Core Crashdump
-        if (cpuInfo[i].cpuidRead.cpuidValid)
-        {
-            logSection =
-                addSectionLog(cpu, cpuInfo[i], "big_core", logCrashdump);
-            if (CHECK_BIT(cpuInfo[i].sectionMask, crashdump::BIG_CORE))
-            {
-                if (logSection)
-                {
-                    // Include the version
-                    logCrashdumpVersion(logSection, cpuInfo[i],
-                                        record_type::coreCrashLog);
-                }
-                // Fill in the SQ dump
-                addSectionLog(cpu, cpuInfo[i], "big_core", logSqDump);
-                logRunTime(logSection, &sectionStart, timeStr);
-            }
+    logResetDetected(metaData, platformState.resetCpu,
+                     platformState.resetSection);
 
-            // Fill in the Core MCA data
-            addSectionLog(cpu, cpuInfo[i], "MCA", logCoreMca);
-            if (CHECK_BIT(cpuInfo[i].sectionMask, crashdump::MCA))
-            {
-                // Fill in the Uncore MCA data
-                logSection =
-                    addSectionLog(cpu, cpuInfo[i], "MCA", logUncoreMca);
-                if (logSection)
-                {
-                    // Include the version
-                    logCrashdumpVersion(logSection, cpuInfo[i],
-                                        record_type::mcaLog);
-                    logRunTime(logSection, &sectionStart, timeStr);
-                }
-            }
-
-            // Fill in the Uncore Status
-            logSection =
-                addSectionLog(cpu, cpuInfo[i], "uncore", logUncoreStatus);
-            if (CHECK_BIT(cpuInfo[i].sectionMask, crashdump::UNCORE) &&
-                logSection)
-            {
-                logRunTime(logSection, &sectionStart, timeStr);
-            }
-
-            // Fill in the TOR Dump
-            logSection = addSectionLog(cpu, cpuInfo[i], "TOR", logTorDump);
-            if (CHECK_BIT(cpuInfo[i].sectionMask, crashdump::TOR) && logSection)
-            {
-                // Include the version
-                logCrashdumpVersion(logSection, cpuInfo[i],
-                                    record_type::torDump);
-                logRunTime(logSection, &sectionStart, timeStr);
-            }
-
-            // Fill in the Power Management Info
-            logSection =
-                addSectionLog(cpu, cpuInfo[i], "PM_info", logPowerManagement);
-            if (CHECK_BIT(cpuInfo[i].sectionMask, crashdump::PM_INFO) &&
-                logSection)
-            {
-                // Include the version
-                logCrashdumpVersion(logSection, cpuInfo[i],
-                                    record_type::pmInfo);
-                logRunTime(logSection, &sectionStart, timeStr);
-            }
-
-            // Fill in the Address Map
-            logSection =
-                addSectionLog(cpu, cpuInfo[i], "address_map", logAddressMap);
-            if (CHECK_BIT(cpuInfo[i].sectionMask, crashdump::ADDRESS_MAP) &&
-                logSection)
-            {
-                // Include the version
-                logCrashdumpVersion(logSection, cpuInfo[i],
-                                    record_type::addressMap);
-                logRunTime(logSection, &sectionStart, timeStr);
-            }
-        }
-
-        logSection =
-            addSectionLog(crashlogData, cpuInfo[i], "METADATA", logSysInfo);
-        if (CHECK_BIT(cpuInfo[i].sectionMask, crashdump::METADATA) &&
-            (!inputFileInfo.unique))
-        {
-            // Fill in Input File Info in METADATA cpu section
-            logSysInfoInputfile(cpuInfo[i], logSection, &inputFileInfo);
-        }
-    }
-
-    if (CHECK_BIT(cpuInfo[0].sectionMask, crashdump::METADATA))
-    {
-        // Fill in common System Info
-        logSysInfoCommon(metaData);
-
-        if (metaData != NULL)
-        {
-            logMetaDataCommon(metaData, timestamp, triggerType);
-            logCrashdumpVersion(metaData, cpuInfo[0], record_type::metadata);
-            if (inputFileInfo.unique)
-            {
-                logSysInfoInputfile(cpuInfo[0], metaData, &inputFileInfo);
-            }
-            logRunTime(metaData, &sectionStart, timeStr);
-            logRunTime(metaData, &crashdumpStart, "_total_time");
-        }
-    }
 #ifdef OEMDATA_SECTION
     // OEM Customer Section
     clock_gettime(CLOCK_MONOTONIC, &sectionStart);
@@ -858,7 +1137,7 @@ void createCrashdump(std::vector<crashdump::CPUInfo>& cpuInfo,
                           oemProcessors = cJSON_CreateObject());
     logCrashdumpVersion(oemProcessors, cpuInfo[0], record_type::bmcAutonomous);
 
-    for (int i = 0; i < cpuInfo.size(); i++)
+    for (size_t i = 0; i < cpuInfo.size(); i++)
     {
         char cpuString[8];
         cd_snprintf_s(cpuString, sizeof(cpuString), "cpu%d", i);
@@ -886,14 +1165,25 @@ void createCrashdump(std::vector<crashdump::CPUInfo>& cpuInfo,
     {
         crashdumpContents = out;
         cJSON_free(out);
-        fprintf(stderr, "Completed!\n");
+        CRASHDUMP_PRINT(INFO, stderr, "Completed!\n");
     }
     else
     {
-        fprintf(stderr, "cJSON_Print Failed\n");
+        CRASHDUMP_PRINT(ERR, stderr, "cJSON_Print Failed\n");
     }
 
-    cleanupInputFiles(cpuInfo, &inputFileInfo);
+    if (platformState.resetDetected)
+    {
+        clearResetDetected();
+    }
+
+    // Clear crashedCoreMask every time crashdump is run
+    for (size_t i = 0; i < cpuInfo.size(); i++)
+    {
+        cpuInfo[i].crashedCoreMask = 0;
+    }
+
+    cleanupInputFiles(&inputFileInfo);
     cJSON_Delete(root);
     crashdump::checkPeciWake(cpuInfo);
     crashdump::setPeciWake(cpuInfo, OFF);
@@ -910,8 +1200,8 @@ static int scandir_filter(const struct dirent* dirEntry)
 static void dbusRemoveOnDemandLog()
 {
     // Always make sure the D-Bus properties are removed
-    server->remove_interface(onDemandLogIface);
-    onDemandLogIface.reset();
+    server->remove_interface(logIface);
+    logIface.reset();
 
     std::error_code ec;
     if (!std::filesystem::exists(crashdumpDir))
@@ -931,6 +1221,39 @@ static void dbusRemoveOnDemandLog()
         {
             if (!(std::filesystem::remove(fname, ec)))
             {
+                CRASHDUMP_PRINT(ERR, stderr, "failed to remove %s: %s\n",
+                                fname.c_str(), ec.message().c_str());
+                break;
+            }
+        }
+    }
+}
+
+static void dbusRemoveTelemetryLog()
+{
+    // Always make sure the D-Bus properties are removed
+    server->remove_interface(logIface);
+    logIface.reset();
+
+    std::error_code ec;
+    if (!std::filesystem::exists(crashdumpDir))
+    {
+        // Can't delete something that doesn't exist
+        return;
+    }
+
+    for (auto& fileList : std::filesystem::directory_iterator(crashdumpDir))
+    {
+        // always iterate through all files in the directory to clear
+        // on-demand files. This is just a safeguard in the event more
+        // than a single file is created.
+        std::string fname = fileList.path();
+        if (fname.substr(crashdumpDir.string().size() + 1,
+                         crashdumpTelemetryFileRoot.size()) ==
+            crashdumpTelemetryFileRoot)
+        {
+            if (!(std::filesystem::remove(fname, ec)))
+            {
                 fprintf(stderr, "failed to remove %s: %s\n", fname.c_str(),
                         ec.message().c_str());
                 break;
@@ -939,21 +1262,21 @@ static void dbusRemoveOnDemandLog()
     }
 }
 
-static void dbusAddOnDemandLog(const std::string& onDemandLogContents,
-                               const std::string& timestamp)
+static void dbusAddLog(const std::string& logContents,
+                       const std::string& timestamp,
+                       const std::string& dbusPath, const std::string& filename)
 {
     FILE* fpJson = NULL;
     std::error_code ec;
-    std::string new_logfile_name = crashdumpFileRoot + timestamp + ".json";
-    std::filesystem::path out_file = crashdumpDir / new_logfile_name;
+    std::filesystem::path out_file = crashdumpDir / filename;
 
-    // create the crashdumps directory if it doesn't exist
+    // create the crashdump/output directory if it doesn't exist
     if (!(std::filesystem::create_directories(crashdumpDir, ec)))
     {
         if (ec.value() != 0)
         {
-            fprintf(stderr, "failed to create %s: %s\n", crashdumpDir.c_str(),
-                    ec.message().c_str());
+            CRASHDUMP_PRINT(ERR, stderr, "failed to create %s: %s\n",
+                            crashdumpDir.c_str(), ec.message().c_str());
             return;
         }
     }
@@ -961,15 +1284,14 @@ static void dbusAddOnDemandLog(const std::string& onDemandLogContents,
     fpJson = fopen(out_file.c_str(), "w");
     if (fpJson)
     {
-        fprintf(fpJson, "%s", onDemandLogContents.c_str());
+        fprintf(fpJson, "%s", logContents.c_str());
         fclose(fpJson);
     }
-    onDemandLogIface =
-        server->add_interface(crashdumpOnDemandPath, crashdumpInterface);
-    onDemandLogIface->register_property("Log", out_file.string());
-    onDemandLogIface->register_property("Timestamp", timestamp);
-    onDemandLogIface->register_property("Filename", new_logfile_name);
-    onDemandLogIface->initialize();
+    logIface = server->add_interface(dbusPath, crashdumpInterface);
+    logIface->register_property("Log", out_file.string());
+    logIface->register_property("Timestamp", timestamp);
+    logIface->register_property("Filename", filename);
+    logIface->initialize();
 }
 
 static void newOnDemandLog(std::vector<crashdump::CPUInfo>& cpuInfo,
@@ -978,7 +1300,16 @@ static void newOnDemandLog(std::vector<crashdump::CPUInfo>& cpuInfo,
 {
     // Start the log to the on-demand location
     createCrashdump(cpuInfo, onDemandLogContents, triggerTypeOnDemand,
-                    timestamp);
+                    timestamp, false);
+}
+
+static void newTelemetryLog(std::vector<crashdump::CPUInfo>& cpuInfo,
+                            std::string& telemetryLogContents,
+                            std::string& timestamp)
+{
+    // Start the log to the telemetry location
+    createCrashdump(cpuInfo, telemetryLogContents, triggerTypeOnDemand,
+                    timestamp, true);
 }
 
 static void incrementCrashdumpCount()
@@ -989,20 +1320,22 @@ static void incrementCrashdumpCount()
            const std::variant<uint8_t>& property) {
             if (ec)
             {
-                fprintf(stderr, "Failed to get Crashdump count\n");
+                CRASHDUMP_PRINT(ERR, stderr, "Failed to get Crashdump count\n");
                 return;
             }
             const uint8_t* crashdumpCountVariant =
                 std::get_if<uint8_t>(&property);
             if (crashdumpCountVariant == nullptr)
             {
-                fprintf(stderr, "Unable to read Crashdump count\n");
+                CRASHDUMP_PRINT(ERR, stderr,
+                                "Unable to read Crashdump count\n");
                 return;
             }
             uint8_t crashdumpCount = *crashdumpCountVariant;
             if (crashdumpCount == std::numeric_limits<uint8_t>::max())
             {
-                fprintf(stderr, "Maximum crashdump count reached\n");
+                CRASHDUMP_PRINT(ERR, stderr,
+                                "Maximum crashdump count reached\n");
                 return;
             }
             // Increment the count
@@ -1011,7 +1344,8 @@ static void incrementCrashdumpCount()
                 [](boost::system::error_code ec) {
                     if (ec)
                     {
-                        fprintf(stderr, "Failed to set Crashdump count\n");
+                        CRASHDUMP_PRINT(ERR, stderr,
+                                        "Failed to set Crashdump count\n");
                     }
                 },
                 "xyz.openbmc_project.Settings",
@@ -1037,18 +1371,18 @@ static void dbusAddStoredLog(const std::string& storedLogContents,
     FILE* fpJson = NULL;
     std::error_code ec;
 
-    // create the crashdumps directory if it doesn't exist
+    // create the crashdump/output directory if it doesn't exist
     if (!(std::filesystem::create_directories(crashdumpDir, ec)))
     {
         if (ec.value() != 0)
         {
-            fprintf(stderr, "failed to create %s: %s\n", crashdumpDir.c_str(),
-                    ec.message().c_str());
+            CRASHDUMP_PRINT(ERR, stderr, "failed to create %s: %s\n",
+                            crashdumpDir.c_str(), ec.message().c_str());
             return;
         }
     }
 
-    // Search the crashdumps directory for existing log files
+    // Search the crashdump/output directory for existing log files
     int numLogFiles =
         scandir(crashdumpDir.c_str(), &namelist, scandir_filter, versionsort);
     if (numLogFiles < 0)
@@ -1083,8 +1417,8 @@ static void dbusAddStoredLog(const std::string& storedLogContents,
             if (!(std::filesystem::remove(crashdumpDir / namelist[i]->d_name,
                                           ec)))
             {
-                fprintf(stderr, "failed to remove %s: %s\n",
-                        namelist[i]->d_name, ec.message().c_str());
+                CRASHDUMP_PRINT(ERR, stderr, "failed to remove %s: %s\n",
+                                namelist[i]->d_name, ec.message().c_str());
             }
 #ifdef USE_SYSTEMD
             // Now remove the interface for the deleted log
@@ -1144,27 +1478,7 @@ static void newStoredLog(std::vector<crashdump::CPUInfo>& cpuInfo,
                          const std::string& triggerType, std::string& timestamp)
 {
     // Start the log
-    createCrashdump(cpuInfo, storedLogContents, triggerType, timestamp);
-}
-
-static int parseLogEntry(const std::string& filename,
-                         std::string& crashdumpContents)
-{
-    if (!std::filesystem::exists(filename))
-    {
-        crashdumpContents = "CPU log not found";
-        return 1;
-    }
-    std::ifstream inf(filename);
-    if (inf.bad())
-    {
-        crashdumpContents = "failed to open CPU log";
-        return 1;
-    }
-    std::stringstream buffer;
-    buffer << inf.rdbuf();
-    crashdumpContents = buffer.str();
-    return 0;
+    createCrashdump(cpuInfo, storedLogContents, triggerType, timestamp, false);
 }
 
 static bool isPECIAvailable()
@@ -1173,7 +1487,7 @@ static bool isPECIAvailable()
     getClientAddrs(cpuInfo);
     if (cpuInfo.empty())
     {
-        fprintf(stderr, "PECI is not available!\n");
+        CRASHDUMP_PRINT(ERR, stderr, "PECI is not available!\n");
         return false;
     }
     return true;
@@ -1274,14 +1588,15 @@ int main(int argc, char* argv[])
 
     if (!crashdump::isPECIAvailable())
     {
-        fprintf(stderr, "PECI not available\n");
+        CRASHDUMP_PRINT(ERR, stderr, "PECI not available\n");
     }
     crashdump::initCPUInfo(crashdump::cpuInfo);
     crashdump::getCPUData(crashdump::cpuInfo, cpuid::STARTUP);
 
     // Generate a Stored Log
     ifaceStored->register_method(
-        "GenerateStoredLog", [&future](const std::string& triggerType) {
+        "GenerateStoredLog",
+        [&future, ifaceStored](const std::string& triggerType) {
             if (!crashdump::isPECIAvailable())
             {
                 throw crashdump::PowerOffException();
@@ -1291,11 +1606,28 @@ int main(int argc, char* argv[])
             {
                 throw crashdump::LogInProgressException();
             }
-            future = std::async(std::launch::async, [triggerType]() {
+            future = std::async(std::launch::async, [triggerType,
+                                                     ifaceStored]() {
                 std::string storedLogContents;
                 std::string storedLogTime = crashdump::newTimestamp();
                 crashdump::newStoredLog(crashdump::cpuInfo, storedLogContents,
                                         triggerType, storedLogTime);
+
+                // Signal that Crashdump is complete
+                try
+                {
+                    sdbusplus::message::message msg =
+                        ifaceStored->new_signal("CrashdumpComplete");
+
+                    msg.signal_send();
+                }
+                catch (const sdbusplus::exception::exception& e)
+                {
+                    CRASHDUMP_PRINT(
+                        ERR, stderr,
+                        "Failed to send CrashdumpComplete signal\n");
+                }
+
                 if (storedLogContents.empty())
                 {
                     // Log is empty, so don't save it
@@ -1325,14 +1657,14 @@ int main(int argc, char* argv[])
         {
             if (!(std::filesystem::remove(crashdump::crashdumpDir / file, ec)))
             {
-                fprintf(stderr, "failed to remove %s: %s\n", file.c_str(),
-                        ec.message().c_str());
+                CRASHDUMP_PRINT(ERR, stderr, "failed to remove %s: %s\n",
+                                file.c_str(), ec.message().c_str());
             }
             crashdump::server->remove_interface(interface);
         }
         crashdump::storedLogIfaces.clear();
         crashdump::dbusRemoveOnDemandLog();
-        fprintf(stderr, "Crashdump logs cleared\n");
+        CRASHDUMP_PRINT(INFO, stderr, "Crashdump logs cleared\n");
         return std::string("Logs Cleared");
     });
     ifaceDeleteAll->initialize();
@@ -1361,21 +1693,70 @@ int main(int argc, char* argv[])
         future = std::async(std::launch::async, []() {
             std::string onDemandLogContents;
             std::string onDemandTimestamp = crashdump::newTimestamp();
+            std::string filename =
+                crashdump::crashdumpFileRoot + onDemandTimestamp + ".json";
             crashdump::newOnDemandLog(crashdump::cpuInfo, onDemandLogContents,
                                       onDemandTimestamp);
             boost::asio::post(
                 crashdump::io,
                 [onDemandLogContents = std::move(onDemandLogContents),
-                 onDemandTimestamp = std::move(onDemandTimestamp)]() mutable {
-                    crashdump::dbusAddOnDemandLog(onDemandLogContents,
-                                                  onDemandTimestamp);
+                 onDemandTimestamp = std::move(onDemandTimestamp),
+                 filename]() mutable {
+                    crashdump::dbusAddLog(
+                        onDemandLogContents, onDemandTimestamp,
+                        crashdump::crashdumpOnDemandPath, filename);
                 });
         });
 
         // Return success
         return std::string("Log Started");
     });
+
     ifaceOnDemand->initialize();
+
+    // Telemetry Log Interface
+    std::shared_ptr<sdbusplus::asio::dbus_interface> ifaceTelemetry =
+        crashdump::server->add_interface(
+            crashdump::crashdumpPath, crashdump::crashdumpTelemetryInterface);
+
+    // Generate a Telemetry Log
+    ifaceTelemetry->register_method("GenerateTelemetryLog", [&future]() {
+        if (!crashdump::isPECIAvailable())
+        {
+            throw crashdump::PowerOffException();
+        }
+        // Check if a Log is in progress
+        if (future.valid() && future.wait_for(std::chrono::seconds(0)) !=
+                                  std::future_status::ready)
+        {
+            throw crashdump::LogInProgressException();
+        }
+        crashdump::dbusRemoveTelemetryLog();
+
+        // Start the log asynchronously since it can take a long time
+        future = std::async(std::launch::async, []() {
+            std::string telemetryLogContents;
+            std::string telemetryTimestamp = crashdump::newTimestamp();
+            std::string filename = crashdump::crashdumpTelemetryFileRoot +
+                                   telemetryTimestamp + ".json";
+            crashdump::newTelemetryLog(crashdump::cpuInfo, telemetryLogContents,
+                                       telemetryTimestamp);
+            boost::asio::post(
+                crashdump::io,
+                [telemetryLogContents = std::move(telemetryLogContents),
+                 telemetryTimestamp = std::move(telemetryTimestamp),
+                 filename]() mutable {
+                    crashdump::dbusAddLog(
+                        telemetryLogContents, telemetryTimestamp,
+                        crashdump::crashdumpTelemetryPath, filename);
+                });
+        });
+
+        // Return success
+        return std::string("Log Started");
+    });
+
+    ifaceTelemetry->initialize();
 
     // Build up paths for any existing stored logs
     if (std::filesystem::exists(crashdump::crashdumpDir))
@@ -1436,6 +1817,10 @@ int main(int argc, char* argv[])
             return rawResp;
         });
     ifaceRawPeci->initialize();
+
+    // Start tracking host state
+    std::shared_ptr<sdbusplus::bus::match::match> hostStateMonitor =
+        crashdump::startHostStateMonitor(crashdump::conn);
 
     crashdump::io.run();
 #endif

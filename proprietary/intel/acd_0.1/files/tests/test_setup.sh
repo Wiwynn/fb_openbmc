@@ -1,2 +1,2 @@
 #!/bin/bash
-mkdir -p /tmp/crashdump_input && cp /usr/share/crashdump/*.json /tmp/crashdump_input
+mkdir -p /tmp/crashdump/input && cp /usr/share/crashdump/input/*.json /tmp/crashdump/input

@@ -26,14 +26,17 @@ extern "C" {
 #include "crashdump.hpp"
 #include "utils.hpp"
 
+#ifdef OEMDATA_SECTION
 int logOemDataCPX1(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
 {
+    (void)cpuInfo;
     cJSON_AddStringToObject(pJsonChild, "Test", "1");
     return 0;
 }
 
 int logOemDataICX1(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
 {
+    (void)cpuInfo;
     cJSON_AddStringToObject(pJsonChild, "Test", "1");
     return 0;
 }
@@ -44,6 +47,7 @@ static const SOemDataVx sOemDataVx[] = {
     {crashdump::cpu::skx, logOemDataCPX1},
     {crashdump::cpu::icx, logOemDataICX1},
     {crashdump::cpu::icx2, logOemDataICX1},
+    {crashdump::cpu::icxd, logOemDataICX1},
 };
 
 /******************************************************************************
@@ -66,4 +70,6 @@ int logOemData(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
             return sOemDataVx[i].logOemDataVx(cpuInfo, pJsonChild);
         }
     }
+    return 1;
 }
+#endif

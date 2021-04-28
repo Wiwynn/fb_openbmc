@@ -26,6 +26,7 @@ extern "C" {
 }
 
 #include "crashdump.hpp"
+#include "utils.hpp"
 
 /******************************************************************************
  *
@@ -52,21 +53,21 @@ static void powerManagementJson(uint32_t u32CoreNum,
     if (sCpuPowerState->retCstate != PECI_CC_SUCCESS ||
         sCpuPowerState->retVratio != PECI_CC_SUCCESS)
     {
-        cd_snprintf_s(jsonItemString, PM_JSON_STRING_LEN, PM_UA_DF,
+        cd_snprintf_s(jsonItemString, PM_JSON_STRING_LEN, PM_UA_DF_CPX,
                       sCpuPowerState->ccCstate, sCpuPowerState->retCstate);
         cJSON_AddStringToObject(core, PM_JSON_CSTATE_REG_NAME, jsonItemString);
-        cd_snprintf_s(jsonItemString, PM_JSON_STRING_LEN, PM_UA_DF,
+        cd_snprintf_s(jsonItemString, PM_JSON_STRING_LEN, PM_UA_DF_CPX,
                       sCpuPowerState->ccVratio, sCpuPowerState->retVratio);
         cJSON_AddStringToObject(core, PM_JSON_VID_REG_NAME, jsonItemString);
     }
     else if (PECI_CC_UA(sCpuPowerState->ccCstate) ||
              PECI_CC_UA(sCpuPowerState->ccVratio))
     {
-        cd_snprintf_s(jsonItemString, PM_JSON_STRING_LEN, PM_UA,
-                      sCpuPowerState->ccCstate);
+        cd_snprintf_s(jsonItemString, PM_JSON_STRING_LEN, PM_UA_CPX,
+                      sCpuPowerState->u32CState, sCpuPowerState->ccCstate);
         cJSON_AddStringToObject(core, PM_JSON_CSTATE_REG_NAME, jsonItemString);
-        cd_snprintf_s(jsonItemString, PM_JSON_STRING_LEN, PM_UA,
-                      sCpuPowerState->ccVratio);
+        cd_snprintf_s(jsonItemString, PM_JSON_STRING_LEN, PM_UA_CPX,
+                      sCpuPowerState->u32VidRatio, sCpuPowerState->ccVratio);
         cJSON_AddStringToObject(core, PM_JSON_VID_REG_NAME, jsonItemString);
     }
     else
@@ -192,7 +193,7 @@ int logPowerManagementCPX1(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
     for (uint32_t u32CoreNum = 0; (cpuInfo.coreMask >> u32CoreNum) != 0;
          u32CoreNum++)
     {
-        if (!(cpuInfo.coreMask & (1 << u32CoreNum)))
+        if (!CHECK_BIT(cpuInfo.coreMask, u32CoreNum))
         {
             continue;
         }
@@ -214,12 +215,6 @@ int logPowerManagementCPX1(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
         if (ret != PECI_CC_SUCCESS)
         {
             retval = ret;
-        }
-        // If we hit a failure, assume that register reads are not allowed and
-        // bail
-        if (retval != 0)
-        {
-            break;
         }
         // Log the Power Management for this core
         powerManagementJson(u32CoreNum, &sCpuPowerState, pJsonChild);
@@ -261,6 +256,42 @@ static void powerManagementJsonICX1(const char* regName,
 
 /******************************************************************************
  *
+ *   powerManagementPllJsonICX1
+ *
+ *   This function formats the Pll log into a JSON object
+ *   It uses section name and regName and generates 2 levels.
+ *
+ ******************************************************************************/
+static void powerManagementPllJsonICX1(const char* secName, const char* regName,
+                                       SPmRegRawData* sRegData,
+                                       cJSON* pJsonChild, uint8_t cc, int ret)
+{
+    char jsonItemString[PM_JSON_STRING_LEN] = {0};
+    cJSON* section = nullptr;
+    if ((section = cJSON_GetObjectItemCaseSensitive(pJsonChild, secName)) ==
+        NULL)
+    {
+        cJSON_AddItemToObject(pJsonChild, secName,
+                              section = cJSON_CreateObject());
+    }
+    if (sRegData->bInvalid)
+    {
+        cd_snprintf_s(jsonItemString, PM_JSON_STRING_LEN, PM_UA_DF, cc, ret);
+    }
+    else if (PECI_CC_UA(cc))
+    {
+        cd_snprintf_s(jsonItemString, PM_JSON_STRING_LEN, PM_UA, cc);
+    }
+    else
+    {
+        cd_snprintf_s(jsonItemString, PM_JSON_STRING_LEN, PM_UINT32_FMT,
+                      sRegData->uValue, cc);
+    }
+    cJSON_AddStringToObject(section, regName, jsonItemString);
+}
+
+/******************************************************************************
+ *
  *   powerManagementJsonPerCoreICX1
  *
  *   This function formats Power Management Per Core log into a JSON object
@@ -293,25 +324,61 @@ static void powerManagementJsonPerCoreICX1(const char* regName,
  *
  *   logPowerManagementICX1
  *
- *   This function gathers the Power Management log and adds it to the debug log
+ *   This function reads the input file and gathers the Power Management log
+ *   and adds it to the debug log.
  *   The PECI flow is listed below to dump the core state registers
  *
  ******************************************************************************/
 int logPowerManagementICX1(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
 {
     int ret = 0;
+    uint8_t cc = 0;
+    char jsonNameString[PM_JSON_STRING_LEN];
+    cJSON* regList = NULL;
+    cJSON* itRegs = NULL;
+    cJSON* itParams = NULL;
+    bool enable = false;
 
-    if (ret != PECI_CC_SUCCESS)
+    regList = getCrashDataSectionRegList(cpuInfo.inputFile.bufferPtr, "PM_info",
+                                         "pci", &enable);
+
+    if (regList == NULL)
     {
-        return ret;
+        cJSON_AddStringToObject(pJsonChild, FILE_PM_KEY, FILE_PM_ERR);
+        return 1;
     }
 
-    for (uint32_t i = 0; i < (sizeof(sPmEntries) / sizeof(SPmEntry)); i++)
+    if (!enable)
     {
-        uint8_t cc = 0;
-        SPmRegRawData sRegData = {};
+        cJSON_AddFalseToObject(pJsonChild, RECORD_ENABLE);
+        return 0;
+    }
 
-        if (sPmEntries[i].isPerCore)
+    SPmEntry reg{};
+    cJSON_ArrayForEach(itRegs, regList)
+    {
+        int position = 0;
+        cJSON_ArrayForEach(itParams, itRegs)
+
+        {
+            switch (position)
+            {
+                case PM_REG_NAME:
+                    reg.regName = itParams->valuestring;
+                    break;
+                case PM_CORESCOPE:
+                    reg.coreScope = itParams->valueint;
+                    break;
+                case PM_PARAM:
+                    reg.param = strtoull(itParams->valuestring, NULL, 16);
+                    break;
+                default:
+                    break;
+            }
+            position++;
+        }
+        SPmRegRawData sRegData{};
+        if (reg.coreScope)
         {
             // Go through each enabled core
             for (uint32_t u32CoreNum = 0; (cpuInfo.coreMask >> u32CoreNum) != 0;
@@ -322,8 +389,7 @@ int logPowerManagementICX1(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
                     continue;
                 }
 
-                uint16_t param =
-                    (u32CoreNum << 8) | (uint8_t)sPmEntries[i].param;
+                uint16_t param = (u32CoreNum << 8) | (uint8_t)reg.param;
 
                 ret = peci_RdPkgConfig(cpuInfo.clientAddr, PM_PCS_88, param,
                                        sizeof(uint32_t),
@@ -332,22 +398,116 @@ int logPowerManagementICX1(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
                 {
                     sRegData.bInvalid = true;
                 }
-                powerManagementJsonPerCoreICX1(sPmEntries[i].regName,
-                                               u32CoreNum, &sRegData,
-                                               pJsonChild, cc, ret);
+                cd_snprintf_s(jsonNameString, PM_JSON_STRING_LEN, reg.regName);
+                powerManagementJsonPerCoreICX1(jsonNameString, u32CoreNum,
+                                               &sRegData, pJsonChild, cc, ret);
             }
         }
         else
         {
-            ret = peci_RdPkgConfig(cpuInfo.clientAddr, PM_PCS_88,
-                                   sPmEntries[i].param, sizeof(uint32_t),
-                                   (uint8_t*)&sRegData.uValue, &cc);
+            ret = peci_RdPkgConfig(cpuInfo.clientAddr, PM_PCS_88, reg.param,
+                                   sizeof(uint32_t), (uint8_t*)&sRegData.uValue,
+                                   &cc);
             if (ret != PECI_CC_SUCCESS)
             {
                 sRegData.bInvalid = true;
             }
-            powerManagementJsonICX1(sPmEntries[i].regName, &sRegData,
-                                    pJsonChild, cc, ret);
+            cd_snprintf_s(jsonNameString, PM_JSON_STRING_LEN, reg.regName);
+            powerManagementJsonICX1(jsonNameString, &sRegData, pJsonChild, cc,
+                                    ret);
+        }
+    }
+    return 0;
+}
+
+/******************************************************************************
+ *
+ *   logPllCX1
+ *
+ *   This function reads the input file and gathers the Phase Lock Loop log
+ *   and adds it to the debug log.
+ *   The PECI flow is listed below to dump the core state registers
+ *
+ ******************************************************************************/
+int logPllICX1(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
+{
+    int ret = 0;
+    uint8_t cc = 0;
+    char jsonNameString1[PM_JSON_STRING_LEN];
+    char jsonNameString2[PM_JSON_STRING_LEN];
+    cJSON* regList = NULL;
+    cJSON* itRegs = NULL;
+    cJSON* itParams = NULL;
+    bool enable = false;
+    regList = getCrashDataSectionRegList(cpuInfo.inputFile.bufferPtr, "PM_info",
+                                         "pll", &enable);
+
+    if (regList == NULL)
+    {
+        cJSON_AddStringToObject(pJsonChild, FILE_PLL_KEY, FILE_PLL_ERR);
+        return 1;
+    }
+
+    if (!enable)
+    {
+        cJSON_AddFalseToObject(pJsonChild, RECORD_ENABLE);
+        return 0;
+    }
+
+    SPmEntry reg{};
+
+    cJSON_ArrayForEach(itRegs, regList)
+    {
+        int position = 0;
+        cJSON_ArrayForEach(itParams, itRegs)
+        {
+            switch (position)
+            {
+                case PLL_SEC_NAME:
+                    reg.secName = itParams->valuestring;
+                    break;
+                case PLL_REG_NAME:
+                    reg.regName = itParams->valuestring;
+                    break;
+                case PLL_PARAM:
+                    reg.param = strtoull(itParams->valuestring, NULL, 16);
+                    break;
+                default:
+                    break;
+            }
+            position++;
+        }
+        SPmRegRawData sRegData{};
+        ret =
+            peci_RdPkgConfig(cpuInfo.clientAddr, PM_PCS_88, reg.param,
+                             sizeof(uint32_t), (uint8_t*)&sRegData.uValue, &cc);
+        if (ret != PECI_CC_SUCCESS)
+        {
+            sRegData.bInvalid = true;
+        }
+        cd_snprintf_s(jsonNameString1, PM_JSON_STRING_LEN, reg.regName);
+        cd_snprintf_s(jsonNameString2, PM_JSON_STRING_LEN, reg.secName);
+        powerManagementPllJsonICX1(jsonNameString2, jsonNameString1, &sRegData,
+                                   pJsonChild, cc, ret);
+    }
+    return 0;
+}
+
+static PowerManagementStatusRead PowerManagementStatusTypesICX[] = {
+    logPowerManagementICX1,
+    logPllICX1,
+};
+
+int logPowerManagementICX(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
+{
+    int ret = 0;
+    for (uint32_t i = 0; i < (sizeof(PowerManagementStatusTypesICX) /
+                              sizeof(PowerManagementStatusTypesICX[0]));
+         i++)
+    {
+        if (PowerManagementStatusTypesICX[i](cpuInfo, pJsonChild) != 0)
+        {
+            ret = 1;
         }
     }
 
@@ -358,8 +518,9 @@ static const SPowerManagementVx sPowerManagementVx[] = {
     {crashdump::cpu::clx, logPowerManagementCPX1},
     {crashdump::cpu::cpx, logPowerManagementCPX1},
     {crashdump::cpu::skx, logPowerManagementCPX1},
-    {crashdump::cpu::icx, logPowerManagementICX1},
-    {crashdump::cpu::icx2, logPowerManagementICX1},
+    {crashdump::cpu::icx, logPowerManagementICX},
+    {crashdump::cpu::icx2, logPowerManagementICX},
+    {crashdump::cpu::icxd, logPowerManagementICX},
 };
 
 /******************************************************************************
@@ -376,12 +537,6 @@ int logPowerManagement(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
         return 1;
     }
 
-    if (!CHECK_BIT(cpuInfo.sectionMask, crashdump::PM_INFO))
-    {
-        updateRecordEnable(pJsonChild, false);
-        return 0;
-    }
-
     for (uint32_t i = 0;
          i < (sizeof(sPowerManagementVx) / sizeof(SPowerManagementVx)); i++)
     {
@@ -392,6 +547,6 @@ int logPowerManagement(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
         }
     }
 
-    fprintf(stderr, "Cannot find version for %s\n", __FUNCTION__);
+    CRASHDUMP_PRINT(ERR, stderr, "Cannot find version for %s\n", __FUNCTION__);
     return 1;
 }

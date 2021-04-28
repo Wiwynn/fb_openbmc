@@ -25,21 +25,31 @@ extern "C" {
 using namespace std;
 
 int getBmcVersion(char *ver) {
+  ver = ver;
   return 0;
 }
 
 int getBiosVersion(char *ver) {
+  ver = ver;
   return 0;
 }
 
 int getMeVersion(char *ver) {
-  return 0;
+  ver = ver;
+  return -1;
 }
 
 int getSystemGuid(string &guid) {
+  guid = guid;
   return 0;
 }
 
-void platformInit(uint8_t fru) {
+int getPpinData(int cpu, char *ppin) {
+  cpu = cpu;
+  ppin = ppin;
+  return -1;
+}
 
+void platformInit(uint8_t fru) {
+  fru = fru;
 }

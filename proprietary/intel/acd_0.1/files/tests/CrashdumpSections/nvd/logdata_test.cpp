@@ -17,45 +17,44 @@
  *
  ******************************************************************************/
 
-#include "../test_utils.hpp"
-#include "CrashdumpSections/UncoreRegs.hpp"
+#include "../../test_utils.hpp"
+#include "CrashdumpSections/nvd/apis.hpp"
+#include "CrashdumpSections/nvd/csrs.hpp"
+#include "CrashdumpSections/nvd/logdata.hpp"
+#include "crashdump.hpp"
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-TEST(UncoreRegs, sizeCheck)
-{
-    // Check Num of PCI registers
-    int expected = 3212;
-    int val = sizeof(sUncoreStatusPciICX1) / sizeof(SUncoreStatusRegPci);
-    EXPECT_EQ(val, expected);
+using namespace ::testing;
+using ::testing::Return;
+using namespace crashdump;
 
-    // Check Num of MMIO registers
-    val =
-        sizeof(sUncoreStatusPciMmioICX1) / sizeof(SUncoreStatusRegPciMmioICX1);
-    expected = 1326;
-    EXPECT_EQ(val, expected);
-}
-
-TEST(UncoreRegs, read_and_compare_crashdump_input_icx_json_files)
+// change to ifdef or adjust CMakeList.txt to test against hardware
+#ifndef MOCK
+class LogDataTestFixture : public Test
 {
+  public:
+    void SetUp() override
+    {
+        buffer = readTestFile("/tmp/crashdump_nvd.json");
+        // Initialize json object
+        root = cJSON_CreateObject();
+    }
+
     cJSON* root = NULL;
     cJSON* expected = NULL;
-    cJSON* logSection = NULL;
     char* buffer = NULL;
+    uint8_t addr = 0x30;
+    uint8_t cpuNum = 0;
+};
 
-    buffer = readTestFile("/usr/share/crashdump/crashdump_input_icx.json");
-    root = cJSON_Parse(buffer);
-    buffer = readTestFile("/tmp/crashdump_input/crashdump_input_icx.json");
+TEST_F(LogDataTestFixture, main_test)
+{
+    logNvdJson(addr, cpuNum, root);
     expected = cJSON_Parse(buffer);
-
     EXPECT_EQ(true, cJSON_Compare(expected, root, true));
-
-    logSection = cJSON_GetObjectItemCaseSensitive(
-        cJSON_GetObjectItemCaseSensitive(expected, "crash_data"), "uncore");
-
-    EXPECT_TRUE(logSection != NULL);
-
     cJSON_Delete(root);
-    cJSON_Delete(expected);
-    FREE(buffer);
 }
+
+#endif

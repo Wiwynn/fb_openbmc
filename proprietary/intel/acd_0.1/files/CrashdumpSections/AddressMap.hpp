@@ -31,8 +31,10 @@
 
 #define AM_NA "N/A"
 #define AM_UA "UA:0x%x"
+#define AM_UA_CPX "0x%" PRIx64 ",UA:0x%x"
 #define AM_DF "DF:0x%x"
 #define AM_UA_DF "UA:0x%x,DF:0x%x"
+#define AM_UA_DF_CPX "0x0,UA:0x%x,DF:0x%x"
 #define AM_UINT64_FMT "0x%" PRIx64 ""
 #define SIZE_FAILURE 7
 #define AM_PCI_SEG 0

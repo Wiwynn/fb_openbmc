@@ -125,6 +125,33 @@ int getSystemGuid(string &guid) {
   return 0;
 }
 
-void platformInit(uint8_t fru) {
+int getPpinData(int cpu, char *ppin) {
+  int ret = -1;
+  char buf[128];
+  FILE *fp;
 
+  cd_snprintf_s(buf, sizeof(buf), "/usr/local/bin/cfg-util cpu%d_ppin 2>/dev/null", cpu);
+  if (!(fp = popen(buf, "r")))
+    return ret;
+
+  do {
+    if (!fgets(buf, sizeof(buf), fp))
+      break;
+
+    string str = buf;
+    auto end = str.find("\n");
+    if (end == string::npos) {
+      end = str.size();
+    }
+
+    cd_snprintf_s(ppin, SI_JSON_STRING_LEN, "0x%s", str.substr(0, end).c_str());
+    ret = 0;
+  } while (0);
+  pclose(fp);
+
+  return ret;
+}
+
+void platformInit(uint8_t fru) {
+  fru = fru;
 }

@@ -6,13 +6,14 @@ https://github.com/Intel-BMC/openbmc/tree/intel/meta-openbmc-mods
 
 Dependencies:
 - <peci.h> from libpeci (https://github.com/openbmc/libpeci)
+    Tested with: a2ceec2aa139277cebb62e1eda449ef60fa4c962
 - <peci-ioctl.h> from the PECI kernel driver (https://github.com/openbmc/linux/blob/dev-5.4/include/uapi/linux/peci-ioctl.h)
 - Install sdbusplus (https://github.com/openbmc/sdbusplus)
-    Tested with: 1befc49be9b32b1c04cc9485c132827c86aa891c
-- Install boost (https://www.boost.org/) Tested with: version 1.66
+    Tested with: 1b7a58871cba4b97025f493f72cbb26ca6b21254
+- Install boost (https://www.boost.org/) Tested with: version 1.73
 - Install CJSON (https://github.com/DaveGamble/cJSON) Tested with verison v1.7.12
-- Install safeclib (https://sourceforge.net/projects/safeclib/files/)
-    Tested with: f1708afcbba69f75e80920b75aa3d7baee3f611d
+- Install safeclib (https://github.com/rurban/safeclib)
+    Tested with: 60786283fd61cd621a5d1df00e083a1c1e3cf52a
 - (optional)Install gtest (https://github.com/google/googletest)
     Tested with: 2134e3fd857d952e03ce76064fad5ac6e9036104
 

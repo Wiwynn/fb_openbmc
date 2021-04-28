@@ -36,8 +36,8 @@ using namespace crashdump;
 
 namespace crashdump
 {
-void loadInputFiles(std::vector<CPUInfo>& cpuInfo,
-                    InputFileInfo* inputFileInfo);
+void loadInputFiles(std::vector<CPUInfo>& cpuInfo, InputFileInfo* inputFileInfo,
+                    bool isTelemetry);
 }
 
 class CrashdumpTestFixture : public Test
@@ -58,11 +58,19 @@ class CrashdumpTestFixture : public Test
     std::vector<CPUInfo> cpus;
     InputFileInfo inputFileInfo = {
         .unique = true, .filenames = {NULL}, .buffers = {NULL}};
+    bool isTelemetry = false;
 };
 
 TEST_F(CrashdumpTestFixture, loadInputFiles)
 {
-    loadInputFiles(cpus, &inputFileInfo);
+    isTelemetry = false;
+    loadInputFiles(cpus, &inputFileInfo, isTelemetry);
     EXPECT_EQ(cpus[0].sectionMask, 0xff);
+}
+TEST_F(CrashdumpTestFixture, loadInputFilesTelemetry)
+{
+    isTelemetry = true;
+    loadInputFiles(cpus, &inputFileInfo, isTelemetry);
+    EXPECT_EQ(cpus[0].sectionMask, 0xc4);
 }
 #endif

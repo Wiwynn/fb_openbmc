@@ -19,16 +19,8 @@
 
 #include "utils.hpp"
 
-#include "crashdump.hpp"
-
-#ifdef USE_SYSTEMD
-#include <boost/container/flat_map.hpp>
-#include <sdbusplus/bus.hpp>
-#include <sdbusplus/message.hpp>
-#else
+#include <stdlib.h>
 #include <unistd.h>
-#endif
-#include <variant>
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,77 +32,6 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-
-namespace crashdump
-{
-int getBMCVersionDBus(char* bmcVerStr, size_t bmcVerStrSize)
-{
-#ifdef USE_SYSTEMD
-    using ManagedObjectType = boost::container::flat_map<
-        sdbusplus::message::object_path,
-        boost::container::flat_map<
-            std::string, boost::container::flat_map<
-                             std::string, std::variant<std::string>>>>;
-#endif
-
-    if (bmcVerStr == nullptr)
-    {
-        return 1;
-    }
-
-#ifdef USE_SYSTEMD
-    sdbusplus::bus::bus dbus = sdbusplus::bus::new_default_system();
-    sdbusplus::message::message getObjects = dbus.new_method_call(
-        "xyz.openbmc_project.Software.BMC.Updater",
-        "/xyz/openbmc_project/software", "org.freedesktop.DBus.ObjectManager",
-        "GetManagedObjects");
-    ManagedObjectType bmcUpdaterIntfs;
-    try
-    {
-        sdbusplus::message::message resp = dbus.call(getObjects);
-        resp.read(bmcUpdaterIntfs);
-    }
-    catch (sdbusplus::exception_t& e)
-    {
-        return 1;
-    }
-
-    for (const std::pair<
-             sdbusplus::message::object_path,
-             boost::container::flat_map<
-                 std::string, boost::container::flat_map<
-                                  std::string, std::variant<std::string>>>>&
-             pathPair : bmcUpdaterIntfs)
-    {
-        boost::container::flat_map<
-            std::string,
-            boost::container::flat_map<
-                std::string, std::variant<std::string>>>::const_iterator
-            softwareVerIt =
-                pathPair.second.find("xyz.openbmc_project.Software.Version");
-        if (softwareVerIt != pathPair.second.end())
-        {
-            boost::container::flat_map<std::string, std::variant<std::string>>::
-                const_iterator versionIt =
-                    softwareVerIt->second.find("Version");
-            if (versionIt != softwareVerIt->second.end())
-            {
-                const std::string* bmcVersion =
-                    std::get_if<std::string>(&versionIt->second);
-                if (bmcVersion != nullptr)
-                {
-                    size_t copySize =
-                        std::min(bmcVersion->size(), bmcVerStrSize - 1);
-                    bmcVersion->copy(bmcVerStr, copySize);
-                    return 0;
-                }
-            }
-        }
-    }
-#endif
-    return 1;
-}
-} // namespace crashdump
 
 int cd_snprintf_s(char* str, size_t len, const char* format, ...)
 {
@@ -154,8 +75,9 @@ cJSON* readInputFile(const char* filename)
 {
     char* buffer = NULL;
     cJSON* jsonBuf = NULL;
-    uint64_t length = 0;
+    long int length = 0;
     FILE* fp = fopen(filename, "r");
+    size_t result = 0;
 
     if (fp == NULL)
     {
@@ -173,10 +95,18 @@ cJSON* readInputFile(const char* filename)
     buffer = (char*)calloc(length, sizeof(char));
     if (buffer)
     {
-        fread(buffer, 1, length, fp);
+        result = fread(buffer, 1, length, fp);
+        if ((int)result != length)
+        {
+            fprintf(stderr, "fread read %zu bytes, but length is %ld", result,
+                    length);
+            fclose(fp);
+            FREE(buffer);
+            return NULL;
+        }
     }
-    fclose(fp);
 
+    fclose(fp);
     // Convert and return cJSON object from buffer
     jsonBuf = cJSON_Parse(buffer);
     FREE(buffer);
@@ -191,7 +121,15 @@ cJSON* getCrashDataSection(cJSON* root, char* section, bool* enable)
 
     if (child != NULL)
     {
-        *enable = cJSON_IsTrue(cJSON_GetObjectItem(child, RECORD_ENABLE));
+        cJSON* recordEnable = cJSON_GetObjectItem(child, RECORD_ENABLE);
+        if (recordEnable == NULL)
+        {
+            *enable = true;
+        }
+        else
+        {
+            *enable = cJSON_IsTrue(recordEnable);
+        }
     }
 
     return child;
@@ -206,6 +144,19 @@ cJSON* getCrashDataSectionRegList(cJSON* root, char* section, char* regType,
     {
         return cJSON_GetObjectItemCaseSensitive(
             cJSON_GetObjectItemCaseSensitive(child, regType), "reg_list");
+    }
+
+    return child;
+}
+
+cJSON* getCrashDataSectionObjectOneLevel(cJSON* root, char* section,
+                                         const char* firstLevel, bool* enable)
+{
+    cJSON* child = getCrashDataSection(root, section, enable);
+
+    if (child != NULL)
+    {
+        return cJSON_GetObjectItemCaseSensitive(child, firstLevel);
     }
 
     return child;
@@ -229,7 +180,8 @@ int getCrashDataSectionVersion(cJSON* root, char* section)
     return version;
 }
 
-cJSON* selectAndReadInputFile(crashdump::cpu::Model cpuModel, char** filename)
+cJSON* selectAndReadInputFile(crashdump::cpu::Model cpuModel, char** filename,
+                              bool isTelemetry)
 {
     char cpuStr[CPU_STR_LEN] = {0};
     char nameStr[NAME_STR_LEN] = {0};
@@ -237,35 +189,41 @@ cJSON* selectAndReadInputFile(crashdump::cpu::Model cpuModel, char** filename)
     switch (cpuModel)
     {
         case crashdump::cpu::skx:
+        case crashdump::cpu::clx:
             strcpy_s(cpuStr, sizeof("skx"), "skx");
             break;
         case crashdump::cpu::cpx:
             strcpy_s(cpuStr, sizeof("cpx"), "cpx");
             break;
-        case crashdump::cpu::clx:
-            strcpy_s(cpuStr, sizeof("clx"), "clx");
-            break;
         case crashdump::cpu::icx:
         case crashdump::cpu::icx2:
+        case crashdump::cpu::icxd:
             strcpy_s(cpuStr, sizeof("icx"), "icx");
             break;
         default:
-            fprintf(stderr, "Error selecting input file (CPUID 0x%x).\n",
-                    cpuModel);
+            CRASHDUMP_PRINT(ERR, stderr,
+                            "Error selecting input file (CPUID 0x%x).\n",
+                            cpuModel);
             return NULL;
     }
 
-    cd_snprintf_s(nameStr, NAME_STR_LEN, OVERRIDE_INPUT_FILE, cpuStr);
+    char* override_file;
+
+    isTelemetry ? override_file = OVERRIDE_TELEMETRY_FILE
+                : override_file = OVERRIDE_INPUT_FILE;
+    cd_snprintf_s(nameStr, NAME_STR_LEN, override_file, cpuStr);
 
     if (access(nameStr, F_OK) != -1)
     {
-        fprintf(stderr, "Using override file - %s\n", nameStr);
+        CRASHDUMP_PRINT(INFO, stderr, "Using override file - %s\n", nameStr);
     }
     else
     {
-        cd_snprintf_s(nameStr, NAME_STR_LEN, DEFAULT_INPUT_FILE, cpuStr);
+        const char* default_file;
+        isTelemetry ? default_file = DEFAULT_TELEMETRY_FILE
+                    : default_file = DEFAULT_INPUT_FILE;
+        cd_snprintf_s(nameStr, NAME_STR_LEN, default_file, cpuStr);
     }
-
     *filename = (char*)malloc(sizeof(nameStr));
     if (*filename == NULL)
     {
@@ -284,4 +242,134 @@ void updateRecordEnable(cJSON* root, bool enable)
     {
         cJSON_AddBoolToObject(root, RECORD_ENABLE, enable);
     }
+}
+
+int getPciRegister(crashdump::CPUInfo& cpuInfo, SRegRawData* sRegData,
+                   uint8_t u8index)
+{
+    int peci_fd = -1;
+    int ret = 0;
+    uint16_t u16Offset = 0;
+    uint8_t u8Size = 0;
+    ret = peci_Lock(&peci_fd, PECI_WAIT_FOREVER);
+    if (ret != PECI_CC_SUCCESS)
+    {
+        sRegData->ret = ret;
+        return ACD_FAILURE;
+    }
+    switch (sPciReg[u8index].u8Size)
+    {
+        case UT_REG_DWORD:
+            ret = peci_RdEndPointConfigPciLocal_seq(
+                cpuInfo.clientAddr, sPciReg[u8index].u8Seg,
+                sPciReg[u8index].u8Bus, sPciReg[u8index].u8Dev,
+                sPciReg[u8index].u8Func, sPciReg[u8index].u16Reg,
+                sPciReg[u8index].u8Size, (uint8_t*)&sRegData->uValue.u64,
+                peci_fd, &sRegData->cc);
+            sRegData->ret = ret;
+            if (ret != PECI_CC_SUCCESS)
+            {
+                peci_Unlock(peci_fd);
+                return ACD_FAILURE;
+            }
+            sRegData->uValue.u64 &= 0xFFFFFFFF;
+            break;
+        case UT_REG_QWORD:
+            for (uint8_t u8Dword = 0; u8Dword < 2; u8Dword++)
+            {
+                u16Offset = ((sPciReg[u8index].u16Reg) >> (u8Dword * 8)) & 0xFF;
+                u8Size = sPciReg[u8index].u8Size / 2;
+                ret = peci_RdEndPointConfigPciLocal_seq(
+                    cpuInfo.clientAddr, sPciReg[u8index].u8Seg,
+                    sPciReg[u8index].u8Bus, sPciReg[u8index].u8Dev,
+                    sPciReg[u8index].u8Func, u16Offset, u8Size,
+                    (uint8_t*)&sRegData->uValue.u32[u8Dword], peci_fd,
+                    &sRegData->cc);
+                sRegData->ret = ret;
+                if (ret != PECI_CC_SUCCESS)
+                {
+                    peci_Unlock(peci_fd);
+                    return ACD_FAILURE;
+                }
+            }
+            break;
+        default:
+            ret = ACD_FAILURE;
+    }
+    peci_Unlock(peci_fd);
+    return ACD_SUCCESS;
+}
+
+struct timespec calculateDelay(struct timespec* crashdumpStart,
+                               uint32_t delayTimeFromInputFileInSec)
+{
+    struct timespec current = {0, 0};
+    clock_gettime(CLOCK_MONOTONIC, &current);
+
+    uint64_t runTimeInNs =
+        tsToNanosecond(&current) - tsToNanosecond(crashdumpStart);
+
+    uint64_t delayTimeFromInputFileInNs =
+        delayTimeFromInputFileInSec * (uint64_t)1e9;
+
+    struct timespec delay = {0, 0};
+    if (runTimeInNs < delayTimeFromInputFileInNs)
+    {
+        delay.tv_sec = (delayTimeFromInputFileInNs - runTimeInNs) / 1e9;
+        delay.tv_nsec =
+            (delayTimeFromInputFileInNs - runTimeInNs) % (uint64_t)1e9;
+
+        return delay;
+    }
+
+    return delay;
+}
+
+uint32_t getDelayFromInputFile(crashdump::CPUInfo& cpuInfo, char* sectionName)
+{
+    bool enable = false;
+    cJSON* inputDelayField = getCrashDataSectionObjectOneLevel(
+        cpuInfo.inputFile.bufferPtr, sectionName, "_max_wait_sec", &enable);
+
+    if (inputDelayField != NULL && enable)
+    {
+        return (uint32_t)inputDelayField->valueint;
+    }
+
+    return 0;
+}
+
+bool getTorSkipFromInputFile(crashdump::CPUInfo& cpuInfo, char* sectionName)
+{
+    bool enable = false;
+    cJSON* skipIfFailRead = getCrashDataSectionObjectOneLevel(
+        cpuInfo.inputFile.bufferPtr, sectionName, "_skip_cha_on_fail", &enable);
+
+    if (skipIfFailRead != NULL && enable)
+    {
+        return cJSON_IsTrue(skipIfFailRead);
+    }
+
+    return false;
+}
+
+uint64_t tsToNanosecond(timespec* ts)
+{
+    return (ts->tv_sec * (uint64_t)1e9 + ts->tv_nsec);
+}
+
+inputField getFlagValueFromInputFile(crashdump::CPUInfo& cpuInfo,
+                                     char* sectionName, char* flagName)
+{
+    bool enable;
+    cJSON* flagField = getCrashDataSectionObjectOneLevel(
+        cpuInfo.inputFile.bufferPtr, sectionName, flagName, &enable);
+
+    if (flagField != NULL && enable)
+    {
+        return (cJSON_IsTrue(flagField) ? inputField::FLAG_ENABLE
+                                        : inputField::FLAG_DISABLE);
+    }
+
+    return inputField::FLAG_NOT_PRESENT;
 }

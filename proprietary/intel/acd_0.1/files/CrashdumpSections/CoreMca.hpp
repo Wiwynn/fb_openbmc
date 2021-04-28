@@ -60,6 +60,10 @@ extern "C" {
 
 #define CORE_MCA_JSON_MCA_NAME "MC%d"
 
+#define CORE_MCA_UA_CPX "0x%llx,UA:0x%x"
+
+#define CORE_MCA_UA_DF_CPX "0x0,UA:0x%x,DF:0x%x"
+
 /******************************************************************************
  *
  *   CPX1 Structures

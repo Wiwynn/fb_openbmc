@@ -16,172 +16,71 @@
  * License.
  *
  ******************************************************************************/
-
+#include "../mock/libpeci_mock.hpp"
 #include "../test_utils.hpp"
 #include "CrashdumpSections/Uncore.hpp"
-#include "crashdump.hpp"
+
+#include <safe_mem_lib.h>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-using namespace ::testing;
-using ::testing::Return;
 using namespace crashdump;
 
-int uncoreStatusPciICX(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild);
-int uncoreStatusPciMmioICX(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild);
-int uncoreStatusPciCPX(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild);
-int uncoreStatusPciMmioCPX(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild);
-cJSON* readInputFile(const char* filename);
-cJSON* selectAndReadInputFile(crashdump::cpu::Model cpuModel, char** filename);
-
-// change to ifdef or adjust CMakeList.txt to test against hardware
-#ifndef MOCK
-
-class UncoreTestFixture : public Test
+TEST_F(PeciTestFixture, logUncoreStatus_null)
 {
-  public:
-    void SetUp() override
-    {
-        // Build a list of cpus
-        info.model = crashdump::cpu::icx;
-        cpus.push_back(info);
-        info.model = crashdump::cpu::icx;
-        cpus.push_back(info);
-        info.model = crashdump::cpu::cpx;
-        cpus.push_back(info);
-
-        // Initialize json object
-        root = cJSON_CreateObject();
-    }
-
-    void TearDown() override
-    {
-        FREE(jsonStr);
-        cJSON_Delete(root);
-        cJSON_Delete(ut);
-    }
-
-    CPUInfo info = {};
-    std::vector<CPUInfo> cpus;
-    InputFileInfo inputFileInfo = {
-        .unique = true, .filenames = {NULL}, .buffers = {NULL}};
-    cJSON* root = NULL;
-    cJSON* ut = NULL;
-    char* jsonStr = NULL;
-    char* defaultFile = NULL;
-    char* overrideFile = NULL;
-};
-
-TEST_F(UncoreTestFixture, getCrashDataSection)
-{
-    bool enable = false;
-    inputFileInfo.buffers[0] =
-        selectAndReadInputFile(cpus[0].model, inputFileInfo.filenames);
-    cJSON* section =
-        getCrashDataSection(inputFileInfo.buffers[0], "uncore", &enable);
-    EXPECT_TRUE(enable);
+    cJSON* root = nullptr;
+    CPUInfo cpuInfo = {};
+    root = nullptr;
+    int ret = logUncoreStatus(cpuInfo, root);
+    EXPECT_EQ(ret, 1);
 }
 
-TEST_F(UncoreTestFixture, getCrashDataSectionVersion)
+TEST_F(PeciTestFixture, cpx_logUncoreStatus)
 {
-    inputFileInfo.buffers[0] =
-        selectAndReadInputFile(cpus[0].model, inputFileInfo.filenames);
-    int version =
-        getCrashDataSectionVersion(inputFileInfo.buffers[0], "uncore");
-    EXPECT_EQ(version, 0x21);
+    uint8_t Data[4] = {0x07, 0x00, 0x00, 0x0};
+    uint8_t Data2[4] = {0xef, 0xbe, 0xad, 0xde};
+    EXPECT_CALL(*PeciMock, peci_Lock(_, _))
+        .Times(3655)
+        .WillRepeatedly(DoAll(Return(PECI_CC_SUCCESS)));
+    EXPECT_CALL(*PeciMock, peci_WrPkgConfig_seq(_, _, _, _, _, _, _))
+        .Times(4038)
+        .WillRepeatedly(DoAll(SetArgPointee<6>(0x40), Return(PECI_CC_SUCCESS)));
+    EXPECT_CALL(*PeciMock, peci_RdPkgConfig_seq(_, _, _, _, _, _, _))
+        .Times(1398)
+        .WillRepeatedly(DoAll(SetArrayArgument<4>(Data, Data + 4),
+                              SetArgPointee<6>(0x40), Return(PECI_CC_SUCCESS)));
+    EXPECT_CALL(*PeciMock, peci_RdPCIConfigLocal_seq(_, _, _, _, _, _, _, _, _))
+        .Times(3652)
+        .WillRepeatedly(DoAll(SetArrayArgument<6>(Data2, Data2 + 4),
+                              SetArgPointee<8>(0x40), Return(PECI_CC_SUCCESS)));
+    cJSON* root = nullptr;
+    CPUInfo cpuInfo = {};
+    char* buffer = NULL;
+    cpuInfo.model = cpu::cpx;
+    buffer = readTestFile("../crashdump_input_icx.json");
+    cJSON* inputFile = cJSON_Parse(buffer);
+    cpuInfo.inputFile.bufferPtr = inputFile;
+    root = cJSON_CreateObject();
+    int ret = logUncoreStatus(cpuInfo, root);
+    // printJson(root);
+    cJSON* expected = cJSON_CreateObject();
+    expected = cJSON_GetObjectItemCaseSensitive(root, "uncore_crashdump_dw0");
+    ASSERT_NE(expected, nullptr);
+    EXPECT_STREQ(expected->valuestring, "0x7");
+    expected = cJSON_GetObjectItemCaseSensitive(root, "B00_D00_F0_0x0");
+    ASSERT_NE(expected, nullptr);
+    EXPECT_STREQ(expected->valuestring, "0xdeadbeef");
+    expected = cJSON_GetObjectItemCaseSensitive(root, "B00_D00_F0_0x90");
+    ASSERT_NE(expected, nullptr);
+    EXPECT_STREQ(expected->valuestring, "0xdeadbeefdeadbeef");
+    expected = cJSON_GetObjectItemCaseSensitive(root, "iio_cstack_mc_ctl");
+    ASSERT_NE(expected, nullptr);
+    EXPECT_STREQ(expected->valuestring, "0x700000007");
+    expected = cJSON_GetObjectItemCaseSensitive(root, "B30_D29_F0_0x24ED8");
+    ASSERT_NE(expected, nullptr);
+    EXPECT_STREQ(expected->valuestring, "0x7");
+    EXPECT_EQ(ret, 0);
+    cJSON_Delete(root);
+    expected = nullptr;
 }
-
-TEST_F(UncoreTestFixture, uncoreStatusPciICX)
-{
-    ut = readInputFile("/tmp/crashdump_input/ut_uncore_sample_icx.json");
-    inputFileInfo.buffers[0] =
-        selectAndReadInputFile(cpus[0].model, inputFileInfo.filenames);
-
-    uncoreStatusPciICX(cpus[0], root);
-
-    cJSON* pci = cJSON_GetObjectItemCaseSensitive(ut, "pci");
-    cJSON* expected = NULL;
-    cJSON* actual = NULL;
-
-    cJSON_ArrayForEach(expected, pci)
-    {
-        actual = cJSON_GetObjectItemCaseSensitive(root, expected->string);
-        EXPECT_TRUE(cJSON_Compare(actual, expected, true))
-            << "Not match!\n"
-            << "expected - " << expected->string << ":" << expected->valuestring
-            << "\n"
-            << "actual - " << actual->string << ":" << actual->valuestring;
-    }
-}
-
-TEST_F(UncoreTestFixture, uncoreStatusPciMmioICX)
-{
-    ut = readInputFile("/tmp/crashdump_input/ut_uncore_sample_icx.json");
-    inputFileInfo.buffers[0] =
-        selectAndReadInputFile(cpus[0].model, inputFileInfo.filenames);
-
-    uncoreStatusPciMmioICX(cpus[0], root);
-
-    cJSON* mmio = cJSON_GetObjectItemCaseSensitive(ut, "mmio");
-    cJSON* expected = NULL;
-    cJSON* actual = NULL;
-
-    cJSON_ArrayForEach(expected, mmio)
-    {
-        actual = cJSON_GetObjectItemCaseSensitive(root, expected->string);
-        EXPECT_TRUE(cJSON_Compare(actual, expected, true))
-            << "Not match!\n"
-            << "expected - " << expected->string << ":" << expected->valuestring
-            << "\n"
-            << "actual - " << actual->string << ":" << actual->valuestring;
-    }
-}
-
-TEST_F(UncoreTestFixture, uncoreStatusPciCPX)
-{
-    ut = readInputFile("/tmp/crashdump_input/ut_uncore_sample_cpx.json");
-    inputFileInfo.buffers[0] =
-        selectAndReadInputFile(cpus[0].model, inputFileInfo.filenames);
-
-    uncoreStatusPciCPX(cpus[0], root);
-
-    cJSON* pci = cJSON_GetObjectItemCaseSensitive(ut, "pci");
-    cJSON* expected = NULL;
-    cJSON* actual = NULL;
-
-    cJSON_ArrayForEach(expected, pci)
-    {
-        actual = cJSON_GetObjectItemCaseSensitive(root, expected->string);
-        EXPECT_TRUE(cJSON_Compare(actual, expected, true))
-            << "Not match!\n"
-            << "expected - " << expected->string << ":" << expected->valuestring
-            << "\n"
-            << "actual - " << actual->string << ":" << actual->valuestring;
-    }
-}
-
-TEST_F(UncoreTestFixture, uncoreStatusPciMmioCPX)
-{
-    ut = readInputFile("/tmp/crashdump_input/ut_uncore_sample_cpx.json");
-    inputFileInfo.buffers[0] =
-        selectAndReadInputFile(cpus[0].model, inputFileInfo.filenames);
-
-    uncoreStatusPciMmioCPX(cpus[0], root);
-
-    cJSON* mmio = cJSON_GetObjectItemCaseSensitive(ut, "mmio");
-    cJSON* expected = NULL;
-    cJSON* actual = NULL;
-
-    cJSON_ArrayForEach(expected, mmio)
-    {
-        actual = cJSON_GetObjectItemCaseSensitive(root, expected->string);
-        EXPECT_TRUE(cJSON_Compare(actual, expected, true))
-            << "Not match!\n"
-            << "expected - " << expected->string << ":" << expected->valuestring
-            << "\n"
-            << "actual - " << actual->string << ":" << actual->valuestring;
-    }
-}
-
-#endif

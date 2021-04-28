@@ -14,96 +14,311 @@
 #
 
 cmake_minimum_required (VERSION 3.6)
-project (acd)
+option (YOCTO_DEPENDENCIES "Use YOCTO dependencies system" ON)
+option (CRASHDUMP_BUILD_UT "Enable Building Unit tests" OFF)
 
-find_package (cJSON REQUIRED)
-find_package (PkgConfig REQUIRED)
-pkg_check_modules (SAFEC REQUIRED libsafec)
-include_directories (${SAFEC_INCLUDE_DIRS})
-link_directories (${SAFEC_LIBRARY_DIRS})
+project (crashdump)
+include (ExternalProject)
+if (${YOCTO_DEPENDENCIES})
+    find_package (PkgConfig REQUIRED)
+    pkg_check_modules (SAFEC REQUIRED libsafec)
+    include_directories (${SAFEC_INCLUDE_DIRS})
+    link_directories (${SAFEC_LIBRARY_DIRS})
+endif ()
 
 set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
+set (EXTERNAL_PACKAGES Boost cjson-project sdbusplus-project safeclib-project
+                       libpeci-project
+)
 
-set (SRC_FILES utils.cpp PlatInfo.cpp CrashdumpSections/AddressMap.cpp
-     CrashdumpSections/TorDump.cpp CrashdumpSections/BigCore.cpp
-     CrashdumpSections/MetaData.cpp CrashdumpSections/CoreMca.cpp
-     CrashdumpSections/SqDump.cpp CrashdumpSections/Uncore.cpp
-     CrashdumpSections/UncoreRegs.hpp CrashdumpSections/PowerManagement.cpp
-     CrashdumpSections/UncoreMca.cpp CrashdumpSections/OemData.cpp)
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU") # require at least gcc 8.0
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
+        message (FATAL_ERROR "GCC version must be at least 8.0")
+    endif ()
+endif ()
 
-add_executable (acd crashdump.cpp ${SRC_FILES})
+if (NOT ${YOCTO_DEPENDENCIES})
 
-option (
-    CRASHDUMP_PRINT_UNFORMATTED
-    "Use cJSON_PrintUnformatted() to print the crashdump contents without
-         whitespace to reduce the file size."
-    OFF
+    externalproject_add (
+        Boost
+        URL https://dl.bintray.com/boostorg/release/1.73.0/source/boost_1_73_0.tar.gz
+        URL_MD5 4036cd27ef7548b8d29c30ea10956196
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND ""
+        INSTALL_COMMAND ""
+    )
+    externalproject_get_property (Boost SOURCE_DIR)
+    include_directories (SYSTEM ${SOURCE_DIR})
+    set (CMAKE_PREFIX_PATH ${SOURCE_DIR} ${CMAKE_PREFIX_PATH})
+
+    # requires apt install autoconf-archive and autoconf
+    externalproject_add (
+        sdbusplus-project
+        PREFIX ${CMAKE_BINARY_DIR}/sdbusplus-project
+        GIT_REPOSITORY https://github.com/openbmc/sdbusplus.git
+        GIT_TAG 0f19c87276e46b56edbae70a71749353d401ed39
+        SOURCE_DIR ${CMAKE_BINARY_DIR}/sdbusplus-src
+        BINARY_DIR ${CMAKE_BINARY_DIR}/sdbusplus-build
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND cd ${CMAKE_BINARY_DIR}/sdbusplus-src && meson build
+                      -Ddefault_library=static && ninja -C build libsdbusplus.a
+        INSTALL_COMMAND ""
+        LOG_DOWNLOAD ON
+    )
+    include_directories (SYSTEM ${CMAKE_BINARY_DIR}/sdbusplus-src/include)
+    link_directories (${CMAKE_BINARY_DIR}/sdbusplus-src/build)
+
+    externalproject_add (
+        safeclib-project
+        GIT_REPOSITORY https://github.com/rurban/safeclib.git
+        GIT_TAG 60786283fd61cd621a5d1df00e083a1c1e3cf52a
+        SOURCE_DIR "${CMAKE_BINARY_DIR}/safeclib-src"
+        BINARY_DIR "${CMAKE_BINARY_DIR}/safeclib-build"
+        INSTALL_DIR "${CMAKE_BINARY_DIR}/safeclib-install"
+        CONFIGURE_COMMAND
+            cd ${CMAKE_BINARY_DIR}/safeclib-src/ && ./build-aux/autogen.sh &&
+            ./configure --prefix=${CMAKE_BINARY_DIR}/safeclib-install
+        BUILD_COMMAND cd ${CMAKE_BINARY_DIR}/safeclib-src && make -j 10
+        INSTALL_COMMAND cd ${CMAKE_BINARY_DIR}/safeclib-src && make install
+        LOG_DOWNLOAD ON
+    )
+    include_directories (
+        SYSTEM ${CMAKE_BINARY_DIR}/safeclib-install/include/libsafec
+    )
+    externalproject_get_property (safeclib-project INSTALL_DIR)
+    add_library (safec SHARED IMPORTED)
+    set_target_properties (
+        safec PROPERTIES IMPORTED_LOCATION ${INSTALL_DIR}/lib/libsafec-3.5.1.so
+    )
+
+    externalproject_add (
+        libpeci-project
+        PREFIX ${CMAKE_BINARY_DIR}/libpeci-project
+        GIT_REPOSITORY https://github.com/openbmc/libpeci.git
+        GIT_TAG a2ceec2aa139277cebb62e1eda449ef60fa4c962
+        INSTALL_COMMAND ""
+        LOG_DOWNLOAD ON
+    )
+    externalproject_get_property (libpeci-project SOURCE_DIR)
+    include_directories (${SOURCE_DIR})
+    externalproject_get_property (libpeci-project BINARY_DIR)
+    add_library (peci SHARED IMPORTED)
+    set_target_properties (
+        peci PROPERTIES IMPORTED_LOCATION ${BINARY_DIR}/libpeci.so
+    )
+
+    externalproject_add (
+        cjson-project
+        GIT_REPOSITORY https://github.com/DaveGamble/cJSON.git
+        GIT_TAG v1.7.12
+        SOURCE_DIR "${CMAKE_BINARY_DIR}/cjson-src"
+        BINARY_DIR "${CMAKE_BINARY_DIR}/cjson-build"
+        INSTALL_DIR "${CMAKE_BINARY_DIR}/cjson-install"
+        CONFIGURE_COMMAND
+            cd ${CMAKE_BINARY_DIR}/cjson-src/ && cmake . -DENABLE_CJSON_UTILS=On
+            -DENABLE_CJSON_TEST=Off
+            -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/cjson-install
+        BUILD_COMMAND cd ${CMAKE_BINARY_DIR}/cjson-src && make -j 10
+        INSTALL_COMMAND cd ${CMAKE_BINARY_DIR}/cjson-src && make install
+        LOG_DOWNLOAD ON
+    )
+    include_directories (SYSTEM ${CMAKE_BINARY_DIR}/cjson-install/include/)
+    externalproject_get_property (cjson-project INSTALL_DIR)
+    add_library (cjson SHARED IMPORTED)
+    set_target_properties (
+        cjson PROPERTIES IMPORTED_LOCATION ${INSTALL_DIR}/lib/libcjson.so
+    )
+
+endif ()
+
+if (NOT ${YOCTO_DEPENDENCIES})
+    set (
+        CMAKE_CXX_FLAGS
+        "${CMAKE_CXX_FLAGS} -Wno-cpp -Wno-write-strings -Werror \
+-Wall \
+-Wuninitialized \
+-Wunused-parameter \
+-Wshift-negative-value \
+-Wuninitialized \
+-Wtype-limits \
+-Wsign-compare \
+-Wmissing-field-initializers \
+-Wimplicit-fallthrough=3 \
+-Wempty-body \
+-Wignored-qualifiers \
+-Wclobbered \
+-Wcast-function-type \
+"
+    )
+endif ()
+
+if (${YOCTO_DEPENDENCIES})
+    set (
+        CMAKE_CXX_FLAGS
+        "${CMAKE_CXX_FLAGS} -Wno-cpp -Wno-write-strings -Werror \
+-Wall \
+-Wuninitialized \
+-Wunused-parameter \
+-Wshift-negative-value \
+-Wuninitialized \
+-Wtype-limits \
+-Wredundant-move \
+-Wsign-compare \
+-Wdeprecated-copy \
+-Wmissing-field-initializers \
+-Wimplicit-fallthrough=3 \
+-Wempty-body \
+-Wignored-qualifiers \
+-Wclobbered \
+-Wcast-function-type"
+    )
+endif ()
+
+set (
+    SRC_FILES
+    utils.cpp
+    PlatInfo.cpp
+    CrashdumpSections/AddressMap.cpp
+    CrashdumpSections/TorDump.cpp
+    CrashdumpSections/BigCore.cpp
+    CrashdumpSections/MetaData.cpp
+    CrashdumpSections/CoreMca.cpp
+    CrashdumpSections/SqDump.cpp
+    CrashdumpSections/Uncore.cpp
+    CrashdumpSections/PowerManagement.cpp
+    CrashdumpSections/UncoreMca.cpp
+    CrashdumpSections/OemData.cpp
+)
+
+if (${IPMB_PECI_INTF})
+    set (SRC_FILES ${SRC_FILES} ipmb_peci_interface.c)
+endif ()
+
+add_executable (crashdump crashdump.cpp ${SRC_FILES})
+
+if (NOT ${YOCTO_DEPENDENCIES})
+    add_dependencies (crashdump ${EXTERNAL_PACKAGES})
+    target_link_libraries (crashdump safec sdbusplus peci cjson)
+endif ()
+
+option (CRASHDUMP_PRINT_UNFORMATTED
+        "Use cJSON_PrintUnformatted() to print the crashdump contents without
+         whitespace to reduce the file size." OFF
 )
 
 option (OEMDATA_SECTION
-        "Adds oemdata Section to the crashdump contents, for OEM usage." OFF)
+        "Adds oemdata Section to the crashdump contents, for OEM usage." OFF
+)
 
-option (CRASHDUMP_INPUT_FILE "Enable dynamic loading feature." OFF)
+target_compile_definitions (
+    crashdump
+    PRIVATE $<$<BOOL:${CRASHDUMP_PRINT_UNFORMATTED}>:
+            -DCRASHDUMP_PRINT_UNFORMATTED> $<$<BOOL:${OEMDATA_SECTION}>:
+            -DOEMDATA_SECTION> $<$<BOOL:${IPMB_PECI_INTF}>: -DIPMB_PECI_INTF>
+)
 
-target_compile_definitions (acd PRIVATE
-                            $<$<BOOL:${CRASHDUMP_PRINT_UNFORMATTED}>:
-                            -DCRASHDUMP_PRINT_UNFORMATTED>
-                            $<$<BOOL:${OEMDATA_SECTION}>: -DOEMDATA_SECTION>
-                            $<$<BOOL:${CRASHDUMP_INPUT_FILE}>:
-                            -DCRASHDUMP_INPUT_FILE>)
+target_include_directories (crashdump PRIVATE ${CMAKE_SOURCE_DIR})
+set_property (TARGET crashdump PROPERTY C_STANDARD 99)
+target_link_libraries (
+    crashdump
+    cjson
+    peci
+    pthread
+    -lstdc++fs
+    ${SAFEC_LIBRARIES}
+)
 
-target_include_directories (acd PRIVATE ${CMAKE_SOURCE_DIR})
-set_property (TARGET acd PROPERTY C_STANDARD 99)
-target_link_libraries (acd cjson peci pthread -lstdc++fs
-                       ${SAFEC_LIBRARIES})
+install (
+    TARGETS crashdump
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib/static
+)
 
-install (TARGETS acd
-         RUNTIME DESTINATION bin
-         LIBRARY DESTINATION lib
-         ARCHIVE DESTINATION lib/static)
+install (
+    FILES ${CMAKE_CURRENT_SOURCE_DIR}/crashdump_input_icx.json
+          ${CMAKE_CURRENT_SOURCE_DIR}/crashdump_input_cpx.json
+          ${CMAKE_CURRENT_SOURCE_DIR}/crashdump_input_skx.json
+          ${CMAKE_CURRENT_SOURCE_DIR}/telemetry_input_icx.json
+          ${CMAKE_CURRENT_SOURCE_DIR}/telemetry_input_cpx.json
+    PERMISSIONS OWNER_READ
+    DESTINATION /usr/share/crashdump/input/
+)
 
-install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/crashdump_input_icx.json
-               ${CMAKE_CURRENT_SOURCE_DIR}/crashdump_input_cpx.json PERMISSIONS
-               OWNER_READ DESTINATION /usr/share/crashdump/)
+#find_package (Boost 1.73 REQUIRED)
+#include_directories (${BOOST_SRC_DIR})
 
-# find_package (Boost 1.66 REQUIRED)
-# include_directories (${BOOST_SRC_DIR})
-
-# add_definitions (-DBOOST_ERROR_CODE_HEADER_ONLY)
-# add_definitions (-DBOOST_SYSTEM_NO_DEPRECATED)
-# add_definitions (-DBOOST_ALL_NO_LIB)
-# add_definitions (-DBOOST_NO_RTTI)
-# add_definitions (-DBOOST_NO_TYPEID)
+#add_definitions (-DBOOST_ERROR_CODE_HEADER_ONLY)
+#add_definitions (-DBOOST_SYSTEM_NO_DEPRECATED)
+#add_definitions (-DBOOST_ALL_NO_LIB)
+#add_definitions (-DBOOST_NO_RTTI)
+#add_definitions (-DBOOST_NO_TYPEID)
 
 # Unit Tests
-if (${CRASHDUMP_BUILD_UT})
-    include (CTest)
-    include_directories (${CMAKE_SOURCE_DIR})
+if (NOT ${YOCTO_DEPENDENCIES})
+    if (${CRASHDUMP_BUILD_UT})
+        externalproject_add (
+            googletest-project
+            GIT_REPOSITORY "https://github.com/google/googletest.git"
+            GIT_TAG 2134e3fd857d952e03ce76064fad5ac6e9036104
+            CMAKE_ARGS
+                -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/googletest-build
+            SOURCE_DIR "${CMAKE_BINARY_DIR}/googletest-src"
+            BINARY_DIR "${CMAKE_BINARY_DIR}/googletest-build"
+        )
+        externalproject_get_property (googletest-project BINARY_DIR)
+        include_directories (${BINARY_DIR}/include)
+        externalproject_get_property (googletest-project BINARY_DIR)
+        add_library (gmock UNKNOWN IMPORTED)
+        set_target_properties (
+            gmock
+            PROPERTIES "IMPORTED_LOCATION" "${BINARY_DIR}/lib/libgmock.a"
+                       "IMPORTED_LINK_INTERFACE_LIBRARIES"
+                       "${CMAKE_THREAD_LIBS_INIT}"
+        )
+        add_library (gtest UNKNOWN IMPORTED)
+        set_target_properties (
+            gtest
+            PROPERTIES "IMPORTED_LOCATION" "${BINARY_DIR}/lib/libgtest.a"
+                       "IMPORTED_LINK_INTERFACE_LIBRARIES"
+                       "${CMAKE_THREAD_LIBS_INIT}"
+        )
 
-    set (UT_FILES tests/CrashdumpSections/UncoreRegs_test.cpp
-         tests/CrashdumpSections/SqDump_test.cpp
-         tests/CrashdumpSections/BigCore_test.cpp tests/test_utils.cpp
-         tests/test_main.cpp tests/CrashdumpSections/Uncore_test.cpp
-         tests/crashdump_test.cpp)
+        enable_testing ()
 
-    enable_testing ()
+        include (CTest)
+        include_directories (${CMAKE_SOURCE_DIR})
 
-    add_definitions (-DCOMPILE_UNIT_TESTS)
-    add_definitions (-DMOCK)
-    add_executable (crashdump_ut ${SRC_FILES} ${UT_FILES})
+        set (
+            UT_FILES
+            utils_dbusplus.cpp
+            tests/test_main.cpp
+            tests/test_utils.cpp
+            tests/mock/libpeci_mock.cpp
+            tests/CrashdumpSections/AddressMap_test.cpp
+            tests/CrashdumpSections/BigCore_test.cpp
+            tests/CrashdumpSections/CoreMca_test.cpp
+            tests/CrashdumpSections/PowerManagement_test.cpp
+            tests/CrashdumpSections/SqDump_test.cpp
+            tests/CrashdumpSections/TorDump_test.cpp
+            tests/CrashdumpSections/Uncore_test.cpp
+            tests/CrashdumpSections/Uncore_Mca_test.cpp
+        )
 
-    find_library(GTEST gtest)
-    target_link_libraries (crashdump_ut gtest gmock)
-    target_link_libraries (crashdump_ut cjson peci pthread)
-    target_link_libraries (crashdump_ut -lstdc++fs)
-    target_link_libraries (crashdump_ut ${SAFEC_LIBRARIES})
+        add_definitions (-DCOMPILE_UNIT_TESTS)
 
-    add_test (crashdump_ut crashdump_ut "--gtest_output=xml:crashdump_test.xml")
+        add_executable (crashdump_ut ${SRC_FILES} ${UT_FILES})
+        add_dependencies (crashdump_ut ${EXTERNAL_PACKAGES} googletest-project)
 
-    install (TARGETS crashdump_ut
-             RUNTIME DESTINATION bin
-             LIBRARY DESTINATION lib
-             ARCHIVE DESTINATION lib/static)
+        target_link_libraries (crashdump_ut cjson peci -lsystemd pthread)
+        target_link_libraries (crashdump_ut -lstdc++fs sdbusplus)
+        target_link_libraries (crashdump_ut safec ${SAFEC_LIBRARIES})
+        target_link_libraries (crashdump_ut gmock gtest)
 
-endif (${CRASHDUMP_BUILD_UT})
+        add_test (test_crashdump_ut crashdump_ut
+                  "--gtest_output=xml:crashdump_test.xml"
+        )
+
+    endif ()
+endif ()

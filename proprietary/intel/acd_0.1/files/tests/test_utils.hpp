@@ -23,25 +23,21 @@
 #define NTIME(n) for (int i = 0; i < n; i++)
 
 // uncomment to enable debug print out
-// #define DEBUG_FLAG
-
+//#define DEBUG_FLAG
+#ifdef DEBUG_FLAG
 inline void DEBUG_PRINT(cJSON* root, cJSON* expected)
 {
-#ifdef DEBUG_FLAG
     char* jsonStr = NULL;
     jsonStr = cJSON_Print(root);
     printf("%s\n", jsonStr);
     jsonStr = cJSON_Print(expected);
     printf("%s\n", jsonStr);
-#endif
 };
 
 inline void DEBUG_CC_PRINT(uint8_t cc, uint64_t val)
 {
-#ifdef DEBUG_FLAG
     printf("cc:0x%x val:0x%" PRIx64 "\n", cc, val);
-#endif
 };
-
+#endif
 char* readTestFile(char* filename);
 char* removeQuotes(char* str);

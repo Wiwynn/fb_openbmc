@@ -27,6 +27,7 @@ char* readTestFile(char* filename)
     char* buffer = NULL;
     uint64_t length = 0;
     FILE* fp = fopen(filename, "r");
+    size_t result = 0;
     if (fp != NULL)
     {
         fseek(fp, 0, SEEK_END);
@@ -35,7 +36,11 @@ char* readTestFile(char* filename)
         buffer = (char*)calloc(length, sizeof(char));
         if (buffer)
         {
-            fread(buffer, 1, length, fp);
+            result = fread(buffer, 1, length, fp);
+            if (result != length)
+            {
+                printf("Size Error!\n");
+            }
         }
         fclose(fp);
     }

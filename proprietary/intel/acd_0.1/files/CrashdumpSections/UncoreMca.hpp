@@ -64,6 +64,23 @@ extern "C" {
 #define US_BASE_CBO_BANK 9
 #define US_NUM_CBO_BANKS 3
 
+#define UNCORE_UPI0 5
+#define UNCORE_UPI1 12
+#define UNCORE_UPI2 19
+#define UNCORE_UPI3 20
+#define UNCORE_UPI4 21
+#define UNCORE_UPI5 22
+
+#define CAPID2_DISABLE0 23
+#define CAPID2_DISABLE1 24
+#define CAPID2_DISABLE2 25
+#define CAPID2_DISABLE3 26
+#define CAPID2_DISABLE4 27
+#define CAPID2_DISABLE5 28
+
+#define UNCORE_MCA_UA_CPX "0x%llx,UA:0x%x"
+#define UNCORE_MCA_UA_DF_CPX "0x0,UA:0x%x,DF:0x%x"
+
 /******************************************************************************
  *
  *   ICX1 Defines

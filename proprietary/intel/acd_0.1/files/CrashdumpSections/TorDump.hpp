@@ -53,6 +53,9 @@ extern "C" {
 #define TD_TORS_PER_CHA_CPX1 24
 #define TD_SUBINDEX_PER_TOR_CPX1 3
 
+#define TD_UA_CPX "0x%x,UA:0x%x"
+#define TD_UA_DF_CPX "0x0,UA:0x%x,DF:0x%x"
+
 /******************************************************************************
  *
  *   ICX1 Defines

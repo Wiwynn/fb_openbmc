@@ -18,10 +18,14 @@
  ******************************************************************************/
 
 #pragma once
-#include "utils.hpp"
+#ifdef USE_SYSTEMD
+#include "utils_dbusplus.hpp"
+#endif
 
+#ifndef IPMB_PECI_INTF
 #include <linux/peci-ioctl.h>
 #include <peci.h>
+#endif
 
 #include <array>
 #include <vector>
@@ -30,8 +34,36 @@ extern "C" {
 #include <cjson/cJSON.h>
 
 #include "safe_str_lib.h"
-}
 
+#ifdef IPMB_PECI_INTF
+#include "ipmb_peci_interface.h"
+#endif
+}
+#define CRASHDUMP_PRINT(level, fmt, ...) fprintf(fmt, __VA_ARGS__)
+#define CRASHDUMP_VALUE_LEN 6
+
+#define ICXD_MODEL 0x606C0
+
+#define RESET_DETECTED_NAME "cpu%d.%s"
+typedef enum
+{
+    EMERG,
+    ALERT,
+    CRIT,
+    ERR,
+    WARNING,
+    NOTICE,
+    INFO,
+    DEBUG,
+} severity;
+
+typedef enum
+{
+    ACD_SUCCESS,
+    ACD_FAILURE,
+    ACD_INVALID_OBJECT,
+    ACD_ALLOCATE_FAILURE
+} acdStatus;
 namespace cpuid
 {
 typedef enum
@@ -42,6 +74,19 @@ typedef enum
     OVERWRITTEN = 3,
 } cpuidState;
 }
+
+namespace record_type
+{
+constexpr const int offset = 24;
+constexpr const int coreCrashLog = 0x04;
+constexpr const int uncoreStatusLog = 0x08;
+constexpr const int torDump = 0x09;
+constexpr const int metadata = 0x0b;
+constexpr const int pmInfo = 0x0c;
+constexpr const int addressMap = 0x0d;
+constexpr const int bmcAutonomous = 0x23;
+constexpr const int mcaLog = 0x3e;
+} // namespace record_type
 
 namespace crashdump
 {
@@ -57,6 +102,7 @@ enum Model
     cpx,
     icx,
     icx2,
+    icxd,
     numberOfModels,
 };
 namespace stepping
@@ -66,6 +112,7 @@ constexpr const uint8_t clx = 6;
 constexpr const uint8_t cpx = 10;
 constexpr const uint8_t icx = 0;
 constexpr const uint8_t icx2 = 4;
+constexpr const uint8_t icxd = 4;
 } // namespace stepping
 } // namespace cpu
 
@@ -78,28 +125,17 @@ typedef enum
 
 typedef enum
 {
-    BIG_CORE,
-    TOR,
-    MCA,
     UNCORE,
+    TOR,
     PM_INFO,
     ADDRESS_MAP,
+    BIG_CORE,
+    MCA,
     METADATA,
     NUMBER_OF_SECTIONS,
 } Section;
 
-typedef struct
-{
-    char* name;
-    Section section;
-} CrashdumpSection;
-
-const CrashdumpSection sectionNames[NUMBER_OF_SECTIONS] = {
-    {"big_core", BIG_CORE}, {"TOR", TOR},         {"MCA", MCA},
-    {"uncore", UNCORE},     {"PM_info", PM_INFO}, {"address_map", ADDRESS_MAP},
-    {"METADATA", METADATA}};
-
-#define NUMBER_OF_CPU_MODELS crashdump::cpu::Model::numberOfModels
+const int NUMBER_OF_CPU_MODELS = crashdump::cpu::Model::numberOfModels;
 
 typedef struct _InputFileInfo
 {
@@ -118,12 +154,16 @@ typedef struct COREMaskRead
 {
     uint8_t coreMaskCc;
     int coreMaskRet;
+    bool coreMaskValid;
+    cpuid::cpuidState source;
 } COREMaskRead;
 
 typedef struct CHACountRead
 {
     uint8_t chaCountCc;
     int chaCountRet;
+    bool chaCountValid;
+    cpuid::cpuidState source;
 } CHACountRead;
 
 typedef struct CPUIDRead
@@ -136,6 +176,13 @@ typedef struct CPUIDRead
     cpuid::cpuidState source;
 } CPUIDRead;
 
+typedef struct capidRead
+{
+    uint32_t capid2;
+    uint8_t capid2Cc;
+    int capid2Ret;
+} CAPIDRead;
+
 struct CPUInfo
 {
     int clientAddr;
@@ -143,13 +190,36 @@ struct CPUInfo
     uint64_t coreMask;
     uint64_t crashedCoreMask;
     uint8_t sectionMask = 0xff;
-    int chaCount;
+    size_t chaCount;
     pwState initialPeciWake;
     JSONInfo inputFile;
     CPUIDRead cpuidRead;
+    CAPIDRead capidRead;
     CHACountRead chaCountRead;
     COREMaskRead coreMaskRead;
+    struct timespec launchDelay;
 };
+
+typedef struct
+{
+    char* name;
+    Section section;
+    int record_type;
+    int (*fptr)(CPUInfo& cpuInfo, cJSON* pJsonChild);
+} CrashdumpSection;
+
+typedef struct PlatformState
+{
+    bool resetDetected;
+    int resetCpu;
+    int resetSection;
+    int currentSection;
+    int currentCpu;
+} PlatformState;
+
+extern const CrashdumpSection sectionNames[NUMBER_OF_SECTIONS];
+
+void setResetDetected();
 } // namespace crashdump
 
 namespace revision
@@ -167,20 +237,10 @@ constexpr const int cpx = 0x34;
 constexpr const int skxSP = 0x2A;
 constexpr const int icxSP = 0x1A;
 constexpr const int bmcAutonomous = 0x23;
+constexpr const int icxdSP = 0x1B;
 } // namespace product_type
 
-namespace record_type
-{
-constexpr const int offset = 24;
-constexpr const int coreCrashLog = 0x04;
-constexpr const int uncoreStatusLog = 0x08;
-constexpr const int torDump = 0x09;
-constexpr const int metadata = 0x0b;
-constexpr const int pmInfo = 0x0c;
-constexpr const int addressMap = 0x0d;
-constexpr const int bmcAutonomous = 0x23;
-constexpr const int mcaLog = 0x3e;
-} // namespace record_type
+int cd_snprintf_s(char* str, size_t len, const char* format, ...);
 
 inline static void logCrashdumpVersion(cJSON* parent,
                                        crashdump::CPUInfo& cpuInfo,
@@ -198,6 +258,7 @@ inline static void logCrashdumpVersion(cJSON* parent,
         VersionInfo{crashdump::cpu::skx, product_type::skxSP},
         VersionInfo{crashdump::cpu::icx, product_type::icxSP},
         VersionInfo{crashdump::cpu::icx2, product_type::icxSP},
+        VersionInfo{crashdump::cpu::icxd, product_type::icxdSP},
     };
 
     static constexpr const std::array revision{
@@ -206,6 +267,7 @@ inline static void logCrashdumpVersion(cJSON* parent,
         VersionInfo{crashdump::cpu::skx, revision::revision1},
         VersionInfo{crashdump::cpu::icx, revision::revision1},
         VersionInfo{crashdump::cpu::icx2, revision::revision1},
+        VersionInfo{crashdump::cpu::icxd, revision::revision1},
     };
 
     int productType = 0;
