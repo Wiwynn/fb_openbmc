@@ -1,0 +1,2086 @@
+{
+    "devicesMap": [
+        {
+            "description": "Host bridge: Intel Corporation Sky Lake-E DMI3 Registers (rev 0b)",
+            "bus": "0x0",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CBDMA Registers (rev 0b)",
+            "bus": "0x0",
+            "device": "0x4",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CBDMA Registers (rev 0b)",
+            "bus": "0x0",
+            "device": "0x4",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CBDMA Registers (rev 0b)",
+            "bus": "0x0",
+            "device": "0x4",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CBDMA Registers (rev 0b)",
+            "bus": "0x0",
+            "device": "0x4",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CBDMA Registers (rev 0b)",
+            "bus": "0x0",
+            "device": "0x4",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CBDMA Registers (rev 0b)",
+            "bus": "0x0",
+            "device": "0x4",
+            "function": "0x5"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CBDMA Registers (rev 0b)",
+            "bus": "0x0",
+            "device": "0x4",
+            "function": "0x6"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CBDMA Registers (rev 0b)",
+            "bus": "0x0",
+            "device": "0x4",
+            "function": "0x7"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E MM/Vt-d Configuration Registers (rev 0b)",
+            "bus": "0x0",
+            "device": "0x5",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E RAS (rev 0b)",
+            "bus": "0x0",
+            "device": "0x5",
+            "function": "0x2"
+        },
+        {
+            "description": "PIC: Intel Corporation Sky Lake-E IOAPIC (rev 0b)",
+            "bus": "0x0",
+            "device": "0x5",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Ubox Registers (rev 0b)",
+            "bus": "0x0",
+            "device": "0x8",
+            "function": "0x0"
+        },
+        {
+            "description": "Performance counters: Intel Corporation Sky Lake-E Ubox Registers (rev 0b)",
+            "bus": "0x0",
+            "device": "0x8",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Ubox Registers (rev 0b)",
+            "bus": "0x0",
+            "device": "0x8",
+            "function": "0x2"
+        },
+        {
+            "description": "Unassigned class [ff00]: Intel Corporation C620 Series Chipset Family MROM 0 (rev 0a)",
+            "bus": "0x0",
+            "device": "0x11",
+            "function": "0x0"
+        },
+        {
+            "description": "Unassigned class [ff00]: Intel Corporation C620 Series Chipset Family MROM 1 (rev 0a)",
+            "bus": "0x0",
+            "device": "0x11",
+            "function": "0x1"
+        },
+        {
+            "description": "SATA controller: Intel Corporation C620 Series Chipset Family SSATA Controller [AHCI mode] (rev 0a)",
+            "bus": "0x0",
+            "device": "0x11",
+            "function": "0x5"
+        },
+        {
+            "description": "USB controller: Intel Corporation C620 Series Chipset Family USB 3.0 xHCI Controller (rev 0a)",
+            "bus": "0x0",
+            "device": "0x14",
+            "function": "0x0"
+        },
+        {
+            "description": "Signal processing controller: Intel Corporation C620 Series Chipset Family Thermal Subsystem (rev 0a)",
+            "bus": "0x0",
+            "device": "0x14",
+            "function": "0x2"
+        },
+        {
+            "description": "Communication controller: Intel Corporation C620 Series Chipset Family MEI Controller #1 (rev 0a)",
+            "bus": "0x0",
+            "device": "0x16",
+            "function": "0x0"
+        },
+        {
+            "description": "Communication controller: Intel Corporation C620 Series Chipset Family MEI Controller #2 (rev 0a)",
+            "bus": "0x0",
+            "device": "0x16",
+            "function": "0x1"
+        },
+        {
+            "description": "Communication controller: Intel Corporation C620 Series Chipset Family MEI Controller #3 (rev 0a)",
+            "bus": "0x0",
+            "device": "0x16",
+            "function": "0x4"
+        },
+        {
+            "description": "PCI bridge: Intel Corporation C620 Series Chipset Family PCI Express Root Port #17 (rev fa)",
+            "bus": "0x0",
+            "device": "0x1b",
+            "function": "0x0"
+        },
+        {
+            "description": "ISA bridge: Intel Corporation Device a1cb (rev 0a)",
+            "bus": "0x0",
+            "device": "0x1f",
+            "function": "0x0"
+        },
+        {
+            "description": "Memory controller: Intel Corporation C620 Series Chipset Family Power Management Controller (rev 0a)",
+            "bus": "0x0",
+            "device": "0x1f",
+            "function": "0x2"
+        },
+        {
+            "description": "SMBus: Intel Corporation C620 Series Chipset Family SMBus (rev 0a)",
+            "bus": "0x0",
+            "device": "0x1f",
+            "function": "0x4"
+        },
+        {
+            "description": "Serial bus controller [0c80]: Intel Corporation C620 Series Chipset Family SPI Controller (rev 0a)",
+            "bus": "0x0",
+            "device": "0x1f",
+            "function": "0x5"
+        },
+        {
+            "description": "Non-Volatile memory controller: Micron Technology Inc Device 5410 (rev 01)",
+            "bus": "0x1",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: Intel Corporation Sky Lake-E PCI Express Root Port A (rev 0b)",
+            "bus": "0xd",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E VT-d (rev 0b)",
+            "bus": "0xd",
+            "device": "0x5",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E RAS Configuration Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x5",
+            "function": "0x2"
+        },
+        {
+            "description": "PIC: Intel Corporation Sky Lake-E IOxAPIC Configuration Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x5",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x8",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x8",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x8",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x8",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x8",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x8",
+            "function": "0x5"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x8",
+            "function": "0x6"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x8",
+            "function": "0x7"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x9",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x9",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x9",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x9",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x9",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x9",
+            "function": "0x5"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x9",
+            "function": "0x6"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x9",
+            "function": "0x7"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xa",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xa",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xa",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xa",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xa",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xa",
+            "function": "0x5"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xa",
+            "function": "0x6"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xa",
+            "function": "0x7"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xb",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xb",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xb",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xb",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xe",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xe",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xe",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xe",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xe",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xe",
+            "function": "0x5"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xe",
+            "function": "0x6"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xe",
+            "function": "0x7"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xf",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xf",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xf",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xf",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xf",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xf",
+            "function": "0x5"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xf",
+            "function": "0x6"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0xf",
+            "function": "0x7"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x10",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x10",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x10",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x10",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x10",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x10",
+            "function": "0x5"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x10",
+            "function": "0x6"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x10",
+            "function": "0x7"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x11",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x11",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x11",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x11",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x1d",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x1d",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x1d",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x1d",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E PCU Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x1e",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E PCU Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x1e",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E PCU Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x1e",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E PCU Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x1e",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E PCU Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x1e",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E PCU Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x1e",
+            "function": "0x5"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E PCU Registers (rev 0b)",
+            "bus": "0xd",
+            "device": "0x1e",
+            "function": "0x6"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0xe",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Memory controller: PMC-Sierra Inc. Device 4000",
+            "bus": "0xe",
+            "device": "0x0",
+            "function": "0x1"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0xf",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0xf",
+            "device": "0x1",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0xf",
+            "device": "0x2",
+            "function": "0x0"
+        },
+        {
+            "description": "3D controller: NVIDIA Corporation GA100 [A100 SXM4 40GB] (rev a1)",
+            "bus": "0x10",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x11",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Memory controller: PMC-Sierra Inc. Device 4000",
+            "bus": "0x11",
+            "device": "0x0",
+            "function": "0x1"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x12",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x12",
+            "device": "0x1",
+            "function": "0x0"
+        },
+        {
+            "description": "3D controller: NVIDIA Corporation GA100 [A100 SXM4 40GB] (rev a1)",
+            "bus": "0x13",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "3D controller: NVIDIA Corporation GA100 [A100 SXM4 40GB] (rev a1)",
+            "bus": "0x14",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "3D controller: NVIDIA Corporation GA100 [A100 SXM4 40GB] (rev a1)",
+            "bus": "0x15",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: Intel Corporation Sky Lake-E PCI Express Root Port A (rev 0b)",
+            "bus": "0x40",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E VT-d (rev 0b)",
+            "bus": "0x40",
+            "device": "0x5",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E RAS Configuration Registers (rev 0b)",
+            "bus": "0x40",
+            "device": "0x5",
+            "function": "0x2"
+        },
+        {
+            "description": "PIC: Intel Corporation Sky Lake-E IOxAPIC Configuration Registers (rev 0b)",
+            "bus": "0x40",
+            "device": "0x5",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0x40",
+            "device": "0x8",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0x40",
+            "device": "0x9",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0x40",
+            "device": "0xa",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0x40",
+            "device": "0xa",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0x40",
+            "device": "0xa",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0x40",
+            "device": "0xa",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0x40",
+            "device": "0xa",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LM Channel 1 (rev 0b)",
+            "bus": "0x40",
+            "device": "0xa",
+            "function": "0x5"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LMS Channel 1 (rev 0b)",
+            "bus": "0x40",
+            "device": "0xa",
+            "function": "0x6"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LMDP Channel 1 (rev 0b)",
+            "bus": "0x40",
+            "device": "0xa",
+            "function": "0x7"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E DECS Channel 2 (rev 0b)",
+            "bus": "0x40",
+            "device": "0xb",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LM Channel 2 (rev 0b)",
+            "bus": "0x40",
+            "device": "0xb",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LMS Channel 2 (rev 0b)",
+            "bus": "0x40",
+            "device": "0xb",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LMDP Channel 2 (rev 0b)",
+            "bus": "0x40",
+            "device": "0xb",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0x40",
+            "device": "0xc",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0x40",
+            "device": "0xc",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0x40",
+            "device": "0xc",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0x40",
+            "device": "0xc",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0x40",
+            "device": "0xc",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LM Channel 1 (rev 0b)",
+            "bus": "0x40",
+            "device": "0xc",
+            "function": "0x5"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LMS Channel 1 (rev 0b)",
+            "bus": "0x40",
+            "device": "0xc",
+            "function": "0x6"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LMDP Channel 1 (rev 0b)",
+            "bus": "0x40",
+            "device": "0xc",
+            "function": "0x7"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E DECS Channel 2 (rev 0b)",
+            "bus": "0x40",
+            "device": "0xd",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LM Channel 2 (rev 0b)",
+            "bus": "0x40",
+            "device": "0xd",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LMS Channel 2 (rev 0b)",
+            "bus": "0x40",
+            "device": "0xd",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LMDP Channel 2 (rev 0b)",
+            "bus": "0x40",
+            "device": "0xd",
+            "function": "0x3"
+        },
+        {
+            "description": "Performance counters: Intel Corporation Sky Lake-E KTI 0 (rev 0b)",
+            "bus": "0x59",
+            "device": "0xe",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E UPI Registers (rev 0b)",
+            "bus": "0x59",
+            "device": "0xe",
+            "function": "0x1"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E KTI 0 (rev 0b)",
+            "bus": "0x59",
+            "device": "0xe",
+            "function": "0x4"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E UPI Registers (rev 0b)",
+            "bus": "0x59",
+            "device": "0xe",
+            "function": "0x5"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Device 205a (rev 0b)",
+            "bus": "0x59",
+            "device": "0xe",
+            "function": "0x6"
+        },
+        {
+            "description": "Performance counters: Intel Corporation Sky Lake-E KTI 0 (rev 0b)",
+            "bus": "0x59",
+            "device": "0xf",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E UPI Registers (rev 0b)",
+            "bus": "0x59",
+            "device": "0xf",
+            "function": "0x1"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Device 205b (rev 0b)",
+            "bus": "0x59",
+            "device": "0xf",
+            "function": "0x3"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E KTI 0 (rev 0b)",
+            "bus": "0x59",
+            "device": "0xf",
+            "function": "0x4"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E UPI Registers (rev 0b)",
+            "bus": "0x59",
+            "device": "0xf",
+            "function": "0x5"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Device 205a (rev 0b)",
+            "bus": "0x59",
+            "device": "0xf",
+            "function": "0x6"
+        },
+        {
+            "description": "Performance counters: Intel Corporation Sky Lake-E KTI 0 (rev 0b)",
+            "bus": "0x59",
+            "device": "0x10",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E UPI Registers (rev 0b)",
+            "bus": "0x59",
+            "device": "0x10",
+            "function": "0x1"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E KTI 0 (rev 0b)",
+            "bus": "0x59",
+            "device": "0x10",
+            "function": "0x4"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E UPI Registers (rev 0b)",
+            "bus": "0x59",
+            "device": "0x10",
+            "function": "0x5"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Device 205a (rev 0b)",
+            "bus": "0x59",
+            "device": "0x10",
+            "function": "0x6"
+        },
+        {
+            "description": "Performance counters: Intel Corporation Sky Lake-E M3KTI Registers (rev 0b)",
+            "bus": "0x59",
+            "device": "0x12",
+            "function": "0x0"
+        },
+        {
+            "description": "Performance counters: Intel Corporation Sky Lake-E M3KTI Registers (rev 0b)",
+            "bus": "0x59",
+            "device": "0x12",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E M3KTI Registers (rev 0b)",
+            "bus": "0x59",
+            "device": "0x12",
+            "function": "0x2"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E M3KTI Registers (rev 0b)",
+            "bus": "0x59",
+            "device": "0x13",
+            "function": "0x0"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E M3KTI Registers (rev 0b)",
+            "bus": "0x59",
+            "device": "0x13",
+            "function": "0x1"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E M3KTI Registers (rev 0b)",
+            "bus": "0x59",
+            "device": "0x13",
+            "function": "0x2"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E M3KTI Registers (rev 0b)",
+            "bus": "0x59",
+            "device": "0x14",
+            "function": "0x0"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E M3KTI Registers (rev 0b)",
+            "bus": "0x59",
+            "device": "0x14",
+            "function": "0x1"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E M3KTI Registers (rev 0b)",
+            "bus": "0x59",
+            "device": "0x14",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E M2PCI Registers (rev 0b)",
+            "bus": "0x59",
+            "device": "0x15",
+            "function": "0x0"
+        },
+        {
+            "description": "Performance counters: Intel Corporation Sky Lake-E DDRIO Registers (rev 0b)",
+            "bus": "0x59",
+            "device": "0x15",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E M2PCI Registers (rev 0b)",
+            "bus": "0x59",
+            "device": "0x16",
+            "function": "0x0"
+        },
+        {
+            "description": "Performance counters: Intel Corporation Sky Lake-E DDRIO Registers (rev 0b)",
+            "bus": "0x59",
+            "device": "0x16",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E M2PCI Registers (rev 0b)",
+            "bus": "0x59",
+            "device": "0x17",
+            "function": "0x0"
+        },
+        {
+            "description": "Performance counters: Intel Corporation Sky Lake-E DDRIO Registers (rev 0b)",
+            "bus": "0x59",
+            "device": "0x17",
+            "function": "0x1"
+        },
+        {
+            "description": "PCI bridge: Intel Corporation Device 203f (rev 0b)",
+            "bus": "0x5a",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E VT-d (rev 0b)",
+            "bus": "0x5a",
+            "device": "0x5",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E RAS Configuration Registers (rev 0b)",
+            "bus": "0x5a",
+            "device": "0x5",
+            "function": "0x2"
+        },
+        {
+            "description": "PIC: Intel Corporation Sky Lake-E IOxAPIC Configuration Registers (rev 0b)",
+            "bus": "0x5a",
+            "device": "0x5",
+            "function": "0x4"
+        },
+        {
+            "description": "Ethernet controller: Broadcom Inc. and subsidiaries BCM57504 NetXtreme-E 10Gb/25Gb/40Gb/50Gb/100Gb/200Gb Ethernet (rev 11)",
+            "bus": "0x5b",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CBDMA Registers (rev 0b)",
+            "bus": "0x80",
+            "device": "0x4",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CBDMA Registers (rev 0b)",
+            "bus": "0x80",
+            "device": "0x4",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CBDMA Registers (rev 0b)",
+            "bus": "0x80",
+            "device": "0x4",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CBDMA Registers (rev 0b)",
+            "bus": "0x80",
+            "device": "0x4",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CBDMA Registers (rev 0b)",
+            "bus": "0x80",
+            "device": "0x4",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CBDMA Registers (rev 0b)",
+            "bus": "0x80",
+            "device": "0x4",
+            "function": "0x5"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CBDMA Registers (rev 0b)",
+            "bus": "0x80",
+            "device": "0x4",
+            "function": "0x6"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CBDMA Registers (rev 0b)",
+            "bus": "0x80",
+            "device": "0x4",
+            "function": "0x7"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E MM/Vt-d Configuration Registers (rev 0b)",
+            "bus": "0x80",
+            "device": "0x5",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E RAS (rev 0b)",
+            "bus": "0x80",
+            "device": "0x5",
+            "function": "0x2"
+        },
+        {
+            "description": "PIC: Intel Corporation Sky Lake-E IOAPIC (rev 0b)",
+            "bus": "0x80",
+            "device": "0x5",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Ubox Registers (rev 0b)",
+            "bus": "0x80",
+            "device": "0x8",
+            "function": "0x0"
+        },
+        {
+            "description": "Performance counters: Intel Corporation Sky Lake-E Ubox Registers (rev 0b)",
+            "bus": "0x80",
+            "device": "0x8",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Ubox Registers (rev 0b)",
+            "bus": "0x80",
+            "device": "0x8",
+            "function": "0x2"
+        },
+        {
+            "description": "PCI bridge: Intel Corporation Sky Lake-E PCI Express Root Port A (rev 0b)",
+            "bus": "0x84",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E VT-d (rev 0b)",
+            "bus": "0x84",
+            "device": "0x5",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E RAS Configuration Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x5",
+            "function": "0x2"
+        },
+        {
+            "description": "PIC: Intel Corporation Sky Lake-E IOxAPIC Configuration Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x5",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x8",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x8",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x8",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x8",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x8",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x8",
+            "function": "0x5"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x8",
+            "function": "0x6"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x8",
+            "function": "0x7"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x9",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x9",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x9",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x9",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x9",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x9",
+            "function": "0x5"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x9",
+            "function": "0x6"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x9",
+            "function": "0x7"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xa",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xa",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xa",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xa",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xa",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xa",
+            "function": "0x5"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xa",
+            "function": "0x6"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xa",
+            "function": "0x7"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xb",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xb",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xb",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xb",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xe",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xe",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xe",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xe",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xe",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xe",
+            "function": "0x5"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xe",
+            "function": "0x6"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xe",
+            "function": "0x7"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xf",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xf",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xf",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xf",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xf",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xf",
+            "function": "0x5"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xf",
+            "function": "0x6"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0xf",
+            "function": "0x7"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x10",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x10",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x10",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x10",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x10",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x10",
+            "function": "0x5"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x10",
+            "function": "0x6"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x10",
+            "function": "0x7"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x11",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x11",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x11",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x11",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x1d",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x1d",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x1d",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E CHA Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x1d",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E PCU Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x1e",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E PCU Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x1e",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E PCU Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x1e",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E PCU Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x1e",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E PCU Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x1e",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E PCU Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x1e",
+            "function": "0x5"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E PCU Registers (rev 0b)",
+            "bus": "0x84",
+            "device": "0x1e",
+            "function": "0x6"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x85",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Memory controller: PMC-Sierra Inc. Device 4000",
+            "bus": "0x85",
+            "device": "0x0",
+            "function": "0x1"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x86",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x86",
+            "device": "0x1",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x86",
+            "device": "0x2",
+            "function": "0x0"
+        },
+        {
+            "description": "3D controller: NVIDIA Corporation GA100 [A100 SXM4 40GB] (rev a1)",
+            "bus": "0x87",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x88",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Memory controller: PMC-Sierra Inc. Device 4000",
+            "bus": "0x88",
+            "device": "0x0",
+            "function": "0x1"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x89",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x89",
+            "device": "0x1",
+            "function": "0x0"
+        },
+        {
+            "description": "3D controller: NVIDIA Corporation GA100 [A100 SXM4 40GB] (rev a1)",
+            "bus": "0x8a",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "3D controller: NVIDIA Corporation GA100 [A100 SXM4 40GB] (rev a1)",
+            "bus": "0x8b",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "3D controller: NVIDIA Corporation GA100 [A100 SXM4 40GB] (rev a1)",
+            "bus": "0x8c",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: Intel Corporation Sky Lake-E PCI Express Root Port A (rev 0b)",
+            "bus": "0xba",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: Intel Corporation Sky Lake-E PCI Express Root Port B (rev 0b)",
+            "bus": "0xba",
+            "device": "0x1",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: Intel Corporation Sky Lake-E PCI Express Root Port C (rev 0b)",
+            "bus": "0xba",
+            "device": "0x2",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E VT-d (rev 0b)",
+            "bus": "0xba",
+            "device": "0x5",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E RAS Configuration Registers (rev 0b)",
+            "bus": "0xba",
+            "device": "0x5",
+            "function": "0x2"
+        },
+        {
+            "description": "PIC: Intel Corporation Sky Lake-E IOxAPIC Configuration Registers (rev 0b)",
+            "bus": "0xba",
+            "device": "0x5",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0xba",
+            "device": "0x8",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0xba",
+            "device": "0x9",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0xba",
+            "device": "0xa",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0xba",
+            "device": "0xa",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0xba",
+            "device": "0xa",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0xba",
+            "device": "0xa",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0xba",
+            "device": "0xa",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LM Channel 1 (rev 0b)",
+            "bus": "0xba",
+            "device": "0xa",
+            "function": "0x5"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LMS Channel 1 (rev 0b)",
+            "bus": "0xba",
+            "device": "0xa",
+            "function": "0x6"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LMDP Channel 1 (rev 0b)",
+            "bus": "0xba",
+            "device": "0xa",
+            "function": "0x7"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E DECS Channel 2 (rev 0b)",
+            "bus": "0xba",
+            "device": "0xb",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LM Channel 2 (rev 0b)",
+            "bus": "0xba",
+            "device": "0xb",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LMS Channel 2 (rev 0b)",
+            "bus": "0xba",
+            "device": "0xb",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LMDP Channel 2 (rev 0b)",
+            "bus": "0xba",
+            "device": "0xb",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0xba",
+            "device": "0xc",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0xba",
+            "device": "0xc",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0xba",
+            "device": "0xc",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0xba",
+            "device": "0xc",
+            "function": "0x3"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E Integrated Memory Controller (rev 0b)",
+            "bus": "0xba",
+            "device": "0xc",
+            "function": "0x4"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LM Channel 1 (rev 0b)",
+            "bus": "0xba",
+            "device": "0xc",
+            "function": "0x5"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LMS Channel 1 (rev 0b)",
+            "bus": "0xba",
+            "device": "0xc",
+            "function": "0x6"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LMDP Channel 1 (rev 0b)",
+            "bus": "0xba",
+            "device": "0xc",
+            "function": "0x7"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E DECS Channel 2 (rev 0b)",
+            "bus": "0xba",
+            "device": "0xd",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LM Channel 2 (rev 0b)",
+            "bus": "0xba",
+            "device": "0xd",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LMS Channel 2 (rev 0b)",
+            "bus": "0xba",
+            "device": "0xd",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E LMDP Channel 2 (rev 0b)",
+            "bus": "0xba",
+            "device": "0xd",
+            "function": "0x3"
+        },
+        {
+            "description": "Non-Volatile memory controller: Toshiba Corporation Device 0119",
+            "bus": "0xbb",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Non-Volatile memory controller: Toshiba Corporation Device 0119",
+            "bus": "0xbc",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Performance counters: Intel Corporation Sky Lake-E KTI 0 (rev 0b)",
+            "bus": "0xd6",
+            "device": "0xe",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E UPI Registers (rev 0b)",
+            "bus": "0xd6",
+            "device": "0xe",
+            "function": "0x1"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E KTI 0 (rev 0b)",
+            "bus": "0xd6",
+            "device": "0xe",
+            "function": "0x4"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E UPI Registers (rev 0b)",
+            "bus": "0xd6",
+            "device": "0xe",
+            "function": "0x5"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Device 205a (rev 0b)",
+            "bus": "0xd6",
+            "device": "0xe",
+            "function": "0x6"
+        },
+        {
+            "description": "Performance counters: Intel Corporation Sky Lake-E KTI 0 (rev 0b)",
+            "bus": "0xd6",
+            "device": "0xf",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E UPI Registers (rev 0b)",
+            "bus": "0xd6",
+            "device": "0xf",
+            "function": "0x1"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Device 205b (rev 0b)",
+            "bus": "0xd6",
+            "device": "0xf",
+            "function": "0x3"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E KTI 0 (rev 0b)",
+            "bus": "0xd6",
+            "device": "0xf",
+            "function": "0x4"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E UPI Registers (rev 0b)",
+            "bus": "0xd6",
+            "device": "0xf",
+            "function": "0x5"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Device 205a (rev 0b)",
+            "bus": "0xd6",
+            "device": "0xf",
+            "function": "0x6"
+        },
+        {
+            "description": "Performance counters: Intel Corporation Sky Lake-E KTI 0 (rev 0b)",
+            "bus": "0xd6",
+            "device": "0x10",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E UPI Registers (rev 0b)",
+            "bus": "0xd6",
+            "device": "0x10",
+            "function": "0x1"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E KTI 0 (rev 0b)",
+            "bus": "0xd6",
+            "device": "0x10",
+            "function": "0x4"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E UPI Registers (rev 0b)",
+            "bus": "0xd6",
+            "device": "0x10",
+            "function": "0x5"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Device 205a (rev 0b)",
+            "bus": "0xd6",
+            "device": "0x10",
+            "function": "0x6"
+        },
+        {
+            "description": "Performance counters: Intel Corporation Sky Lake-E M3KTI Registers (rev 0b)",
+            "bus": "0xd6",
+            "device": "0x12",
+            "function": "0x0"
+        },
+        {
+            "description": "Performance counters: Intel Corporation Sky Lake-E M3KTI Registers (rev 0b)",
+            "bus": "0xd6",
+            "device": "0x12",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E M3KTI Registers (rev 0b)",
+            "bus": "0xd6",
+            "device": "0x12",
+            "function": "0x2"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E M3KTI Registers (rev 0b)",
+            "bus": "0xd6",
+            "device": "0x13",
+            "function": "0x0"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E M3KTI Registers (rev 0b)",
+            "bus": "0xd6",
+            "device": "0x13",
+            "function": "0x1"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E M3KTI Registers (rev 0b)",
+            "bus": "0xd6",
+            "device": "0x13",
+            "function": "0x2"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E M3KTI Registers (rev 0b)",
+            "bus": "0xd6",
+            "device": "0x14",
+            "function": "0x0"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E M3KTI Registers (rev 0b)",
+            "bus": "0xd6",
+            "device": "0x14",
+            "function": "0x1"
+        },
+        {
+            "description": "Unassigned class [ffff]: Intel Corporation Sky Lake-E M3KTI Registers (rev 0b)",
+            "bus": "0xd6",
+            "device": "0x14",
+            "function": "0x2"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E M2PCI Registers (rev 0b)",
+            "bus": "0xd6",
+            "device": "0x15",
+            "function": "0x0"
+        },
+        {
+            "description": "Performance counters: Intel Corporation Sky Lake-E DDRIO Registers (rev 0b)",
+            "bus": "0xd6",
+            "device": "0x15",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E M2PCI Registers (rev 0b)",
+            "bus": "0xd6",
+            "device": "0x16",
+            "function": "0x0"
+        },
+        {
+            "description": "Performance counters: Intel Corporation Sky Lake-E DDRIO Registers (rev 0b)",
+            "bus": "0xd6",
+            "device": "0x16",
+            "function": "0x1"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E M2PCI Registers (rev 0b)",
+            "bus": "0xd6",
+            "device": "0x17",
+            "function": "0x0"
+        },
+        {
+            "description": "Performance counters: Intel Corporation Sky Lake-E DDRIO Registers (rev 0b)",
+            "bus": "0xd6",
+            "device": "0x17",
+            "function": "0x1"
+        },
+        {
+            "description": "PCI bridge: Intel Corporation Device 203f (rev 0b)",
+            "bus": "0xd7",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E VT-d (rev 0b)",
+            "bus": "0xd7",
+            "device": "0x5",
+            "function": "0x0"
+        },
+        {
+            "description": "System peripheral: Intel Corporation Sky Lake-E RAS Configuration Registers (rev 0b)",
+            "bus": "0xd7",
+            "device": "0x5",
+            "function": "0x2"
+        },
+        {
+            "description": "PIC: Intel Corporation Sky Lake-E IOxAPIC Configuration Registers (rev 0b)",
+            "bus": "0xd7",
+            "device": "0x5",
+            "function": "0x4"
+        },
+        {
+            "description": "Ethernet controller: Broadcom Inc. and subsidiaries BCM57504 NetXtreme-E 10Gb/25Gb/40Gb/50Gb/100Gb/200Gb Ethernet (rev 11)",
+            "bus": "0xd8",
+            "device": "0x0",
+            "function": "0x0"
+        }
+    ]
+}

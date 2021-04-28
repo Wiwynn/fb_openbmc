@@ -1,0 +1,704 @@
+{
+    "memoryMap": [
+        {
+            "addressBase": "0x9d600000",
+            "addressLimit": "0x9d603fff",
+            "bus": "0x1",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x9d700000",
+            "addressLimit": "0x9d77ffff",
+            "bus": "0x0",
+            "device": "0x11",
+            "function": "0x5"
+        },
+        {
+            "addressBase": "0x9d780000",
+            "addressLimit": "0x9d783fff",
+            "bus": "0x0",
+            "device": "0x1f",
+            "function": "0x2"
+        },
+        {
+            "addressBase": "0x9d784000",
+            "addressLimit": "0x9d785fff",
+            "bus": "0x0",
+            "device": "0x11",
+            "function": "0x5"
+        },
+        {
+            "addressBase": "0x9d786000",
+            "addressLimit": "0x9d7860ff",
+            "bus": "0x0",
+            "device": "0x11",
+            "function": "0x5"
+        },
+        {
+            "addressBase": "0x9d787000",
+            "addressLimit": "0x9d787fff",
+            "bus": "0x0",
+            "device": "0x5",
+            "function": "0x4"
+        },
+        {
+            "addressBase": "0xa3000000",
+            "addressLimit": "0xa3ffffff",
+            "bus": "0x14",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0xa4000000",
+            "addressLimit": "0xa43fffff",
+            "bus": "0x14",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0xa5000000",
+            "addressLimit": "0xa5ffffff",
+            "bus": "0x13",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0xa6000000",
+            "addressLimit": "0xa63fffff",
+            "bus": "0x13",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0xa7000000",
+            "addressLimit": "0xa7ffffff",
+            "bus": "0x15",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0xa8000000",
+            "addressLimit": "0xa83fffff",
+            "bus": "0x15",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0xa9000000",
+            "addressLimit": "0xa9ffffff",
+            "bus": "0x10",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0xaa000000",
+            "addressLimit": "0xaa3fffff",
+            "bus": "0x10",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0xaa400000",
+            "addressLimit": "0xaa400fff",
+            "bus": "0xd",
+            "device": "0x5",
+            "function": "0x4"
+        },
+        {
+            "addressBase": "0xaaf00000",
+            "addressLimit": "0xaaf00fff",
+            "bus": "0xd",
+            "device": "0x5",
+            "function": "0x4"
+        },
+        {
+            "addressBase": "0xb8700000",
+            "addressLimit": "0xb8700fff",
+            "bus": "0x40",
+            "device": "0x5",
+            "function": "0x4"
+        },
+        {
+            "addressBase": "0xc5e00000",
+            "addressLimit": "0xc5e3ffff",
+            "bus": "0x5b",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0xc5f00000",
+            "addressLimit": "0xc5f00fff",
+            "bus": "0x5a",
+            "device": "0x5",
+            "function": "0x4"
+        },
+        {
+            "addressBase": "0xd3700000",
+            "addressLimit": "0xd3700fff",
+            "bus": "0x80",
+            "device": "0x5",
+            "function": "0x4"
+        },
+        {
+            "addressBase": "0xd9000000",
+            "addressLimit": "0xd9ffffff",
+            "bus": "0x8b",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0xda000000",
+            "addressLimit": "0xda3fffff",
+            "bus": "0x8b",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0xdb000000",
+            "addressLimit": "0xdbffffff",
+            "bus": "0x8a",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0xdc000000",
+            "addressLimit": "0xdc3fffff",
+            "bus": "0x8a",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0xdd000000",
+            "addressLimit": "0xddffffff",
+            "bus": "0x8c",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0xde000000",
+            "addressLimit": "0xde3fffff",
+            "bus": "0x8c",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0xdf000000",
+            "addressLimit": "0xdfffffff",
+            "bus": "0x87",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0xe0000000",
+            "addressLimit": "0xe03fffff",
+            "bus": "0x87",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0xe0400000",
+            "addressLimit": "0xe0400fff",
+            "bus": "0x84",
+            "device": "0x5",
+            "function": "0x4"
+        },
+        {
+            "addressBase": "0xe0f00000",
+            "addressLimit": "0xe0f00fff",
+            "bus": "0x84",
+            "device": "0x5",
+            "function": "0x4"
+        },
+        {
+            "addressBase": "0xee500000",
+            "addressLimit": "0xee503fff",
+            "bus": "0xbc",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0xee600000",
+            "addressLimit": "0xee603fff",
+            "bus": "0xbb",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0xee700000",
+            "addressLimit": "0xee700fff",
+            "bus": "0xba",
+            "device": "0x5",
+            "function": "0x4"
+        },
+        {
+            "addressBase": "0xfbe00000",
+            "addressLimit": "0xfbe3ffff",
+            "bus": "0xd8",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0xfbf00000",
+            "addressLimit": "0xfbf00fff",
+            "bus": "0xd7",
+            "device": "0x5",
+            "function": "0x4"
+        },
+        {
+            "addressBase": "0xfe010000",
+            "addressLimit": "0xfe010fff",
+            "bus": "0x0",
+            "device": "0x1f",
+            "function": "0x5"
+        },
+        {
+            "addressBase": "0x40000000000",
+            "addressLimit": "0x400000000ff",
+            "bus": "0x0",
+            "device": "0x1f",
+            "function": "0x4"
+        },
+        {
+            "addressBase": "0x4fffff00000",
+            "addressLimit": "0x4fffff0ffff",
+            "bus": "0x0",
+            "device": "0x14",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x4fffff10000",
+            "addressLimit": "0x4fffff13fff",
+            "bus": "0x0",
+            "device": "0x4",
+            "function": "0x7"
+        },
+        {
+            "addressBase": "0x4fffff14000",
+            "addressLimit": "0x4fffff17fff",
+            "bus": "0x0",
+            "device": "0x4",
+            "function": "0x6"
+        },
+        {
+            "addressBase": "0x4fffff18000",
+            "addressLimit": "0x4fffff1bfff",
+            "bus": "0x0",
+            "device": "0x4",
+            "function": "0x5"
+        },
+        {
+            "addressBase": "0x4fffff1c000",
+            "addressLimit": "0x4fffff1ffff",
+            "bus": "0x0",
+            "device": "0x4",
+            "function": "0x4"
+        },
+        {
+            "addressBase": "0x4fffff20000",
+            "addressLimit": "0x4fffff23fff",
+            "bus": "0x0",
+            "device": "0x4",
+            "function": "0x3"
+        },
+        {
+            "addressBase": "0x4fffff24000",
+            "addressLimit": "0x4fffff27fff",
+            "bus": "0x0",
+            "device": "0x4",
+            "function": "0x2"
+        },
+        {
+            "addressBase": "0x4fffff28000",
+            "addressLimit": "0x4fffff2bfff",
+            "bus": "0x0",
+            "device": "0x4",
+            "function": "0x1"
+        },
+        {
+            "addressBase": "0x4fffff2c000",
+            "addressLimit": "0x4fffff2ffff",
+            "bus": "0x0",
+            "device": "0x4",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x4fffff30000",
+            "addressLimit": "0x4fffff30fff",
+            "bus": "0x0",
+            "device": "0x16",
+            "function": "0x4"
+        },
+        {
+            "addressBase": "0x4fffff31000",
+            "addressLimit": "0x4fffff31fff",
+            "bus": "0x0",
+            "device": "0x16",
+            "function": "0x1"
+        },
+        {
+            "addressBase": "0x4fffff32000",
+            "addressLimit": "0x4fffff32fff",
+            "bus": "0x0",
+            "device": "0x16",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x4fffff33000",
+            "addressLimit": "0x4fffff33fff",
+            "bus": "0x0",
+            "device": "0x14",
+            "function": "0x2"
+        },
+        {
+            "addressBase": "0x54000000000",
+            "addressLimit": "0x54fffffffff",
+            "bus": "0x14",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x55000000000",
+            "addressLimit": "0x55fffffffff",
+            "bus": "0x14",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x56000000000",
+            "addressLimit": "0x5601fffffff",
+            "bus": "0x14",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x56020000000",
+            "addressLimit": "0x56021ffffff",
+            "bus": "0x14",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x57000000000",
+            "addressLimit": "0x57fffffffff",
+            "bus": "0x13",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x58000000000",
+            "addressLimit": "0x58fffffffff",
+            "bus": "0x13",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x59000000000",
+            "addressLimit": "0x5901fffffff",
+            "bus": "0x13",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x59020000000",
+            "addressLimit": "0x59021ffffff",
+            "bus": "0x13",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x59022000000",
+            "addressLimit": "0x590223fffff",
+            "bus": "0x11",
+            "device": "0x0",
+            "function": "0x1"
+        },
+        {
+            "addressBase": "0x5a000000000",
+            "addressLimit": "0x5afffffffff",
+            "bus": "0x15",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x5b000000000",
+            "addressLimit": "0x5bfffffffff",
+            "bus": "0x15",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x5c000000000",
+            "addressLimit": "0x5c01fffffff",
+            "bus": "0x15",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x5c020000000",
+            "addressLimit": "0x5c021ffffff",
+            "bus": "0x15",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x5d000000000",
+            "addressLimit": "0x5dfffffffff",
+            "bus": "0x10",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x5e000000000",
+            "addressLimit": "0x5efffffffff",
+            "bus": "0x10",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x5f000000000",
+            "addressLimit": "0x5f01fffffff",
+            "bus": "0x10",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x5f020000000",
+            "addressLimit": "0x5f021ffffff",
+            "bus": "0x10",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x5f022000000",
+            "addressLimit": "0x5f0223fffff",
+            "bus": "0xe",
+            "device": "0x0",
+            "function": "0x1"
+        },
+        {
+            "addressBase": "0x7ffffe00000",
+            "addressLimit": "0x7ffffefffff",
+            "bus": "0x5b",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x7fffff00000",
+            "addressLimit": "0x7fffff0ffff",
+            "bus": "0x5b",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x7fffff10000",
+            "addressLimit": "0x7fffff11fff",
+            "bus": "0x5b",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x8fffff00000",
+            "addressLimit": "0x8fffff03fff",
+            "bus": "0x80",
+            "device": "0x4",
+            "function": "0x7"
+        },
+        {
+            "addressBase": "0x8fffff04000",
+            "addressLimit": "0x8fffff07fff",
+            "bus": "0x80",
+            "device": "0x4",
+            "function": "0x6"
+        },
+        {
+            "addressBase": "0x8fffff08000",
+            "addressLimit": "0x8fffff0bfff",
+            "bus": "0x80",
+            "device": "0x4",
+            "function": "0x5"
+        },
+        {
+            "addressBase": "0x8fffff0c000",
+            "addressLimit": "0x8fffff0ffff",
+            "bus": "0x80",
+            "device": "0x4",
+            "function": "0x4"
+        },
+        {
+            "addressBase": "0x8fffff10000",
+            "addressLimit": "0x8fffff13fff",
+            "bus": "0x80",
+            "device": "0x4",
+            "function": "0x3"
+        },
+        {
+            "addressBase": "0x8fffff14000",
+            "addressLimit": "0x8fffff17fff",
+            "bus": "0x80",
+            "device": "0x4",
+            "function": "0x2"
+        },
+        {
+            "addressBase": "0x8fffff18000",
+            "addressLimit": "0x8fffff1bfff",
+            "bus": "0x80",
+            "device": "0x4",
+            "function": "0x1"
+        },
+        {
+            "addressBase": "0x8fffff1c000",
+            "addressLimit": "0x8fffff1ffff",
+            "bus": "0x80",
+            "device": "0x4",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x94000000000",
+            "addressLimit": "0x94fffffffff",
+            "bus": "0x8b",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x95000000000",
+            "addressLimit": "0x95fffffffff",
+            "bus": "0x8b",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x96000000000",
+            "addressLimit": "0x9601fffffff",
+            "bus": "0x8b",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x96020000000",
+            "addressLimit": "0x96021ffffff",
+            "bus": "0x8b",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x97000000000",
+            "addressLimit": "0x97fffffffff",
+            "bus": "0x8a",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x98000000000",
+            "addressLimit": "0x98fffffffff",
+            "bus": "0x8a",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x99000000000",
+            "addressLimit": "0x9901fffffff",
+            "bus": "0x8a",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x99020000000",
+            "addressLimit": "0x99021ffffff",
+            "bus": "0x8a",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x99022000000",
+            "addressLimit": "0x990223fffff",
+            "bus": "0x88",
+            "device": "0x0",
+            "function": "0x1"
+        },
+        {
+            "addressBase": "0x9a000000000",
+            "addressLimit": "0x9afffffffff",
+            "bus": "0x8c",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x9b000000000",
+            "addressLimit": "0x9bfffffffff",
+            "bus": "0x8c",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x9c000000000",
+            "addressLimit": "0x9c01fffffff",
+            "bus": "0x8c",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x9c020000000",
+            "addressLimit": "0x9c021ffffff",
+            "bus": "0x8c",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x9d000000000",
+            "addressLimit": "0x9dfffffffff",
+            "bus": "0x87",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x9e000000000",
+            "addressLimit": "0x9efffffffff",
+            "bus": "0x87",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x9f000000000",
+            "addressLimit": "0x9f01fffffff",
+            "bus": "0x87",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x9f020000000",
+            "addressLimit": "0x9f021ffffff",
+            "bus": "0x87",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0x9f022000000",
+            "addressLimit": "0x9f0223fffff",
+            "bus": "0x85",
+            "device": "0x0",
+            "function": "0x1"
+        },
+        {
+            "addressBase": "0xbffffe00000",
+            "addressLimit": "0xbffffefffff",
+            "bus": "0xd8",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0xbfffff00000",
+            "addressLimit": "0xbfffff0ffff",
+            "bus": "0xd8",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "addressBase": "0xbfffff10000",
+            "addressLimit": "0xbfffff11fff",
+            "bus": "0xd8",
+            "device": "0x0",
+            "function": "0x0"
+        }
+    ]
+}
