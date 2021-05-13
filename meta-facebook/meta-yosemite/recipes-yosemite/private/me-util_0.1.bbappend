@@ -47,4 +47,3 @@ FBPACKAGEDIR = "${prefix}/local/fbpackages"
 FILES_${PN} = "${FBPACKAGEDIR}/me-util ${prefix}/local/bin "
 
 INHIBIT_PACKAGE_DEBUG_SPLIT = "1"
-INHIBIT_PACKAGE_STRIP = "1"
