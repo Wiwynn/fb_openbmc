@@ -26,7 +26,7 @@ extern "C" {
 
 using namespace std;
 
-static int get_fw_ver(string fru, string comp, string &ver) {
+static int get_fw_ver(const string &fru, const string &comp, string &ver) {
   char line[128];
   FILE *fp;
   string cmd;
@@ -153,5 +153,5 @@ int getPpinData(int cpu, char *ppin) {
 }
 
 void platformInit(uint8_t fru) {
-  fru = fru;
+  (void)fru;
 }
