@@ -127,12 +127,6 @@
             "function": "0x0"
         },
         {
-            "description": "Communication controller: Intel Corporation C620 Series Chipset Family MEI Controller #2 (rev 0a)",
-            "bus": "0x0",
-            "device": "0x16",
-            "function": "0x1"
-        },
-        {
             "description": "Communication controller: Intel Corporation C620 Series Chipset Family MEI Controller #3 (rev 0a)",
             "bus": "0x0",
             "device": "0x16",
@@ -169,7 +163,7 @@
             "function": "0x5"
         },
         {
-            "description": "Non-Volatile memory controller: Micron Technology Inc Device 5410 (rev 01)",
+            "description": "Non-Volatile memory controller: Toshiba Corporation XG6 NVMe SSD Controller",
             "bus": "0x1",
             "device": "0x0",
             "function": "0x0"
@@ -1855,13 +1849,13 @@
             "function": "0x3"
         },
         {
-            "description": "Non-Volatile memory controller: Toshiba Corporation Device 0119",
+            "description": "Non-Volatile memory controller: Samsung Electronics Co Ltd NVMe SSD Controller PM9A1/980PRO",
             "bus": "0xbb",
             "device": "0x0",
             "function": "0x0"
         },
         {
-            "description": "Non-Volatile memory controller: Toshiba Corporation Device 0119",
+            "description": "Non-Volatile memory controller: Samsung Electronics Co Ltd NVMe SSD Controller PM9A1/980PRO",
             "bus": "0xbc",
             "device": "0x0",
             "function": "0x0"

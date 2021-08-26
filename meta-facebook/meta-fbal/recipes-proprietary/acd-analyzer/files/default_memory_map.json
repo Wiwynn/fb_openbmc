@@ -106,13 +106,6 @@
             "function": "0x4"
         },
         {
-            "addressBase": "0xaaf00000",
-            "addressLimit": "0xaaf00fff",
-            "bus": "0xd",
-            "device": "0x5",
-            "function": "0x4"
-        },
-        {
             "addressBase": "0xb8700000",
             "addressLimit": "0xb8700fff",
             "bus": "0x40",
@@ -199,13 +192,6 @@
         {
             "addressBase": "0xe0400000",
             "addressLimit": "0xe0400fff",
-            "bus": "0x84",
-            "device": "0x5",
-            "function": "0x4"
-        },
-        {
-            "addressBase": "0xe0f00000",
-            "addressLimit": "0xe0f00fff",
             "bus": "0x84",
             "device": "0x5",
             "function": "0x4"
@@ -334,18 +320,11 @@
             "addressLimit": "0x4fffff31fff",
             "bus": "0x0",
             "device": "0x16",
-            "function": "0x1"
+            "function": "0x0"
         },
         {
             "addressBase": "0x4fffff32000",
             "addressLimit": "0x4fffff32fff",
-            "bus": "0x0",
-            "device": "0x16",
-            "function": "0x0"
-        },
-        {
-            "addressBase": "0x4fffff33000",
-            "addressLimit": "0x4fffff33fff",
             "bus": "0x0",
             "device": "0x14",
             "function": "0x2"

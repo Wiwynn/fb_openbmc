@@ -3,9 +3,11 @@ FILESEXTRAPATHS_append := "${THISDIR}/files:"
 
 SRC_URI += "file://4s_device_map.json \
             file://4s_memory_map.json \
+            file://ex_device_map.json \
+            file://ex_memory_map.json \
            "
 
-EXTRA_MAP_FILES = "4s_device_map.json 4s_memory_map.json"
+EXTRA_MAP_FILES = "4s_device_map.json 4s_memory_map.json ex_device_map.json ex_memory_map.json"
 
 do_install_append() {
   install -d ${D}/var/bafi

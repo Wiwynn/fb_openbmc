@@ -163,7 +163,7 @@
             "function": "0x5"
         },
         {
-            "description": "Non-Volatile memory controller: Toshiba Corporation XG6 NVMe SSD Controller",
+            "description": "Non-Volatile memory controller: Micron Technology Inc Device 5410 (rev 01)",
             "bus": "0x1",
             "device": "0x0",
             "function": "0x0"
@@ -620,9 +620,57 @@
         },
         {
             "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0xe",
+            "device": "0x2",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0xe",
+            "device": "0x3",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0xe",
+            "device": "0x4",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0xe",
+            "device": "0x5",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0xe",
+            "device": "0x6",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0xe",
+            "device": "0x7",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0xe",
+            "device": "0x8",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
             "bus": "0xf",
             "device": "0x0",
             "function": "0x0"
+        },
+        {
+            "description": "Memory controller: PMC-Sierra Inc. Device 4000",
+            "bus": "0xf",
+            "device": "0x0",
+            "function": "0x1"
         },
         {
             "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
@@ -637,8 +685,56 @@
             "function": "0x0"
         },
         {
-            "description": "3D controller: NVIDIA Corporation GA100 [A100 SXM4 40GB] (rev a1)",
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
             "bus": "0x12",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x13",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "3D controller: NVIDIA Corporation GA100 [A100 SXM4 40GB] (rev a1)",
+            "bus": "0x14",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Non-Volatile memory controller: Samsung Electronics Co Ltd NVMe SSD Controller SM981/PM981/PM983",
+            "bus": "0x15",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Ethernet controller: Mellanox Technologies MT2892 Family [ConnectX-6 Dx]",
+            "bus": "0x16",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Ethernet controller: Mellanox Technologies MT2892 Family [ConnectX-6 Dx]",
+            "bus": "0x17",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Non-Volatile memory controller: Samsung Electronics Co Ltd NVMe SSD Controller SM981/PM981/PM983",
+            "bus": "0x18",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Non-Volatile memory controller: Samsung Electronics Co Ltd NVMe SSD Controller SM981/PM981/PM983",
+            "bus": "0x19",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Non-Volatile memory controller: Samsung Electronics Co Ltd NVMe SSD Controller SM981/PM981/PM983",
+            "bus": "0x1a",
             "device": "0x0",
             "function": "0x0"
         },
@@ -1574,9 +1670,57 @@
         },
         {
             "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x45",
+            "device": "0x2",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x45",
+            "device": "0x3",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x45",
+            "device": "0x4",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x45",
+            "device": "0x5",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x45",
+            "device": "0x6",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x45",
+            "device": "0x7",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x45",
+            "device": "0x8",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
             "bus": "0x46",
             "device": "0x0",
             "function": "0x0"
+        },
+        {
+            "description": "Memory controller: PMC-Sierra Inc. Device 4000",
+            "bus": "0x46",
+            "device": "0x0",
+            "function": "0x1"
         },
         {
             "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
@@ -1591,8 +1735,56 @@
             "function": "0x0"
         },
         {
-            "description": "3D controller: NVIDIA Corporation GA100 [A100 SXM4 40GB] (rev a1)",
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
             "bus": "0x49",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x4a",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "3D controller: NVIDIA Corporation GA100 [A100 SXM4 40GB] (rev a1)",
+            "bus": "0x4b",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Non-Volatile memory controller: Samsung Electronics Co Ltd NVMe SSD Controller SM981/PM981/PM983",
+            "bus": "0x4c",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Ethernet controller: Mellanox Technologies MT2892 Family [ConnectX-6 Dx]",
+            "bus": "0x4d",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Ethernet controller: Mellanox Technologies MT2892 Family [ConnectX-6 Dx]",
+            "bus": "0x4e",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Non-Volatile memory controller: Samsung Electronics Co Ltd NVMe SSD Controller SM981/PM981/PM983",
+            "bus": "0x4f",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Non-Volatile memory controller: Samsung Electronics Co Ltd NVMe SSD Controller SM981/PM981/PM983",
+            "bus": "0x50",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Non-Volatile memory controller: Samsung Electronics Co Ltd NVMe SSD Controller SM981/PM981/PM983",
+            "bus": "0x51",
             "device": "0x0",
             "function": "0x0"
         },
@@ -2539,6 +2731,12 @@
             "function": "0x0"
         },
         {
+            "description": "Memory controller: PMC-Sierra Inc. Device 4000",
+            "bus": "0x84",
+            "device": "0x0",
+            "function": "0x1"
+        },
+        {
             "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
             "bus": "0x85",
             "device": "0x0",
@@ -2551,32 +2749,122 @@
             "function": "0x0"
         },
         {
-            "description": "3D controller: NVIDIA Corporation GA100 [A100 SXM4 40GB] (rev a1)",
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x85",
+            "device": "0x2",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x85",
+            "device": "0x3",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x85",
+            "device": "0x4",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x85",
+            "device": "0x5",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x85",
+            "device": "0x6",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x85",
+            "device": "0x7",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x85",
+            "device": "0x8",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
             "bus": "0x86",
             "device": "0x0",
             "function": "0x0"
         },
         {
-            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
-            "bus": "0x87",
-            "device": "0x0",
-            "function": "0x0"
-        },
-        {
             "description": "Memory controller: PMC-Sierra Inc. Device 4000",
-            "bus": "0x87",
+            "bus": "0x86",
             "device": "0x0",
             "function": "0x1"
         },
         {
             "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
-            "bus": "0x88",
+            "bus": "0x87",
             "device": "0x0",
             "function": "0x0"
         },
         {
             "description": "3D controller: NVIDIA Corporation GA100 [A100 SXM4 40GB] (rev a1)",
+            "bus": "0x88",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
             "bus": "0x89",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0x8a",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "3D controller: NVIDIA Corporation GA100 [A100 SXM4 40GB] (rev a1)",
+            "bus": "0x8b",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Non-Volatile memory controller: Samsung Electronics Co Ltd NVMe SSD Controller SM981/PM981/PM983",
+            "bus": "0x8c",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Ethernet controller: Mellanox Technologies MT2892 Family [ConnectX-6 Dx]",
+            "bus": "0x8d",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Ethernet controller: Mellanox Technologies MT2892 Family [ConnectX-6 Dx]",
+            "bus": "0x8e",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Non-Volatile memory controller: Samsung Electronics Co Ltd NVMe SSD Controller SM981/PM981/PM983",
+            "bus": "0x8f",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Non-Volatile memory controller: Samsung Electronics Co Ltd NVMe SSD Controller SM981/PM981/PM983",
+            "bus": "0x90",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Non-Volatile memory controller: Samsung Electronics Co Ltd NVMe SSD Controller SM981/PM981/PM983",
+            "bus": "0x91",
             "device": "0x0",
             "function": "0x0"
         },
@@ -3493,6 +3781,12 @@
             "function": "0x0"
         },
         {
+            "description": "Memory controller: PMC-Sierra Inc. Device 4000",
+            "bus": "0xc4",
+            "device": "0x0",
+            "function": "0x1"
+        },
+        {
             "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
             "bus": "0xc5",
             "device": "0x0",
@@ -3505,32 +3799,122 @@
             "function": "0x0"
         },
         {
-            "description": "3D controller: NVIDIA Corporation GA100 [A100 SXM4 40GB] (rev a1)",
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0xc5",
+            "device": "0x2",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0xc5",
+            "device": "0x3",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0xc5",
+            "device": "0x4",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0xc5",
+            "device": "0x5",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0xc5",
+            "device": "0x6",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0xc5",
+            "device": "0x7",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0xc5",
+            "device": "0x8",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
             "bus": "0xc6",
             "device": "0x0",
             "function": "0x0"
         },
         {
-            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
-            "bus": "0xc7",
-            "device": "0x0",
-            "function": "0x0"
-        },
-        {
             "description": "Memory controller: PMC-Sierra Inc. Device 4000",
-            "bus": "0xc7",
+            "bus": "0xc6",
             "device": "0x0",
             "function": "0x1"
         },
         {
             "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
-            "bus": "0xc8",
+            "bus": "0xc7",
             "device": "0x0",
             "function": "0x0"
         },
         {
             "description": "3D controller: NVIDIA Corporation GA100 [A100 SXM4 40GB] (rev a1)",
+            "bus": "0xc8",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
             "bus": "0xc9",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "PCI bridge: PMC-Sierra Inc. Device 4000",
+            "bus": "0xca",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "3D controller: NVIDIA Corporation GA100 [A100 SXM4 40GB] (rev a1)",
+            "bus": "0xcb",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Non-Volatile memory controller: Samsung Electronics Co Ltd NVMe SSD Controller SM981/PM981/PM983",
+            "bus": "0xcc",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Ethernet controller: Mellanox Technologies MT2892 Family [ConnectX-6 Dx]",
+            "bus": "0xcd",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Ethernet controller: Mellanox Technologies MT2892 Family [ConnectX-6 Dx]",
+            "bus": "0xce",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Non-Volatile memory controller: Samsung Electronics Co Ltd NVMe SSD Controller SM981/PM981/PM983",
+            "bus": "0xcf",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Non-Volatile memory controller: Samsung Electronics Co Ltd NVMe SSD Controller SM981/PM981/PM983",
+            "bus": "0xd0",
+            "device": "0x0",
+            "function": "0x0"
+        },
+        {
+            "description": "Non-Volatile memory controller: Samsung Electronics Co Ltd NVMe SSD Controller SM981/PM981/PM983",
+            "bus": "0xd1",
             "device": "0x0",
             "function": "0x0"
         },
