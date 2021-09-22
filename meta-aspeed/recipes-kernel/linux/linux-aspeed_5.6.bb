@@ -26,6 +26,6 @@ S = "${WORKDIR}/linux-aspeed-5.6"
 python () {
     if d.getVar('DISTRO_CODENAME') == 'rocko':
         d.appendVar(
-            'FILES_kernel-base',
+            'FILES:kernel-base',
             ' ${nonarch_base_libdir}/modules/${KERNEL_VERSION}/modules.builtin.modinfo')
 }

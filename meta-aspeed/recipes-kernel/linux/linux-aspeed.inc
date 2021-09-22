@@ -15,5 +15,5 @@ remove_kernel_image_from_rootfs() {
     rm -rf ${D}/boot/${KERNEL_IMAGETYPE}*
 }
 
-pkg_postinst_kernel-image() {
+pkg_postinst:kernel-image() {
 }

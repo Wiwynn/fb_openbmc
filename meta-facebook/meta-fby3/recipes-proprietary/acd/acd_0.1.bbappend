@@ -1,6 +1,6 @@
 # Copyright 2017-present Facebook. All Rights Reserved.
 
-FILESEXTRAPATHS_append := "${THISDIR}/files:"
+FILESEXTRAPATHS:append := "${THISDIR}/files:"
 SRC_URI += "file://PlatInfo.cpp \
             file://ipmb_peci_interface.c \
             file://ipmb_peci_interface.h \
@@ -9,4 +9,4 @@ SRC_URI += "file://PlatInfo.cpp \
 EXTRA_OECMAKE = "-DIPMB_PECI_INTF=ON"
 
 DEPENDS += "libipmb libipmi libpal"
-RDEPENDS_${PN} += "libipmb libipmi libpal"
+RDEPENDS:${PN} += "libipmb libipmi libpal"

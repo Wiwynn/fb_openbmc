@@ -1,6 +1,6 @@
 # Copyright 2017-present Facebook. All Rights Reserved.
 
-FILESEXTRAPATHS_append := "${THISDIR}/files:"
+FILESEXTRAPATHS:append := "${THISDIR}/files:"
 SRC_URI += "file://PlatInfo.cpp \
             file://CMakeLists.txt \
             file://crashdump.cpp \
@@ -10,4 +10,4 @@ SRC_URI += "file://PlatInfo.cpp \
            "
 
 DEPENDS = "cjson safec gtest libpeci cli11 libipmb libipmi libpal"
-RDEPENDS_${PN} += "cjson safec libpeci libipmb libipmi libpal"
+RDEPENDS:${PN} += "cjson safec libpeci libipmb libipmi libpal"

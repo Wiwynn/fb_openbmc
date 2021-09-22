@@ -3,7 +3,7 @@ SRC_URI += "\
                          'file://ubifs.scc file://ubifs.cfg', '', d)} \
     "
 
-KERNEL_FEATURES_append = " \
+KERNEL_FEATURES:append = " \
     ${@bb.utils.contains('MACHINE_FEATURES', 'mtd-ubifs', \
                          'ubifs.scc', '', d)} \
     "

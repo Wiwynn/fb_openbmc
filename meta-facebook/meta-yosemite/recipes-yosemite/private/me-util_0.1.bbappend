@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
 
-FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 SRC_URI += "file://dump.sh \
             file://crashdump_coreid \
@@ -44,4 +44,4 @@ do_install() {
 
 FBPACKAGEDIR = "${prefix}/local/fbpackages"
 
-FILES_${PN} = "${FBPACKAGEDIR}/me-util ${prefix}/local/bin "
+FILES:${PN} = "${FBPACKAGEDIR}/me-util ${prefix}/local/bin "
