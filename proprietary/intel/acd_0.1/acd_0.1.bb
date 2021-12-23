@@ -33,6 +33,6 @@ SRC_URI = "file://cmake-format.json \
 
 S = "${WORKDIR}"
 
-RDEPENDS_${PN} += "safec libpeci cjson"
+RDEPENDS:${PN} += "safec libpeci cjson"
 
-FILES_${PN} += "${prefix}/share/crashdump"
+FILES:${PN} += "${prefix}/share/crashdump"
