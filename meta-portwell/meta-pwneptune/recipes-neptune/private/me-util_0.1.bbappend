@@ -17,10 +17,7 @@
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-SRC_URI += "file://dump.sh \
-           "
-
-S = "${WORKDIR}"
+LOCAL_URI += "file://dump.sh"
 
 binfiles += "dump.sh \
             "

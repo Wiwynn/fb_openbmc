@@ -12,26 +12,25 @@ inherit cmake
 
 SRC_URI[sha256sum] = "a810ec1b695eea04aa4126937cc9dcbeaca69213419756a34d5648d546eca36f"
 
-SRC_URI = "file://cmake-format.json \
-           file://CMakeLists.txt \
-           file://crashdump.cpp \
-           file://crashdump.hpp \
-           file://crashdump_input_cpx.json \
-           file://crashdump_input_icx.json \
-           file://crashdump_input_skx.json \
-           file://CrashdumpSections \
-           file://LICENSE \
-           file://PlatInfo.cpp \
-           file://telemetry_input_cpx.json \
-           file://telemetry_input_icx.json \
-           file://tests \
-           file://utils_dbusplus.cpp \
-           file://utils_dbusplus.hpp \
-           file://utils.cpp \
-           file://utils.hpp \
-          "
-
-S = "${WORKDIR}"
+LOCAL_URI = " \
+    file://cmake-format.json \
+    file://CMakeLists.txt \
+    file://crashdump.cpp \
+    file://crashdump.hpp \
+    file://crashdump_input_cpx.json \
+    file://crashdump_input_icx.json \
+    file://crashdump_input_skx.json \
+    file://CrashdumpSections \
+    file://LICENSE \
+    file://PlatInfo.cpp \
+    file://telemetry_input_cpx.json \
+    file://telemetry_input_icx.json \
+    file://tests \
+    file://utils_dbusplus.cpp \
+    file://utils_dbusplus.hpp \
+    file://utils.cpp \
+    file://utils.hpp \
+    "
 
 RDEPENDS:${PN} += "safec libpeci cjson"
 

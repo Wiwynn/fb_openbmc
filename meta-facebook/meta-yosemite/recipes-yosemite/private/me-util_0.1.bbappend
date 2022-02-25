@@ -17,12 +17,11 @@
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-SRC_URI += "file://dump.sh \
-            file://crashdump_coreid \
-            file://crashdump_msr \
-           "
-
-S = "${WORKDIR}"
+LOCAL_URI += " \
+    file://dump.sh \
+    file://crashdump_coreid \
+    file://crashdump_msr \
+    "
 
 binfiles += "dump.sh \
             "
