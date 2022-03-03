@@ -114,6 +114,8 @@ extern const char *slot_usage;
 
 #define FRU_DPV2_X8_BUS(fru) ((fru) + 3)
 
+#define IANA_ID_SIZE 3
+
 enum {
   FRU_ALL       = 0,
   FRU_SLOT1     = 1,
@@ -327,6 +329,11 @@ enum {
   FW_2OU_M2_DEV11,
   // last id
   FW_COMPONENT_LAST_ID
+};
+
+enum {
+  PRESENT = 0,
+  NOT_PRESENT = 1,
 };
 
 const static char *gpio_server_prsnt[] =
