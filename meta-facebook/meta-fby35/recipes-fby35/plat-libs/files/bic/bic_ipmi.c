@@ -1417,14 +1417,15 @@ bic_set_sys_guid(uint8_t slot_id, uint8_t *guid) {
 
 int
 bic_do_sled_cycle(uint8_t slot_id) {
-  uint8_t tbuf[4] = {0};
-  uint8_t tlen = 4;
+  uint8_t tbuf[5] = {0};
+  uint8_t tlen = 5;
 
   tbuf[0] = 0x03; //bus id
-  tbuf[1] = 0x80; //slave addr
+  tbuf[1] = 0x1E; //slave addr
   tbuf[2] = 0x00; //read 0 byte
-  tbuf[3] = 0xd9; //register offset
-  tlen = 4;
+  tbuf[3] = 0x2B; //register offset
+  tbuf[4] = 0x01; //excecute sled cycle
+  tlen = 5;
   return bic_ipmb_send(slot_id, NETFN_APP_REQ, CMD_APP_MASTER_WRITE_READ, tbuf, tlen, NULL, 0, BB_BIC_INTF);
 }
 
