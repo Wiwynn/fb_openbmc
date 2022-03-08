@@ -66,8 +66,8 @@ function init_class2_dev() {
   create_new_dev "lm75" 0x4f 2
 
   #create the device of bmc/nic fru.
-  create_new_dev "24c128" 0x51 10
-  create_new_dev "24c128" 0x54 10
+  create_new_dev "24c128" 0x51 11
+  create_new_dev "24c128" 0x54 11
 }
 
 function init_exp_dev() {

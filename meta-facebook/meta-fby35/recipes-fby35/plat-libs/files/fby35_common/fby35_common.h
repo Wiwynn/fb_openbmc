@@ -58,7 +58,7 @@ extern "C" {
 
 #define NIC_FRU_BUS     8
 #define CLASS1_FRU_BUS 11
-#define CLASS2_FRU_BUS 10
+#define CLASS2_FRU_BUS 11
 #define BMC_FRU_ADDR 0x54
 #define BB_FRU_ADDR  0x51
 #define NICEXP_FRU_ADDR 0x51
