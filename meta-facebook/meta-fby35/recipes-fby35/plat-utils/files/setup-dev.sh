@@ -64,6 +64,7 @@ function init_class1_dev() {
 function init_class2_dev() {
   #create the device of the outlet temp.
   create_new_dev "lm75" 0x4f 2
+  create_new_dev "lm75" 0x4f 12
 
   #create the device of bmc/nic fru.
   create_new_dev "24c128" 0x51 11

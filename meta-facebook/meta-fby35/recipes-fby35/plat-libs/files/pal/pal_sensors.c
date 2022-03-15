@@ -133,15 +133,20 @@ const uint8_t nicexp_sensor_list[] = {
   BMC_SENSOR_PWM1,
   BMC_SENSOR_PWM2,
   BMC_SENSOR_PWM3,
-  BMC_SENSOR_OUTLET_TEMP,
   BMC_SENSOR_P12V,
   BMC_SENSOR_P3V3_STBY,
   BMC_SENSOR_P1V8_STBY,
   BMC_SENSOR_P1V2_BMC_STBY,
   BMC_SENSOR_P2V5_BMC_STBY,
+  BMC_SENSOR_P1V0_STBY,
+  BMC_SENSOR_P0V6_STBY,
+  BMC_SENSOR_P3V3_RGM_STBY,
+  BMC_SENSOR_P3V3_NIC,
   BMC_SENSOR_NIC_P12V,
   BMC_SENSOR_NIC_IOUT,
   BMC_SENSOR_NIC_PWR,
+  NIC_SENSOR_TEMP,
+  BMC_SENSOR_NICEXP_TEMP
 };
 
 const uint8_t bic_sensor_list[] = {
@@ -893,7 +898,7 @@ PAL_SENSOR_MAP sensor_map[] = {
   {"BMC_SENSOR_FAN_IOUT"   ,       ADC10, read_adc_val   ,    0, { 14.52,     0,   39.2,      0,      0,      0, 0, 0}, CURR}, //0xFB
   {"BMC_SENSOR_NIC_IOUT"   ,       ADC11, read_adc_val   ,    0, {   6.6,     0,   8.15,      0,      0,      0, 0, 0}, CURR}, //0xFC
   {"BMC_SENSOR_MEDUSA_VIN" ,        0xFD, read_medusa_val, true, {13.875, 13.75,   13.9, 11.125,   9.25,  11.25, 0, 0}, VOLT}, //0xFD
-  {NULL, 0, NULL, 0, {0, 0, 0, 0, 0, 0, 0, 0}, 0}, //0xFE
+  {"BMC_SENSOR_NICEXP_TEMP",TEMP_NICEXP , read_temp      , true, {    50,     0,    150,      0,      0,      0, 0, 0}, TEMP}, //0xFE
   {NULL, 0, NULL, 0, {0, 0, 0, 0, 0, 0, 0, 0}, 0}, //0xFF
 };
 
@@ -1641,16 +1646,17 @@ read_medusa_val(uint8_t snr_number, float *value) {
 
 static int
 read_temp(uint8_t snr_id, float *value) {
-  struct {
-    const char *chip;
-    const char *label;
-  } devs[] = {
-    {"lm75-i2c-12-4e",  "BMC_INLET_TEMP"},
-    {"lm75-i2c-12-4f",  "BMC_OUTLET_TEMP"},
-    {"tmp421-i2c-8-1f", "NIC_SENSOR_TEMP"},
-    {"lm75-i2c-2-4f",  "BMC_OUTLET_TEMP"},
-  };
-  if (snr_id >= ARRAY_SIZE(devs)) {
+  struct {                                                          //******************************
+    const char *chip;                                               //Corresponds to GENERIC I2C Sensors define in pal_sensor.h
+    const char *label;                                              //Because of Class1 & Class2, we have to define two duplicate devs for TEMP_OUTLET and TEMP_NICEXP
+  } devs[] = {                                                      //enum {
+    {"lm75-i2c-12-4e",  "BMC_INLET_TEMP"},                          //  TEMP_INLET = 0,
+    {"lm75-i2c-12-4f",  "BMC_OUTLET_TEMP/BMC_SENSOR_NICEXP_TEMP"},  //  TEMP_OUTLET,
+    {"tmp421-i2c-8-1f", "NIC_SENSOR_TEMP"},                         //  TEMP_NIC,
+    {"lm75-i2c-2-4f",  "BMC_OUTLET_TEMP"},                          //  TEMP_NICEXP_OUTLET,
+    {"lm75-i2c-12-4f",  "BMC_OUTLET_TEMP/BMC_SENSOR_NICEXP_TEMP"}   //  TEMP_NICEXP
+  };                                                                //};
+  if (snr_id >= ARRAY_SIZE(devs)) {                                 //******************************
     return -1;
   }
 
@@ -2167,7 +2173,6 @@ pal_sensor_read_raw(uint8_t fru, uint8_t sensor_num, void *value) {
   pal_get_fru_name(fru, fru_name);
   sprintf(key, "%s_sensor%d", fru_name, sensor_num);
   id = sensor_map[sensor_num].id;
-
   switch(fru) {
     case FRU_SLOT1:
     case FRU_SLOT2:
