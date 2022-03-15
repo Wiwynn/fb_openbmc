@@ -403,7 +403,7 @@ if [ -n "$COMP" ]; then
         enable_usb_hub $SLOT 1
         show_microcom_usage
 
-        if [ $BOARD_ID -eq 9 ]; then
+        if [ $BOARD_ID -eq $BMC_ID_CLASS2 ]; then
           /usr/bin/microcom $(get_usb_dev "$DEV" "$EXP_BOARD_TYPE" "$BAUDRATE")
         else
           /usr/bin/microcom $(get_usb_dev_by_slot "$SLOT" "$DEV" "$EXP_BOARD_TYPE" "$BAUDRATE")

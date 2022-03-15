@@ -43,10 +43,10 @@ function init_class1_sdr() {
 
 echo -n "Setup Caching for Bridge IC info.."
 bmc_location=$(get_bmc_board_id)
-if [ $bmc_location -eq 9 ]; then
+if [ $bmc_location -eq $BMC_ID_CLASS2 ]; then
   #The BMC of class2
   init_class2_sdr
-elif [ $bmc_location -eq 14 ] || [ $bmc_location -eq 7 ]; then
+elif [ $bmc_location -eq $BMC_ID_CLASS1 ]; then
   #The BMC of class1
   init_class1_sdr
 else
