@@ -787,108 +787,66 @@ bic_update_fw_fd(uint8_t slot_id, uint8_t comp, int fd, uint8_t force) {
 }
 
 int
-get_board_rev(uint8_t slot_id, uint8_t board_id, uint8_t* rev_id) {
-  uint8_t bmc_location = 0;
+get_cpld_revid(uint8_t cpld_bus, uint8_t reg_addr, uint8_t* rev_id){
   int i2cfd = 0;
   uint8_t rbuf[2] = {0};
   uint8_t rlen = sizeof(rbuf);
   uint8_t tbuf[4] = {0};
   uint8_t tlen = 0;
-  int ret_val = 0 , retry = 0;
+  int retry = 0;
   int ret = 0;
 
-  if (fby35_common_get_bmc_location(&bmc_location) != 0) {
-    printf("Cannot get the location of BMC");
-    return -1;
+  i2cfd = i2c_cdev_slave_open(cpld_bus, CPLD_ADDRESS >> 1, I2C_SLAVE_FORCE_CLAIM);
+  if ( i2cfd < 0 ) {
+    syslog(LOG_WARNING, "%s() Failed to open %d", __func__, CPLD_ADDRESS);
+    goto error_exit;
   }
-  switch (board_id) {
-    case BOARD_ID_BB:
-      if (bmc_location == NIC_BMC) {
-        // Read Board Revision from BB CPLD
-        tbuf[0] = CPLD_BB_BUS;
-        tbuf[1] = CPLD_FLAG_REG_ADDR;
-        tbuf[2] = 0x01;
-        tbuf[3] = BB_CPLD_BOARD_REV_ID_REGISTER;
-        tlen = 4;
-        retry = 0;
-        while (retry < RETRY_TIME) {
-          ret_val = bic_ipmb_send(slot_id, NETFN_APP_REQ, CMD_APP_MASTER_WRITE_READ, tbuf, tlen, rbuf, &rlen, BB_BIC_INTF);
-          if ( ret_val < 0 ) {
-            retry++;
-            msleep(100);
-          } else {
-            break;
-          }
-        }
-        if (retry == RETRY_TIME) {
-          syslog(LOG_WARNING, "%s() Failed to get board revision via BB CPLD, tlen=%d", __func__, tlen);
-          return -1;
-        }
-        *rev_id = rbuf[0];
-        break;
-      } else {
-        i2cfd = i2c_cdev_slave_open(BB_CPLD_BUS, CPLD_ADDRESS >> 1, I2C_SLAVE_FORCE_CLAIM);
-        if ( i2cfd < 0 ) {
-          printf("Failed to open CPLD 0x%x\n", CPLD_ADDRESS);
-          return -1;
-        }
 
-        tbuf[0] = BB_CPLD_BOARD_REV_ID_REGISTER;
-        tlen = 1;
-        rlen = 1;
-        retry = 0;
-        while (retry < RETRY_TIME) {
-          ret = i2c_rdwr_msg_transfer(i2cfd, CPLD_ADDRESS, tbuf, tlen, rbuf, rlen);
-          if ( ret < 0 ) {
-            retry++;
-            msleep(100);
-          } else {
-            break;
-          }
-        }
-        if (retry == RETRY_TIME) {
-          printf("Failed to do i2c_rdwr_msg_transfer\n");
-          ret = -1;
-          goto error_exit;
-        }
-        *rev_id = rbuf[0];
-      }
+  tbuf[0] = reg_addr;
+  tlen = 1;
+  rlen = 1;
+  retry = 0;
+  while (retry < RETRY_TIME) {
+    ret = i2c_rdwr_msg_transfer(i2cfd, CPLD_ADDRESS, tbuf, tlen, rbuf, rlen);
+    if ( ret < 0 ) {
+      retry++;
+      msleep(100);
+    } else {
+      break;
+    }
+  }
+  if (retry == RETRY_TIME) {
+    syslog(LOG_WARNING, "%s() Failed to do i2c_rdwr_msg_transfer, tlen=%d", __func__, tlen);
+    ret = -1;
+    goto error_exit;
+  }
+  *rev_id = rbuf[0];
+  
+  error_exit:
+  if (i2cfd >= 0)
+    close(i2cfd);
+
+  return ret;
+}
+
+int
+get_board_rev(uint8_t slot_id, uint8_t board_id, uint8_t* rev_id) {
+  int ret = 0;
+  
+  switch (board_id) {
+    case BOARD_ID_NIC_EXP:
+      ret = get_cpld_revid(NIC_CPLD_BUS, BB_CPLD_BOARD_REV_ID_REGISTER, rev_id);
+      break;
+    case BOARD_ID_BB:
+      ret = get_cpld_revid(BB_CPLD_BUS, BB_CPLD_BOARD_REV_ID_REGISTER, rev_id);
       break;
     case BOARD_ID_SB:
-      // Read Board Revision from SB CPLD
-      i2cfd = i2c_cdev_slave_open(slot_id + SLOT_BUS_BASE, CPLD_ADDRESS >> 1, I2C_SLAVE_FORCE_CLAIM);
-      if ( i2cfd < 0 ) {
-        syslog(LOG_WARNING, "%s() Failed to open %d", __func__, CPLD_ADDRESS);
-        goto error_exit;
-      }
-      tbuf[0] = SB_CPLD_BOARD_REV_ID_REGISTER;
-      tlen = 1;
-      rlen = 1;
-      retry = 0;
-      while (retry < RETRY_TIME) {
-        ret_val = i2c_rdwr_msg_transfer(i2cfd, CPLD_ADDRESS, tbuf, tlen, rbuf, rlen);
-        if ( ret_val < 0 ) {
-          retry++;
-          msleep(100);
-        } else {
-          break;
-        }
-      }
-      if (retry == RETRY_TIME) {
-        syslog(LOG_WARNING, "%s() Failed to do i2c_rdwr_msg_transfer, tlen=%d", __func__, tlen);
-        ret = -1;
-        goto error_exit;
-      }
-      *rev_id = rbuf[0];
+      ret = get_cpld_revid(slot_id + SLOT_BUS_BASE, SB_CPLD_BOARD_REV_ID_REGISTER, rev_id);
       break;
     default:
       syslog(LOG_WARNING, "%s() Not supported board id %x", __func__, board_id);
       return -1;
   }
-
-error_exit:
-  if (i2cfd >= 0)
-    close(i2cfd);
 
   return ret;
 }
