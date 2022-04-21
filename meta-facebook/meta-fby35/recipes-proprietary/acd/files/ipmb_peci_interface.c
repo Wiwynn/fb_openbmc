@@ -49,7 +49,9 @@
 #define MIN_IPMB_REQ_LEN 7
 #define MIN_IPMB_RES_LEN 8
 #define MAX_IPMB_RES_LEN 1024
-
+#define MAX_PECI_RETRY   50
+#define RDIAMSR_READ_LEN 8
+#define RDIAMSR_WRITE_LEN 5 
 #ifdef DEBUG
 #undef DEBUG
 #ifdef __TEST__
@@ -332,6 +334,7 @@ static EPECIStatus IPMB_peci_issue_cmd(ipmb_req_t *req, ipmb_res_t *res)
 	EPECIStatus  ret = PECI_CC_IPMB_ERR;
         uint8_t iana[3] = {0x9c, 0x9c, 0x0};
         uint8_t data_tmp[PECI_DATA_BUF_SIZE] = {0};
+	int retry = 0;
 
 	if (NULL == req || NULL == res)
 	{
@@ -358,9 +361,7 @@ static EPECIStatus IPMB_peci_issue_cmd(ipmb_req_t *req, ipmb_res_t *res)
 	peci_cmd = &(data_tmp[0]);
 
         tlen = peci_cmd->write_len + 6 + MIN_IPMB_REQ_LEN;
-
 	rlen = ipmb_send_buf(node_bus_id, tlen);
-
 	if (rlen >= MIN_IPMB_RES_LEN)
 	{
 		ret = PECI_CC_IPMB_SUCCESS;
@@ -371,13 +372,18 @@ static EPECIStatus IPMB_peci_issue_cmd(ipmb_req_t *req, ipmb_res_t *res)
 		{
 			ret = PECI_CC_IPMB_SUCCESS;
 		}
+		else
+		{
+			printf("IPMB ERROR, response length = %d\n", rlen);
+			return PECI_CC_IPMB_ERR;
+		}
 	}
 
 
         //Remove return iana code
-        memset(data_tmp, 0, sizeof(data_tmp));
-        memcpy(data_tmp, &(res->data[3]), rlen-3);
-        memset(res->data, 0, rlen);
+	memset(data_tmp, 0, sizeof(data_tmp));
+	memcpy(data_tmp, &(res->data[3]), rlen-3);
+	memset(res->data, 0, rlen);
 	memcpy(res->data, data_tmp, rlen-3);
 
 	return ret;
@@ -408,7 +414,7 @@ EPECIStatus peci_Ping_seq(uint8_t target, int peci_fd)
 	peci_cmd_t  *peci_cmd;
 	ipmb_req_t  *ipmb_req;
 	ipmb_res_t  *ipmb_res;
-        uint8_t data[4] = {0x30, 0x0, 0x0, 0xe1};
+	uint8_t data[4] = {0x30, 0x0, 0x0, 0xe1};
 
 	ipmb_req = ipmb_txb();
 	ipmb_res = ipmb_rxb();
@@ -705,37 +711,44 @@ EPECIStatus peci_RdIAMSR(uint8_t target, uint8_t threadID, uint16_t MSRAddress,
 	peci_cmd_t	*peci_cmd;
 	ipmb_req_t  *ipmb_req;
 	ipmb_res_t  *ipmb_res;
+	int retry = 0;
 
 	if (u64MsrVal == NULL || cc == NULL)
 	{
 		return PECI_CC_INVALID_REQ;
 	}
+	for (retry = 0; retry < MAX_PECI_RETRY; retry++) {
 
-	ipmb_req = ipmb_txb();
-	ipmb_res = ipmb_rxb();
-	peci_cmd = &(ipmb_req->data[0]);
-	memset(peci_cmd, 0, sizeof(peci_cmd_t));
+		ipmb_req = ipmb_txb();
+		ipmb_res = ipmb_rxb();
+		peci_cmd = &(ipmb_req->data[0]);
+		memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
-	peci_cmd->target = target;
-	peci_cmd->read_len = 8 + 1;                                // Add 1 for completion code.
-	peci_cmd->write_len = 5;
+		peci_cmd->target = target;
+		peci_cmd->read_len = RDIAMSR_READ_LEN + 1;                                // Add 1 for completion code.
+		peci_cmd->write_len = RDIAMSR_WRITE_LEN;
 
-	// peci_cmd->write_buffer[0] = PECI_RDIAMSR | (0x01 << peci_cmd->target);
-	peci_cmd->write_buffer[0] = PECI_RDIAMSR | 0x01;
-	peci_cmd->write_buffer[1] = PECI_HOST_ID;
-	peci_cmd->write_buffer[2] = threadID;                      // request byte for thread ID
-	peci_cmd->write_buffer[3] = (uint8_t)(MSRAddress & 0x00ff);           // MSR Address - low byte
-	peci_cmd->write_buffer[4] = (uint8_t)((MSRAddress & 0xff00) >> 8);    // MSR Address - high byte
-
-	ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res);
-
+		peci_cmd->write_buffer[0] = PECI_RDIAMSR | 0x01;
+		peci_cmd->write_buffer[1] = PECI_HOST_ID;
+		peci_cmd->write_buffer[2] = threadID;                      // request byte for thread ID
+		peci_cmd->write_buffer[3] = (uint8_t)(MSRAddress & 0x00ff);           // MSR Address - low byte
+		peci_cmd->write_buffer[4] = (uint8_t)((MSRAddress & 0xff00) >> 8);    // MSR Address - high byte
+		if (retry != 0) {
+			peci_cmd->write_buffer[1] = PECI_HOST_ID | 1;                 // set retry bit (bit 0) to declare this is retry command
+		}
+		ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res);
+		if (ipmb_res->data[0] != PECI_DEV_CC_NEED_RETRY) {
+			break;
+		}
+	}
 	if (ret == PECI_CC_IPMB_SUCCESS)
 	{
 		// PECI completion code in the 1st byte
 		*cc = ipmb_res->data[0];
 		memcpy((uint8_t*)u64MsrVal, (uint8_t*)&(ipmb_res->data[1]), 8);
 
-        if (*cc != PECI_DEV_CC_SUCCESS && *cc != PECI_DEV_CC_FATAL_MCA_DETECTED)
+        if (*cc != PECI_DEV_CC_SUCCESS && *cc != PECI_DEV_CC_FATAL_MCA_DETECTED
+		&& *cc != PECI_DEV_CC_CATASTROPHIC_MCA_ERROR)
         {
             ret = PECI_CC_HW_ERR;
         }
@@ -1424,37 +1437,46 @@ EPECIStatus peci_CrashDump_GetFrame(uint8_t target, uint16_t param0,
 	{
 		return PECI_CC_INVALID_REQ;
 	}
+	
+	for (int retry = 0; retry < MAX_PECI_RETRY; retry++) {
+		ipmb_req = ipmb_txb();
+	  	ipmb_res = ipmb_rxb();
+	  	peci_cmd = &(ipmb_req->data[0]);
+	  	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
-	ipmb_req = ipmb_txb();
-	ipmb_res = ipmb_rxb();
-	peci_cmd = &(ipmb_req->data[0]);
-	memset(peci_cmd, 0, sizeof(peci_cmd_t));
+	  	peci_cmd->target = target;
+	  	peci_cmd->read_len = u8ReadLen + 1;                                             // plus 1 byte completion code.
+	  	peci_cmd->write_len = 10;                                                       // for get frame command the input length is 10 
 
-	peci_cmd->target = target;
-	peci_cmd->read_len = u8ReadLen + 1;                                             // plus 1 byte completion code.
-	peci_cmd->write_len = 10;                                                       // 10=bytes command
-
-	// peci_cmd->write_buffer[0] = PECI_CRASHDUMP | (0x01 << peci_cmd->target);
-	peci_cmd->write_buffer[0] = PECI_CRASHDUMP | 0x01;
-	peci_cmd->write_buffer[1] = PECI_HOST_ID;
-	peci_cmd->write_buffer[2] = 0;                                                  // Version 0x00
-	peci_cmd->write_buffer[3] = 0x03;                                               // Opcode 0x03 - GetFrame
-	peci_cmd->write_buffer[4] = (uint8_t)(param0 & 0x00ff);                         // Parameter 0 - low byte
-	peci_cmd->write_buffer[5] = (uint8_t)((param0 & 0xff00) >> 8);                  // Parameter 0 - high byte
-	peci_cmd->write_buffer[6] = (uint8_t)(param1 & 0x00ff);                         // Parameter 1 - low byte
-	peci_cmd->write_buffer[7] = (uint8_t)((param1 & 0xff00) >> 8);                  // Parameter 1 - high byte
-	peci_cmd->write_buffer[8] = (uint8_t)(param2 & 0x00ff);                         // Parameter 2 - low byte
-	peci_cmd->write_buffer[9] = (uint8_t)((param2 & 0xff00) >> 8);                  // Parameter 2 - high byte
-
-	ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res);
-
+	  	peci_cmd->write_buffer[0] = PECI_CRASHDUMP | 0x01;
+	  	peci_cmd->write_buffer[1] = PECI_HOST_ID;
+	  	peci_cmd->write_buffer[2] = 0;                                                  // Version 0x00
+	  	peci_cmd->write_buffer[3] = 0x03;                                               // Opcode 0x03 - GetFrame
+	  	peci_cmd->write_buffer[4] = (uint8_t)(param0 & 0x00ff);                         // Parameter 0 - low byte
+	  	peci_cmd->write_buffer[5] = (uint8_t)((param0 & 0xff00) >> 8);                  // Parameter 0 - high byte
+	  	peci_cmd->write_buffer[6] = (uint8_t)(param1 & 0x00ff);                         // Parameter 1 - low byte
+	  	peci_cmd->write_buffer[7] = (uint8_t)((param1 & 0xff00) >> 8);                  // Parameter 1 - high byte
+	  	peci_cmd->write_buffer[8] = (uint8_t)(param2 & 0x00ff);                         // Parameter 2 - low byte
+	  	peci_cmd->write_buffer[9] = (uint8_t)((param2 & 0xff00) >> 8);                  // Parameter 2 - high byte
+	    
+		if (retry != 0) {
+			peci_cmd->write_buffer[1] = PECI_HOST_ID | 1;                           // Set retry bit (bit 0) to declare this is retry command
+		}
+		ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res);
+		if (ipmb_res->data[0] != PECI_DEV_CC_NEED_RETRY) {
+			break;
+		}
+	}
+       	  
+	
 	if (ret == PECI_CC_IPMB_SUCCESS)
 	{
 		// PECI completion code in the 1st byte
 		*cc = ipmb_res->data[0];
 		memcpy(pData, (uint8_t*)&(ipmb_res->data[1]), u8ReadLen);
 
-        if (*cc != PECI_DEV_CC_SUCCESS && *cc != PECI_DEV_CC_FATAL_MCA_DETECTED)
+        if (*cc != PECI_DEV_CC_SUCCESS && *cc != PECI_DEV_CC_FATAL_MCA_DETECTED
+		&& *cc != PECI_DEV_CC_CATASTROPHIC_MCA_ERROR)
         {
             ret = PECI_CC_HW_ERR;
         }

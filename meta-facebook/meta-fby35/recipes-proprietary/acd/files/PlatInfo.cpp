@@ -22,10 +22,24 @@ extern "C" {
 }
 #include <string>
 #include <sstream>
-
+#include <unistd.h>
 #include "CrashdumpSections/MetaData.hpp"
+#include <syslog.h>
 
 using namespace std;
+
+#define KEY_BLK_SLED_CYCLE "/tmp/cache_store/to_blk_sled_cycle"
+#define MAX_BUF_SIZE 128
+#define PID_SIZE 16
+
+enum {
+  ENABLE_MONITOR = 0,
+  DISABLE_MONITOR,
+};
+enum {
+  FLAG_UNLOCK = 0,
+  FLAG_LOCK,
+};
 
 extern int node_bus_id;
 
@@ -42,7 +56,7 @@ void split(const std::string& s, std::vector<std::string>& sv, const char delim 
 }
 
 static int get_fw_ver(string fru, string comp, string &ver) {
-  char line[128];
+  char line[MAX_BUF_SIZE];
   FILE *fp;
   string cmd;
 
@@ -111,7 +125,7 @@ int getMeVersion(char *ver) {
 }
 
 int getSystemGuid(string &guid) {
-  char line[128], cmd[128];
+  char line[MAX_BUF_SIZE], cmd[MAX_BUF_SIZE];
   FILE *fp;
   string slot_str = "slot" + to_string(node_bus_id+1);
   string guid_str("");
@@ -157,6 +171,11 @@ int getSystemGuid(string &guid) {
   return 0;
 }
 
+int getPpinData(int, char*) {
+  return -1;
+}
+
 void platformInit(uint8_t fru) {
   node_bus_id = fru - 1;
 }
+
