@@ -28,7 +28,6 @@ extern "C" {
 
 using namespace std;
 
-#define KEY_BLK_SLED_CYCLE "/tmp/cache_store/to_blk_sled_cycle"
 #define MAX_BUF_SIZE 128
 #define PID_SIZE 16
 
@@ -178,4 +177,3 @@ int getPpinData(int, char*) {
 void platformInit(uint8_t fru) {
   node_bus_id = fru - 1;
 }
-
