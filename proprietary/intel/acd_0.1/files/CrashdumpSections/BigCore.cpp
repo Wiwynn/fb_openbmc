@@ -1305,15 +1305,6 @@ int logCrashdumpICX1(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
                     cpuInfo.clientAddr, PECI_CRASHDUMP_CORE, u32CoreNum, 0,
                     sizeof(uint64_t), (uint8_t*)&uCrashdumpVerSize.raw, &cc);
 
-                if (ret != PECI_CC_SUCCESS)
-                {
-                    CRASHDUMP_PRINT(ERR, stderr,
-                                    "Error (%d) during GetFrame 0 (0x%" PRIx64
-                                    ")\n",
-                                    ret, uCrashdumpVerSize.raw);
-                    continue;
-                }
-
                 if (PECI_CC_SKIP_CORE(cc))
                 {
                     break;
@@ -1321,6 +1312,14 @@ int logCrashdumpICX1(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
                 if (PECI_CC_SKIP_SOCKET(cc))
                 {
                     return ret;
+                }
+                if (ret != PECI_CC_SUCCESS)
+                {
+                    CRASHDUMP_PRINT(ERR, stderr,
+                                    "Error (%d) during GetFrame 0 (0x%" PRIx64
+                                    ")\n",
+                                    ret, uCrashdumpVerSize.raw);
+                    continue;
                 }
 
                 uint32_t u32CrashdumpSize = 0;
@@ -1442,6 +1441,7 @@ static const SCrashdumpVx sCrashdumpVx[] = {
     {crashdump::cpu::icx, logCrashdumpICX1},
     {crashdump::cpu::icx2, logCrashdumpICX1},
     {crashdump::cpu::icxd, logCrashdumpICX1},
+    {crashdump::cpu::spr, logCrashdumpICX1},
 };
 
 /******************************************************************************

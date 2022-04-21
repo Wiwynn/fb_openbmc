@@ -40,6 +40,9 @@ class PeciMOCK
                  EPECIStatus(uint8_t, uint8_t, uint16_t, uint64_t*, uint8_t*));
     MOCK_METHOD6(peci_RdPkgConfig, EPECIStatus(uint8_t, uint8_t, uint16_t,
                                                uint8_t, uint8_t*, uint8_t*));
+    MOCK_METHOD(EPECIStatus, peci_RdEndPointConfigPciLocal,
+                (uint8_t, uint8_t, uint8_t, uint8_t, uint8_t, uint16_t, uint8_t,
+                 uint8_t*, uint8_t*));
 };
 
 class PeciTestFixture : public Test

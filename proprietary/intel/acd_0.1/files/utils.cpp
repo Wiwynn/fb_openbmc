@@ -200,6 +200,9 @@ cJSON* selectAndReadInputFile(crashdump::cpu::Model cpuModel, char** filename,
         case crashdump::cpu::icxd:
             strcpy_s(cpuStr, sizeof("icx"), "icx");
             break;
+        case crashdump::cpu::spr:
+            strcpy_s(cpuStr, sizeof("spr"), "spr");
+            break;
         default:
             CRASHDUMP_PRINT(ERR, stderr,
                             "Error selecting input file (CPUID 0x%x).\n",

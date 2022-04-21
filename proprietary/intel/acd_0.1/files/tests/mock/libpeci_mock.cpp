@@ -46,6 +46,18 @@ EPECIStatus peci_RdEndPointConfigPciLocal_seq(uint8_t target, uint8_t u8Seg,
         peci_fd, cc);
 }
 
+EPECIStatus peci_RdEndPointConfigPciLocal(uint8_t target, uint8_t u8Seg,
+                                              uint8_t u8Bus, uint8_t u8Device,
+                                              uint8_t u8Fcn, uint16_t u16Reg,
+                                              uint8_t u8ReadLen,uint8_t* pPCIData,
+                                              uint8_t* cc)
+{
+    uint8_t data[] = {0xef, 0xbe, 0xad, 0xde};
+    memcpy(pPCIData, data, u8ReadLen);
+    return PeciTestFixture::PeciMock->peci_RdEndPointConfigPciLocal(
+        target, u8Seg, u8Bus, u8Device, u8Fcn, u16Reg, u8ReadLen, pPCIData, cc);
+}
+
 EPECIStatus peci_WrPkgConfig_seq(uint8_t target, uint8_t u8Index,
                                  uint16_t u16Param, uint32_t u32Value,
                                  uint8_t u8WriteLen, int peci_fd, uint8_t* cc)

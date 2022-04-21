@@ -741,6 +741,7 @@ static const SPpinVx sSPpinVx[] = {
     {crashdump::cpu::icx, getPpinDataICX1},
     {crashdump::cpu::icx2, getPpinDataICX1},
     {crashdump::cpu::icxd, getPpinDataICX1},
+    {crashdump::cpu::spr, getPpinDataICX1},
 };
 
 /******************************************************************************

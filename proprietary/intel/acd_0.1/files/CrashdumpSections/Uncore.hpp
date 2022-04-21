@@ -126,6 +126,12 @@ enum US_RDIAMSR
 #define US_UINT64_FMT "0x%" PRIx64 ""
 #define SIZE_FAILURE 7
 
+#define POST_ENUM_QUERY_BUS 8
+#define POST_ENUM_QUERY_DEVICE 3
+#define POST_ENUM_QUERY_FUNCTION 0
+#define POST_ENUM_QUERY_VALID_BIT_OFFSET 0x1a0
+#define POST_ENUM_QUERY_BUS_NUMBER_OFFSET 0x1cc
+
 /******************************************************************************
  *
  *   Input File Defines

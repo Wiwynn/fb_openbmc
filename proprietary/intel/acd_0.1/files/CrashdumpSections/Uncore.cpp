@@ -825,6 +825,69 @@ static int bus30ToPostEnumeratedBus(uint32_t addr, uint8_t* postEnumBus)
 
 /******************************************************************************
  *
+ *   bus30ToPostEnumeratedBusSPR()
+ *
+ *   This function is dedicated to converting bus 30 to post enumerated
+ *   bus number for MMIO read.
+ *
+ ******************************************************************************/
+static acdStatus bus30ToPostEnumeratedBusSPR(uint32_t addr,
+                                             uint8_t* const postEnumBus)
+{
+    uint32_t cpubusno_valid = 0;
+    uint32_t cpubusno7 = 0;
+    uint8_t cc = 0;
+    int ret = ACD_SUCCESS;
+
+    ret = peci_RdEndPointConfigPciLocal(
+        addr, 0, POST_ENUM_QUERY_BUS, POST_ENUM_QUERY_DEVICE,
+        POST_ENUM_QUERY_FUNCTION, POST_ENUM_QUERY_VALID_BIT_OFFSET,
+        sizeof(cpubusno_valid), (uint8_t*)&cpubusno_valid, &cc);
+
+    if ((ret != PECI_CC_SUCCESS) || (PECI_CC_UA(cc)))
+    {
+        CRASHDUMP_PRINT(ERR, stderr,
+                        "Unable to read cpubusno_valid - cc: 0x%x ret: 0x%x\n",
+                        cc, ret);
+        // Need to return 1 for all failures
+        return ACD_FAILURE;
+    }
+
+    // Bit 30 is for checking bus 30 contains valid post enumerated bus#
+    if (0 == CHECK_BIT(cpubusno_valid, 30))
+    {
+        CRASHDUMP_PRINT(ERR, stderr,
+                        "Bus 30 does not contain valid post enumerated bus"
+                        "number! (0x%x)\n",
+                        cpubusno_valid);
+        return ACD_FAILURE;
+    }
+
+    ret = peci_RdEndPointConfigPciLocal(
+        addr, 0, POST_ENUM_QUERY_BUS, POST_ENUM_QUERY_DEVICE,
+        POST_ENUM_QUERY_FUNCTION, POST_ENUM_QUERY_BUS_NUMBER_OFFSET,
+        sizeof(cpubusno7), (uint8_t*)&cpubusno7, &cc);
+
+    if ((ret != PECI_CC_SUCCESS) || (PECI_CC_UA(cc)))
+    {
+        CRASHDUMP_PRINT(ERR, stderr,
+                        "Unable to read cpubusno7 - cc: 0x%x\n ret: 0x%x\n", cc,
+                        ret);
+        // Need to return 1 for all failures
+        return ACD_FAILURE;
+    }
+
+    if (postEnumBus == NULL)
+    {
+        return ACD_FAILURE;
+    }
+    // CPUBUSNO7[23:16] for Bus 30
+    *postEnumBus = ((cpubusno7 >> 16) & 0xff);
+    return ACD_SUCCESS;
+}
+
+/******************************************************************************
+ *
  *   uncoreStatusRdIAMSRICX
  *
  *   This function gathers the Uncore Status MSR using input file
@@ -1030,6 +1093,132 @@ int uncoreStatusPciICX(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
 
 /******************************************************************************
  *
+ *   uncoreStatusPciSPR
+ *
+ *   This function gathers the SPR Uncore Status PCI registers by using
+ *   crashdump_input_spr.json
+ *
+ ******************************************************************************/
+int uncoreStatusPciSPR(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
+{
+    int peci_fd = -1;
+    int ret = 0;
+
+    cJSON* regList = NULL;
+    cJSON* itRegs = NULL;
+    cJSON* itParams = NULL;
+    bool enable = false;
+
+    regList = getCrashDataSectionRegList(cpuInfo.inputFile.bufferPtr, "uncore",
+                                         "pci", &enable);
+
+    if (pJsonChild == NULL)
+    {
+        return 1;
+    }
+    if (regList == NULL)
+    {
+        cJSON_AddStringToObject(pJsonChild, FILE_PCI_KEY, FILE_PCI_ERR);
+        return 1;
+    }
+
+    if (!enable)
+    {
+        cJSON_AddFalseToObject(pJsonChild, RECORD_ENABLE);
+        return 0;
+    }
+
+    ret = peci_Lock(&peci_fd, PECI_WAIT_FOREVER);
+    if (ret != PECI_CC_SUCCESS)
+    {
+        return ret;
+    }
+
+    SUncoreStatusRegPciIcxCpx pciReg = {};
+
+    cJSON_ArrayForEach(itRegs, regList)
+    {
+        int position = 0;
+        cJSON_ArrayForEach(itParams, itRegs)
+        {
+            switch (position)
+            {
+                case US_PCI_REG_NAME:
+                    pciReg.regName = itParams->valuestring;
+                    break;
+                case US_PCI_BUS:
+                    pciReg.u8Bus = itParams->valueint;
+                    break;
+                case US_PCI_DEVICE:
+                    pciReg.u8Dev = itParams->valueint;
+                    break;
+                case US_PCI_FUNCTION:
+                    pciReg.u8Func = itParams->valueint;
+                    break;
+                case US_PCI_OFFSET:
+                    pciReg.u16Reg = strtoull(itParams->valuestring, NULL, 16);
+                    break;
+                case US_PCI_SIZE:
+                    pciReg.u8Size = itParams->valueint;
+                    break;
+                default:
+                    break;
+            }
+            position++;
+        }
+
+        SUncoreStatusRegRawData sRegData = {};
+        uint8_t cc = 0;
+        uint8_t bus = 0;
+        // ICX EDS Reference Section: PCI Configuration Space Registers
+        // Note that registers located in Bus 30 and 31
+        // have been translated to Bus 13 and 14 respectively for PECI access.
+        bus = pciReg.u8Bus;
+
+        switch (pciReg.u8Size)
+        {
+            case US_REG_BYTE:
+            case US_REG_WORD:
+            case US_REG_DWORD:
+
+                ret = peci_RdEndPointConfigPciLocal_seq(
+                    cpuInfo.clientAddr, US_PCI_SEG, bus, pciReg.u8Dev,
+                    pciReg.u8Func, pciReg.u16Reg, pciReg.u8Size,
+                    (uint8_t*)&sRegData.uValue.u64, peci_fd, &cc);
+                if (ret != PECI_CC_SUCCESS)
+                {
+                    sRegData.bInvalid = true;
+                }
+                break;
+            case US_REG_QWORD:
+                for (uint8_t u8Dword = 0; u8Dword < 2; u8Dword++)
+                {
+                    ret = peci_RdEndPointConfigPciLocal_seq(
+                        cpuInfo.clientAddr, US_PCI_SEG, bus, pciReg.u8Dev,
+                        pciReg.u8Func, pciReg.u16Reg + (u8Dword * 4),
+                        sizeof(uint32_t),
+                        (uint8_t*)&sRegData.uValue.u32[u8Dword], peci_fd, &cc);
+                    if (ret != PECI_CC_SUCCESS)
+                    {
+                        sRegData.bInvalid = true;
+                        break;
+                    }
+                }
+                break;
+            default:
+                sRegData.bInvalid = true;
+                ret = SIZE_FAILURE;
+        }
+        uncoreStatusJsonICX(pciReg.regName, &sRegData, pJsonChild, cc, ret);
+    }
+
+    peci_Unlock(peci_fd);
+    return ret;
+}
+
+
+/******************************************************************************
+ *
  *   uncoreStatusPciMmioICX
  *
  *   This function gathers the Uncore Status PCI MMIO registers by using
@@ -1155,9 +1344,146 @@ int uncoreStatusPciMmioICX(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
     return ret;
 }
 
+/******************************************************************************
+ *
+ *   uncoreStatusPciMmioICXSPR
+ *
+ *   This function gathers the Uncore Status PCI MMIO registers by using
+ *   crashdump_input_spr.json
+ *
+ ******************************************************************************/
+
+int uncoreStatusPciMmioSPR(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
+{
+    char jsonNameString[US_REG_NAME_LEN];
+    int peci_fd = -1;
+    int ret = 0;
+    uint8_t cc = 0;
+    uint8_t postEnumBus = 0;
+
+    cJSON* itRegs = NULL;
+    cJSON* itParams = NULL;
+    cJSON* regList = NULL;
+    bool enable = false;
+
+    regList = getCrashDataSectionRegList(cpuInfo.inputFile.bufferPtr, "uncore",
+                                         "mmio", &enable);
+    if (pJsonChild == NULL)
+    {
+        return 1;
+    }
+    if (regList == NULL)
+    {
+        cJSON_AddStringToObject(pJsonChild, FILE_MMIO_KEY, FILE_MMIO_ERR);
+        return 1;
+    }
+
+    if (!enable)
+    {
+        cJSON_AddFalseToObject(pJsonChild, RECORD_ENABLE);
+        return 0;
+    }
+
+    ret = peci_Lock(&peci_fd, PECI_WAIT_FOREVER);
+    if (ret != PECI_CC_SUCCESS)
+    {
+        return ret;
+    }
+
+    if (0 != bus30ToPostEnumeratedBusSPR(cpuInfo.clientAddr, &postEnumBus))
+    {
+        peci_Unlock(peci_fd);
+        return 1;
+    }
+
+    cd_snprintf_s(jsonNameString, US_JSON_STRING_LEN, "B%d", postEnumBus, cc);
+    cJSON_AddStringToObject(pJsonChild, "_post_enumerated_B30", jsonNameString);
+
+    SUncoreStatusRegPciMmioICX mmioReg = {};
+
+    cJSON_ArrayForEach(itRegs, regList)
+    {
+        int position = 0;
+        cJSON_ArrayForEach(itParams, itRegs)
+        {
+            switch (position)
+            {
+                case US_MMIO_REG_NAME:
+                    mmioReg.regName = itParams->valuestring;
+                    break;
+                case US_MMIO_BAR_ID:
+                    mmioReg.u8Bar = itParams->valueint;
+                    break;
+                case US_MMIO_BUS:
+                    mmioReg.u8Bus = itParams->valueint;
+                    break;
+                case US_MMIO_DEVICE:
+                    mmioReg.u8Dev = itParams->valueint;
+                    break;
+                case US_MMIO_FUNCTION:
+                    mmioReg.u8Func = itParams->valueint;
+                    break;
+                case US_MMIO_OFFSET:
+                    mmioReg.u64Offset =
+                        strtoull(itParams->valuestring, NULL, 16);
+                    break;
+                case US_MMIO_ADDRTYPE:
+                    mmioReg.u8AddrType = itParams->valueint;
+                    break;
+                case US_MMIO_SIZE:
+                    mmioReg.u8Size = itParams->valueint;
+                    break;
+                default:
+                    break;
+            }
+            position++;
+        }
+
+        SUncoreStatusRegRawData sRegData = {};
+        uint8_t readLen = 0;
+
+        switch (mmioReg.u8Size)
+        {
+            case US_REG_BYTE:
+            case US_REG_WORD:
+            case US_REG_DWORD:
+                readLen = US_REG_DWORD;
+                break;
+            case US_REG_QWORD:
+                readLen = US_REG_QWORD;
+                break;
+            default:
+                sRegData.bInvalid = true;
+                ret = SIZE_FAILURE;
+        }
+
+        ret = peci_RdEndPointConfigMmio_seq(
+            cpuInfo.clientAddr, US_MMIO_SEG, postEnumBus, mmioReg.u8Dev,
+            mmioReg.u8Func, mmioReg.u8Bar, mmioReg.u8AddrType,
+            mmioReg.u64Offset, readLen, (uint8_t*)&sRegData.uValue.u64, peci_fd,
+            &cc);
+        if (ret != PECI_CC_SUCCESS)
+        {
+            sRegData.bInvalid = true;
+        }
+
+        uncoreStatusJsonICX(mmioReg.regName, &sRegData, pJsonChild, cc, ret);
+    }
+
+    peci_Unlock(peci_fd);
+    return ret;
+}
+
+
 static UncoreStatusRead UncoreStatusTypesICX1[] = {
     uncoreStatusPciICX,
     uncoreStatusPciMmioICX,
+    uncoreStatusRdIAMSRICX,
+};
+
+static UncoreStatusRead UncoreStatusTypesSPR[] = {
+    uncoreStatusPciSPR,
+    uncoreStatusPciMmioSPR,
     uncoreStatusRdIAMSRICX,
 };
 
@@ -1186,6 +1512,36 @@ int logUncoreStatusICX1(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
     return ret;
 }
 
+/******************************************************************************
+ *
+ *   logUncoreStatusSPR
+ *
+ *   This function gathers the Uncore Status register contents and adds them to
+ *   the debug log.
+ *
+ ******************************************************************************/
+int logUncoreStatusSPR(crashdump::CPUInfo& cpuInfo, cJSON* pJsonChild)
+{
+    int ret = 0;
+
+    if (pJsonChild == NULL)
+    {
+        return 1;
+    }
+    for (uint32_t i = 0;
+         i < (sizeof(UncoreStatusTypesSPR) / sizeof(UncoreStatusTypesSPR[0]));
+         i++)
+    {
+        if (UncoreStatusTypesSPR[i](cpuInfo, pJsonChild) != ACD_SUCCESS)
+        {
+            ret = 1;
+        }
+    }
+
+    return ret;
+}
+
+
 static const SUncoreStatusLogVx sUncoreStatusLogVx[] = {
     {crashdump::cpu::clx, logUncoreStatusCPX1},
     {crashdump::cpu::cpx, logUncoreStatusCPX1},
@@ -1193,6 +1549,7 @@ static const SUncoreStatusLogVx sUncoreStatusLogVx[] = {
     {crashdump::cpu::icx, logUncoreStatusICX1},
     {crashdump::cpu::icx2, logUncoreStatusICX1},
     {crashdump::cpu::icxd, logUncoreStatusICX1},
+    {crashdump::cpu::spr, logUncoreStatusSPR},
 };
 
 /******************************************************************************

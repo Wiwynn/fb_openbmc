@@ -511,6 +511,7 @@ static const SCoreMcaLogVx sCoreMcaLogVx[] = {
     {crashdump::cpu::icx, logCoreMcaICX1},
     {crashdump::cpu::icx2, logCoreMcaICX1},
     {crashdump::cpu::icxd, logCoreMcaICX1},
+    {crashdump::cpu::spr, logCoreMcaICX1},
 };
 
 /******************************************************************************

@@ -240,8 +240,10 @@ install (
     FILES ${CMAKE_CURRENT_SOURCE_DIR}/crashdump_input_icx.json
           ${CMAKE_CURRENT_SOURCE_DIR}/crashdump_input_cpx.json
           ${CMAKE_CURRENT_SOURCE_DIR}/crashdump_input_skx.json
+          ${CMAKE_CURRENT_SOURCE_DIR}/crashdump_input_spr.json
           ${CMAKE_CURRENT_SOURCE_DIR}/telemetry_input_icx.json
           ${CMAKE_CURRENT_SOURCE_DIR}/telemetry_input_cpx.json
+          ${CMAKE_CURRENT_SOURCE_DIR}/telemetry_input_spr.json
     PERMISSIONS OWNER_READ
     DESTINATION /usr/share/crashdump/input/
 )

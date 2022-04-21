@@ -20,11 +20,13 @@ LOCAL_URI = " \
     file://crashdump_input_cpx.json \
     file://crashdump_input_icx.json \
     file://crashdump_input_skx.json \
+    file://crashdump_input_spr.json \
     file://CrashdumpSections \
     file://LICENSE \
     file://PlatInfo.cpp \
     file://telemetry_input_cpx.json \
     file://telemetry_input_icx.json \
+    file://telemetry_input_spr.json \
     file://tests \
     file://utils_dbusplus.cpp \
     file://utils_dbusplus.hpp \

@@ -888,6 +888,7 @@ static const SUncoreMcaLogVx sUncoreMcaLogVx[] = {
     {crashdump::cpu::icx, logUncoreMcaICX1},
     {crashdump::cpu::icx2, logUncoreMcaICX1},
     {crashdump::cpu::icxd, logUncoreMcaICX1},
+    {crashdump::cpu::spr, logUncoreMcaICX1},
 };
 
 /******************************************************************************

@@ -375,6 +375,7 @@ static const SSqDumpVx sSqDumpVx[] = {
     {crashdump::cpu::icx, logSqDumpICX1},
     {crashdump::cpu::icx2, logSqDumpICX1},
     {crashdump::cpu::icxd, logSqDumpICX1},
+    {crashdump::cpu::spr, logSqDumpICX1},
 };
 
 /******************************************************************************

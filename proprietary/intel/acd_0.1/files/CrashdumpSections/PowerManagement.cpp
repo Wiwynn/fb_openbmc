@@ -521,6 +521,7 @@ static const SPowerManagementVx sPowerManagementVx[] = {
     {crashdump::cpu::icx, logPowerManagementICX},
     {crashdump::cpu::icx2, logPowerManagementICX},
     {crashdump::cpu::icxd, logPowerManagementICX},
+    {crashdump::cpu::spr, logPowerManagementICX},
 };
 
 /******************************************************************************

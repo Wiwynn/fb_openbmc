@@ -371,6 +371,7 @@ static void getUPIDisable(std::vector<CPUInfo>& cpuInfo)
             case cpu::skx:
             case cpu::icx:
             case cpu::icx2:
+            case cpu::spr:
             default:
                 break;
         }
@@ -389,6 +390,9 @@ static bool getCoreMasks(std::vector<CPUInfo>& cpuInfo,
         {
             break;
         }
+        uint32_t coreMask0;
+        uint32_t coreMask1;
+
         switch (cpu.model)
         {
             case cpu::cpx:
@@ -417,7 +421,6 @@ static bool getCoreMasks(std::vector<CPUInfo>& cpuInfo,
             case cpu::icx2:
             case cpu::icxd:
                 // RESOLVED_CORES Local PCI B14:D30:F3 Reg 0xD0 and 0xD4
-                uint32_t coreMask0;
                 retval = peci_RdPCIConfigLocal(cpu.clientAddr, 14, 30, 3, 0xD0,
                                                sizeof(coreMask0),
                                                (uint8_t*)&coreMask0, &cc);
@@ -431,10 +434,43 @@ static bool getCoreMasks(std::vector<CPUInfo>& cpuInfo,
                         retval, cc);
                     break;
                 }
-                uint32_t coreMask1;
                 retval = peci_RdPCIConfigLocal(cpu.clientAddr, 14, 30, 3, 0xD4,
                                                sizeof(coreMask1),
                                                (uint8_t*)&coreMask1, &cc);
+                cpu.coreMaskRead.coreMaskCc = cc;
+                cpu.coreMaskRead.coreMaskRet = retval;
+                if (retval != PECI_CC_SUCCESS)
+                {
+                    CRASHDUMP_PRINT(
+                        ERR, stderr,
+                        "Cannot find coreMask1! ret: (0x%x), cc: (0x%x)\n",
+                        retval, cc);
+                    break;
+                }
+                cpu.coreMask = coreMask1;
+                cpu.coreMask <<= 32;
+                cpu.coreMask |= coreMask0;
+                cpu.coreMaskRead.coreMaskValid = true;
+                cpu.coreMaskRead.source = cpuState;
+                break;
+            case cpu::spr:
+                // RESOLVED_CORES EP Local PCI B31:D30:F6 Reg 0x80 and 0x84
+                retval = peci_RdEndPointConfigPciLocal(
+                    cpu.clientAddr, 0, 31, 30, 6, 0x80, sizeof(coreMask0),
+                    (uint8_t*)&coreMask0, &cc);
+                cpu.coreMaskRead.coreMaskCc = cc;
+                cpu.coreMaskRead.coreMaskRet = retval;
+                if (retval != PECI_CC_SUCCESS)
+                {
+                    CRASHDUMP_PRINT(
+                        ERR, stderr,
+                        "Cannot find coreMask0! ret: (0x%x), cc: (0x%x)\n",
+                        retval, cc);
+                    break;
+                }
+                retval = peci_RdEndPointConfigPciLocal(
+                    cpu.clientAddr, 0, 31, 30, 6, 0x84, sizeof(coreMask1),
+                    (uint8_t*)&coreMask1, &cc);
                 cpu.coreMaskRead.coreMaskCc = cc;
                 cpu.coreMaskRead.coreMaskRet = retval;
                 if (retval != PECI_CC_SUCCESS)
@@ -470,6 +506,9 @@ static bool getCHACounts(std::vector<CPUInfo>& cpuInfo,
         {
             break;
         }
+        uint32_t chaMask0;
+        uint32_t chaMask1;
+
         switch (cpu.model)
         {
             case cpu::cpx:
@@ -498,7 +537,6 @@ static bool getCHACounts(std::vector<CPUInfo>& cpuInfo,
             case cpu::icx2:
             case cpu::icxd:
                 // LLC_SLICE_EN Local PCI B14:D30:F3 Reg 0x9C and 0xA0
-                uint32_t chaMask0;
                 retval = peci_RdPCIConfigLocal(cpu.clientAddr, 14, 30, 3, 0x9C,
                                                sizeof(chaMask0),
                                                (uint8_t*)&chaMask0, &cc);
@@ -512,10 +550,42 @@ static bool getCHACounts(std::vector<CPUInfo>& cpuInfo,
                         retval, cc);
                     break;
                 }
-                uint32_t chaMask1;
                 retval = peci_RdPCIConfigLocal(cpu.clientAddr, 14, 30, 3, 0xA0,
                                                sizeof(chaMask1),
                                                (uint8_t*)&chaMask1, &cc);
+                cpu.chaCountRead.chaCountCc = cc;
+                cpu.chaCountRead.chaCountRet = retval;
+                if (retval != PECI_CC_SUCCESS)
+                {
+                    CRASHDUMP_PRINT(
+                        ERR, stderr,
+                        "Cannot find chaMask1! ret: (0x%x), cc: (0x%x)\n",
+                        retval, cc);
+                    break;
+                }
+                cpu.chaCount =
+                    __builtin_popcount(chaMask0) + __builtin_popcount(chaMask1);
+                cpu.chaCountRead.chaCountValid = true;
+                cpu.chaCountRead.source = cpuState;
+                break;
+            case cpu::spr:
+                // LLC_SLICE_EN EP Local PCI B31:D30:F3 Reg 0x9C and 0xA0
+                retval = peci_RdEndPointConfigPciLocal(
+                    cpu.clientAddr, 0, 31, 30, 3, 0x9c, sizeof(chaMask0),
+                    (uint8_t*)&chaMask0, &cc);
+                cpu.chaCountRead.chaCountCc = cc;
+                cpu.chaCountRead.chaCountRet = retval;
+                if (retval != PECI_CC_SUCCESS)
+                {
+                    CRASHDUMP_PRINT(
+                        ERR, stderr,
+                        "Cannot find chaMask0! ret: (0x%x),  cc: (0x%x)\n",
+                        retval, cc);
+                    break;
+                }
+                retval = peci_RdEndPointConfigPciLocal(
+                    cpu.clientAddr, 0, 31, 30, 3, 0xa0, sizeof(chaMask1),
+                    (uint8_t*)&chaMask1, &cc);
                 cpu.chaCountRead.chaCountCc = cc;
                 cpu.chaCountRead.chaCountRet = retval;
                 if (retval != PECI_CC_SUCCESS)
@@ -598,6 +668,14 @@ static void parseCPUInfo(CPUInfo& cpuInfo, cpuid::cpuidState cpuState)
             {
                 cpuInfo.model = cpu::icx;
             }
+            cpuInfo.cpuidRead.cpuidValid = true;
+            cpuInfo.cpuidRead.source = cpuState;
+            break;
+        case SPR_MODEL:
+            CRASHDUMP_PRINT(INFO, stderr, "SPR detected (CPUID 0x%x)\n",
+                            cpuInfo.cpuidRead.cpuModel |
+                                cpuInfo.cpuidRead.stepping);
+            cpuInfo.model = cpu::spr;
             cpuInfo.cpuidRead.cpuidValid = true;
             cpuInfo.cpuidRead.source = cpuState;
             break;
@@ -975,9 +1053,12 @@ static void iterateByCPU(std::vector<crashdump::CPUInfo>& cpuInfo,
                             break;
 
                         case ADDRESS_MAP:
-                            fillSection(cpu, cpuInfo[j], sectionNames[i],
-                                        sectionNames[i].fptr, &sectionStart,
-                                        timeStr);
+                            if (cpu::spr != cpuInfo[j].model)
+                            {
+                                fillSection(cpu, cpuInfo[j], sectionNames[i],
+                                            sectionNames[i].fptr, &sectionStart,
+                                            timeStr);
+                            }
                             break;
 
                         case MCA:
@@ -1104,7 +1185,8 @@ void createCrashdump(std::vector<crashdump::CPUInfo>& cpuInfo,
 
     if ((crashdump::cpu::icx == cpuInfo[0].model) ||
         (crashdump::cpu::icx2 == cpuInfo[0].model) ||
-        (crashdump::cpu::icxd == cpuInfo[0].model))
+        (crashdump::cpu::icxd == cpuInfo[0].model) ||
+        (crashdump::cpu::spr == cpuInfo[0].model))
     {
         iterateByCPU(cpuInfo, processors, crashlogData, crashdumpStart,
                      sectionStart, inputFileInfo);

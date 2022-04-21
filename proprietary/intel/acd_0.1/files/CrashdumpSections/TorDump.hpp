@@ -55,6 +55,8 @@ extern "C" {
 
 #define TD_UA_CPX "0x%x,UA:0x%x"
 #define TD_UA_DF_CPX "0x0,UA:0x%x,DF:0x%x"
+#define TD_DATA_CC_RC ",CC:0x%x,RC:0x%x"
+#define TD_FIXED_DATA_CC_RC "0x0,CC:0x%x,RC:0x%x"
 
 /******************************************************************************
  *

@@ -43,8 +43,11 @@ extern "C" {
 #define CRASHDUMP_VALUE_LEN 6
 
 #define ICXD_MODEL 0x606C0
+#define SPR_MODEL 0x806F0
 
 #define RESET_DETECTED_NAME "cpu%d.%s"
+
+#define PID_FILE "/var/run/autodump%d.pid"
 typedef enum
 {
     EMERG,
@@ -103,6 +106,7 @@ enum Model
     icx,
     icx2,
     icxd,
+    spr,
     numberOfModels,
 };
 namespace stepping
@@ -113,6 +117,7 @@ constexpr const uint8_t cpx = 10;
 constexpr const uint8_t icx = 0;
 constexpr const uint8_t icx2 = 4;
 constexpr const uint8_t icxd = 4;
+constexpr const uint8_t spr = 2;
 } // namespace stepping
 } // namespace cpu
 
@@ -238,6 +243,7 @@ constexpr const int skxSP = 0x2A;
 constexpr const int icxSP = 0x1A;
 constexpr const int bmcAutonomous = 0x23;
 constexpr const int icxdSP = 0x1B;
+constexpr const int spr = 0x1C;
 } // namespace product_type
 
 int cd_snprintf_s(char* str, size_t len, const char* format, ...);
@@ -259,6 +265,7 @@ inline static void logCrashdumpVersion(cJSON* parent,
         VersionInfo{crashdump::cpu::icx, product_type::icxSP},
         VersionInfo{crashdump::cpu::icx2, product_type::icxSP},
         VersionInfo{crashdump::cpu::icxd, product_type::icxdSP},
+        VersionInfo{crashdump::cpu::spr, product_type::spr},
     };
 
     static constexpr const std::array revision{
@@ -268,6 +275,7 @@ inline static void logCrashdumpVersion(cJSON* parent,
         VersionInfo{crashdump::cpu::icx, revision::revision1},
         VersionInfo{crashdump::cpu::icx2, revision::revision1},
         VersionInfo{crashdump::cpu::icxd, revision::revision1},
+        VersionInfo{crashdump::cpu::spr, revision::revision1},
     };
 
     int productType = 0;
@@ -306,3 +314,4 @@ inline static void logCrashdumpVersion(cJSON* parent,
     cd_snprintf_s(versionString, sizeof(versionString), "0x%x", version);
     cJSON_AddStringToObject(parent, "_version", versionString);
 }
+
