@@ -8,7 +8,6 @@ LOCAL_URI += " \
     file://ipmb_peci_interface.h \
     "
 
-DEPENDS += "cjson safec gtest libpeci cli11 libipmb libipmi libpal"
-RDEPENDS:${PN} += "cjson safec libpeci libipmb libipmi libpal"
+DEPENDS += "libipmb libipmi"
+RDEPENDS:${PN} += "libipmb libipmi"
 EXTRA_OECMAKE = "-DIPMB_PECI_INTF=ON"
-

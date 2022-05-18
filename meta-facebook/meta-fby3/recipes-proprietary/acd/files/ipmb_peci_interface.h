@@ -29,13 +29,7 @@ extern "C" {
 #endif
 
 #include <inttypes.h>
-
 #include <stdbool.h>
-
-#define UINT32_MAX             (4294967295U)
-
-extern int peci_fd;
-#define PECI_DEVICE "/dev/ast-peci"
 
 #define PECI_MBX_INDEX_CPU_ID			0  /* Package Identifier Read */
 
@@ -72,27 +66,6 @@ typedef struct
 	unsigned char write_buffer[PECI_DATA_BUF_SIZE];
 }__attribute__((packed)) peci_cmd_t;
 
-typedef struct _ipmb_req_t {
-  uint8_t res_slave_addr;
-  uint8_t netfn_lun;
-  uint8_t hdr_cksum;
-  uint8_t req_slave_addr;
-  uint8_t seq_lun;
-  uint8_t cmd;
-  uint8_t data[];
-} ipmb_req_t;
-
-typedef struct _ipmb_res_t {
-  uint8_t req_slave_addr;
-  uint8_t netfn_lun;
-  uint8_t hdr_cksum;
-  uint8_t res_slave_addr;
-  uint8_t seq_lun;
-  uint8_t cmd;
-  uint8_t cc;
-  uint8_t data[];
-} ipmb_res_t;
-
 #define PECI_HEADER_SIZE 3
 
 #define PECI_GET_DIB                        0xf7
@@ -121,10 +94,6 @@ typedef struct _ipmb_res_t {
 #define MIN_CLIENT_ADDR 0x30
 #define MAX_CLIENT_ADDR 0x30
 #define MAX_CPUS (MAX_CLIENT_ADDR - MIN_CLIENT_ADDR + 1)
-enum
-{
-  NETFN_OEM_1S_REQ = 0x38,
-};
 
 typedef enum
 {
@@ -236,7 +205,7 @@ EPECIStatus peci_RdIAMSR(uint8_t target, uint8_t threadID, uint16_t MSRAddress,
 
 // Provides read access to PCI Configuration space
 EPECIStatus peci_RdPCIConfig(uint8_t target, uint8_t u8Bus, uint8_t u8Device,
-	uint8_t u8Fcn, uint16_t u16Reg, uint8_t* pPCIReg,
+	uint8_t u8Fcn, uint16_t u16Reg, uint8_t* pPCIData,
 	uint8_t* cc);
 
 // Allows sequential RdPCIConfig with the provided peci file descriptor

@@ -21,212 +21,19 @@
 //
 //*********************************************************************************
 
-#include <errno.h>
-#include <fcntl.h>
-#include <pthread.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <sys/un.h>
-#include <syslog.h>
-#include <time.h>
-#include <unistd.h>
+#include <openbmc/ipmi.h>
+#include <openbmc/ipmb.h>
 
 #include "ipmb_peci_interface.h"
 
 #define PECI_HOST_ID          0x00
-#define NODE_IPMB_SLAVE_ADDR  0x20              // TODO: Need confirm the IPMB address for compute node.
+#define NODE_IPMB_SLAVE_ADDR  0x20
 #define CMD_SEND_RAW_PECI     0x29
-#define MAX_RETRIES 5
-#define SOCK_PATH_IPMB "ipmb_socket"
-#define TIMEOUT_IPMB 8
-#define BMC_SLAVE_ADDR 0x10
-#define LUN_OFFSET 2
-#define ZERO_CKSUM_CONST 0x100
-#define MIN_IPMB_REQ_LEN 7
-#define MIN_IPMB_RES_LEN 8
-#define MAX_IPMB_RES_LEN 1024
 #define MAX_PECI_RETRY   50
 #define RDIAMSR_READ_LEN 8
-#define RDIAMSR_WRITE_LEN 5 
-#ifdef DEBUG
-#undef DEBUG
-#ifdef __TEST__
-#define DEBUG(fmt, ...) fprintf(stderr, "INFO: " fmt, ## __VA_ARGS__)
-#else
-#define DEBUG(fmt, ...) syslog(LOG_INFO, fmt, ## __VA_ARGS__)
-#endif
-#else
-#define DEBUG(fmt, ...)
-#endif
-
-#define SAVE_ERRNO_RUN(exp)  \
-  do {                       \
-    int saved_errno = errno; \
-    exp;                     \
-    errno = saved_errno;     \
-  } while (0)
-
-
-
-/*-------------------------------------------------------------------------
- * IPMB Helpers
- *------------------------------------------------------------------------*/
-
-static void set_sock_timeout(int sock, int timeout)
-{
-  if (timeout >= 0) {
-    struct timeval tv;
-    tv.tv_sec = timeout;
-    tv.tv_usec = 0;
-    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(struct timeval)) != 0) {
-      DEBUG("%s failed to set timeout (%d)", __func__, timeout);
-    }
-  }
-}
-
-static pthread_key_t rxkey, txkey;
-static pthread_once_t key_once = PTHREAD_ONCE_INIT;
-
-static void
-destructor(void *buf)
-{
-  if (buf)
-    free(buf);
-}
-
-static void
-make_key()
-{
-  (void) pthread_key_create(&rxkey, destructor);
-  (void) pthread_key_create(&txkey, destructor);
-}
-
-ipmb_res_t*
-ipmb_rxb()
-{
-  ipmb_res_t *buf = NULL;
-
-  pthread_once(&key_once, make_key);
-  if ((buf = pthread_getspecific(rxkey)) == NULL) {
-    buf = malloc(MAX_IPMB_RES_LEN);
-    pthread_setspecific(rxkey, buf);
-  }
-
-  return (ipmb_res_t*)buf;
-}
-
-ipmb_req_t*
-ipmb_txb()
-{
-  void *buf = NULL;
-
-  pthread_once(&key_once, make_key);
-  if ((buf = pthread_getspecific(txkey)) == NULL) {
-    buf = malloc(MAX_IPMB_RES_LEN);
-    pthread_setspecific(txkey, buf);
-  }
-
-  return (ipmb_req_t*)buf;
-}
-
-int ipc_send_req(const char *endpoint, uint8_t *req, size_t req_len,
-                 uint8_t *resp, size_t *resp_len, int timeout)
-{
-  struct sockaddr_un remote;
-  int len, retry = 0, sockfd;
-  size_t max_resp;
-
-  if (!req || !req_len || !resp || !resp_len || !*resp_len) {
-    DEBUG("%s(%s) bad parameters passed", __func__, endpoint);
-    errno = EINVAL;
-    return -1;
-  }
-
-  if ((sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
-    DEBUG("%s(%s) failed to create socket (%s)", __func__, endpoint, strerror(errno));
-    return -1;
-  }
-
-  set_sock_timeout(sockfd, timeout);
-
-  remote.sun_family = AF_UNIX;
-  sprintf(remote.sun_path, "/tmp/%s", endpoint);
-  len = strlen(remote.sun_path) + sizeof(remote.sun_family);
-
-  if (connect(sockfd, (struct sockaddr *)&remote, len) == -1) {
-    DEBUG("%s(%s) failed to connect (%s)", __func__, endpoint, strerror(errno));
-    goto error;
-  }
-
-  if (send(sockfd, req, req_len, MSG_NOSIGNAL) != req_len) {
-    DEBUG("%s(%s) failed to send (%s)", __func__, endpoint, strerror(errno));
-    goto error;
-  }
-
-  max_resp = *resp_len;
-  while ((len = recv(sockfd, resp, max_resp, 0)) < 0) {
-    if ((errno != EINTR && errno != EWOULDBLOCK) ||
-        (retry++ >= MAX_RETRIES)) {
-      DEBUG("%s(%s) failed to recv (%s)", __func__, endpoint, strerror(errno));
-      goto error;
-    }
-    DEBUG("%s(%s) recv interrupted (%s)", __func__, endpoint, strerror(errno));
-    usleep(20 * 1000);
-  }
-  *resp_len = len;
-
-  close(sockfd);
-  return 0;
-
-error:
-  SAVE_ERRNO_RUN(close(sockfd));
-  return -1;
-}
-
-/*
- * Function to handle IPMB messages
- */
-int
-lib_ipmb_handle(unsigned char bus_id,
-            unsigned char *request, unsigned int req_len,
-            unsigned char *response, unsigned char *res_len) {
-
-  size_t resp_len = MAX_IPMB_RES_LEN;
-  char sock_path[64];
-
-  sprintf(sock_path, "%s_%d", SOCK_PATH_IPMB, bus_id);
-
-  if (ipc_send_req(sock_path, request, (size_t)req_len, response,
-                   &resp_len, TIMEOUT_IPMB) != 0) {
-    return -1;
-  }
-
-  *res_len = (unsigned char)resp_len;
-  return 0;
-}
-
-int
-ipmb_send_buf (unsigned char bus_id, unsigned char tlen)
-{
-  unsigned char rlen = 0;
-
-  lib_ipmb_handle(bus_id,
-    (unsigned char *)ipmb_txb(), tlen,
-    (unsigned char *)ipmb_rxb(), &rlen);
-
-  if (rlen >= MIN_IPMB_RES_LEN)
-    return (int)rlen;
-  else
-    return -1;
-}
-
-/*-------------------------------------------------------------------------
- * End Helpers
- *------------------------------------------------------------------------*/
+#define RDIAMSR_WRITE_LEN 5
 
 EPECIStatus peci_GetDIB_seq(uint8_t target, uint64_t* dib);
 
@@ -234,42 +41,12 @@ int node_bus_id;  // bus# for compute node
 
 EPECIStatus peci_Lock(int* peci_fd, int timeout_ms)
 {
-    struct timespec sRequest;
-    sRequest.tv_sec = 0;
-    sRequest.tv_nsec = PECI_TIMEOUT_RESOLUTION_MS * 1000 * 1000;
-    int timeout_count = 0;
+	return PECI_CC_SUCCESS;
+}
 
-    if (NULL == peci_fd)
-    {
-        return PECI_CC_INVALID_REQ;
-    }
-
-    // Open the PECI driver with the specified timeout
-    *peci_fd = open(PECI_DEVICE, O_RDWR | O_CLOEXEC);
-    switch (timeout_ms)
-    {
-        case PECI_NO_WAIT:
-            break;
-        case PECI_WAIT_FOREVER:
-            while (-1 == *peci_fd)
-            {
-                nanosleep(&sRequest, NULL);
-                *peci_fd = open(PECI_DEVICE, O_RDWR | O_CLOEXEC);
-            }
-        default:
-            while (-1 == *peci_fd && timeout_count < timeout_ms)
-            {
-                nanosleep(&sRequest, NULL);
-                timeout_count += PECI_TIMEOUT_RESOLUTION_MS;
-                *peci_fd = open(PECI_DEVICE, O_RDWR | O_CLOEXEC);
-            }
-    }
-    if (-1 == *peci_fd)
-    {
-        syslog(LOG_ERR, " >>> PECI Device Busy <<< \n");
-        return PECI_CC_DRIVER_ERR;
-    }
-    return PECI_CC_SUCCESS;
+void peci_Unlock(int peci_fd)
+{
+	return;
 }
 
 #define POLYCHECK (0x1070U << 3) //0x07
@@ -395,11 +172,8 @@ static EPECIStatus IPMB_peci_issue_cmd(ipmb_req_t *req, ipmb_res_t *res)
 EPECIStatus peci_Ping(uint8_t target)
 {
 	EPECIStatus ret;
-	int peci_fd = -1;
 
-	peci_fd = open(PECI_DEVICE, O_RDWR | O_CREAT, 0666);
-	close(peci_fd);
-	ret = peci_Ping_seq(target, peci_fd);
+	ret = peci_Ping_seq(target, 0);
 
 	return ret;
 }

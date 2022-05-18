@@ -218,14 +218,20 @@ target_compile_definitions (
             -DOEMDATA_SECTION> $<$<BOOL:${IPMB_PECI_INTF}>: -DIPMB_PECI_INTF>
 )
 
+if (${IPMB_PECI_INTF})
+    set (PECI_LIB ipmb)
+else ()
+    set (PECI_LIB peci)
+endif ()
+
 target_include_directories (crashdump PRIVATE ${CMAKE_SOURCE_DIR})
 set_property (TARGET crashdump PROPERTY C_STANDARD 99)
 target_link_libraries (
     crashdump
     cjson
-    peci
     pthread
     -lstdc++fs
+    ${PECI_LIB}
     ${SAFEC_LIBRARIES}
 )
 

@@ -22,9 +22,11 @@
 #include "utils_dbusplus.hpp"
 #endif
 
-#ifndef IPMB_PECI_INTF
 #include <linux/peci-ioctl.h>
+#ifndef IPMB_PECI_INTF
 #include <peci.h>
+#else
+#include "ipmb_peci_interface.h"
 #endif
 
 #include <array>
@@ -34,10 +36,6 @@ extern "C" {
 #include <cjson/cJSON.h>
 
 #include "safe_str_lib.h"
-
-#ifdef IPMB_PECI_INTF
-#include "ipmb_peci_interface.h"
-#endif
 }
 #define CRASHDUMP_PRINT(level, fmt, ...) fprintf(fmt, __VA_ARGS__)
 #define CRASHDUMP_VALUE_LEN 6
