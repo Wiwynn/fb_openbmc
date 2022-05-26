@@ -8,7 +8,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=43c09494f6b77f344027eea0a1c22830"
 
 DEPENDS = "boost safec libpeci cjson gtest cli11"
 
-inherit cmake
+inherit cmake pkgconfig
 
 SRC_URI[sha256sum] = "a810ec1b695eea04aa4126937cc9dcbeaca69213419756a34d5648d546eca36f"
 
