@@ -1,0 +1,89 @@
+From 251f4fc15c9563f7c5ac34896f5b7de56466eb38 Mon Sep 17 00:00:00 2001
+From: "Jason M. Bills" <jason.m.bills@linux.intel.com>
+Date: Fri, 13 Aug 2021 10:36:23 -0700
+Subject: [PATCH] Add ConfigWatcher workaround
+
+For SPR D0 and earlier, the config watcher write command
+incorrectly assumes that the last byte of data contains
+an AW FCS. For those SPR revisions, the command will fail
+with -EIO as the return.  In that case, we need to replace
+the last byte with an AW FCS and try again for the command
+to succeed.
+
+Signed-off-by: Jason M. Bills <jason.m.bills@linux.intel.com>
+---
+ drivers/peci/peci-core.c | 50 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 50 insertions(+)
+
+diff --git a/drivers/peci/peci-core.c b/drivers/peci/peci-core.c
+index cdb8aa3699a0..5cd278e3068e 100644
+--- a/drivers/peci/peci-core.c
++++ b/drivers/peci/peci-core.c
+@@ -449,6 +449,36 @@ static int peci_cmd_xfer(struct peci_adapter *adapter, void *vmsg)
+ 
+ 			ret = peci_xfer_with_retries(adapter, msg, true);
+ 			break;
++		case PECI_TELEMETRY_CMD:
++			/*
++			 * WORKAROUND:
++			 * For SPR D0 and earlier, the config watcher write command
++			 * incorrectly assumes that the last byte of data contains
++			 * an AW FCS. For those SPR revisions, the command will fail
++			 * with -EIO as the return.  In that case, we need to replace
++			 * the last byte with an AW FCS and try again for the command
++			 * to succeed.
++			 */
++			ret = peci_xfer_with_retries(adapter, msg, false);
++			if (msg->tx_buf[3] ==
++				    PECI_TELEMETRY_CONFIG_WATCHER_OPCODE &&
++			    msg->tx_buf[4] ==
++				    PECI_TELEMETRY_CONFIG_WATCHER_WR_PARAM &&
++			    ret == -EIO) {
++				u8 aw_fcs;
++				dev_dbg(&adapter->dev,
++					"Raw ConfigWatcher write attempt failed (%d). Replacing last byte of data with AW FCS to try again.\n",
++					ret);
++				ret = peci_aw_fcs(msg, 2 + msg->tx_len,
++						  &aw_fcs);
++				if (!ret) {
++					msg->tx_buf[msg->tx_len - 1] =
++						0x80 ^ aw_fcs;
++					ret = peci_xfer_with_retries(adapter,
++								     msg, true);
++				}
++			}
++			break;
+ 		default:
+ 			ret = peci_xfer_with_retries(adapter, msg, false);
+ 			break;
+@@ -1313,7 +1343,27 @@ static int peci_cmd_telemetry_config_watcher_wr(struct peci_adapter *adapter, vo
+ 	for (i = 0; i < sizeof(umsg->data); i++)
+ 		msg->tx_buf[9 + i] = umsg->data[i];
+ 
++	/*
++	 * WORKAROUND:
++	 * For SPR D0 and earlier, the config watcher write command
++	 * incorrectly assumes that the last byte of data contains
++	 * an AW FCS. For those SPR revisions, the command will fail
++	 * with -EIO as the return.  In that case, we need to replace
++	 * the last byte with an AW FCS and try again for the command
++	 * to succeed.
++	 */
+ 	ret = peci_xfer_with_retries(adapter, msg, false);
++	if (ret == -EIO) {
++		u8 aw_fcs;
++		dev_dbg(&adapter->dev,
++			"ConfigWatcher write attempt failed (%d). Replacing last byte of data with AW FCS to try again.\n",
++			ret);
++		ret = peci_aw_fcs(msg, 2 + msg->tx_len, &aw_fcs);
++		if (!ret) {
++			msg->tx_buf[msg->tx_len - 1] = 0x80 ^ aw_fcs;
++			ret = peci_xfer_with_retries(adapter, msg, true);
++		}
++	}
+ 
+ 	umsg->cc = msg->rx_buf[0];
+ 	peci_put_xfer_msg(msg);
+-- 
+2.17.1
+
