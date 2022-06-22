@@ -29,7 +29,9 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#ifndef NO_SYSTEMD
 #include <systemd/sd-id128.h>
+#endif
 #include <termios.h>
 #include <time.h>
 #include <unistd.h>
@@ -40,6 +42,9 @@
 #include <regex>
 #include <sstream>
 #include <vector>
+#ifdef NO_SYSTEMD
+#include <CLI/CLI.hpp>
+#endif
 
 extern "C" {
 #include <cjson/cJSON.h>
@@ -59,10 +64,17 @@ extern "C" {
 #include "crashdump.hpp"
 #include "utils_triage.hpp"
 
+#ifdef NO_SYSTEMD
+extern void getSystemGuid(std::string &);
+extern void platformInit(uint8_t);
+#endif
+
 namespace crashdump
 {
 static std::vector<CPUInfo> cpuInfo;
+#ifndef NO_SYSTEMD
 static std::shared_ptr<sdbusplus::asio::dbus_interface> logIface;
+#endif
 
 constexpr char const* triggerTypeOnDemand = "On-Demand";
 constexpr int const vcuPeciWake = 5;
@@ -95,6 +107,9 @@ static void logRunTime(cJSON* parent, timespec* start, char* key)
 static const std::string getUuid()
 {
     std::string ret;
+#ifdef NO_SYSTEMD
+    getSystemGuid(ret);
+#else
     sd_id128_t appId = SD_ID128_MAKE(e0, e1, 73, 76, 64, 61, 47, da, a5, 0c, d0,
                                      cc, 64, 12, 45, 78);
     sd_id128_t machineId = SD_ID128_NULL;
@@ -108,6 +123,7 @@ static const std::string getUuid()
         ret.insert(18, 1, '-');
         ret.insert(23, 1, '-');
     }
+#endif
 
     return ret;
 }
@@ -917,6 +933,7 @@ int scandir_filter(const struct dirent* dirEntry)
                     crashdumpPrefix.size()) == 0);
 }
 
+#ifndef NO_SYSTEMD
 void dbusRemoveOnDemandLog()
 {
     // Always make sure the D-Bus properties are removed
@@ -1076,6 +1093,7 @@ void incrementCrashdumpCount()
         "org.freedesktop.DBus.Properties", "Get",
         "xyz.openbmc_project.Control.Processor.ErrConfig", "CrashdumpCount");
 }
+#endif
 
 void dbusAddStoredLog(const std::string& storedLogContents,
                       const std::string& timestamp)
@@ -1159,6 +1177,7 @@ void dbusAddStoredLog(const std::string& storedLogContents,
             CRASHDUMP_PRINT(ERR, stderr, "failed to remove %s: %s\n",
                             filename.c_str(), ec.message().c_str());
         }
+#ifndef NO_SYSTEMD
         // Now remove the interface for the deleted log
         auto eraseit =
             std::find_if(storedLogIfaces.begin(), storedLogIfaces.end(),
@@ -1172,6 +1191,7 @@ void dbusAddStoredLog(const std::string& storedLogContents,
             crashdump::server->remove_interface(std::get<1>(*eraseit));
             storedLogIfaces.erase(eraseit);
         }
+#endif
     }
 
     // Create the new crashdump filename
@@ -1188,6 +1208,7 @@ void dbusAddStoredLog(const std::string& storedLogContents,
         fclose(fpJson);
     }
 
+#ifndef NO_SYSTEMD
     // Add the new interface for this log
     std::filesystem::path path =
         std::filesystem::path(crashdumpPath) / std::to_string(crashdumpNum);
@@ -1203,6 +1224,7 @@ void dbusAddStoredLog(const std::string& storedLogContents,
 
     // Increment the count for this completed crashdump
     incrementCrashdumpCount();
+#endif
 }
 
 void newStoredLog(std::vector<CPUInfo>& cpuInfo, std::string& storedLogContents,
@@ -1224,6 +1246,7 @@ bool isPECIAvailable()
     return true;
 }
 
+#ifndef NO_SYSTEMD
 /** Exception for when a log is attempted while power is off. */
 struct PowerOffException final : public sdbusplus::exception_t
 {
@@ -1266,11 +1289,45 @@ struct LogInProgressException final : public sdbusplus::exception_t
         return EBUSY;
     }
 };
+#endif
 } // namespace crashdump
 
 #ifdef BUILD_MAIN
-int main()
+int main(int argc, char *argv[])
 {
+#ifdef NO_SYSTEMD
+    uint8_t fru;
+    std::string triggerType;
+    CLI::App app("Crashdump");
+
+    app.failure_message(CLI::FailureMessage::help);
+    app.add_option("fru", fru, "FRU number");
+    app.add_option("--type", triggerType, "Trigger Type");
+    app.require_option(0, 2);
+    CLI11_PARSE(app, argc, argv);
+
+    platformInit(fru);
+
+    if (!crashdump::isPECIAvailable())
+    {
+        CRASHDUMP_PRINT(ERR, stderr, "PECI not available\n");
+    }
+    crashdump::initCPUInfo(crashdump::cpuInfo);
+    crashdump::getCPUData(crashdump::cpuInfo, STARTUP);
+
+    std::string storedLogContents;
+    std::string storedLogTime = crashdump::newTimestamp();
+    crashdump::newStoredLog(crashdump::cpuInfo, storedLogContents,
+                            triggerType, storedLogTime);
+    if (storedLogContents.empty())
+    {
+        // Log is empty, so don't save it
+        CRASHDUMP_PRINT(ERR, stderr, "Log is empty, so don't save it\n");
+        return -1;
+    }
+
+    crashdump::dbusAddStoredLog(storedLogContents, storedLogTime);
+#else
     // future to use for long-running tasks
     std::future<void> future;
 
@@ -1541,6 +1598,7 @@ int main()
         crashdump::startHostStateMonitor(crashdump::conn);
 
     crashdump::io.run();
+#endif
 
     return ACD_SUCCESS;
 }

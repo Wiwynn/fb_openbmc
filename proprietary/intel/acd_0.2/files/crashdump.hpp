@@ -25,7 +25,9 @@
 #include <array>
 #include <boost/asio/io_service.hpp>
 #include <filesystem>
+#ifndef NO_SYSTEMD
 #include <sdbusplus/asio/object_server.hpp>
+#endif
 #include <vector>
 
 extern "C" {
@@ -60,12 +62,14 @@ constexpr char const* crashdumpRawPeciInterface =
     "com.intel.crashdump.SendRawPeci";
 constexpr int numStoredLogs = 3;
 
+#ifndef NO_SYSTEMD
 static boost::asio::io_service io;
 static std::shared_ptr<sdbusplus::asio::connection> conn;
 static std::shared_ptr<sdbusplus::asio::object_server> server;
 static std::vector<
     std::pair<std::string, std::shared_ptr<sdbusplus::asio::dbus_interface>>>
     storedLogIfaces;
+#endif
 
 const std::filesystem::path crashdumpDir = "/tmp/crashdump/output";
 const std::string crashdumpFileRoot{"crashdump_ondemand_"};

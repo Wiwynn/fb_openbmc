@@ -15,7 +15,7 @@
 
 
 cmake_minimum_required (VERSION 3.6)
-option (YOCTO_DEPENDENCIES "Use YOCTO dependencies system" OFF)
+option (YOCTO_DEPENDENCIES "Use YOCTO dependencies system" ON)
 option (CRASHDUMP_BUILD_UT "Enable Building Unit tests" OFF)
 
 # optional features
@@ -37,7 +37,7 @@ endif ()
 # Set the searching location for cmake 'include' locations
 set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
 # Include the sanitizer module
-include (code-coverage)
+#include (code-coverage)
 
 set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -198,6 +198,7 @@ endif ()
 
 set (
     SRC_FILES
+    PlatInfo.cpp
     engine/TorDump.c
     engine/BigCore.c
     engine/utils.c
@@ -251,8 +252,12 @@ if (NOT ${CRASHDUMP_BUILD_UT})
         crashdump
         PRIVATE $<$<BOOL:${CRASHDUMP_PRINT_UNFORMATTED}>:
                 -DCRASHDUMP_PRINT_UNFORMATTED> $<$<BOOL:${OEMDATA_SECTION}>:
-                -DOEMDATA_SECTION>
+                -DOEMDATA_SECTION> $<$<BOOL:${NO_SYSTEMD}>: -DNO_SYSTEMD>
     )
+
+    if (NOT ${NO_SYSTEMD})
+        set (DBUS_LIB sdbusplus -lsystemd)
+    endif ()
 
     target_include_directories (crashdump PRIVATE ${CMAKE_SOURCE_DIR})
     set_property (TARGET crashdump PROPERTY C_STANDARD 99)
@@ -260,10 +265,9 @@ if (NOT ${CRASHDUMP_BUILD_UT})
         crashdump
         cjson
         peci
-        -lsystemd
         pthread
         -lstdc++fs
-        sdbusplus
+        ${DBUS_LIB}
         ${SAFEC_LIBRARIES}
         ${NVD_LIB}
     )
@@ -377,8 +381,10 @@ if (NOT ${YOCTO_DEPENDENCIES})
     endif ()
 endif ()
 
-set (SERVICE_FILES
-     ${PROJECT_SOURCE_DIR}/service_files/com.intel.crashdump.service
-)
+if (NOT ${NO_SYSTEMD})
+    set (SERVICE_FILES
+         ${PROJECT_SOURCE_DIR}/service_files/com.intel.crashdump.service
+    )
 
-install (FILES ${SERVICE_FILES} DESTINATION /lib/systemd/system/)
+    install (FILES ${SERVICE_FILES} DESTINATION /lib/systemd/system/)
+endif ()

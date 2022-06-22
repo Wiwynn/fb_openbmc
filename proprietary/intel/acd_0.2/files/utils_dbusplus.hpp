@@ -25,18 +25,22 @@ extern "C" {
 #include "crashdump.hpp"
 
 #include <boost/container/flat_map.hpp>
+#ifndef NO_SYSTEMD
 #include <sdbusplus/asio/object_server.hpp>
 #include <sdbusplus/bus.hpp>
 #include <sdbusplus/message.hpp>
+#endif
 #include <variant>
 
 namespace crashdump
 {
 acdStatus getDIMMInventoryDBus(std::vector<CPUInfo>& cpuInfo);
+#ifndef NO_SYSTEMD
 int getBMCVersionDBus(char* bmcVerStr, size_t bmcVerStrSize);
 int getBIOSVersionDBus(char* biosVerStr, size_t biosVerStrSize);
 std::shared_ptr<sdbusplus::bus::match::match>
     startHostStateMonitor(std::shared_ptr<sdbusplus::asio::connection> conn);
+#endif
 } // namespace crashdump
 int fillBmcVersion(char* cSectionName, cJSON* pJsonChild);
 int fillBiosId(char* cSectionName, cJSON* pJsonChild);

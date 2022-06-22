@@ -26,6 +26,11 @@ using PropertyValue =
     std::variant<bool, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t,
                  uint64_t, double, std::string>;
 
+#ifdef NO_SYSTEMD
+extern void getBmcVersion(char *);
+extern void getBiosVersion(char *);
+#endif
+
 namespace crashdump
 {
 acdStatus getDIMMInventoryDBus(std::vector<CPUInfo>& cpuInfo)
@@ -56,6 +61,8 @@ acdStatus getDIMMInventoryDBus(std::vector<CPUInfo>& cpuInfo)
 
     return ACD_SUCCESS;
 }
+
+#ifndef NO_SYSTEMD
 int getBMCVersionDBus(char* bmcVerStr, size_t bmcVerStrSize)
 {
     using ManagedObjectType = boost::container::flat_map<
@@ -204,6 +211,7 @@ std::shared_ptr<sdbusplus::bus::match::match>
             }
         });
 }
+#endif
 
 } // namespace crashdump
 
@@ -217,7 +225,11 @@ std::shared_ptr<sdbusplus::bus::match::match>
 int fillBmcVersion(char* cSectionName, cJSON* pJsonChild)
 {
     char bmcVersion[SI_BMC_VER_LEN] = {0};
+#ifdef NO_SYSTEMD
+    getBmcVersion(bmcVersion);
+#else
     crashdump::getBMCVersionDBus(bmcVersion, sizeof(bmcVersion));
+#endif
     // Fill in BMC Version string
     cJSON_AddStringToObject(pJsonChild, cSectionName, bmcVersion);
     return ACD_SUCCESS;
@@ -233,7 +245,11 @@ int fillBmcVersion(char* cSectionName, cJSON* pJsonChild)
 int fillBiosId(char* cSectionName, cJSON* pJsonChild)
 {
     char biosVersion[SI_BIOS_ID_LEN] = {0};
+#ifdef NO_SYSTEMD
+    getBiosVersion(biosVersion);
+#else
     crashdump::getBIOSVersionDBus(biosVersion, sizeof(biosVersion));
+#endif
     // Fill in BIOS Version string
     cJSON_AddStringToObject(pJsonChild, cSectionName, biosVersion);
     return ACD_SUCCESS;
