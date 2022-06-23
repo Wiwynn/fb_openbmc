@@ -109,7 +109,7 @@ static EPECIStatus IPMB_peci_issue_cmd(ipmb_req_t *req, ipmb_res_t *res)
 	int tlen;
 	peci_cmd_t *peci_cmd;
 	EPECIStatus  ret = PECI_CC_IPMB_ERR;
-        uint8_t iana[3] = {0x9c, 0x9c, 0x0};
+        uint8_t iana[3] = {0x15, 0xa0, 0x0};
         uint8_t data_tmp[PECI_DATA_BUF_SIZE] = {0};
 	int retry = 0;
 
