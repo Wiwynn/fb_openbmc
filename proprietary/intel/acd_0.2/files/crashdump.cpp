@@ -21,7 +21,9 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#ifndef IPMB_PECI_INTF
 #include <peci.h>
+#endif
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -228,6 +228,10 @@ if (${TRIAGE_SECTION} OR ${BAFI_NDA_OUTPUT})
     endif ()
 endif ()
 
+if (${IPMB_PECI_INTF})
+    set (SRC_FILES ${SRC_FILES} ipmb_peci_interface.c)
+endif ()
+
 if (NOT ${CRASHDUMP_BUILD_UT})
     add_definitions (-DBUILD_MAIN)
     add_executable (crashdump crashdump.cpp utils_dbusplus.cpp ${SRC_FILES})
@@ -253,10 +257,17 @@ if (NOT ${CRASHDUMP_BUILD_UT})
         PRIVATE $<$<BOOL:${CRASHDUMP_PRINT_UNFORMATTED}>:
                 -DCRASHDUMP_PRINT_UNFORMATTED> $<$<BOOL:${OEMDATA_SECTION}>:
                 -DOEMDATA_SECTION> $<$<BOOL:${NO_SYSTEMD}>: -DNO_SYSTEMD>
+                $<$<BOOL:${IPMB_PECI_INTF}>: -DIPMB_PECI_INTF>
     )
 
     if (NOT ${NO_SYSTEMD})
         set (DBUS_LIB sdbusplus -lsystemd)
+    endif ()
+
+    if (${IPMB_PECI_INTF})
+        set (PECI_LIB ipmb)
+    else ()
+        set (PECI_LIB peci)
     endif ()
 
     target_include_directories (crashdump PRIVATE ${CMAKE_SOURCE_DIR})
@@ -264,10 +275,10 @@ if (NOT ${CRASHDUMP_BUILD_UT})
     target_link_libraries (
         crashdump
         cjson
-        peci
         pthread
         -lstdc++fs
         ${DBUS_LIB}
+        ${PECI_LIB}
         ${SAFEC_LIBRARIES}
         ${NVD_LIB}
     )

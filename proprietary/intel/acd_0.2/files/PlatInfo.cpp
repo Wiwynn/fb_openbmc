@@ -22,6 +22,10 @@ extern "C" {
 }
 #include <string>
 
+#ifdef IPMB_PECI_INTF
+extern int node_bus_id;
+#endif
+
 void getBmcVersion(char *ver) {
   (void)ver;
 }

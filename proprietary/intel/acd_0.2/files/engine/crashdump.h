@@ -22,7 +22,11 @@
 
 #include <cjson/cJSON.h>
 #include <linux/peci-ioctl.h>
+#ifndef IPMB_PECI_INTF
 #include <peci.h>
+#else
+#include "ipmb_peci_interface.h"
+#endif
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -20,7 +20,11 @@
 #pragma once
 
 #include <linux/peci-ioctl.h>
+#ifndef IPMB_PECI_INTF
 #include <peci.h>
+#else
+#include "ipmb_peci_interface.h"
+#endif
 
 #include <array>
 #include <boost/asio/io_service.hpp>
