@@ -372,7 +372,7 @@
         "Revision": "0x28",
         "SkipOnFail": false,
         "LoopOnCPU": true,
-        "MaxTimeSec": 30,
+        "MaxTimeSec": 100,
         "OutputPath": "crash_data/PROCESSORS/cpu%d/uncore",
         "PreReq": {
           "PECICmds": []
@@ -11537,7 +11537,7 @@
         "RecordEnable": true,
         "SkipOnFail": false,
         "LoopOnCpu": true,
-        "MaxTimeSec": 1,
+        "MaxTimeSec": 15,
         "RootAtLevel": 4,
         "OutputPath": "crash_data/PROCESSORS/cpu%d/PM_info/",
         "PreReq": {
