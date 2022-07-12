@@ -71,6 +71,8 @@ extern void getSystemGuid(std::string &);
 extern void platformInit(uint8_t);
 #endif
 
+std::string crashdumpFruName("");
+
 namespace crashdump
 {
 static std::vector<CPUInfo> cpuInfo;
@@ -931,8 +933,9 @@ void createCrashdump(std::vector<CPUInfo>& cpuInfo,
 int scandir_filter(const struct dirent* dirEntry)
 {
     // Filter for just the crashdump files
-    return (strncmp(dirEntry->d_name, crashdumpPrefix.c_str(),
-                    crashdumpPrefix.size()) == 0);
+    const std::string filePrefix(crashdumpPrefix + crashdumpFruName);
+    return (strncmp(dirEntry->d_name, filePrefix.c_str(),
+                    filePrefix.size()) == 0);
 }
 
 #ifndef NO_SYSTEMD
@@ -1100,7 +1103,8 @@ void incrementCrashdumpCount()
 void dbusAddStoredLog(const std::string& storedLogContents,
                       const std::string& timestamp)
 {
-    constexpr char const* crashdumpFile = "crashdump_%llu";
+    const std::string dumpFile(crashdumpPrefix + crashdumpFruName + "%llu");
+    char const* crashdumpFile = dumpFile.c_str();
     uint64_t crashdumpNum = 0;
     struct dirent** namelist = NULL;
     FILE* fpJson = NULL;
@@ -1197,7 +1201,7 @@ void dbusAddStoredLog(const std::string& storedLogContents,
     }
 
     // Create the new crashdump filename
-    std::string new_logfile_name = crashdumpPrefix +
+    std::string new_logfile_name = crashdumpPrefix + crashdumpFruName +
                                    std::to_string(crashdumpNum) + "-" +
                                    timestamp + ".json";
     std::filesystem::path out_file = crashdumpDir / new_logfile_name;

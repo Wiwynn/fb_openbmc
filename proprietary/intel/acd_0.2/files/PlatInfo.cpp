@@ -26,6 +26,8 @@ extern "C" {
 extern int node_bus_id;
 #endif
 
+extern std::string crashdumpFruName;
+
 void getBmcVersion(char *ver) {
   (void)ver;
 }
