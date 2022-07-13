@@ -19,42 +19,30 @@
 
 extern "C" {
 #include <stdio.h>
+#include "engine/utils.h"
 }
 #include <string>
 #include <sstream>
-#include <unistd.h>
-#include "CrashdumpSections/MetaData.hpp"
-#include <syslog.h>
+#include <vector>
 
 using namespace std;
 
 #define MAX_BUF_SIZE 128
-#define PID_SIZE 16
-
-enum {
-  ENABLE_MONITOR = 0,
-  DISABLE_MONITOR,
-};
-enum {
-  FLAG_UNLOCK = 0,
-  FLAG_LOCK,
-};
 
 extern int node_bus_id;
+extern string crashdumpFruName;
 
-void split(const std::string& s, std::vector<std::string>& sv, const char delim = ' ') {
-    sv.clear();
-    std::istringstream iss(s);
-    std::string temp;
+static void split(const string &s, vector<string> &sv, const char delim = ' ') {
+  istringstream iss(s);
+  string temp;
 
-    while (std::getline(iss, temp, delim)) {
-        sv.emplace_back(std::move(&temp[2]));
-    }
-
-    return;
+  sv.clear();
+  while (getline(iss, temp, delim)) {
+    sv.emplace_back(move(&temp[2]));
+  }
 }
 
-static int get_fw_ver(string fru, string comp, string &ver) {
+static int get_fw_ver(const string &fru, const string &comp, string &ver) {
   char line[MAX_BUF_SIZE];
   FILE *fp;
   string cmd;
@@ -63,18 +51,17 @@ static int get_fw_ver(string fru, string comp, string &ver) {
   if (!(fp = popen(cmd.c_str(), "r")))
     return -1;
 
-  do {
-    if (!fgets(line, sizeof(line), fp))
-      break;
+  if (fgets(line, sizeof(line), fp)) {
+    pclose(fp);
 
     string str = line;
     auto start = str.find(":");
     if (start == string::npos)
-      break;
+      return -1;
 
     start = str.find_first_not_of(" ", start+1);
     if (start == string::npos)
-      break;
+      return -1;
 
     auto end = str.find("\n", start);
     if (end == string::npos) {
@@ -82,98 +69,80 @@ static int get_fw_ver(string fru, string comp, string &ver) {
     }
 
     ver = str.substr(start, end - start);
-  } while (0);
-  pclose(fp);
-
-  return 0;
-}
-
-int getBmcVersion(char *ver) {
-  string ver_str;
-
-  if (get_fw_ver("bmc", "bmc", ver_str)) {
-    return -1;
   }
 
-  cd_snprintf_s(ver, SI_JSON_STRING_LEN, "%s", ver_str.c_str());
   return 0;
 }
 
-int getBiosVersion(char *ver) {
+void getBmcVersion(char *ver) {
+  string ver_str;
+
+  if (get_fw_ver("bmc", "bmc", ver_str) == 0) {
+    cd_snprintf_s(ver, SI_BMC_VER_LEN, "%s", ver_str.c_str());
+  }
+}
+
+void getBiosVersion(char *ver) {
   string ver_str;
   string slot_str = "slot" + to_string(node_bus_id+1);
 
-  if (get_fw_ver(slot_str, "bios", ver_str)) {
-    return -1;
+  if (get_fw_ver(slot_str, "bios", ver_str) == 0) {
+    cd_snprintf_s(ver, SI_BIOS_ID_LEN, "%s", ver_str.c_str());
   }
-
-  cd_snprintf_s(ver, SI_JSON_STRING_LEN, "%s", ver_str.c_str());
-  return 0;
 }
 
-int getMeVersion(char *ver) {
+void getMeVersion(char *ver) {
   string ver_str;
   string slot_str = "slot" + to_string(node_bus_id+1);
 
-  if (get_fw_ver(slot_str, "me", ver_str)) {
-    return -1;
+  if (get_fw_ver(slot_str, "me", ver_str) == 0) {
+    cd_snprintf_s(ver, SI_JSON_STRING_LEN, "%s", ver_str.c_str());
   }
-
-  cd_snprintf_s(ver, SI_JSON_STRING_LEN, "%s", ver_str.c_str());
-  return 0;
 }
 
-int getSystemGuid(string &guid) {
+void getSystemGuid(string &guid) {
   char line[MAX_BUF_SIZE], cmd[MAX_BUF_SIZE];
   FILE *fp;
   string slot_str = "slot" + to_string(node_bus_id+1);
   string guid_str("");
 
   snprintf(cmd, sizeof(cmd), "/usr/local/bin/guid-util %s sys --get 2>/dev/null", slot_str.c_str());
-
   if (!(fp = popen(cmd, "r")))
-    return -1;
+    return;
 
-  do {
-    if (!fgets(line, sizeof(line), fp))
-      break;
+  if (fgets(line, sizeof(line), fp)) {
+    pclose(fp);
 
     string str = line;
     auto start = str[0];
     if (start == string::npos)
-      break;
+      return;
 
     size_t pos = 0;
-    while (( pos = str.find ("\n",pos)) != string::npos ) {
+    while ((pos = str.find("\n", pos)) != string::npos) {
       str.erase (pos, 1);
     }
 
-    std::vector<std::string> sv;
+    vector<string> sv;
     split(str, sv, ':');
 
     // Hanle LSB
-    std::swap(sv[0],sv[3]);
-    std::swap(sv[1],sv[2]);
-    std::swap(sv[4],sv[5]);
-    std::swap(sv[6],sv[7]);
-    for (int i = 0; i < (int)sv.size(); i++ ) {
-      if ( i == 4 || i == 6 || i == 8 || i == 10 ) {
+    swap(sv[0], sv[3]);
+    swap(sv[1], sv[2]);
+    swap(sv[4], sv[5]);
+    swap(sv[6], sv[7]);
+    for (int i = 0; i < (int)sv.size(); i++) {
+      if (i == 4 || i == 6 || i == 8 || i == 10) {
         guid_str += "-";
       }
       guid_str += sv[i];
     }
 
     guid = guid_str;
-  } while (0);
-  pclose(fp);
-
-  return 0;
-}
-
-int getPpinData(int, char*) {
-  return -1;
+  }
 }
 
 void platformInit(uint8_t fru) {
   node_bus_id = fru - 1;
+  crashdumpFruName = "slot" + to_string(fru) + "_";
 }
