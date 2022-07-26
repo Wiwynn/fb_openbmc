@@ -3,6 +3,7 @@
 # u-boot, u-boot-fw-utils, u-boot-tools(or legacy u-boot-mkimage)
 # the main purpose is to use local u-boot code base instead of
 # git://github.com/facebook/openbmc-uboot.git
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 SRC_URI:remove = "git://github.com/facebook/openbmc-uboot.git;branch=${SRCBRANCH};protocol=https"
 SRC_URI += "file://u-boot-${PV}"
