@@ -486,7 +486,6 @@ void logSectionRunTime(cJSON* parent, struct timespec* start, char* key)
         double totalTime = (double)runTimeInNs / 1e9 + previousTime;
 
         cd_snprintf_s(timeString, sizeof(timeString), "%.2fs", totalTime);
-        cJSON_DeleteItemFromObjectCaseSensitive(parent, key);
         cJSON_AddStringToObject(parent, key, timeString);
         clock_gettime(CLOCK_MONOTONIC, start);
         return;
