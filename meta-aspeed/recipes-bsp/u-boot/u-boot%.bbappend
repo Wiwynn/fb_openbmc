@@ -5,6 +5,13 @@
 # git://github.com/facebook/openbmc-uboot.git
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-SRC_URI:remove = "git://github.com/facebook/openbmc-uboot.git;branch=${SRCBRANCH};protocol=https"
-SRC_URI += "file://u-boot-${PV}"
-S = "${WORKDIR}/u-boot-${PV}"
+def uboot_base_pv(d):
+    return d.getVar('PV', True).split('+')[0]
+uboot_base_pv[vardeps] = "PV"
+
+PV := "${@uboot_base_pv(d)}"
+
+SRC_URI:remove:uboot-aspeed-fb = "git://github.com/facebook/openbmc-uboot.git;branch=${SRCBRANCH};protocol=https"
+# Notice have to use append and don't remove the leading space
+SRC_URI:append:uboot-aspeed-fb = " file://u-boot-${PV}"
+S:uboot-aspeed-fb = "${WORKDIR}/u-boot-${PV}"
