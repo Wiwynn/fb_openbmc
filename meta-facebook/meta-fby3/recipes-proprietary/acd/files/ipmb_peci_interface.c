@@ -374,9 +374,9 @@ EPECIStatus peci_RdPkgConfig_seq(uint8_t target, uint8_t u8Index,
 		*cc = ipmb_res->data[0];
 		memcpy(pPkgConfig, (uint8_t*)&(ipmb_res->data[1]), u8ReadLen);
 
-		if (*cc != PECI_DEV_CC_SUCCESS && *cc != PECI_DEV_CC_FATAL_MCA_DETECTED)
+		if (*cc != PECI_DEV_CC_SUCCESS)
 		{
-			ret = PECI_CC_HW_ERR;
+			memset(pPkgConfig, 0, u8ReadLen);
 		}
 	}
 
@@ -456,11 +456,6 @@ EPECIStatus peci_WrPkgConfig_seq(uint8_t target, uint8_t u8Index,
 	{
 		// PECI completion code in the 1st byte
 		*cc = ipmb_res->data[0];
-
-		if (*cc != PECI_DEV_CC_SUCCESS && *cc != PECI_DEV_CC_FATAL_MCA_DETECTED)
-		{
-			ret = PECI_CC_HW_ERR;
-		}
 	}
 
 	return ret;
@@ -507,9 +502,9 @@ EPECIStatus peci_RdIAMSR(uint8_t target, uint8_t threadID, uint16_t MSRAddress,
 		*cc = ipmb_res->data[0];
 		memcpy((uint8_t*)u64MsrVal, (uint8_t*)&(ipmb_res->data[1]), 8);
 
-        if (*cc != PECI_DEV_CC_SUCCESS && *cc != PECI_DEV_CC_FATAL_MCA_DETECTED)
+        if (*cc != PECI_DEV_CC_SUCCESS)
         {
-            ret = PECI_CC_HW_ERR;
+            memset((uint8_t*)u64MsrVal, 0, 8);
         }
 	}
 
@@ -584,9 +579,9 @@ EPECIStatus peci_RdPCIConfig_seq(uint8_t target, uint8_t u8Bus,
 		*cc = ipmb_res->data[0];
 		memcpy(pPCIData, (uint8_t*)&(ipmb_res->data[1]), 4);
 
-        if (*cc != PECI_DEV_CC_SUCCESS && *cc != PECI_DEV_CC_FATAL_MCA_DETECTED)
+        if (*cc != PECI_DEV_CC_SUCCESS)
         {
-            ret = PECI_CC_HW_ERR;
+            memset(pPCIData, 0, 4);
         }
 	}
 
@@ -668,9 +663,9 @@ EPECIStatus peci_RdPCIConfigLocal_seq(uint8_t target, uint8_t u8Bus,
 		*cc = ipmb_res->data[0];
 		memcpy(pPCIReg, (uint8_t *)&(ipmb_res->data[1]), u8ReadLen);
 
-        if (*cc != PECI_DEV_CC_SUCCESS && *cc != PECI_DEV_CC_FATAL_MCA_DETECTED)
+        if (*cc != PECI_DEV_CC_SUCCESS)
         {
-            ret = PECI_CC_HW_ERR;
+            memset(pPCIReg, 0, u8ReadLen);
         }
 	}
 
@@ -730,11 +725,6 @@ EPECIStatus peci_WrPCIConfigLocal(uint8_t target, uint8_t u8Bus,
 	{
 		// PECI completion code in the 1st byte
 		*cc = ipmb_res->data[0];
-
-        if (*cc != PECI_DEV_CC_SUCCESS && *cc != PECI_DEV_CC_FATAL_MCA_DETECTED)
-        {
-            ret = PECI_CC_HW_ERR;
-        }
 	}
 
 	return ret;
@@ -797,9 +787,9 @@ static EPECIStatus peci_RdEndPointConfigPciCommon(
 		*cc = ipmb_res->data[0];
 		memcpy(pPCIData, (uint8_t *)&(ipmb_res->data[1]), u8ReadLen);
 
-        if (*cc != PECI_DEV_CC_SUCCESS && *cc != PECI_DEV_CC_FATAL_MCA_DETECTED)
+        if (*cc != PECI_DEV_CC_SUCCESS)
         {
-            ret = PECI_CC_HW_ERR;
+            memset(pPCIData, 0, u8ReadLen);
         }
 	}
 
@@ -990,9 +980,9 @@ EPECIStatus peci_RdEndPointConfigMmio_seq(
 		*cc = ipmb_res->data[0];
 		memcpy(pMmioData, (uint8_t*)&(ipmb_res->data[1]), u8ReadLen);
 
-        if (*cc != PECI_DEV_CC_SUCCESS && *cc != PECI_DEV_CC_FATAL_MCA_DETECTED)
+        if (*cc != PECI_DEV_CC_SUCCESS)
         {
-            ret = PECI_CC_HW_ERR;
+            memset(pMmioData, 0, u8ReadLen);
         }
 	}
 
@@ -1064,11 +1054,6 @@ EPECIStatus peci_WrEndPointConfig_seq(uint8_t target, uint8_t u8MsgType,
 	{
 		// PECI completion code in the 1st byte
 		*cc = ipmb_res->data[0];
-
-        if (*cc != PECI_DEV_CC_SUCCESS && *cc != PECI_DEV_CC_FATAL_MCA_DETECTED)
-        {
-            ret = PECI_CC_HW_ERR;
-        }
 	}
 
 	return ret;
@@ -1164,9 +1149,9 @@ EPECIStatus peci_CrashDump_Discovery(uint8_t target, uint8_t subopcode,
 		*cc = ipmb_res->data[0];
 		memcpy(pData, (uint8_t*)&(ipmb_res->data[1]), u8ReadLen);
 
-        if (*cc != PECI_DEV_CC_SUCCESS && *cc != PECI_DEV_CC_FATAL_MCA_DETECTED)
+        if (*cc != PECI_DEV_CC_SUCCESS)
         {
-            ret = PECI_CC_HW_ERR;
+            memset(pData, 0, u8ReadLen);
         }
 	}
 
@@ -1226,9 +1211,9 @@ EPECIStatus peci_CrashDump_GetFrame(uint8_t target, uint16_t param0,
 		*cc = ipmb_res->data[0];
 		memcpy(pData, (uint8_t*)&(ipmb_res->data[1]), u8ReadLen);
 
-        if (*cc != PECI_DEV_CC_SUCCESS && *cc != PECI_DEV_CC_FATAL_MCA_DETECTED)
+        if (*cc != PECI_DEV_CC_SUCCESS)
         {
-            ret = PECI_CC_HW_ERR;
+            memset(pData, 0, u8ReadLen);
         }
 	}
 
