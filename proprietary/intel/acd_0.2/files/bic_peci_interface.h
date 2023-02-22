@@ -1,7 +1,7 @@
 //*********************************************************************************
 //
-// File Name :   IPMB_peci_interface.h
-// Description : IPMB PECI Interface
+// File Name :   bic_peci_interface.h
+// Description : BIC PECI Interface
 // Copyright(c) 2020 Intel Corporation.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,8 +20,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 //*********************************************************************************
-#ifndef __IPMB_PECI_INTERFACE_H__
-#define __IPMB_PECI_INTERFACE_H__
+#ifndef __BIC_PECI_INTERFACE_H__
+#define __BIC_PECI_INTERFACE_H__
 
 //#pragma once
 #ifdef __cplusplus
@@ -101,6 +101,13 @@ typedef enum
 	MMIO_DWORD_OFFSET = 0x05,
 	MMIO_QWORD_OFFSET = 0x06,
 } EEndPtMmioAddrType;
+
+typedef struct {
+	uint8_t target;
+	uint8_t write_len;
+	uint8_t read_len;
+	uint8_t write_buffer[];
+} __attribute__((packed)) peci_cmd_t;
 
 // Find the specified PCI bus number value
 EPECIStatus FindBusNumber(uint8_t u8Bus, uint8_t u8Cpu, uint8_t* pu8BusValue);
@@ -282,4 +289,4 @@ EPECIStatus peci_GetCPUID(const uint8_t clientAddr, CPUModel* cpuModel,
 }
 #endif
 
-#endif // __IPMB_PECI_INTERFACE_H__
+#endif // __BIC_PECI_INTERFACE_H__

@@ -21,8 +21,8 @@ LOCAL_URI = " \
     file://crashdump_input_sprhbm.json \
     file://crashdump_input_spr.json \
     file://engine \
-    file://ipmb_peci_interface.c \
-    file://ipmb_peci_interface.h \
+    file://bic_peci_interface.c \
+    file://bic_peci_interface.h \
     file://LICENSE \
     file://PlatInfo.cpp \
     file://telemetry_input_icx.json \

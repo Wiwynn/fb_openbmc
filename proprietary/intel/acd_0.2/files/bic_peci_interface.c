@@ -1,7 +1,7 @@
 //*********************************************************************************
 //
-// File Name :   IPMB_peci_interface.c
-// Description : IPMB PECI Interface
+// File Name :   bic_peci_interface.c
+// Description : BIC PECI Interface
 // Copyright(c) 2020 Intel Corporation.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,24 +26,23 @@
 #include <unistd.h>
 #include <linux/peci-ioctl.h>
 #include <openbmc/ipmi.h>
+#ifdef IPMB_XFER
 #include <openbmc/ipmb.h>
+#else
+#include <libpldm/base.h>
+#include <libpldm-oem/pldm.h>
+#endif
 
-#include "ipmb_peci_interface.h"
+#include "bic_peci_interface.h"
 
 #define PECI_HOST_ID             0x00
 #define NODE_IPMB_SLAVE_ADDR     0x20
+#define NODE_PLDM_EID            0x0A
 #define CMD_SEND_RAW_PECI        0x29
-#define PECI_DATA_BUF_SIZE       32
+#define PECI_DATA_BUF_SIZE       40
 #define IANA_SIZE                3
-#define MAX_RETRIES              10
+#define MAX_RETRIES              0
 #define MAX_RETRY_INTERVAL_MSEC  128
-
-typedef struct {
-	uint8_t target;
-	uint8_t write_len;
-	uint8_t read_len;
-	uint8_t write_buffer[PECI_DATA_BUF_SIZE];
-} __attribute__((packed)) peci_cmd_t;
 
 EPECIStatus peci_GetDIB_seq(uint8_t target, uint64_t* dib);
 
@@ -83,7 +82,6 @@ static uint8_t CalculateCRC8(uint8_t *data, size_t len)
     crc = pec_calculate(crc, data, len);
 
     return crc;
-
 }
 
 /*-------------------------------------------------------------------------
@@ -91,33 +89,28 @@ static uint8_t CalculateCRC8(uint8_t *data, size_t len)
  *------------------------------------------------------------------------*/
 static uint8_t calculate_fcs(peci_cmd_t *peci_cmd)
 {
-	uint8_t tbuf[PECI_DATA_BUF_SIZE + 3];
-
-	tbuf[0] = peci_cmd->target;
-	tbuf[1] = peci_cmd->write_len;
-	tbuf[2] = peci_cmd->read_len;
-	memcpy(&tbuf[3], peci_cmd->write_buffer, peci_cmd->write_len - 1);
-
-	return CalculateCRC8(tbuf, peci_cmd->write_len + 2);
+	return CalculateCRC8(peci_cmd, peci_cmd->write_len + 2);
 }
 
 /*-------------------------------------------------------------------------
  * This function issues peci commands to PECI bridge device
  *------------------------------------------------------------------------*/
-static EPECIStatus IPMB_peci_issue_cmd(ipmb_req_t *req, ipmb_res_t *res,
+static EPECIStatus BIC_peci_issue_cmd(uint8_t *txbuf, uint8_t *rxbuf,
 	bool do_retry, bool has_aw_fcs)
 {
 	EPECIStatus ret = PECI_CC_IPMB_ERR;
-	peci_cmd_t  *peci_cmd;
-	uint8_t iana[IANA_SIZE] = {0x15, 0xa0, 0x00};
-	uint8_t data_tmp[PECI_DATA_BUF_SIZE] = {0};
-	int i, tlen, rlen, interval;
+	peci_cmd_t *peci_cmd = (peci_cmd_t *)txbuf;
+	uint8_t tlen, *peci_res;
+	int i, interval, rlen = 0;
 
-	if (NULL == req || NULL == res) {
+	if (txbuf == NULL || rxbuf == NULL) {
 		return PECI_CC_INVALID_REQ;
 	}
 
-	memcpy(req->data, iana, sizeof(iana));
+#ifdef IPMB_XFER
+	ipmb_req_t *req = ipmb_txb();
+	ipmb_res_t *res = ipmb_rxb();
+	uint8_t iana[IANA_SIZE] = {0x15, 0xa0, 0x00};
 
 	// add IPMB header to the compute node IPMB interface
 	req->res_slave_addr = NODE_IPMB_SLAVE_ADDR << 1;
@@ -130,23 +123,39 @@ static EPECIStatus IPMB_peci_issue_cmd(ipmb_req_t *req, ipmb_res_t *res,
 	req->req_slave_addr = BMC_SLAVE_ADDR << 1;
 	req->seq_lun = 0x00;
 
+	memcpy(req->data, iana, sizeof(iana));
+	memcpy(&req->data[IANA_SIZE], txbuf, sizeof(peci_cmd_t) + peci_cmd->write_len);
 	peci_cmd = (peci_cmd_t *)&req->data[IANA_SIZE];
+	tlen = MIN_IPMB_REQ_LEN + IANA_SIZE + sizeof(peci_cmd_t) + peci_cmd->write_len;
+	peci_res = &res->data[IANA_SIZE];
+#else
+	tlen = sizeof(peci_cmd_t) + peci_cmd->write_len;
+	peci_res = rxbuf;
+#endif
 
-	tlen = peci_cmd->write_len + 6 + MIN_IPMB_REQ_LEN;
 	for (i = 0; i <= MAX_RETRIES; i++) {
+#ifdef IPMB_XFER
 		rlen = ipmb_send_buf(node_bus_id, tlen);
-		if (rlen < (MIN_IPMB_RES_LEN + 3 + peci_cmd->read_len)) {
+		if (rlen < (MIN_IPMB_RES_LEN + IANA_SIZE + peci_cmd->read_len)) {
 			ret = PECI_CC_IPMB_ERR;
 		} else {
 			ret = PECI_CC_IPMB_SUCCESS;
 		}
+#else
+		ret = oem_pldm_ipmi_send_recv(node_bus_id, NODE_PLDM_EID,
+				NETFN_OEM_1S_REQ, CMD_SEND_RAW_PECI,
+				txbuf, tlen, rxbuf, &rlen, true);
+		if (ret || rlen < peci_cmd->read_len) {
+			ret = PECI_CC_IPMB_ERR;
+		}
+#endif
 
 		if (!do_retry || (i == MAX_RETRIES) || ret) {
 			break;
 		}
 
 		// Retry is needed when completion code is 0x8x
-		if ((res->data[3] & PECI_DEV_CC_RETRY_CHECK_MASK) !=
+		if ((peci_res[0] & PECI_DEV_CC_RETRY_CHECK_MASK) !=
 		    PECI_DEV_CC_NEED_RETRY) {
 			break;
 		}
@@ -166,17 +175,16 @@ static EPECIStatus IPMB_peci_issue_cmd(ipmb_req_t *req, ipmb_res_t *res,
 	}
 
 	if (ret) {
-		syslog(LOG_WARNING, "IPMB ERROR: cmd=%02X, rlen = %d, read_len=%u",
-		       peci_cmd->write_buffer[0], rlen, peci_cmd->read_len);
+		syslog(LOG_WARNING, "%s: cmd=0x%02X, read_len=%u, rlen=%d", __func__,
+		       peci_cmd->write_buffer[0], peci_cmd->read_len, rlen);
 		return PECI_CC_DRIVER_ERR;
 	}
 
-	rlen -= (MIN_IPMB_RES_LEN + 3);
-	// Remove return iana code
-	memset(data_tmp, 0, sizeof(data_tmp));
-	memcpy(data_tmp, &res->data[3], rlen);
-	memset(res->data, 0, rlen);
-	memcpy(res->data, data_tmp, rlen);
+#ifdef IPMB_XFER
+	rlen -= (MIN_IPMB_RES_LEN + IANA_SIZE);
+	// Remove IANA
+	memcpy(rxbuf, peci_res, rlen);
+#endif
 
 	return ret;
 }
@@ -210,20 +218,15 @@ EPECIStatus peci_Ping(uint8_t target)
 EPECIStatus peci_Ping_seq(uint8_t target, int peci_fd)
 {
 	EPECIStatus ret;
-	peci_cmd_t  *peci_cmd;
-	ipmb_req_t  *ipmb_req;
-	ipmb_res_t  *ipmb_res;
-
-	ipmb_req = ipmb_txb();
-	ipmb_res = ipmb_rxb();
-	peci_cmd = (peci_cmd_t *)(ipmb_req->data + IANA_SIZE);
-	memset(peci_cmd, 0, sizeof(peci_cmd_t));
+	uint8_t txbuf[PECI_DATA_BUF_SIZE] = {0};
+	uint8_t rxbuf[PECI_DATA_BUF_SIZE] = {0};
+	peci_cmd_t *peci_cmd = (peci_cmd_t *)txbuf;
 
 	peci_cmd->target = target;
 	peci_cmd->read_len = 0;
 	peci_cmd->write_len = 0;
 
-	ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res, false, false);
+	ret = BIC_peci_issue_cmd(txbuf, rxbuf, false, false);
 
 	// No CC returned for Ping.
 
@@ -254,30 +257,24 @@ EPECIStatus peci_GetDIB(uint8_t target, uint64_t* dib)
 EPECIStatus peci_GetDIB_seq(uint8_t target, uint64_t* dib)
 {
 	EPECIStatus ret;
-	peci_cmd_t  *peci_cmd;
-	ipmb_req_t  *ipmb_req;
-	ipmb_res_t  *ipmb_res;
+	uint8_t txbuf[PECI_DATA_BUF_SIZE] = {0};
+	uint8_t rxbuf[PECI_DATA_BUF_SIZE] = {0};
+	peci_cmd_t *peci_cmd = (peci_cmd_t *)txbuf;
 
 	if (dib == NULL)
 	{
 		return PECI_CC_INVALID_REQ;
 	}
 
-	ipmb_req = ipmb_txb();
-	ipmb_res = ipmb_rxb();
-	peci_cmd = (peci_cmd_t *)(ipmb_req->data + IANA_SIZE);
-	memset(peci_cmd, 0, sizeof(peci_cmd_t));
-
 	peci_cmd->target = target;
 	peci_cmd->read_len = PECI_GET_DIB_RD_LEN;              // 8 bytes, without completion code
 	peci_cmd->write_len = PECI_GET_DIB_WR_LEN;             // 1 byte
 	peci_cmd->write_buffer[0] = PECI_GET_DIB_CMD;
 
-	memset(ipmb_res->data, 0, peci_cmd->read_len);
-	ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res, false, false);
+	ret = BIC_peci_issue_cmd(txbuf, rxbuf, false, false);
 	if (ret == PECI_CC_IPMB_SUCCESS)
 	{
-		memcpy((uint8_t *)dib, ipmb_res->data, peci_cmd->read_len);
+		memcpy((uint8_t *)dib, rxbuf, peci_cmd->read_len);
 	}
 
 	return ret;
@@ -290,30 +287,24 @@ EPECIStatus peci_GetDIB_seq(uint8_t target, uint64_t* dib)
 EPECIStatus peci_GetTemp(uint8_t target, int16_t* temperature)
 {
 	EPECIStatus ret;
-	peci_cmd_t  *peci_cmd;
-	ipmb_req_t  *ipmb_req;
-	ipmb_res_t  *ipmb_res;
+	uint8_t txbuf[PECI_DATA_BUF_SIZE] = {0};
+	uint8_t rxbuf[PECI_DATA_BUF_SIZE] = {0};
+	peci_cmd_t *peci_cmd = (peci_cmd_t *)txbuf;
 
 	if (temperature == NULL)
 	{
 		return PECI_CC_INVALID_REQ;
 	}
 
-	ipmb_req = ipmb_txb();
-	ipmb_res = ipmb_rxb();
-	peci_cmd = (peci_cmd_t *)(ipmb_req->data + IANA_SIZE);
-	memset(peci_cmd, 0, sizeof(peci_cmd_t));
-
 	peci_cmd->target = target;
 	peci_cmd->read_len = PECI_GET_TEMP_RD_LEN;             // 2 bytes, without completion code
 	peci_cmd->write_len = PECI_GET_TEMP_WR_LEN;            // 1 byte
 	peci_cmd->write_buffer[0] = PECI_GET_TEMP_CMD;
 
-	memset(ipmb_res->data, 0, peci_cmd->read_len);
-	ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res, false, false);
+	ret = BIC_peci_issue_cmd(txbuf, rxbuf, false, false);
 	if (ret == PECI_CC_IPMB_SUCCESS)
 	{
-		memcpy((uint8_t *)temperature, ipmb_res->data, peci_cmd->read_len);
+		memcpy((uint8_t *)temperature, rxbuf, peci_cmd->read_len);
 	}
 
 	return ret;
@@ -348,9 +339,9 @@ EPECIStatus peci_RdPkgConfig_seq(uint8_t target, uint8_t u8Index,
 	uint8_t* pPkgConfig, int peci_fd, uint8_t* cc)
 {
 	EPECIStatus ret;
-	peci_cmd_t  *peci_cmd;
-	ipmb_req_t  *ipmb_req;
-	ipmb_res_t  *ipmb_res;
+	uint8_t txbuf[PECI_DATA_BUF_SIZE] = {0};
+	uint8_t rxbuf[PECI_DATA_BUF_SIZE] = {0};
+	peci_cmd_t *peci_cmd = (peci_cmd_t *)txbuf;
 
 	if (pPkgConfig == NULL || cc == NULL)
 	{
@@ -363,11 +354,6 @@ EPECIStatus peci_RdPkgConfig_seq(uint8_t target, uint8_t u8Index,
 		return PECI_CC_INVALID_REQ;
 	}
 
-	ipmb_req = ipmb_txb();
-	ipmb_res = ipmb_rxb();
-	peci_cmd = (peci_cmd_t *)(ipmb_req->data + IANA_SIZE);
-	memset(peci_cmd, 0, sizeof(peci_cmd_t));
-
 	peci_cmd->target = target;
 	peci_cmd->read_len = u8ReadLen + 1;                        // Add 1 for completion code
 	peci_cmd->write_len = PECI_RDPKGCFG_WRITE_LEN;             // 5 bytes
@@ -378,12 +364,12 @@ EPECIStatus peci_RdPkgConfig_seq(uint8_t target, uint8_t u8Index,
 	peci_cmd->write_buffer[3] = (uint8_t)u16Value;             // Config parameter value - low byte
 	peci_cmd->write_buffer[4] = (uint8_t)(u16Value >> 8);      // Config parameter value - high byte
 
-	ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res, true, false);
+	ret = BIC_peci_issue_cmd(txbuf, rxbuf, true, false);
 	if (ret == PECI_CC_IPMB_SUCCESS)
 	{
 		// PECI completion code in the 1st byte
-		*cc = ipmb_res->data[0];
-		memcpy(pPkgConfig, &ipmb_res->data[1], u8ReadLen);
+		*cc = rxbuf[0];
+		memcpy(pPkgConfig, &rxbuf[1], u8ReadLen);
 	}
 
 	return ret;
@@ -417,9 +403,9 @@ EPECIStatus peci_WrPkgConfig_seq(uint8_t target, uint8_t u8Index,
 	uint8_t u8WriteLen, int peci_fd, uint8_t* cc)
 {
 	EPECIStatus ret;
-	peci_cmd_t  *peci_cmd;
-	ipmb_req_t  *ipmb_req;
-	ipmb_res_t  *ipmb_res;
+	uint8_t txbuf[PECI_DATA_BUF_SIZE] = {0};
+	uint8_t rxbuf[PECI_DATA_BUF_SIZE] = {0};
+	peci_cmd_t *peci_cmd = (peci_cmd_t *)txbuf;
 
 	if (cc == NULL)
 	{
@@ -431,11 +417,6 @@ EPECIStatus peci_WrPkgConfig_seq(uint8_t target, uint8_t u8Index,
 	{
 		return PECI_CC_INVALID_REQ;
 	}
-
-	ipmb_req = ipmb_txb();
-	ipmb_res = ipmb_rxb();
-	peci_cmd = (peci_cmd_t *)(ipmb_req->data + IANA_SIZE);
-	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
 	peci_cmd->read_len = 1;                                    // 1 byte completion Code
@@ -454,11 +435,11 @@ EPECIStatus peci_WrPkgConfig_seq(uint8_t target, uint8_t u8Index,
 	// FCS is calculated and invert the MSB to get AW FCS.
 	peci_cmd->write_buffer[peci_cmd->write_len - 1] = calculate_fcs(peci_cmd) ^ 0x80;
 
-	ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res, true, true);
+	ret = BIC_peci_issue_cmd(txbuf, rxbuf, true, true);
 	if (ret == PECI_CC_IPMB_SUCCESS)
 	{
 		// PECI completion code in the 1st byte
-		*cc = ipmb_res->data[0];
+		*cc = rxbuf[0];
 	}
 
 	return ret;
@@ -472,19 +453,14 @@ EPECIStatus peci_RdIAMSR(uint8_t target, uint8_t threadID, uint16_t MSRAddress,
 	uint64_t* u64MsrVal, uint8_t* cc)
 {
 	EPECIStatus ret;
-	peci_cmd_t  *peci_cmd;
-	ipmb_req_t  *ipmb_req;
-	ipmb_res_t  *ipmb_res;
+	uint8_t txbuf[PECI_DATA_BUF_SIZE] = {0};
+	uint8_t rxbuf[PECI_DATA_BUF_SIZE] = {0};
+	peci_cmd_t *peci_cmd = (peci_cmd_t *)txbuf;
 
 	if (u64MsrVal == NULL || cc == NULL)
 	{
 		return PECI_CC_INVALID_REQ;
 	}
-
-	ipmb_req = ipmb_txb();
-	ipmb_res = ipmb_rxb();
-	peci_cmd = (peci_cmd_t *)(ipmb_req->data + IANA_SIZE);
-	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
 	peci_cmd->read_len = PECI_RDIAMSR_READ_LEN;                // 9 bytes, include completion code
@@ -496,12 +472,12 @@ EPECIStatus peci_RdIAMSR(uint8_t target, uint8_t threadID, uint16_t MSRAddress,
 	peci_cmd->write_buffer[3] = (uint8_t)MSRAddress;           // MSR Address - low byte
 	peci_cmd->write_buffer[4] = (uint8_t)(MSRAddress >> 8);    // MSR Address - high byte
 
-	ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res, true, false);
+	ret = BIC_peci_issue_cmd(txbuf, rxbuf, true, false);
 	if (ret == PECI_CC_IPMB_SUCCESS)
 	{
 		// PECI completion code in the 1st byte
-		*cc = ipmb_res->data[0];
-		memcpy((uint8_t *)u64MsrVal, &ipmb_res->data[1], 8);
+		*cc = rxbuf[0];
+		memcpy((uint8_t *)u64MsrVal, &rxbuf[1], 8);
 	}
 
 	return ret;
@@ -537,19 +513,14 @@ EPECIStatus peci_RdPCIConfig_seq(uint8_t target, uint8_t u8Bus,
 	int peci_fd, uint8_t* cc)
 {
 	EPECIStatus ret;
-	peci_cmd_t  *peci_cmd;
-	ipmb_req_t  *ipmb_req;
-	ipmb_res_t  *ipmb_res;
+	uint8_t txbuf[PECI_DATA_BUF_SIZE] = {0};
+	uint8_t rxbuf[PECI_DATA_BUF_SIZE] = {0};
+	peci_cmd_t *peci_cmd = (peci_cmd_t *)txbuf;
 
 	if (pPCIData == NULL || cc == NULL)
 	{
 		return PECI_CC_INVALID_REQ;
 	}
-
-	ipmb_req = ipmb_txb();
-	ipmb_res = ipmb_rxb();
-	peci_cmd = (peci_cmd_t *)(ipmb_req->data + IANA_SIZE);
-	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
 	peci_cmd->read_len = PECI_RDPCICFG_READ_LEN;               // 5 bytes, include completion code
@@ -565,12 +536,12 @@ EPECIStatus peci_RdPCIConfig_seq(uint8_t target, uint8_t u8Bus,
 	peci_cmd->write_buffer[4] |= u8Bus << 4;                   // Bus[27:20]
 	peci_cmd->write_buffer[5] = u8Bus >> 4;                    // Bus[27:20] & Reserved[31:28]
 
-	ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res, true, false);
+	ret = BIC_peci_issue_cmd(txbuf, rxbuf, true, false);
 	if (ret == PECI_CC_IPMB_SUCCESS)
 	{
 		// PECI completion code in the 1st byte
-		*cc = ipmb_res->data[0];
-		memcpy(pPCIData, &ipmb_res->data[1], 4);
+		*cc = rxbuf[0];
+		memcpy(pPCIData, &rxbuf[1], 4);
 	}
 
 	return ret;
@@ -608,9 +579,9 @@ EPECIStatus peci_RdPCIConfigLocal_seq(uint8_t target, uint8_t u8Bus,
 	uint8_t* cc)
 {
 	EPECIStatus ret;
-	peci_cmd_t  *peci_cmd;
-	ipmb_req_t  *ipmb_req;
-	ipmb_res_t  *ipmb_res;
+	uint8_t txbuf[PECI_DATA_BUF_SIZE] = {0};
+	uint8_t rxbuf[PECI_DATA_BUF_SIZE] = {0};
+	peci_cmd_t *peci_cmd = (peci_cmd_t *)txbuf;
 
 	if (pPCIReg == NULL || cc == NULL)
 	{
@@ -622,11 +593,6 @@ EPECIStatus peci_RdPCIConfigLocal_seq(uint8_t target, uint8_t u8Bus,
 	{
 		return PECI_CC_INVALID_REQ;
 	}
-
-	ipmb_req = ipmb_txb();
-	ipmb_res = ipmb_rxb();
-	peci_cmd = (peci_cmd_t *)(ipmb_req->data + IANA_SIZE);
-	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
 	peci_cmd->read_len = u8ReadLen + 1;                        // Add 1 for completion code
@@ -641,12 +607,12 @@ EPECIStatus peci_RdPCIConfigLocal_seq(uint8_t target, uint8_t u8Bus,
 	peci_cmd->write_buffer[4] = u8Device >> 1;                 // Device[19:15]
 	peci_cmd->write_buffer[4] |= u8Bus << 4;                   // Bus[23:20]
 
-	ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res, true, false);
+	ret = BIC_peci_issue_cmd(txbuf, rxbuf, true, false);
 	if (ret == PECI_CC_IPMB_SUCCESS)
 	{
 		// PECI completion code in the 1st byte
-		*cc = ipmb_res->data[0];
-		memcpy(pPCIReg, &ipmb_res->data[1], u8ReadLen);
+		*cc = rxbuf[0];
+		memcpy(pPCIReg, &rxbuf[1], u8ReadLen);
 	}
 
 	return ret;
@@ -661,9 +627,9 @@ EPECIStatus peci_WrPCIConfigLocal(uint8_t target, uint8_t u8Bus,
 	uint32_t DataVal, uint8_t* cc)
 {
 	EPECIStatus ret;
-	peci_cmd_t  *peci_cmd;
-	ipmb_req_t  *ipmb_req;
-	ipmb_res_t  *ipmb_res;
+	uint8_t txbuf[PECI_DATA_BUF_SIZE] = {0};
+	uint8_t rxbuf[PECI_DATA_BUF_SIZE] = {0};
+	peci_cmd_t *peci_cmd = (peci_cmd_t *)txbuf;
 
 	if (cc == NULL)
 	{
@@ -675,11 +641,6 @@ EPECIStatus peci_WrPCIConfigLocal(uint8_t target, uint8_t u8Bus,
 	{
 		return PECI_CC_INVALID_REQ;
 	}
-
-	ipmb_req = ipmb_txb();
-	ipmb_res = ipmb_rxb();
-	peci_cmd = (peci_cmd_t *)(ipmb_req->data + IANA_SIZE);
-	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
 	peci_cmd->read_len = 1;                                    // 1 byte completion Code
@@ -699,11 +660,11 @@ EPECIStatus peci_WrPCIConfigLocal(uint8_t target, uint8_t u8Bus,
 	// FCS is calculated and invert the MSB to get AW FCS.
 	peci_cmd->write_buffer[peci_cmd->write_len - 1] = calculate_fcs(peci_cmd) ^ 0x80;
 
-	ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res, true, true);
+	ret = BIC_peci_issue_cmd(txbuf, rxbuf, true, true);
 	if (ret == PECI_CC_IPMB_SUCCESS)
 	{
 		// PECI completion code in the 1st byte
-		*cc = ipmb_res->data[0];
+		*cc = rxbuf[0];
 	}
 
 	return ret;
@@ -718,9 +679,9 @@ static EPECIStatus peci_RdEndPointConfigPciCommon(
 	uint8_t* pPCIData, int peci_fd, uint8_t* cc)
 {
 	EPECIStatus ret;
-	peci_cmd_t  *peci_cmd;
-	ipmb_req_t  *ipmb_req;
-	ipmb_res_t  *ipmb_res;
+	uint8_t txbuf[PECI_DATA_BUF_SIZE] = {0};
+	uint8_t rxbuf[PECI_DATA_BUF_SIZE] = {0};
+	peci_cmd_t *peci_cmd = (peci_cmd_t *)txbuf;
 
 	if (pPCIData == NULL || cc == NULL)
 	{
@@ -732,11 +693,6 @@ static EPECIStatus peci_RdEndPointConfigPciCommon(
 	{
 		return PECI_CC_INVALID_REQ;
 	}
-
-	ipmb_req = ipmb_txb();
-	ipmb_res = ipmb_rxb();
-	peci_cmd = (peci_cmd_t *)(ipmb_req->data + IANA_SIZE);
-	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
 	peci_cmd->read_len = u8ReadLen + 1;                            // Add 1 for completion code
@@ -758,12 +714,12 @@ static EPECIStatus peci_RdEndPointConfigPciCommon(
 	peci_cmd->write_buffer[10] |= u8Bus << 4;                      // Bus[27:20]
 	peci_cmd->write_buffer[11] = u8Bus >> 4;                       // Bus[27:20] & Reserved[31:28]
 
-	ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res, true, false);
+	ret = BIC_peci_issue_cmd(txbuf, rxbuf, true, false);
 	if (ret == PECI_CC_IPMB_SUCCESS)
 	{
 		// PECI completion code in the 1st byte
-		*cc = ipmb_res->data[0];
-		memcpy(pPCIData, &ipmb_res->data[1], u8ReadLen);
+		*cc = rxbuf[0];
+		memcpy(pPCIData, &rxbuf[1], u8ReadLen);
 	}
 
 	return ret;
@@ -891,9 +847,9 @@ EPECIStatus peci_RdEndPointConfigMmio_seq(
 	uint8_t u8ReadLen, uint8_t* pMmioData, int peci_fd, uint8_t* cc)
 {
 	EPECIStatus ret;
-	peci_cmd_t  *peci_cmd;
-	ipmb_req_t  *ipmb_req;
-	ipmb_res_t  *ipmb_res;
+	uint8_t txbuf[PECI_DATA_BUF_SIZE] = {0};
+	uint8_t rxbuf[PECI_DATA_BUF_SIZE] = {0};
+	peci_cmd_t *peci_cmd = (peci_cmd_t *)txbuf;
 
 	if (pMmioData == NULL || cc == NULL)
 	{
@@ -905,11 +861,6 @@ EPECIStatus peci_RdEndPointConfigMmio_seq(
 	{
 		return PECI_CC_INVALID_REQ;
 	}
-
-	ipmb_req = ipmb_txb();
-	ipmb_res = ipmb_rxb();
-	peci_cmd = (peci_cmd_t *)(ipmb_req->data + IANA_SIZE);
-	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
 	peci_cmd->read_len = u8ReadLen + 1;                                        // Add 1 for completion code
@@ -933,12 +884,12 @@ EPECIStatus peci_RdEndPointConfigMmio_seq(
 	// 4 or 8 bytes address
 	memcpy(&peci_cmd->write_buffer[10], (uint8_t *)&u64Offset, sizeof(uint64_t));
 
-	ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res, true, false);
+	ret = BIC_peci_issue_cmd(txbuf, rxbuf, true, false);
 	if (ret == PECI_CC_IPMB_SUCCESS)
 	{
 		// PECI completion code in the 1st byte
-		*cc = ipmb_res->data[0];
-		memcpy(pMmioData, &ipmb_res->data[1], u8ReadLen);
+		*cc = rxbuf[0];
+		memcpy(pMmioData, &rxbuf[1], u8ReadLen);
 	}
 
 	return ret;
@@ -956,9 +907,9 @@ EPECIStatus peci_WrEndPointConfig_seq(uint8_t target, uint8_t u8MsgType,
 	uint8_t* cc)
 {
 	EPECIStatus ret;
-	peci_cmd_t  *peci_cmd;
-	ipmb_req_t  *ipmb_req;
-	ipmb_res_t  *ipmb_res;
+	uint8_t txbuf[PECI_DATA_BUF_SIZE] = {0};
+	uint8_t rxbuf[PECI_DATA_BUF_SIZE] = {0};
+	peci_cmd_t *peci_cmd = (peci_cmd_t *)txbuf;
 
 	if (cc == NULL)
 	{
@@ -970,11 +921,6 @@ EPECIStatus peci_WrEndPointConfig_seq(uint8_t target, uint8_t u8MsgType,
 	{
 		return PECI_CC_INVALID_REQ;
 	}
-
-	ipmb_req = ipmb_txb();
-	ipmb_res = ipmb_rxb();
-	peci_cmd = (peci_cmd_t *)(ipmb_req->data + IANA_SIZE);
-	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
 	peci_cmd->read_len = 1;                                                // 1 byte completion code
@@ -1002,11 +948,11 @@ EPECIStatus peci_WrEndPointConfig_seq(uint8_t target, uint8_t u8MsgType,
 	// FCS is calculated and invert the MSB to get AW FCS.
 	peci_cmd->write_buffer[peci_cmd->write_len - 1] = calculate_fcs(peci_cmd) ^ 0x80;
 
-	ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res, true, true);
+	ret = BIC_peci_issue_cmd(txbuf, rxbuf, true, true);
 	if (ret == PECI_CC_IPMB_SUCCESS)
 	{
 		// PECI completion code in the 1st byte
-		*cc = ipmb_res->data[0];
+		*cc = rxbuf[0];
 	}
 
 	return ret;
@@ -1057,9 +1003,9 @@ EPECIStatus peci_CrashDump_Discovery(uint8_t target, uint8_t subopcode,
 	uint8_t* pData, uint8_t* cc)
 {
 	EPECIStatus ret;
-	peci_cmd_t  *peci_cmd;
-	ipmb_req_t  *ipmb_req;
-	ipmb_res_t  *ipmb_res;
+	uint8_t txbuf[PECI_DATA_BUF_SIZE] = {0};
+	uint8_t rxbuf[PECI_DATA_BUF_SIZE] = {0};
+	peci_cmd_t *peci_cmd = (peci_cmd_t *)txbuf;
 
 	if (pData == NULL || cc == NULL)
 	{
@@ -1071,11 +1017,6 @@ EPECIStatus peci_CrashDump_Discovery(uint8_t target, uint8_t subopcode,
 	{
 		return PECI_CC_INVALID_REQ;
 	}
-
-	ipmb_req = ipmb_txb();
-	ipmb_res = ipmb_rxb();
-	peci_cmd = (peci_cmd_t *)(ipmb_req->data + IANA_SIZE);
-	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
 	peci_cmd->read_len = u8ReadLen + 1;                            // plus 1 byte completion code
@@ -1091,12 +1032,12 @@ EPECIStatus peci_CrashDump_Discovery(uint8_t target, uint8_t subopcode,
 	peci_cmd->write_buffer[7] = (uint8_t)(param1 >> 8);            // Parameter 1 - high byte
 	peci_cmd->write_buffer[8] = param2;                            // Parameter 2
 
-	ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res, true, false);
+	ret = BIC_peci_issue_cmd(txbuf, rxbuf, true, false);
 	if (ret == PECI_CC_IPMB_SUCCESS)
 	{
 		// PECI completion code in the 1st byte
-		*cc = ipmb_res->data[0];
-		memcpy(pData, &ipmb_res->data[1], u8ReadLen);
+		*cc = rxbuf[0];
+		memcpy(pData, &rxbuf[1], u8ReadLen);
 	}
 
 	return ret;
@@ -1111,9 +1052,9 @@ EPECIStatus peci_CrashDump_GetFrame(uint8_t target, uint16_t param0,
 	uint8_t* cc)
 {
 	EPECIStatus ret;
-	peci_cmd_t  *peci_cmd;
-	ipmb_req_t  *ipmb_req;
-	ipmb_res_t  *ipmb_res;
+	uint8_t txbuf[PECI_DATA_BUF_SIZE] = {0};
+	uint8_t rxbuf[PECI_DATA_BUF_SIZE] = {0};
+	peci_cmd_t *peci_cmd = (peci_cmd_t *)txbuf;
 
 	if (pData == NULL || cc == NULL)
 	{
@@ -1125,11 +1066,6 @@ EPECIStatus peci_CrashDump_GetFrame(uint8_t target, uint16_t param0,
 	{
 		return PECI_CC_INVALID_REQ;
 	}
-
-	ipmb_req = ipmb_txb();
-	ipmb_res = ipmb_rxb();
-	peci_cmd = (peci_cmd_t *)(ipmb_req->data + IANA_SIZE);
-	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
 	peci_cmd->read_len = u8ReadLen + 1;                            // plus 1 byte completion code
@@ -1146,12 +1082,12 @@ EPECIStatus peci_CrashDump_GetFrame(uint8_t target, uint16_t param0,
 	peci_cmd->write_buffer[8] = (uint8_t)param2;                   // Parameter 2 - low byte
 	peci_cmd->write_buffer[9] = (uint8_t)(param2 >> 8);            // Parameter 2 - high byte
 
-	ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res, true, false);
+	ret = BIC_peci_issue_cmd(txbuf, rxbuf, true, false);
 	if (ret == PECI_CC_IPMB_SUCCESS)
 	{
 		// PECI completion code in the 1st byte
-		*cc = ipmb_res->data[0];
-		memcpy(pData, &ipmb_res->data[1], u8ReadLen);
+		*cc = rxbuf[0];
+		memcpy(pData, &rxbuf[1], u8ReadLen);
 	}
 
 	return ret;
@@ -1166,18 +1102,13 @@ EPECIStatus peci_Telemetry_Discovery(uint8_t target, uint8_t subopcode,
     uint8_t* pData, uint8_t* cc)
 {
 	EPECIStatus ret;
-	peci_cmd_t  *peci_cmd;
-	ipmb_req_t  *ipmb_req;
-	ipmb_res_t  *ipmb_res;
+	uint8_t txbuf[PECI_DATA_BUF_SIZE] = {0};
+	uint8_t rxbuf[PECI_DATA_BUF_SIZE] = {0};
+	peci_cmd_t *peci_cmd = (peci_cmd_t *)txbuf;
 
 	if (pData == NULL || cc == NULL) {
 		return PECI_CC_INVALID_REQ;
 	}
-
-	ipmb_req = ipmb_txb();
-	ipmb_res = ipmb_rxb();
-	peci_cmd = (peci_cmd_t *)(ipmb_req->data + IANA_SIZE);
-	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
 	peci_cmd->read_len = u8ReadLen + 1;                        // plus 1 byte completion code
@@ -1193,11 +1124,11 @@ EPECIStatus peci_Telemetry_Discovery(uint8_t target, uint8_t subopcode,
 	peci_cmd->write_buffer[7] = (uint8_t)(param1 >> 8);        // Parameter 1 - high byte
 	peci_cmd->write_buffer[8] = param2;                        // Parameter 2
 
-	ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res, true, false);
+	ret = BIC_peci_issue_cmd(txbuf, rxbuf, true, false);
 	if (ret == PECI_CC_IPMB_SUCCESS) {
 		// PECI completion code in the 1st byte
-		*cc = ipmb_res->data[0];
-		memcpy(pData, &ipmb_res->data[1], u8ReadLen);
+		*cc = rxbuf[0];
+		memcpy(pData, &rxbuf[1], u8ReadLen);
 	}
 
 	return ret;
@@ -1211,18 +1142,13 @@ EPECIStatus peci_Telemetry_GetTelemSample(uint8_t target, uint16_t index,
     uint8_t* pData, uint8_t* cc)
 {
 	EPECIStatus ret;
-	peci_cmd_t  *peci_cmd;
-	ipmb_req_t  *ipmb_req;
-	ipmb_res_t  *ipmb_res;
+	uint8_t txbuf[PECI_DATA_BUF_SIZE] = {0};
+	uint8_t rxbuf[PECI_DATA_BUF_SIZE] = {0};
+	peci_cmd_t *peci_cmd = (peci_cmd_t *)txbuf;
 
 	if (pData == NULL || cc == NULL) {
 		return PECI_CC_INVALID_REQ;
 	}
-
-	ipmb_req = ipmb_txb();
-	ipmb_res = ipmb_rxb();
-	peci_cmd = (peci_cmd_t *)(ipmb_req->data + IANA_SIZE);
-	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
 	peci_cmd->read_len = PECI_TELEMETRY_GET_TELEM_SAMPLE_READ_LEN;         // 9 bytes, include completion code
@@ -1237,11 +1163,11 @@ EPECIStatus peci_Telemetry_GetTelemSample(uint8_t target, uint16_t index,
 	peci_cmd->write_buffer[6] = (uint8_t)sample;                           // Sample - low byte
 	peci_cmd->write_buffer[7] = (uint8_t)(sample >> 8);                    // Sample - high byte
 
-	ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res, true, false);
+	ret = BIC_peci_issue_cmd(txbuf, rxbuf, true, false);
 	if (ret == PECI_CC_IPMB_SUCCESS) {
 		// PECI completion code in the 1st byte
-		*cc = ipmb_res->data[0];
-		memcpy(pData, &ipmb_res->data[1], u8ReadLen);
+		*cc = rxbuf[0];
+		memcpy(pData, &rxbuf[1], u8ReadLen);
 	}
 
     return ret;
@@ -1255,18 +1181,13 @@ EPECIStatus peci_Telemetry_ConfigWatcherRd(uint8_t target, uint16_t watcher,
     uint8_t* pData, uint8_t* cc)
 {
 	EPECIStatus ret;
-	peci_cmd_t  *peci_cmd;
-	ipmb_req_t  *ipmb_req;
-	ipmb_res_t  *ipmb_res;
+	uint8_t txbuf[PECI_DATA_BUF_SIZE] = {0};
+	uint8_t rxbuf[PECI_DATA_BUF_SIZE] = {0};
+	peci_cmd_t *peci_cmd = (peci_cmd_t *)txbuf;
 
 	if (pData == NULL || cc == NULL) {
 		return PECI_CC_INVALID_REQ;
 	}
-
-	ipmb_req = ipmb_txb();
-	ipmb_res = ipmb_rxb();
-	peci_cmd = (peci_cmd_t *)(ipmb_req->data + IANA_SIZE);
-	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
 	peci_cmd->read_len = PECI_TELEMETRY_CONFIG_WATCHER_RD_READ_LEN;        // 9 bytes, include completion code
@@ -1282,11 +1203,11 @@ EPECIStatus peci_Telemetry_ConfigWatcherRd(uint8_t target, uint16_t watcher,
 	peci_cmd->write_buffer[7] = (uint8_t)offset;                           // Offset - low byte
 	peci_cmd->write_buffer[8] = (uint8_t)(offset >> 8);                    // Offset - high byte
 
-	ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res, true, false);
+	ret = BIC_peci_issue_cmd(txbuf, rxbuf, true, false);
 	if (ret == PECI_CC_IPMB_SUCCESS) {
 		// PECI completion code in the 1st byte
-		*cc = ipmb_res->data[0];
-		memcpy(pData, &ipmb_res->data[1], u8ReadLen);
+		*cc = rxbuf[0];
+		memcpy(pData, &rxbuf[1], u8ReadLen);
 	}
 
     return ret;
@@ -1300,18 +1221,13 @@ EPECIStatus peci_Telemetry_ConfigWatcherWr(uint8_t target, uint16_t watcher,
     uint8_t* pData, uint8_t* cc)
 {
 	EPECIStatus ret;
-	peci_cmd_t  *peci_cmd;
-	ipmb_req_t  *ipmb_req;
-	ipmb_res_t  *ipmb_res;
+	uint8_t txbuf[PECI_DATA_BUF_SIZE] = {0};
+	uint8_t rxbuf[PECI_DATA_BUF_SIZE] = {0};
+	peci_cmd_t *peci_cmd = (peci_cmd_t *)txbuf;
 
 	if (pData == NULL || cc == NULL) {
 		return PECI_CC_INVALID_REQ;
 	}
-
-	ipmb_req = ipmb_txb();
-	ipmb_res = ipmb_rxb();
-	peci_cmd = (peci_cmd_t *)(ipmb_req->data + IANA_SIZE);
-	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
 	peci_cmd->read_len = 1;                                                // 1 byte completion code
@@ -1328,10 +1244,10 @@ EPECIStatus peci_Telemetry_ConfigWatcherWr(uint8_t target, uint16_t watcher,
 	peci_cmd->write_buffer[8] = (uint8_t)(offset >> 8);                    // Offset - high byte
 	memcpy(&peci_cmd->write_buffer[9], pData, u8DataLen);
 
-	ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res, true, false);
+	ret = BIC_peci_issue_cmd(txbuf, rxbuf, true, false);
 	if (ret == PECI_CC_IPMB_SUCCESS) {
 		// PECI completion code in the 1st byte
-		*cc = ipmb_res->data[0];
+		*cc = rxbuf[0];
 	} else {
 		/*
 		* WORKAROUND:
@@ -1343,10 +1259,10 @@ EPECIStatus peci_Telemetry_ConfigWatcherWr(uint8_t target, uint16_t watcher,
 		* to succeed.
 		*/
 		peci_cmd->write_buffer[peci_cmd->write_len - 1] = calculate_fcs(peci_cmd) ^ 0x80;
-		ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res, true, true);
+		ret = BIC_peci_issue_cmd(txbuf, rxbuf, true, true);
 		if (ret == PECI_CC_IPMB_SUCCESS) {
 			// PECI completion code in the 1st byte
-			*cc = ipmb_res->data[0];
+			*cc = rxbuf[0];
 		}
 	}
 
@@ -1361,18 +1277,13 @@ EPECIStatus peci_Telemetry_GetCrashlogSample(uint8_t target, uint16_t index,
     uint8_t* pData, uint8_t* cc)
 {
 	EPECIStatus ret;
-	peci_cmd_t  *peci_cmd;
-	ipmb_req_t  *ipmb_req;
-	ipmb_res_t  *ipmb_res;
+	uint8_t txbuf[PECI_DATA_BUF_SIZE] = {0};
+	uint8_t rxbuf[PECI_DATA_BUF_SIZE] = {0};
+	peci_cmd_t *peci_cmd = (peci_cmd_t *)txbuf;
 
 	if (pData == NULL || cc == NULL) {
 		return PECI_CC_INVALID_REQ;
 	}
-
-	ipmb_req = ipmb_txb();
-	ipmb_res = ipmb_rxb();
-	peci_cmd = (peci_cmd_t *)(ipmb_req->data + IANA_SIZE);
-	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
 	peci_cmd->read_len = PECI_TELEMETRY_GET_CRASHLOG_SAMPLE_READ_LEN;          // 9 bytes, include completion code
@@ -1387,11 +1298,11 @@ EPECIStatus peci_Telemetry_GetCrashlogSample(uint8_t target, uint16_t index,
 	peci_cmd->write_buffer[6] = (uint8_t)sample;                               // Sample - low byte
 	peci_cmd->write_buffer[7] = (uint8_t)(sample >> 8);                        // Sample - high byte
 
-	ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res, true, false);
+	ret = BIC_peci_issue_cmd(txbuf, rxbuf, true, false);
 	if (ret == PECI_CC_IPMB_SUCCESS) {
 		// PECI completion code in the 1st byte
-		*cc = ipmb_res->data[0];
-		memcpy(pData, &ipmb_res->data[1], u8ReadLen);
+		*cc = rxbuf[0];
+		memcpy(pData, &rxbuf[1], u8ReadLen);
 	}
 
     return ret;

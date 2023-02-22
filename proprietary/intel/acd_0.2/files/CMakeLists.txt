@@ -228,8 +228,8 @@ if (${TRIAGE_SECTION} OR ${BAFI_NDA_OUTPUT})
     endif ()
 endif ()
 
-if (${IPMB_PECI_INTF})
-    set (SRC_FILES ${SRC_FILES} ipmb_peci_interface.c)
+if (${BIC_PECI_INTF})
+    set (SRC_FILES ${SRC_FILES} bic_peci_interface.c)
 endif ()
 
 if (NOT ${CRASHDUMP_BUILD_UT})
@@ -257,16 +257,15 @@ if (NOT ${CRASHDUMP_BUILD_UT})
         PRIVATE $<$<BOOL:${CRASHDUMP_PRINT_UNFORMATTED}>:
                 -DCRASHDUMP_PRINT_UNFORMATTED> $<$<BOOL:${OEMDATA_SECTION}>:
                 -DOEMDATA_SECTION> $<$<BOOL:${NO_SYSTEMD}>: -DNO_SYSTEMD>
-                $<$<BOOL:${IPMB_PECI_INTF}>: -DIPMB_PECI_INTF>
+                $<$<BOOL:${BIC_PECI_INTF}>: -DBIC_PECI_INTF>
+                $<$<BOOL:${IPMB_XFER}>: -DIPMB_XFER>
     )
 
     if (NOT ${NO_SYSTEMD})
         set (DBUS_LIB sdbusplus -lsystemd)
     endif ()
 
-    if (${IPMB_PECI_INTF})
-        set (PECI_LIB ipmb)
-    else ()
+    if ((NOT DEFINED BIC_PECI_INTF) OR (NOT ${BIC_PECI_INTF}))
         set (PECI_LIB peci)
     endif ()
 

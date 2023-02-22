@@ -6,6 +6,7 @@ LOCAL_URI += " \
     file://PlatInfo.cpp \
     "
 
-DEPENDS += "libipmb libipmi"
-RDEPENDS:${PN} += "libipmb libipmi"
-EXTRA_OECMAKE = "-DNO_SYSTEMD=ON -DIPMB_PECI_INTF=ON"
+DEPENDS += "libipmi libpldm-oem"
+RDEPENDS:${PN} += "libipmi libpldm-oem"
+LDFLAGS =+ "-lpldm_oem"
+EXTRA_OECMAKE = "-DNO_SYSTEMD=ON -DBIC_PECI_INTF=ON"
