@@ -7,6 +7,5 @@ LOCAL_URI += " \
     "
 
 DEPENDS += "libipmi libpldm-oem"
-RDEPENDS:${PN} += "libipmi libpldm-oem"
 LDFLAGS =+ "-lpldm_oem"
 EXTRA_OECMAKE = "-DNO_SYSTEMD=ON -DBIC_PECI_INTF=ON"

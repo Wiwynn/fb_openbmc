@@ -10,4 +10,3 @@ LOCAL_URI += " \
 EXTRA_OECMAKE = "-DIPMB_PECI_INTF=ON"
 
 DEPENDS += "libipmb libipmi"
-RDEPENDS:${PN} += "libipmb libipmi"
