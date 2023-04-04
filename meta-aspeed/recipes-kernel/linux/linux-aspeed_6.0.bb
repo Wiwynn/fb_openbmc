@@ -93,6 +93,16 @@ SRC_URI += "file://patches/0111-drivers-jtag-Add-JTAG-core-driver.patch \
 #
 SRC_URI += "file://patches/0141-spi-add-user-mode-aspeed-spi-driver.patch"
 
+#
+# Below patch (adding spi->shutdown method) fixes the reboot-hang problem
+# detected on AST25XX OpenBM platforms (such as wedge400 and minipack).
+# NOTE:
+#   - the shutdown method is not needed on AST26XX.
+#   - we are not sure if the shutdown path is required on AST24XX (no
+#     issue reported on AST24XX yet).
+#
+SRC_URI += "file://patches/0151-spi-aspeed-add-shutdown-path-for-AST25XX-SPI-control.patch"
+
 do_kernel_configme[depends] += "virtual/${TARGET_PREFIX}gcc:do_populate_sysroot"
 KCONFIG_MODE="--alldefconfig"
 
