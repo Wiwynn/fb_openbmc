@@ -18,7 +18,7 @@
 
 include linux-aspeed.inc
 require recipes-kernel/linux/linux-yocto.inc
-include linux-patches-6.1.inc
+require common/recipes-kernel/linux/linux-patches-6.1.inc
 
 KBRANCH = "dev-6.1"
 KSRC ?= "git://github.com/openbmc/linux;protocol=https;branch=${KBRANCH}"
