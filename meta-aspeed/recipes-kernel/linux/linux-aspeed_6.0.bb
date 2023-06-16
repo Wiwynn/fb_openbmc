@@ -40,6 +40,7 @@ SRC_URI += "file://defconfig-6.0/${SOC_MODEL}/defconfig"
 #
 SRC_URI += "file://patches/0001-net-ftgmac100-support-fixed-link.patch \
             file://patches/0002-ARM-dts-aspeed-elbert-Enable-mac3-controller.patch \
+            file://patches/0003-workqueue-fix-enum-type-for-gcc-13.patch \
            "
 
 #
