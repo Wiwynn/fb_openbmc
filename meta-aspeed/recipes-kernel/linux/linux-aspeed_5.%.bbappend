@@ -6,6 +6,7 @@ SRC_URI += "\
                            'file://emmc-ext4.scc file://emmc-ext4.cfg', \
                            'file://emmc-btrfs.scc file://emmc-btrfs.cfg', d), \
         '', d)} \
+    file://gcc-plugins.scc file://gcc-plugins.cfg \
     "
 
 KERNEL_FEATURES:append = " \
@@ -14,4 +15,5 @@ KERNEL_FEATURES:append = " \
     ${@bb.utils.contains('MACHINE_FEATURES', 'emmc', \
         bb.utils.contains('MACHINE_FEATURES', 'emmc-ext4', \
                              'emmc-ext4.scc', 'emmc-btrfs.scc', d), '', d)} \
+    gcc-plugins.scc \
     "
