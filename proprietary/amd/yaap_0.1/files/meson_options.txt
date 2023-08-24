@@ -1,0 +1,2 @@
+option('yaapbic', type: 'boolean', value : false)
+option('yaaplib', type : 'array', value : [])

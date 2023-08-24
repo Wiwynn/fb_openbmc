@@ -1,0 +1,88 @@
+NDA - AMD OOB Crashdump Reference Package
+
+Top-level change log (refer to README files in each sub-folder for next-level change log):
+
+**Version 1.6 (current) - 3/29/23**
+- New BMC release 19:
+	- CPER Revision
+	- New config_file implementation over Redfish
+	- Signature ID
+
+- New Crashdump Analyzer tool v1.6:
+	- Enable revision decode and enable backward compatibility code.
+	- Enable umcwphy decode for UMC IPID
+	- Print Ucode and PPIN on JSON report
+	- multi MCA bank decode support
+
+**Version 1.5a - 2/22/23**
+- Back dated BMC source code to match 18c release
+
+**Version 1.5 - 2/10/23**
+- New BMC release 18c:
+	- APML mailbox (Reset on syncFlood) command. No change in ADDC functionality
+
+**Version 1.4 - 12/19/22**
+- New BMC release 18b:
+	- Getting Ucode and PPIN on CPER
+
+**Version 1.2 - 11/02/22**
+- New BMC release 18:
+	- Enabled LastTransAddr for all 8CCM
+	- Fixed ColdReset issue by changing to use 4sec PWRBTN through GPIO
+	- Skip MCA Harvesting for all Control Fabric Fatal Errors
+
+- New Crashdump Analyzer tool v1.1
+	- Supports populating meta data from CPER format (platformID, Timestamp, CPUID, APIC_ID, etc)
+	- Return JSON object when no --reportpath
+	- Argument to generate logfile. Default not generate file if argument not included
+	- Final performance numbers available (execution time, size, resource usage)
+
+**Version 1.0 - 08/05/22**
+- New BMC release 16:
+	- Redfish mechanism for RAS retrieval
+	- Harvest enables for MCA and last trans addr in BMC config file link (exWDT Errors only)
+	- APML error handling logic: APML retry. defined in config_file
+
+- New Crashdump Analyzer tool v0.8a
+	- Supports populating meta data from CPER format (platformID, Timestamp, CPUID, APIC_ID, etc)
+	- Return JSON object when no --reportpath
+	- Argument to generate logfile. Default not generate file if argument not included
+	- Final performance numbers available (execution time, size, resource usage)
+
+- exWDT error injection with Gopi
+	- python file patch to current GopiNDA release
+
+**Version 0.7 **
+- New BMC release 15:
+	- Single cper generation for 1P and 2P platforms
+	- Removed the ras-error.txt file generation
+	- config_file default mode is 'no reset'
+
+- New Crashdump Analyzer tool v0.8a
+	- Single CPER file decoding for 1P and 2P platforms
+	- --summary feature for short version of summary printed when running the tool
+
+**Version 0.5 **
+- New BMC release 14:
+   - Added support for producing crashdump records in CPER format
+   - Support for BMC config file located in /var/lib/amd-ras/config_file
+- New Crashdump Analyzer tool v0.7
+- New error injection samples for GMI and xGMI links
+
+**Version 0.20 - 06/02/22**
+- BMC release 13 (no change from 0.12)
+- New Crashdump Analyzer tool v0.5b within Go-pi 1.0.7 release
+
+**Version 0.12 - 05/26/22**
+- Includes scrubbed BMC reference code without OpenBMC references
+- No changes to Crashdump Analyzer tool
+
+**Version 0.11 - 04/13/22**
+- Adds raw crashdump sample files
+- No changes to BMC reference code
+- No changes to Crashdump Analyzer tool
+
+**Version 0.1 - 04/12/22**
+- Inital pre-alpha release
+
+

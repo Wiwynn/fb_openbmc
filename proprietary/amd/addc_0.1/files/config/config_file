@@ -1,0 +1,16 @@
+{
+    "apmlRetries": 10,
+    "harvestPpin": false,
+    "harvestuCodeVersion": false,
+    "sigIDOffset": [
+        "0x30",
+        "0x34",
+        "0x28",
+        "0x2c",
+        "0x08",
+        "0x0c",
+        "null",
+        "null"
+    ],
+    "systemRecovery": 0
+}
