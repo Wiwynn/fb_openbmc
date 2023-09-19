@@ -42,6 +42,20 @@ void apml_mux_unlock(uint8_t cpu) {
     }
 }
 
+void toggle_pwr_btn_out(int delay) {
+    std::ofstream gpioFile("/tmp/gpionames/SYS_BMC_PWRBTN_OUT/value");
+    if (!gpioFile) {
+        syslog(LOG_ERR, "Failed to open GPIO RST_BMC_RSTBTN_OUT_R_N");
+        return;
+    }
+
+    gpioFile << '1' << std::flush;
+    gpioFile << '0' << std::flush;
+    std::this_thread::sleep_for(std::chrono::seconds(delay));
+    gpioFile << '1' << std::flush;
+    gpioFile.close();
+}
+
 void triggerColdReset(void) {
     static bool done = false;
 
@@ -50,15 +64,8 @@ void triggerColdReset(void) {
     }
     done = true;
 
-    std::ofstream gpioFile("/tmp/gpionames/RST_BMC_RSTBTN_OUT_R_N/value");
-    if (!gpioFile) {
-        syslog(LOG_ERR, "Failed to open GPIO RST_BMC_RSTBTN_OUT_R_N");
-        return;
-    }
-
     syslog(LOG_CRIT, "Dump completed, cold reset FRU: 1");
-    gpioFile << '0' << std::flush;
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    gpioFile << '1' << std::flush;
-    gpioFile.close();
+    toggle_pwr_btn_out(6);
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+    toggle_pwr_btn_out(1);
 }
