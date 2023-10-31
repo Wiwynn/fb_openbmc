@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <thread>
+#include <openbmc/kv.h>
 
 extern "C" {
 #include <syslog.h>
@@ -68,4 +69,10 @@ void triggerColdReset(void) {
     toggle_pwr_btn_out(6);
     std::this_thread::sleep_for(std::chrono::seconds(10));
     toggle_pwr_btn_out(1);
+}
+
+void set_sync_flood_reset_flag(void) {
+    if (kv_set("sync_flood_reset", "1", 0, KV_FPERSIST)) {
+        return;
+    }
 }
