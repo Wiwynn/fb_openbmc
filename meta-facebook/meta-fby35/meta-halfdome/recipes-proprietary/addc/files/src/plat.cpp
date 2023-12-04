@@ -33,6 +33,10 @@ void apml_mux_unlock(uint8_t cpu) {
     (void)cpu;
 }
 
+void set_sync_flood_reset_flag(void) {
+
+}
+
 void triggerColdReset(void) {
     syslog(LOG_CRIT, "Dump completed, cold reset FRU: %u", fru);
 

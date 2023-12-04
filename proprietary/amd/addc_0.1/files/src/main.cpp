@@ -83,6 +83,7 @@ extern "C" {
 extern void set_apml_mux_locked(uint8_t cpu);
 extern void apml_mux_lock(uint8_t cpu);
 extern void apml_mux_unlock(uint8_t cpu);
+extern void set_sync_flood_reset_flag(void);
 
 #ifndef NO_SYSTEMD
 static boost::asio::io_service io;
@@ -1343,6 +1344,7 @@ bool harvest_ras_errors(uint8_t info,std::string alert_name)
                            Hence, sending the Signal only to socket 0*/
                         sd_journal_print(LOG_CRIT, "Dump completed, warm reset FRU: %u", fru);
                         set_apml_mux_locked(p0_info);
+                        set_sync_flood_reset_flag();
                         ret = reset_on_sync_flood(p0_info, &ack_resp);
                         if(ret)
                         {
