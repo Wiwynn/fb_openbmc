@@ -1,4 +1,4 @@
-FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:${THISDIR}/../../../../recipes-kernel/linux/files:"
 
 SRC_URI:append:mf-fb-secondary-emmc = " \
     file://emmc-btrfs.scc \
