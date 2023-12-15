@@ -1,0 +1,36 @@
+From 8726653589315ca82434a06dc1e7be174bd1a4d9 Mon Sep 17 00:00:00 2001
+From: RickyWu-wiwynn <ricky_cx_wu@wiwynn.com>
+Date: Fri, 19 Jan 2024 10:02:55 +0800
+Subject: [PATCH 1/2] arm64: dts: nuvoton: Add pin127 and pin159 to npcm845
+ pincfg dtsi
+
+Add pin 127 as the interrupt for Medusa IOE.
+Add pin 159 as the interrupt pin of SPIX.
+---
+ .../boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi   | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi
+index fb3fce8437db..48b180eb28fb 100644
+--- a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi
++++ b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi
+@@ -43,6 +43,16 @@ pin109_slew: pin109-slew {
+ 			pins = "GPIO109/SG1_MDIO";
+ 			slew-rate = <1>;
+ 		};
++		pin127: pin127 {
++			pins = "GPIO127/SMB1B_SCL/CP_GPIO0";
++			bias-disable;
++			input-enable;
++		};
++		pin159: pin159 {
++			pins = "GPIO159/MMC_DT3";
++			bias-disable;
++			input-enable;
++		};
+ 		pin240_slew: pin240-slew {
+ 			pins = "GPIO240/I3C0_SCL";
+ 			slew-rate = <1>;
+-- 
+2.25.1
+
