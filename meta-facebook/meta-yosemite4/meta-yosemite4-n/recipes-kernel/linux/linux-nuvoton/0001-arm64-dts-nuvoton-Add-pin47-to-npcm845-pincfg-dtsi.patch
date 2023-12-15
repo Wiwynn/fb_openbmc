@@ -1,0 +1,28 @@
+From 0e7e18727053b140c235a43db8d93eb361fbbba7 Mon Sep 17 00:00:00 2001
+From: RickyWu-wiwynn <ricky_cx_wu@wiwynn.com>
+Date: Fri, 19 Jan 2024 10:02:55 +0800
+Subject: [PATCH] arm64: dts: nuvoton: Add pin47 to npcm845 pincfg dtsi
+
+---
+ arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi
+index fb3fce8437db..3bded33c4cad 100644
+--- a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi
++++ b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi
+@@ -27,6 +27,11 @@ pin34_slew: pin34-slew {
+ 			pins = "GPIO34/I3C4_SDA";
+ 			slew-rate = <1>;
+ 		};
++		pin47: pin47 {
++			pins = "GPIO47/SI1n_RI1";
++			bias-disable;
++			input-enable;
++		};
+ 		pin106_slew: pin106-slew {
+ 			pins = "GPIO106/I3C5_SCL";
+ 			slew-rate = <1>;
+-- 
+2.25.1
+
