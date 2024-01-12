@@ -257,7 +257,9 @@ do_generate_ext4_tar:append() {
 addtask do_pad_binary before do_prepare_bootloaders
 addtask do_sign_binary before do_merge_bootloaders after do_prepare_bootloaders
 addtask do_prepare_bootloaders before do_generate_static after do_generate_rwfs_static
+addtask do_prepare_bootloaders before do_generate_static_norootfs after do_image_cpio
 addtask do_merge_bootloaders before do_generate_static after do_sign_binary
+addtask do_merge_bootloaders before do_generate_static_norootfs after do_sign_binary
 addtask do_merge_bootloaders before do_generate_ext4_tar after do_prepare_bootloaders
 
 # Include the full bootblock and u-boot in the final static image
@@ -280,5 +282,7 @@ do_generate_ubi_tar[depends] += "${PN}:do_prepare_bootloaders"
 do_generate_ubi_tar[depends] += "${PN}:do_merge_bootloaders"
 do_generate_static_tar[depends] += "${PN}:do_prepare_bootloaders"
 do_generate_static_tar[depends] += "${PN}:do_merge_bootloaders"
+do_generate_static_norootfs[depends] += "${PN}:do_prepare_bootloaders"
+do_generate_static_norootfs[depends] += "${PN}:do_merge_bootloaders"
 do_generate_ext4_tar[depends] += "${PN}:do_prepare_bootloaders"
 do_generate_ext4_tar[depends] += "${PN}:do_merge_bootloaders"

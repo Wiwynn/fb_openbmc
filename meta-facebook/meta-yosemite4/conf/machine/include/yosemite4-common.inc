@@ -1,5 +1,6 @@
 MACHINEOVERRIDES =. "yosemite4-common:"
 
+require conf/distro/include/phosphor-static-norootfs.inc
 require conf/distro/include/pldm.inc
 require conf/machine/include/obmc-bsp-common.inc
 require conf/machine/include/facebook-compute-multihost.inc
