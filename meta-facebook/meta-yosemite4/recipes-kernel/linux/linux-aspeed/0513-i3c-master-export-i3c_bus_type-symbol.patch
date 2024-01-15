@@ -1,0 +1,28 @@
+From 9cdfd6db2708fb43a16726dc598556cf2ffc0261 Mon Sep 17 00:00:00 2001
+From: Vitor Soares <Vitor.Soares@synopsys.com>
+Date: Wed, 19 Feb 2020 01:20:40 +0100
+Subject: [PATCH 2/5] i3c: master: export i3c_bus_type symbol
+
+Export i3c_bus_type symbol so i3cdev can register a notifier chain for
+i3c bus.
+
+Signed-off-by: Vitor Soares <vitor.soares@synopsys.com>
+---
+ drivers/i3c/master.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/i3c/master.c b/drivers/i3c/master.c
+index 28611becd8cc..f8b29ef4a7d4 100644
+--- a/drivers/i3c/master.c
++++ b/drivers/i3c/master.c
+@@ -340,6 +340,7 @@ struct bus_type i3c_bus_type = {
+ 	.probe = i3c_device_probe,
+ 	.remove = i3c_device_remove,
+ };
++EXPORT_SYMBOL_GPL(i3c_bus_type);
+ 
+ static enum i3c_addr_slot_status
+ i3c_bus_get_addr_slot_status(struct i3c_bus *bus, u16 addr)
+-- 
+2.25.1
+

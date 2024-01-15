@@ -1,0 +1,45 @@
+From 5b48561410a26984575e1755f8d6f4b19be7b708 Mon Sep 17 00:00:00 2001
+From: Vitor Soares <Vitor.Soares@synopsys.com>
+Date: Wed, 19 Feb 2020 01:20:39 +0100
+Subject: [PATCH 1/5] i3c: master: export i3c_masterdev_type
+
+Exporte i3c_masterdev_type so i3cdev module can verify if an i3c device
+is a master.
+
+Signed-off-by: Vitor Soares <vitor.soares@synopsys.com>
+---
+ drivers/i3c/internals.h | 1 +
+ drivers/i3c/master.c    | 3 ++-
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/i3c/internals.h b/drivers/i3c/internals.h
+index 908a807badaf..c09072698261 100644
+--- a/drivers/i3c/internals.h
++++ b/drivers/i3c/internals.h
+@@ -11,6 +11,7 @@
+ #include <linux/i3c/master.h>
+ 
+ extern struct bus_type i3c_bus_type;
++extern const struct device_type i3c_masterdev_type;
+ 
+ void i3c_bus_normaluse_lock(struct i3c_bus *bus);
+ void i3c_bus_normaluse_unlock(struct i3c_bus *bus);
+diff --git a/drivers/i3c/master.c b/drivers/i3c/master.c
+index 0e9ff5500a77..28611becd8cc 100644
+--- a/drivers/i3c/master.c
++++ b/drivers/i3c/master.c
+@@ -554,9 +554,10 @@ static void i3c_masterdev_release(struct device *dev)
+ 	of_node_put(dev->of_node);
+ }
+ 
+-static const struct device_type i3c_masterdev_type = {
++const struct device_type i3c_masterdev_type = {
+ 	.groups	= i3c_masterdev_groups,
+ };
++EXPORT_SYMBOL_GPL(i3c_masterdev_type);
+ 
+ static int i3c_bus_set_mode(struct i3c_bus *i3cbus, enum i3c_bus_mode mode,
+ 			    unsigned long max_i2c_scl_rate)
+-- 
+2.25.1
+

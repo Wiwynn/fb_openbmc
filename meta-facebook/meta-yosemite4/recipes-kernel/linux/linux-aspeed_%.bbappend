@@ -12,5 +12,10 @@ SRC_URI += " \
     file://0509-Meta-yv4-dts-add-mac-config-property.patch \
     file://0510-yosemite4-Add-EEPROMs-for-NICs-in-DTS.patch \
     file://0511-Add-ina233-and-ina238-devicetree-config.patch \
+    file://0512-i3c-master-export-i3c_masterdev_type.patch \
+    file://0513-i3c-master-export-i3c_bus_type-symbol.patch \
+    file://0514-i3c-master-add-i3c_for_each_dev-helper.patch \
+    file://0515-i3c-add-i3cdev-module-to-expose-i3c-dev-in-dev.patch \
+    file://0516-add-i3cdev-documentation.patch \
 "
 
