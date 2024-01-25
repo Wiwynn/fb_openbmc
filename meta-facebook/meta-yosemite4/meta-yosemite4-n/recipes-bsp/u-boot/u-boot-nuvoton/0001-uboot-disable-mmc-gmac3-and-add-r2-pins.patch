@@ -1,0 +1,45 @@
+From 293cc19732bf710234b11cf439a5000090a6bd34 Mon Sep 17 00:00:00 2001
+From: Marvin Lin <milkfafa@gmail.com>
+Date: Wed, 31 Jan 2024 11:24:20 +0800
+Subject: [PATCH] disable mmc/gmac3 and add r2 pins
+
+---
+ arch/arm/dts/nuvoton-npcm845-evb.dts | 10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/dts/nuvoton-npcm845-evb.dts b/arch/arm/dts/nuvoton-npcm845-evb.dts
+index bc69dc3e2e..bb7c8a611e 100644
+--- a/arch/arm/dts/nuvoton-npcm845-evb.dts
++++ b/arch/arm/dts/nuvoton-npcm845-evb.dts
+@@ -190,18 +190,13 @@
+ 	snps,reset-active-low;
+ 	snps,reset-delays-us = <0 10000 1000000>;
+ 	snps,reset-gpio = <&gpio2 29 GPIO_ACTIVE_LOW>;    /* gpio93 */
+-	status = "okay";
++	status = "disabled";
+ };
+ 
+ &pspi {
+ 	status = "okay";
+ };
+ 
+-&sdhci0 {
+-	bus-width = <0x8>;
+-	status = "okay";
+-};
+-
+ &rng {
+ 	status = "okay";
+ };
+@@ -367,5 +362,8 @@
+ 		&r1_pins
+ 		&r1en_pins
+ 		&r1oen_pins
++		&r2_pins
++		&r2en_pins
++		&r2oen_pins
+ 	>;
+ };
+-- 
+2.34.1
+
