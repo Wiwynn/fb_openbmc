@@ -100,7 +100,7 @@
             <offset>0x10C</offset>
             <size>0x2</size>
         </config>
-        <content format="32bit">1050</content>
+        <content format="32bit">975</content>
     </BinField>
     <BinField>
         <!-- supporeted values: 333,500,600,666,700,720,750,800,825,850,900,950,1000.
