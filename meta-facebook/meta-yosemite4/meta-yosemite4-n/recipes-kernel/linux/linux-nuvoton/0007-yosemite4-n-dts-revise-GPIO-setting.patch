@@ -1,0 +1,94 @@
+From 85be33ef8f896614c539c1e9fc98ce53d0f5cb16 Mon Sep 17 00:00:00 2001
+From: RickyWu-wiwynn <ricky_cx_wu@wiwynn.com>
+Date: Thu, 29 Feb 2024 09:48:16 +0800
+Subject: [PATCH] yosemite4-n: dts: revise GPIO setting
+
+---
+ .../dts/nuvoton/nuvoton-npcm845-yosemite4.dts | 25 ++++++++++++++-----
+ 1 file changed, 19 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-yosemite4.dts b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-yosemite4.dts
+index ebb275924b95..e919961ba4ff 100644
+--- a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-yosemite4.dts
++++ b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-yosemite4.dts
+@@ -966,8 +966,8 @@ gpio@24 {
+ 				#gpio-cells = <2>;
+ 				gpio-line-names =
+ 				"","","","",
+-				"NIC0-MAIN-PWR-EN","NIC1-MAIN-PWR-EN",
+-				"NIC2-MAIN-PWR-EN","NIC3-MAIN-PWR-EN",
++				"NIC0_MAIN_PWR_EN","NIC1_MAIN_PWR_EN",
++				"NIC2_MAIN_PWR_EN","NIC3_MAIN_PWR_EN",
+ 				"","","","","","","","",
+ 				"","","","","","","","",
+ 				"","","","","","","","";
+@@ -1596,10 +1596,13 @@ &pinctrl {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <
+ 			&bmcuart1_pins
++			&tp_uart_pins
+ 			&spi0_cs1_slew
+ 			&pspi_di_slew
+ 			&pspi_d0_slew
+ 			&pspi_ck_slew
++			&wdog1_pins
++			&wdog2_pins
+ 			&pin242_slew
+ 			&pin243_slew
+ 			&pin244_slew
+@@ -1632,6 +1635,7 @@ &gpio196ol_pins
+ 			&gpio203o_pins
+ 			&gpio208ol_pins
+ 			&gpio228o_pins
++			&gpio233_pins
+ 			&gpio235ol_pins>;
+ 
+ 	gpio0: gpio@f0010000 {
+@@ -1699,9 +1703,9 @@ gpio6: gpio@f0016000 {
+ 		#interrupt-cells = <2>;
+ 		gpio-line-names =
+ 		"FM_NIC0_WAKE_N","","EN_NIC3_POWER_BMC_R","","EN_NIC2_POWER_BMC_R","","FLT_HSC_SERVER_SLOT3_N","RST_PCIE_SLOT5_N",
+-		"","","","","FM_BMC_READY_R2","ALT_SPIDER_TMP75_R_N","ALT_SPIDER_INA233_R_N","",
+-		"FAST_PROCHOT_N","RST_PCIE_SLOT4_N","FM_NIC2_WAKE_N","","INT_FANBOARD1_IOEXP_N","INT_FANBOARD0_IOEXP_N","","",
+-		"","","","","","","","";
++		"","","","PSPI_BMC_TPM_CS_R_N","","","","",
++		"FM_BMC_READY_R2","ALT_SPIDER_TMP75_R_N","ALT_SPIDER_INA233_R_N","","FAST_PROCHOT_N","RST_PCIE_SLOT4_N","FM_NIC2_WAKE_N","",
++		"INT_FANBOARD1_IOEXP_N","INT_FANBOARD0_IOEXP_N","","","","","","";
+ 	};
+ 
+ 	gpio7: gpio@f0017000 {
+@@ -1709,7 +1713,7 @@ gpio7: gpio@f0017000 {
+ 		#interrupt-cells = <2>;
+ 		gpio-line-names =
+ 		"","","","","LED_BMC_HB_R_N","","","",
+-		"","","BTN_BMC_R2_N","EN_P3V_BAT_SCALED_R","","","","",
++		"","PSPI_BMC_BRIDGE_CS_R_N","BTN_BMC_R2_N","EN_P3V_BAT_SCALED_R","","","","",
+ 		"","","","","","","","",
+ 		"","","ALT_P12V_AUX_N","","","","","";
+ 	};
+@@ -1721,6 +1725,10 @@ bu5b_pins: bu5b-pins {
+ 		groups = "bu5b";
+ 		function = "bu5b";
+ 	};
++	tp_uart_pins: tp-uart-pins {
++		groups = "tp_uart";
++		function = "tp_uart";
++	};
+ 	spi0_cs1_slew: spi0-cs1-slew
+ 	{
+ 		pins = "GPIO32/SMB14B_SCL/SPI0_nCS1";
+@@ -1890,6 +1898,11 @@ gpio228o_pins: gpio228o-pins {
+ 		bias-disable;
+ 		output-high;
+ 	};
++	gpio233_pins: gpio233-pins {
++		pins = "GPIO233/SPI1_nCS1/FM1_CSO";
++		bias-disable;
++		input-enable;
++	};
+ 	gpio235ol_pins: gpio235ol-pins {
+ 		pins = "GPIO235/PWM11/SMB20_SDA";
+ 		bias-disable;
+-- 
+2.25.1
+

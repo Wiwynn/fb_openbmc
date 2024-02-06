@@ -1,0 +1,638 @@
+From 36137a2bf1917eacc749df9afbd077a32d5e539b Mon Sep 17 00:00:00 2001
+From: RickyWu-wiwynn <ricky_cx_wu@wiwynn.com>
+Date: Tue, 6 Feb 2024 13:13:12 +0800
+Subject: [PATCH] arm64: dts: Revised gpio, i2c and uart setting for
+ yosemite4-n
+
+---
+ .../dts/nuvoton/nuvoton-npcm845-yosemite4.dts | 360 ++++++++++++++----
+ 1 file changed, 294 insertions(+), 66 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-yosemite4.dts b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-yosemite4.dts
+index 23c9ec3fa3ea..9a5302a0647f 100644
+--- a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-yosemite4.dts
++++ b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-yosemite4.dts
+@@ -184,10 +184,14 @@ &serial3 {
+ };
+ 
+ &serial4 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&bu4b_pins>;
+ 	status = "okay";
+ };
+ 
+ &serial5 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&bu5b_pins>;
+ 	status = "okay";
+ };
+ 
+@@ -350,9 +354,10 @@ target-port@3 {
+ 	};
+ };
+ 
+-&i2c0 {
++&i2c1 {
+ 	status = "okay";
+ 	clock-frequency = <400000>;
++	multi-master;
+ 
+ 	gpio@20 {
+ 		compatible = "nxp,pca9506";
+@@ -389,9 +394,10 @@ power-sensor@40 {
+ 	};
+ };
+ 
+-&i2c1 {
++&i2c2 {
+ 	status = "okay";
+ 	clock-frequency = <400000>;
++	multi-master;
+ 
+ 	gpio@20 {
+ 		compatible = "nxp,pca9506";
+@@ -428,9 +434,10 @@ power-sensor@40 {
+ 	};
+ };
+ 
+-&i2c2 {
++&i2c3 {
+ 	status = "okay";
+ 	clock-frequency = <400000>;
++	multi-master;
+ 
+ 	gpio@20 {
+ 		compatible = "nxp,pca9506";
+@@ -467,9 +474,10 @@ power-sensor@40 {
+ 	};
+ };
+ 
+-&i2c3 {
++&i2c4 {
+ 	status = "okay";
+ 	clock-frequency = <400000>;
++	multi-master;
+ 
+ 	gpio@20 {
+ 		compatible = "nxp,pca9506";
+@@ -506,9 +514,10 @@ power-sensor@40 {
+ 	};
+ };
+ 
+-&i2c4 {
++&i2c5 {
+ 	status = "okay";
+ 	clock-frequency = <400000>;
++	multi-master;
+ 
+ 	gpio@20 {
+ 		compatible = "nxp,pca9506";
+@@ -545,9 +554,10 @@ power-sensor@40 {
+ 	};
+ };
+ 
+-&i2c5 {
++&i2c6 {
+ 	status = "okay";
+ 	clock-frequency = <400000>;
++	multi-master;
+ 
+ 	gpio@20 {
+ 		compatible = "nxp,pca9506";
+@@ -584,9 +594,10 @@ power-sensor@40 {
+ 	};
+ };
+ 
+-&i2c6 {
++&i2c7 {
+ 	status = "okay";
+ 	clock-frequency = <400000>;
++	multi-master;
+ 
+ 	gpio@20 {
+ 		compatible = "nxp,pca9506";
+@@ -623,9 +634,10 @@ power-sensor@40 {
+ 	};
+ };
+ 
+-&i2c7 {
++&i2c8 {
+ 	status = "okay";
+ 	clock-frequency = <400000>;
++	multi-master;
+ 
+ 	gpio@20 {
+ 		compatible = "nxp,pca9506";
+@@ -662,7 +674,7 @@ power-sensor@40 {
+ 	};
+ };
+ 
+-&i2c8 {
++&i2c9 {
+ 	status = "okay";
+ 	clock-frequency = <400000>;
+ 
+@@ -774,7 +786,7 @@ eeprom@54 {
+ 	};
+ };
+ 
+-&i2c9 {
++&i2c10 {
+ 	status = "okay";
+ 	clock-frequency = <400000>;
+ 
+@@ -886,7 +898,7 @@ eeprom@54 {
+ 	};
+ };
+ 
+-&i2c10 {
++&i2c11 {
+ 	status = "okay";
+ 	clock-frequency = <400000>;
+ 
+@@ -935,8 +947,8 @@ gpio@24 {
+ 				#gpio-cells = <2>;
+ 				gpio-line-names =
+ 				"","","","",
+-				"NIC0_MAIN_PWR_EN","NIC1_MAIN_PWR_EN",
+-				"NIC2_MAIN_PWR_EN","NIC3_MAIN_PWR_EN",
++				"NIC0-MAIN-PWR-EN","NIC1-MAIN-PWR-EN",
++				"NIC2-MAIN-PWR-EN","NIC3-MAIN-PWR-EN",
+ 				"","","","","","","","",
+ 				"","","","","","","","",
+ 				"","","","","","","","";
+@@ -951,9 +963,8 @@ imux29: i2c@1 {
+ 	};
+ };
+ 
+-&i2c11 {
++&i2c12 {
+ 	status = "okay";
+-
+ 	power-sensor@10 {
+ 		compatible = "adi,adm1272";
+ 		reg = <0x10>;
+@@ -964,7 +975,7 @@ power-sensor@12 {
+ 		reg = <0x12>;
+ 	};
+ 
+-	gpio_ext1: pca9555@20 {
++	gpio@20 {
+ 		compatible = "nxp,pca9555";
+ 		pinctrl-names = "default";
+ 		gpio-controller;
+@@ -973,17 +984,17 @@ gpio_ext1: pca9555@20 {
+ 		interrupt-parent = <&gpio3>;
+ 		interrupts = <31 IRQ_TYPE_LEVEL_LOW>;
+ 		gpio-line-names =
+-		"P48V_OCP_GPIO1","P48V_OCP_GPIO2",
+-		"P48V_OCP_GPIO3","FAN_BOARD_0_REVISION_0_R",
+-		"FAN_BOARD_0_REVISION_1_R","FAN_BOARD_1_REVISION_0_R",
+-		"FAN_BOARD_1_REVISION_1_R","RST_MUX_R_N",
+-		"RST_LED_CONTROL_FAN_BOARD_0_N","RST_LED_CONTROL_FAN_BOARD_1_N",
+-		"RST_IOEXP_FAN_BOARD_0_N","RST_IOEXP_FAN_BOARD_1_N",
+-		"PWRGD_LOAD_SWITCH_FAN_BOARD_0_R","PWRGD_LOAD_SWITCH_FAN_BOARD_1_R",
++		"P48V-OCP-GPIO1","P48V-OCP-GPIO2",
++		"P48V-OCP-GPIO3","FAN-BOARD-0-REVISION-0-R",
++		"FAN-BOARD-0-REVISION-1-R","FAN-BOARD-1-REVISION-0-R",
++		"FAN-BOARD-1-REVISION-1-R","RST-MUX-R-N",
++		"RST-LED-CONTROL-FAN-BOARD-0-N","RST-LED-CONTROL-FAN-BOARD-1-N",
++		"RST-IOEXP-FAN-BOARD-0-N","RST-IOEXP-FAN-BOARD-1-N",
++		"PWRGD-LOAD-SWITCH-FAN-BOARD-0-R","PWRGD-LOAD-SWITCH-FAN-BOARD-1-R",
+ 		"","";
+ 	};
+ 
+-	gpio_ext2: pca9555@21 {
++	gpio@21 {
+ 		compatible = "nxp,pca9555";
+ 		pinctrl-names = "default";
+ 		gpio-controller;
+@@ -992,17 +1003,17 @@ gpio_ext2: pca9555@21 {
+ 		interrupt-parent = <&gpio3>;
+ 		interrupts = <31 IRQ_TYPE_LEVEL_LOW>;
+ 		gpio-line-names =
+-		"DELTA_MODULE_TYPE","VSENSE_ERR_VDROP_R",
+-		"EN_P48V_AUX_0","EN_P48V_AUX_1",
+-		"MEDUSA_BOARD_REV_0","MEDUSA_BOARD_REV_1",
+-		"MEDUSA_BOARD_REV_2","MEDUSA_BOARD_TYPE",
+-		"HSC_OCP_SLOT_ODD_GPIO1","HSC_OCP_SLOT_ODD_GPIO2",
+-		"HSC_OCP_SLOT_ODD_GPIO3","HSC_OCP_SLOT_EVEN_GPIO1",
+-		"HSC_OCP_SLOT_EVEN_GPIO2","HSC_OCP_SLOT_EVEN_GPIO3",
+-		"ADC_TYPE_0_R","ADC_TYPE_1_R";
++		"HSC-OCP-SLOT-ODD-GPIO1","HSC-OCP-SLOT-ODD-GPIO2",
++		"HSC-OCP-SLOT-ODD-GPIO3","HSC-OCP-SLOT-EVEN-GPIO1",
++		"HSC-OCP-SLOT-EVEN-GPIO2","HSC-OCP-SLOT-EVEN-GPIO3",
++		"ADC-TYPE-0-R","ADC-TYPE-1-R",
++		"MEDUSA-BOARD-REV-0","MEDUSA-BOARD-REV-1",
++		"MEDUSA-BOARD-REV-2","MEDUSA-BOARD-TYPE",
++		"DELTA-MODULE-TYPE","P12V-HSC-TYPE",
++		"","";
+ 	};
+ 
+-	gpio_ext3: pca9555@22 {
++	gpio@22 {
+ 		compatible = "nxp,pca9555";
+ 		pinctrl-names = "default";
+ 		gpio-controller;
+@@ -1011,17 +1022,17 @@ gpio_ext3: pca9555@22 {
+ 		interrupt-parent = <&gpio3>;
+ 		interrupts = <31 IRQ_TYPE_LEVEL_LOW>;
+ 		gpio-line-names =
+-		"CARD_TYPE_SLOT1","CARD_TYPE_SLOT2",
+-		"CARD_TYPE_SLOT3","CARD_TYPE_SLOT4",
+-		"CARD_TYPE_SLOT5","CARD_TYPE_SLOT6",
+-		"CARD_TYPE_SLOT7","CARD_TYPE_SLOT8",
+-		"OC_P48V_HSC_0_N","FLT_P48V_HSC_0_N",
+-		"PWRGD_P12V_AUX_1","OC_P48V_HSC_1_N",
+-		"FLT_P48V_HSC_1_N","PWRGD_P12V_AUX_1",
+-		"MEDUSA_ADC_EFUSE_TYPE_R","P12V_HSC_TYPE";
++		"CARD-TYPE-SLOT1","CARD-TYPE-SLOT2",
++		"CARD-TYPE-SLOT3","CARD-TYPE-SLOT4",
++		"CARD-TYPE-SLOT5","CARD-TYPE-SLOT6",
++		"CARD-TYPE-SLOT7","CARD-TYPE-SLOT8",
++		"OC-P48V-HSC-0-N","FLT-P48V-HSC-0-N",
++		"OC-P48V-HSC-1-N","FLT-P48V-HSC-1-N",
++		"EN-P48V-AUX-0","EN-P48V-AUX-1",
++		"PWRGD-P12V-AUX-0","PWRGD-P12V-AUX-1";
+ 	};
+ 
+-	gpio_ext4: pca9555@23 {
++	gpio@23 {
+ 		compatible = "nxp,pca9555";
+ 		pinctrl-names = "default";
+ 		gpio-controller;
+@@ -1030,19 +1041,32 @@ gpio_ext4: pca9555@23 {
+ 		interrupt-parent = <&gpio3>;
+ 		interrupts = <31 IRQ_TYPE_LEVEL_LOW>;
+ 		gpio-line-names =
+-		"HSC1_ALERT1_R_N","HSC2_ALERT1_R_N",
+-		"HSC3_ALERT1_R_N","HSC4_ALERT1_R_N",
+-		"HSC5_ALERT1_R_N","HSC6_ALERT1_R_N",
+-		"HSC7_ALERT1_R_N","HSC8_ALERT1_R_N",
+-		"HSC1_ALERT2_R_N","HSC2_ALERT2_R_N",
+-		"HSC3_ALERT2_R_N","HSC4_ALERT2_R_N",
+-		"HSC5_ALERT2_R_N","HSC6_ALERT2_R_N",
+-		"HSC7_ALERT2_R_N","HSC8_ALERT2_R_N";
++		"HSC1-ALERT1-R-N","HSC2-ALERT1-R-N",
++		"HSC3-ALERT1-R-N","HSC4-ALERT1-R-N",
++		"HSC5-ALERT1-R-N","HSC6-ALERT1-R-N",
++		"HSC7-ALERT1-R-N","HSC8-ALERT1-R-N",
++		"HSC1-ALERT2-R-N","HSC2-ALERT2-R-N",
++		"HSC3-ALERT2-R-N","HSC4-ALERT2-R-N",
++		"HSC5-ALERT2-R-N","HSC6-ALERT2-R-N",
++		"HSC7-ALERT2-R-N","HSC8-ALERT2-R-N";
+ 	};
+ 
+ 	power-sensor@40 {
+-			compatible = "mps,mp5023";
+-			reg = <0x40>;
++		compatible = "mps,mp5023";
++		reg = <0x40>;
++	};
++
++	power-sensor@41 {
++			compatible = "ti,ina233";
++			resistor-calibration = /bits/ 16 <0x0a00>;
++			current-lsb= /bits/ 16 <0x0001>;
++			reg = <0x41>;
++	};
++
++	power-sensor@44 {
++			compatible = "ti,ina238";
++			shunt-resistor = <1000>;
++			reg = <0x44>;
+ 	};
+ 
+ 	temperature-sensor@48 {
+@@ -1081,7 +1105,7 @@ power-sensor@68 {
+ 	};
+ };
+ 
+-&i2c12 {
++&i2c13 {
+ 	status = "okay";
+ 	clock-frequency = <400000>;
+ 
+@@ -1095,6 +1119,12 @@ imux34: i2c@0 {
+ 			#size-cells = <0>;
+ 			reg = <0>;
+ 
++			adc@1d {
++				compatible = "ti,adc128d818";
++				reg = <0x1d>;
++				ti,mode = /bits/ 8 <1>;
++			};
++
+ 			temperature-sensor@48 {
+ 				compatible = "ti,tmp75";
+ 				reg = <0x48>;
+@@ -1136,10 +1166,9 @@ imux37: i2c@3 {
+ 	};
+ };
+ 
+-&i2c13 {
++&i2c14 {
+ 	status = "okay";
+ 	clock-frequency = <400000>;
+-
+ 	gpio@20 {
+ 		compatible = "nxp,pca9506";
+ 		reg = <0x20>;
+@@ -1169,10 +1198,9 @@ gpio@23 {
+ 	};
+ };
+ 
+-&i2c14 {
++&i2c15 {
+ 	status = "okay";
+ 	clock-frequency = <400000>;
+-
+ 	adc@1d {
+ 		compatible = "ti,adc128d818";
+ 		reg = <0x1d>;
+@@ -1420,11 +1448,11 @@ adc@35 {
+ 	};
+ };
+ 
+-&i2c15 {
++&i2c16 {
+ 	status = "okay";
+-	clock-frequency = <400000>;
+ 	mctp-controller;
+ 	multi-master;
++	clock-frequency = <400000>;
+ 
+ 	mctp@10 {
+ 		compatible = "mctp-i2c-controller";
+@@ -1445,10 +1473,15 @@ temperature-sensor@1f {
+ 				reg = <0x1f>;
+ 			};
+ 
+-			emc1403@3c {
++			temperature-sensor@3c {
+ 				compatible = "smsc,emc1403";
+ 				reg = <0x3c>;
+ 			};
++
++			eeprom@50 {
++				compatible = "atmel,24c64";
++				reg = <0x50>;
++			};
+ 		};
+ 
+ 		imux25: i2c@1 {
+@@ -1461,10 +1494,15 @@ temperature-sensor@1f {
+ 				reg = <0x1f>;
+ 			};
+ 
+-			emc1403@3c {
++			temperature-sensor@3c {
+ 				compatible = "smsc,emc1403";
+ 				reg = <0x3c>;
+ 			};
++
++			eeprom@50 {
++				compatible = "atmel,24c64";
++				reg = <0x50>;
++			};
+ 		};
+ 
+ 		imux26: i2c@2 {
+@@ -1477,10 +1515,15 @@ temperature-sensor@1f {
+ 				reg = <0x1f>;
+ 			};
+ 
+-			emc1403@3c {
++			temperature-sensor@3c {
+ 				compatible = "smsc,emc1403";
+ 				reg = <0x3c>;
+ 			};
++
++			eeprom@50 {
++				compatible = "atmel,24c64";
++				reg = <0x50>;
++			};
+ 		};
+ 
+ 		imux27: i2c@3 {
+@@ -1493,10 +1536,15 @@ temperature-sensor@1f {
+ 				reg = <0x1f>;
+ 			};
+ 
+-			emc1403@3c {
++			temperature-sensor@3c {
+ 				compatible = "smsc,emc1403";
+ 				reg = <0x3c>;
+ 			};
++
++			eeprom@50 {
++				compatible = "atmel,24c64";
++				reg = <0x50>;
++			};
+ 		};
+ 	};
+ };
+@@ -1514,12 +1562,43 @@ &sgpio1 {
+ 	status = "okay";
+ };
+ 
++&pspi {
++	status = "okay";
++};
++
+ &pinctrl {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <
+-			&pin127
+-			&pin159
+-			&bmcuart1_pins>;
++			&bmcuart1_pins
++			&gpio4_pins
++			&gpio5_pins
++			&gpio6_pins
++			&gpio9o_pins
++			&gpio12o_pins
++			&gpio13ol_pins
++			&gpio14ol_pins
++			&gpio24o_pins
++			&gpi35_pins
++			&gpi36_pins
++			&gpio57_pins
++			&gpio93_pins
++			&gpio96o_pins
++			&gpio120ol_pins
++			&gpio122o_pins
++			&gpio125ol_pins
++			&gpio126o_pins
++			&gpio127_pins
++			&gpio159_pins
++			&gpio162_pins
++			&gpio1836_pins
++			&gpio1889_pins
++			&gpio190_pins
++			&gpio194ol_pins
++			&gpio196ol_pins
++			&gpio203o_pins
++			&gpio208ol_pins
++			&gpio228o_pins
++			&gpio235ol_pins>;
+ 
+ 	gpio0: gpio@f0010000 {
+ 		interrupt-controller;
+@@ -1600,4 +1679,153 @@ gpio7: gpio@f0017000 {
+ 		"","","","","","","","",
+ 		"","","ALT_P12V_AUX_N","","","","","";
+ 	};
++	bu4b_pins: bu4b-pins {
++		groups = "bu4b";
++		function = "bu4b";
++	};
++	bu5b_pins: bu5b-pins {
++		groups = "bu5b";
++		function = "bu5b";
++	};
++	gpi35_pins: gpi35-pins {
++		groups = "gpi35";
++		function = "gpi35";
++	};
++	gpi36_pins: gpi36-pins {
++		groups = "gpi36";
++		function = "gpi36";
++	};
++	gpio1836_pins: gpio1836-pins {
++		groups = "gpio1836";
++		function = "gpio1836";
++	};
++	gpio1889_pins: gpio1889-pins {
++		groups = "gpio1889";
++		function = "gpio1889";
++	};
++	gpio4_pins: gpio4-pins {
++		pins = "GPIO4/IOX2_DI/SMB1D_SDA";
++		bias-disable;
++		output-low;
++	};
++	gpio5_pins: gpio5-pins {
++		pins = "GPIO5/IOX2_LD/SMB1D_SCL";
++		bias-disable;
++		input-enable;
++	};
++	gpio6_pins: gpio6-pins {
++		pins = "GPIO6/IOX2_CK/SMB2D_SDA";
++		bias-disable;
++		input-enable;
++	};
++	gpio9o_pins: gpio9o-pins {
++		pins = "GPIO9/LKGPO2/TP_GPIO1";
++		bias-disable;
++		output-high;
++	};
++	gpio12o_pins: gpio12o-pins {
++		pins = "GPIO12/GSPI_CK/SMB5B_SCL";
++		bias-disable;
++		output-high;
++	};
++	gpio13ol_pins: gpio13ol-pins {
++		pins = "GPIO13/GSPI_DO/SMB5B_SDA";
++		bias-disable;
++		output-low;
++	};
++	gpio14ol_pins: gpio14ol-pins {
++		pins = "GPIO14/GSPI_DI/SMB5C_SCL";
++		bias-disable;
++		output-low;
++	};
++	gpio24o_pins: gpio24o-pins {
++		pins = "GPIO24/IOXH_DO/H_GPIO4/SMB7C_SCL/TP_SMB2_SCL";
++		bias-disable;
++		output-high;
++	};
++	gpio57_pins: gpio57-pins {
++		pins = "GPIO57/R1_MDC/TP_GPIO4";
++		bias-disable;
++		input-enable;
++	};
++	gpio93_pins: gpio93-pins {
++		pins = "GPIO93/GA20/SMB5D_SCL";
++		bias-disable;
++		input-enable;
++	};
++	gpio96o_pins: gpio96o-pins {
++		pins = "GPIO96/CP1_GPIO7/BU2_TXD/TP_GPIO7";
++		bias-disable;
++		output-high;
++	};
++	gpio120ol_pins: gpio120ol-pins {
++		pins = "GPIO120/SMB2C_SDA";
++		bias-disable;
++		output-low;
++	};
++	gpio122o_pins: gpio122o-pins {
++		pins = "GPIO122/SMB2B_SDA";
++		bias-disable;
++		output-high;
++	};
++	gpio125ol_pins: gpio125ol-pins {
++		pins = "GPIO125/SMB1C_SCL/CP1_GPIO2";
++		bias-disable;
++		output-low;
++	};
++	gpio126o_pins: gpio126o-pins {
++		pins = "GPIO126/SMB1B_SDA/CP1_GPIO1";
++		bias-disable;
++		output-high;
++	};
++	gpio127_pins: gpio127-pins {
++		pins = "GPIO127/SMB1B_SCL/CP_GPIO0";
++		bias-disable;
++		input-enable;
++	};
++	gpio159_pins: gpio159-pins {
++		pins = "GPIO159/MMC_DT3";
++		bias-disable;
++		input-enable;
++	};
++	gpio162_pins: gpio162-pins {
++		pins = "GPIO162/LPC_nCLKRUN";
++		bias-disable;
++		input-enable;
++	};
++	gpio190_pins: gpio190-pins {
++		pins = "GPIO190/nPRD_SMI";
++		bias-disable;
++		input-enable;
++	};
++	gpio194ol_pins: gpio194ol-pins {
++		pins = "GPIO194/SMB0B_SCL/FM0_CK";
++		bias-disable;
++		output-low;
++	};
++	gpio196ol_pins: gpio196ol-pins {
++		pins = "GPIO196/SMB0C_SCL/FM0_D1";
++		bias-disable;
++		output-low;
++	};
++	gpio203o_pins: gpio203o-pins {
++		pins = "GPIO203/SPI1_nCS0/FANIN16/FM1_CSI";
++		bias-disable;
++		output-high;
++	};
++	gpio208ol_pins: gpio208ol-pins {
++		pins = "GPIO208/RG2_TXC/DVCK";
++		bias-disable;
++		output-low;
++	};
++	gpio228o_pins: gpio228o-pins {
++		pins = "GPIO228/SPIX_nCS1/FM2_CSO";
++		bias-disable;
++		output-high;
++	};
++	gpio235ol_pins: gpio235ol-pins {
++		pins = "GPIO235/PWM11/SMB20_SDA";
++		bias-disable;
++		output-low;
++	};
+ };
+-- 
+2.25.1
+

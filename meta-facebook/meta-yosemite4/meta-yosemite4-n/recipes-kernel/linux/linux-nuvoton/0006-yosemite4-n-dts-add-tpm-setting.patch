@@ -1,0 +1,82 @@
+From 85b7a35ae74488415a22edaa606a878724bec178 Mon Sep 17 00:00:00 2001
+From: RickyWu-wiwynn <ricky_cx_wu@wiwynn.com>
+Date: Fri, 23 Feb 2024 14:53:57 +0800
+Subject: [PATCH] yosemite4-n: dts: add tpm setting
+
+---
+ .../dts/nuvoton/nuvoton-npcm845-yosemite4.dts | 38 ++++++++++---------
+ 1 file changed, 21 insertions(+), 17 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-yosemite4.dts b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-yosemite4.dts
+index 4600b0794bf5..ebb275924b95 100644
+--- a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-yosemite4.dts
++++ b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-yosemite4.dts
+@@ -109,23 +109,6 @@ tip_reserved: tip@0x0 {
+ 		};
+ 	};
+ 
+-	spi_gpio: spi-gpio {
+-		compatible = "spi-gpio";
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+-		gpio-sck = <&gpio0 19 GPIO_ACTIVE_HIGH>; // GPIO19
+-		gpio-mosi = <&gpio0 18 GPIO_ACTIVE_HIGH>; // GPIO18
+-		gpio-miso = <&gpio0 17 GPIO_ACTIVE_HIGH>; // GPIO17
+-		num-chipselects = <1>;
+-		cs-gpios = <&gpio6 11 GPIO_ACTIVE_LOW>; // GPIO203
+-
+-		tpmdev@0 {
+-			compatible = "tcg,tpm_tis-spi";
+-			spi-max-frequency = <33000000>;
+-			reg = <0>;
+-		};
+-	};
+-
+ 	leds {
+ 		compatible = "gpio-leds";
+ 		heartbeat {
+@@ -1601,6 +1584,12 @@ &sgpio1 {
+ 
+ &pspi {
+ 	status = "okay";
++	cs-gpios = <&gpio6 11 GPIO_ACTIVE_LOW>;  // GPIO203
++	spi-max-frequency = <33000000>;
++	tpmdev@0 {
++		compatible = "tcg,tpm_tis-spi";
++		reg = <0>;
++	};
+ };
+ 
+ &pinctrl {
+@@ -1608,6 +1597,9 @@ &pinctrl {
+ 	pinctrl-0 = <
+ 			&bmcuart1_pins
+ 			&spi0_cs1_slew
++			&pspi_di_slew
++			&pspi_d0_slew
++			&pspi_ck_slew
+ 			&pin242_slew
+ 			&pin243_slew
+ 			&pin244_slew
+@@ -1734,6 +1726,18 @@ spi0_cs1_slew: spi0-cs1-slew
+ 		pins = "GPIO32/SMB14B_SCL/SPI0_nCS1";
+ 		slew-rate = <1>;
+ 	};
++	pspi_di_slew: pspi-di-slew {
++		pins = "GPIO17/PSPI_DI/CP1_GPIO5";
++		slew-rate = <1>;
++	};
++	pspi_d0_slew: pspi-d0-slew {
++		pins = "GPIO18/PSPI_D0/SMB4B_SDA";
++		slew-rate = <1>;
++	};
++	pspi_ck_slew: pspi-ck-slew {
++		pins = "GPIO19/PSPI_CK/SMB4B_SCL";
++		slew-rate = <1>;
++	};
+ 	pin242_slew: pin242-slew {
+ 		pins = "GPIO242/I3C1_SCL";
+ 		slew-rate = <1>;
+-- 
+2.25.1
+

@@ -1,0 +1,56 @@
+From c9fbabd524d05b912b7a2504c3258c4eafe13810 Mon Sep 17 00:00:00 2001
+From: RickyWu-wiwynn <ricky_cx_wu@wiwynn.com>
+Date: Thu, 22 Feb 2024 18:32:13 +0800
+Subject: [PATCH] yosemite4-n: dts: add slew rate for spi and i3c
+
+---
+ .../dts/nuvoton/nuvoton-npcm845-yosemite4.dts | 26 +++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-yosemite4.dts b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-yosemite4.dts
+index fe57bd923721..4600b0794bf5 100644
+--- a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-yosemite4.dts
++++ b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-yosemite4.dts
+@@ -1607,6 +1607,11 @@ &pinctrl {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <
+ 			&bmcuart1_pins
++			&spi0_cs1_slew
++			&pin242_slew
++			&pin243_slew
++			&pin244_slew
++			&pin245_slew
+ 			&gpio4_pins
+ 			&gpio5_pins
+ 			&gpio6_pins
+@@ -1724,6 +1729,27 @@ bu5b_pins: bu5b-pins {
+ 		groups = "bu5b";
+ 		function = "bu5b";
+ 	};
++	spi0_cs1_slew: spi0-cs1-slew
++	{
++		pins = "GPIO32/SMB14B_SCL/SPI0_nCS1";
++		slew-rate = <1>;
++	};
++	pin242_slew: pin242-slew {
++		pins = "GPIO242/I3C1_SCL";
++		slew-rate = <1>;
++	};
++	pin243_slew: pin243-slew {
++		pins = "GPIO243/I3C1_SDA";
++		slew-rate = <1>;
++	};
++	pin244_slew: pin244-slew {
++		pins = "GPIO244/I3C2_SCL";
++		slew-rate = <1>;
++	};
++	pin245_slew: pin245-slew {
++		pins = "GPIO245/I3C2_SDA";
++		slew-rate = <1>;
++	};
+ 	gpi35_pins: gpi35-pins {
+ 		groups = "gpi35";
+ 		function = "gpi35";
+-- 
+2.25.1
+
