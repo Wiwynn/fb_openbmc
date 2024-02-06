@@ -1,7 +1,7 @@
-From d6d87fb1a7b652b7c23c2cd631a408566b041948 Mon Sep 17 00:00:00 2001
+From 4f92019a5b26b307d5de5c0219c71a6b48f42a1d Mon Sep 17 00:00:00 2001
 From: RickyWu-wiwynn <ricky_cx_wu@wiwynn.com>
 Date: Fri, 15 Dec 2023 10:16:35 +0800
-Subject: [PATCH 2/2] ARM64: dts: nuvoton: Add initial yosemitev4 device tree
+Subject: [PATCH 1/2] ARM64: dts: nuvoton: Add initial yosemitev4 device tree
 
 Add linux device tree entry related to
 Yosemite 4 specific devices connected to BMC SoC.
