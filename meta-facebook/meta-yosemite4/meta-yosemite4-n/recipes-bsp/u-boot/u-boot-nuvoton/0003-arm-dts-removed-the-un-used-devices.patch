@@ -1,0 +1,186 @@
+From 06ae21ae3db115dca82061257626dc416096f9f2 Mon Sep 17 00:00:00 2001
+From: RickyWu-wiwynn <ricky_cx_wu@wiwynn.com>
+Date: Tue, 6 Feb 2024 13:37:50 +0800
+Subject: [PATCH] arm: dts: removed the un-used devices
+
+---
+ arch/arm/dts/nuvoton-npcm845-evb.dts | 146 +--------------------------
+ 1 file changed, 2 insertions(+), 144 deletions(-)
+
+diff --git a/arch/arm/dts/nuvoton-npcm845-evb.dts b/arch/arm/dts/nuvoton-npcm845-evb.dts
+index bb7c8a611e..c125f250ab 100644
+--- a/arch/arm/dts/nuvoton-npcm845-evb.dts
++++ b/arch/arm/dts/nuvoton-npcm845-evb.dts
+@@ -154,7 +154,7 @@
+ 	snps,reset-active-low;
+ 	snps,reset-delays-us = <0 10000 1000000>;
+ 	snps,reset-gpio = <&gpio5 30 GPIO_ACTIVE_LOW>;    /* gpio190 */
+-	status = "okay";
++	status = "disabled";
+ };
+ &gmac1 {
+ 	phy-mode = "rgmii-id";
+@@ -163,7 +163,7 @@
+ 	snps,reset-gpio = <&gpio5 2 GPIO_ACTIVE_LOW>;    /* gpio162 */
+ 	phy-supply = <&vsbr2>;
+ 	phy-supply-microvolt = <1800000>;
+-	status = "okay";
++	status = "disabled";
+ };
+ 
+ &gmac2 {
+@@ -213,151 +213,9 @@
+ 	status = "okay";
+ };
+ 
+-&i2c0 {
+-	status = "okay";
+-};
+-
+-&i2c1 {
+-	status = "okay";
+-};
+-
+-&i2c2 {
+-	status = "okay";
+-};
+-
+-&i2c3 {
+-	status = "okay";
+-};
+-
+-&i2c4 {
+-	status = "okay";
+-};
+-
+-&i2c5 {
+-	status = "okay";
+-};
+-
+-&i2c6 {
+-	status = "okay";
+-	tmp100@48 {
+-		compatible = "tmp100";
+-		reg = <0x48>;
+-		status = "okay";
+-	};
+-};
+-
+-&i2c7 {
+-	status = "okay";
+-};
+-
+-&i2c8 {
+-	status = "okay";
+-};
+-
+-&i2c9 {
+-	status = "okay";
+-};
+-
+-&i2c10 {
+-	status = "okay";
+-};
+-
+-&i2c11 {
+-	status = "okay";
+-};
+-
+-&i2c12 {
+-	status = "okay";
+-};
+-
+-&i2c13 {
+-	status = "okay";
+-};
+-
+-&i2c14 {
+-	status = "okay";
+-};
+-
+-&i2c15 {
+-	status = "okay";
+-};
+-
+-&i2c16 {
+-	status = "okay";
+-};
+-
+-&i2c17 {
+-	status = "okay";
+-};
+-
+-&i2c18 {
+-	status = "okay";
+-};
+-
+-&i2c19 {
+-	status = "okay";
+-};
+-
+-&i2c20 {
+-	status = "okay";
+-};
+-
+-&i2c21 {
+-	status = "okay";
+-};
+-
+-&i2c22 {
+-	status = "okay";
+-};
+-
+-&i2c23 {
+-	status = "okay";
+-};
+-
+-&i2c24 {
+-	status = "okay";
+-};
+-
+-&i2c25 {
+-	status = "okay";
+-};
+-
+-&i2c26 {
+-	status = "okay";
+-};
+-
+-&usbphy1 {
+-	status = "okay";
+-};
+-
+-&usbphy2 {
+-	status = "okay";
+-};
+-
+-&usbphy3 {
+-	status = "okay";
+-};
+-
+-&udc0 {
+-	status = "okay";
+-	phys = <&usbphy1 NPCM_UDC0_7>;
+-};
+-
+-&ehci1 {
+-	status = "okay";
+-	phys = <&usbphy2 NPCM_USBH1>;
+-};
+-
+-&udc8 {
+-	status = "okay";
+-	phys = <&usbphy3 NPCM_UDC8>;
+-};
+-
+ &pinctrl {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <
+-		&gspi_pins
+-		&vgadig_pins
+ 		&spix_pins
+ 		&r1_pins
+ 		&r1en_pins
+-- 
+2.25.1
+
