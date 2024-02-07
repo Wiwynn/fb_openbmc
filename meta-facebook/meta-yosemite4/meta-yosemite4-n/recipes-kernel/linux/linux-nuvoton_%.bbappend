@@ -9,4 +9,5 @@ SRC_URI += "file://yosemite4-common.cfg \
             file://yosemite4.cfg \
             file://0001-ARM64-dts-nuvoton-Add-initial-yosemitev4-device-tree.patch \
             file://0002-arm64-dts-Revised-gpio-i2c-and-uart-setting-for-yose.patch \
+            file://0003-arm64-dts-yosemite4-n-add-regulator-for-ADC.patch \
            "
