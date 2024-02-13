@@ -4,19 +4,19 @@ EXTRA_OEMESON:append = " \
                          -Dwarm-reboot=enabled \
                        "
 
-HOST_DEFAULT_TARGETS:remove:yosemite4 = " \
+HOST_DEFAULT_TARGETS:remove = " \
     obmc-host-reboot@{}.target.requires/obmc-host-shutdown@{}.target \
     obmc-host-reboot@{}.target.requires/phosphor-reboot-host@{}.service \
     "
 
-CHASSIS_DEFAULT_TARGETS:remove:yosemite4 = " \
+CHASSIS_DEFAULT_TARGETS:remove = " \
     obmc-chassis-powerreset@{}.target.requires/phosphor-reset-chassis-on@{}.service \
     obmc-chassis-powerreset@{}.target.requires/phosphor-reset-chassis-running@{}.service \
     obmc-chassis-poweroff@{}.target.requires/obmc-power-stop@{}.service \
     obmc-chassis-poweron@{}.target.requires/obmc-power-start@{}.service \
     "
 
-SRC_URI:append:yosemite4 = " \
+SRC_URI:append = " \
     file://chassis-poweroff@.service \
     file://chassis-poweron@.service \
     file://chassis-powercycle@.service \
@@ -34,9 +34,9 @@ SRC_URI:append:yosemite4 = " \
     file://power-cmd \
     "
 
-RDEPENDS:${PN}:append:yosemite4 = " bash"
+RDEPENDS:${PN}:append = " bash"
 
-do_install:append:yosemite4() {
+do_install:append() {
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/*.service ${D}${systemd_system_unitdir}/
 
