@@ -1,0 +1,102 @@
+From 2c1b9a4ea471ac5f08b2ea41e6c300328792bf82 Mon Sep 17 00:00:00 2001
+From: RickyWu-wiwynn <ricky_cx_wu@wiwynn.com>
+Date: Sun, 11 Feb 2024 00:38:31 +0800
+Subject: [PATCH 5/7] i3c: export send CCC command API
+
+---
+ drivers/i3c/device.c       | 14 ++++++++++++++
+ drivers/i3c/internals.h    |  1 +
+ drivers/i3c/master.c       | 27 +++++++++++++++++++++++++++
+ include/linux/i3c/device.h |  1 +
+ 4 files changed, 43 insertions(+)
+
+diff --git a/drivers/i3c/device.c b/drivers/i3c/device.c
+index 36c2330f21b0..d28605519720 100644
+--- a/drivers/i3c/device.c
++++ b/drivers/i3c/device.c
+@@ -295,6 +295,20 @@ void i3c_device_free_ibi(struct i3c_device *dev)
+ }
+ EXPORT_SYMBOL_GPL(i3c_device_free_ibi);
+ 
++int i3c_device_send_ccc_cmd(struct i3c_device *dev, u8 ccc_id)
++{
++	int ret;
++
++	if (dev->desc) {
++		i3c_bus_normaluse_lock(dev->bus);
++		ret = i3c_dev_send_ccc_cmd_locked(dev->desc, ccc_id);
++		i3c_bus_normaluse_unlock(dev->bus);
++	}
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(i3c_device_send_ccc_cmd);
++
+ /**
+  * i3cdev_to_dev() - Returns the device embedded in @i3cdev
+  * @i3cdev: I3C device
+diff --git a/drivers/i3c/internals.h b/drivers/i3c/internals.h
+index fb3d429d9f3a..2d74608b044f 100644
+--- a/drivers/i3c/internals.h
++++ b/drivers/i3c/internals.h
+@@ -27,6 +27,7 @@ int i3c_dev_enable_ibi_locked(struct i3c_dev_desc *dev);
+ int i3c_dev_request_ibi_locked(struct i3c_dev_desc *dev,
+ 			       const struct i3c_ibi_setup *req);
+ void i3c_dev_free_ibi_locked(struct i3c_dev_desc *dev);
++int i3c_dev_send_ccc_cmd_locked(struct i3c_dev_desc *dev, u8 ccc_id);
+ int i3c_dev_generate_ibi_locked(struct i3c_dev_desc *dev, const u8 *data, int len);
+ int i3c_dev_pending_read_notify_locked(struct i3c_dev_desc *dev,
+ 				       struct i3c_priv_xfer *pending_read,
+diff --git a/drivers/i3c/master.c b/drivers/i3c/master.c
+index 41d499f3920d..2b233d7c5f60 100644
+--- a/drivers/i3c/master.c
++++ b/drivers/i3c/master.c
+@@ -3585,6 +3585,33 @@ void i3c_dev_free_ibi_locked(struct i3c_dev_desc *dev)
+ 	dev->ibi = NULL;
+ }
+ 
++int i3c_dev_send_ccc_cmd_locked(struct i3c_dev_desc *dev, u8 ccc_id)
++{
++	struct i3c_master_controller *master = i3c_dev_get_master(dev);
++	int ret;
++
++	switch (ccc_id) {
++	case I3C_CCC_SETAASA:
++		ret = i3c_master_setaasa_locked(master);
++		break;
++	case I3C_CCC_SETHID:
++		ret = i3c_master_sethid_locked(master);
++		break;
++	case I3C_CCC_RSTDAA(false):
++		ret = i3c_master_rstdaa_locked(master, dev->info.dyn_addr);
++		break;
++	case I3C_CCC_RSTDAA(true):
++		ret = i3c_master_rstdaa_locked(master, I3C_BROADCAST_ADDR);
++		break;
++	default:
++		dev_err(&master->dev, "Unpermitted ccc: %x\n", ccc_id);
++		return -ENOTSUPP;
++	}
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(i3c_dev_send_ccc_cmd_locked);
++
+ int i3c_for_each_dev(void *data, int (*fn)(struct device *, void *))
+ {
+ 	int res;
+diff --git a/include/linux/i3c/device.h b/include/linux/i3c/device.h
+index b2893fdcb7ca..a351848e5883 100644
+--- a/include/linux/i3c/device.h
++++ b/include/linux/i3c/device.h
+@@ -375,6 +375,7 @@ int i3c_device_getmrl_ccc(struct i3c_device *dev, struct i3c_device_info *info);
+ int i3c_device_getmwl_ccc(struct i3c_device *dev, struct i3c_device_info *info);
+ int i3c_device_setaasa_ccc(struct i3c_device *dev);
+ int i3c_device_sethid_ccc(struct i3c_device *dev);
++int i3c_device_send_ccc_cmd(struct i3c_device *dev, u8 ccc_id);
+ 
+ struct i3c_target_read_setup {
+ 	void (*handler)(struct i3c_device *dev, const u8 *data, size_t len);
+-- 
+2.25.1
+

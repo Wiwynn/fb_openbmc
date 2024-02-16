@@ -1,0 +1,90 @@
+From 40f827dd647aaa26c325dc96157602885f140795 Mon Sep 17 00:00:00 2001
+From: RickyWu-wiwynn <ricky_cx_wu@wiwynn.com>
+Date: Wed, 31 Jan 2024 15:02:55 +0800
+Subject: [PATCH 3/7] arm: dts: aspeed: add i3c config in yv4 dts
+
+---
+ .../aspeed/aspeed-bmc-facebook-yosemite4.dts  | 67 +++++++++++++++++++
+ 1 file changed, 67 insertions(+)
+
+diff --git a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts
+index 21da37111347..c13ecb8932bf 100644
+--- a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts
++++ b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts
+@@ -1406,6 +1406,73 @@ eeprom@50 {
+ 	};
+ };
+ 
++&i3c0 {
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_i3c1_default>;
++
++	mctp-controller;
++	hub@0x70 {
++		reg = <0x70 0x3c0 0x00700000>;
++		cp0-ldo = "1.2V";
++		cp1-ldo = "1.2V";
++		tp0145-ldo = "1.2V";
++		tp2367-ldo = "1.2V";
++		tp0145-pullup = "2k";
++		tp2367-pullup = "2k";
++
++		target-port@0 {
++			mode = "i3c";
++			pullup = "enabled";
++		};
++		target-port@1 {
++			mode = "i3c";
++			pullup = "enabled";
++		};
++		target-port@2 {
++			mode = "i3c";
++			pullup = "enabled";
++		};
++		target-port@3 {
++			mode = "i3c";
++			pullup = "enabled";
++		};
++	};
++};
++
++&i3c1 {
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_i3c2_default>;
++
++	mctp-controller;
++	hub@0x70 {
++		reg = <0x70 0x3c0 0x00700000>;
++		cp0-ldo = "1.2V";
++		cp1-ldo = "1.2V";
++		tp0145-ldo = "1.2V";
++		tp2367-ldo = "1.2V";
++		tp0145-pullup = "2k";
++		tp2367-pullup = "2k";
++
++		target-port@0 {
++			mode = "i3c";
++			pullup = "enabled";
++		};
++		target-port@1 {
++			mode = "i3c";
++			pullup = "enabled";
++		};
++		target-port@2 {
++			mode = "i3c";
++			pullup = "enabled";
++		};
++		target-port@3 {
++			mode = "i3c";
++			pullup = "enabled";
++		};
++	};
++};
+ 
+ &adc0 {
+ 	ref_voltage = <2500>;
+-- 
+2.25.1
+

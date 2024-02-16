@@ -17,5 +17,11 @@ SRC_URI += " \
     file://0514-i3c-master-add-i3c_for_each_dev-helper.patch \
     file://0515-i3c-add-i3cdev-module-to-expose-i3c-dev-in-dev.patch \
     file://0516-add-i3cdev-documentation.patch \
+    file://0517-kernel-6.6-drivers-i3c-add-i3c-related-drivers-from-.patch \
+    file://0518-drivers-i3c-add-i3c-hub-driver.patch \
+    file://0519-arm-dts-aspeed-add-i3c-config-in-yv4-dts.patch \
+    file://0520-ARM-dts-aspeed-g6-Add-I3C-controller-nodes.patch \
+    file://0521-i3c-export-send-CCC-command-API.patch \
+    file://0522-mctp-i3c-MCTP-I3C-driver.patch \
 "
 
