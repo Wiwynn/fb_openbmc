@@ -3,6 +3,7 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 inherit obmc-phosphor-systemd systemd
 
 SRC_URI += "file://yosemite4-phosphor-multi-gpio-monitor.json \
+            file://yosemite4-n-phosphor-multi-gpio-monitor.json \
             file://set-button-sled.service \
             file://probe-slot-device@.service \
             file://probe-slot-device \
@@ -23,13 +24,22 @@ SYSTEMD_SERVICE:${PN} += " \
 SYSTEMD_AUTO_ENABLE = "enable"
 
 do_install:append:() {
-    install -d ${D}${datadir}/phosphor-gpio-monitor
-    install -m 0644 ${WORKDIR}/yosemite4-phosphor-multi-gpio-monitor.json \
-                    ${D}${datadir}/phosphor-gpio-monitor/phosphor-multi-gpio-monitor.json
     install -m 0644 ${WORKDIR}/set-button-sled.service ${D}${systemd_system_unitdir}/set-button-sled.service
     install -m 0644 ${WORKDIR}/probe-slot-device@.service ${D}${systemd_system_unitdir}/probe-slot-device@.service
     install -m 0644 ${WORKDIR}/rescan-fru-device@.service ${D}${systemd_system_unitdir}/rescan-fru-device@.service
     install -d ${D}${libexecdir}/${PN}
     install -m 0777 ${WORKDIR}/probe-slot-device ${D}${libexecdir}/${PN}/
     install -m 0777 ${WORKDIR}/rescan-fru-device ${D}${libexecdir}/${PN}/
+}
+
+do_install:append:yosemite4() {
+    install -d ${D}${datadir}/phosphor-gpio-monitor
+    install -m 0644 ${WORKDIR}/yosemite4-phosphor-multi-gpio-monitor.json \
+                    ${D}${datadir}/phosphor-gpio-monitor/phosphor-multi-gpio-monitor.json
+}
+
+do_install:append:yosemite4-n() {
+    install -d ${D}${datadir}/phosphor-gpio-monitor
+    install -m 0644 ${WORKDIR}/yosemite4-n-phosphor-multi-gpio-monitor.json \
+                    ${D}${datadir}/phosphor-gpio-monitor/phosphor-multi-gpio-monitor.json
 }

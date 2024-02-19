@@ -1,0 +1,100 @@
+[
+    {
+        "Name": "BTN_BMC_R2_N",
+        "ChipId": "7",
+        "GpioNum": 10,
+        "EventMon": "RISING",
+        "Targets": {
+            "RISING": ["set-button-sled.service"]
+        },
+        "Continue": true
+    },
+    {
+        "Name": "PWRGD_SLOT1_STBY",
+        "ChipId": "1",
+        "GpioNum": 29,
+        "EventMon": "BOTH",
+        "Targets": {
+            "RISING": ["probe-slot-device@1.service", "rescan-fru-device@1.service"],
+            "FALLING": ["rescan-fru-device@1.service"]
+        },
+        "Continue": true
+    },
+    {
+        "Name": "PWRGD_SLOT2_STBY",
+        "ChipId": "1",
+        "GpioNum": 14,
+        "EventMon": "BOTH",
+        "Targets": {
+            "RISING": ["probe-slot-device@2.service", "rescan-fru-device@2.service"],
+            "FALLING": ["rescan-fru-device@2.service"]
+        },
+        "Continue": true
+    },
+    {
+        "Name": "PWRGD_SLOT3_STBY",
+        "ChipId": "1",
+        "GpioNum": 22,
+        "EventMon": "BOTH",
+        "Targets": {
+            "RISING": ["probe-slot-device@3.service", "rescan-fru-device@3.service"],
+            "FALLING": ["rescan-fru-device@3.service"]
+        },
+        "Continue": true
+    },
+    {
+        "Name": "PWRGD_SLOT4_STBY",
+        "ChipId": "1",
+        "GpioNum": 23,
+        "EventMon": "BOTH",
+        "Targets": {
+            "RISING": ["probe-slot-device@4.service", "rescan-fru-device@4.service"],
+            "FALLING": ["rescan-fru-device@4.service"]
+        },
+        "Continue": true
+    },
+    {
+        "Name": "PWRGD_SLOT5_STBY",
+        "ChipId": "3",
+        "GpioNum": 25,
+        "EventMon": "BOTH",
+        "Targets": {
+            "RISING": ["probe-slot-device@5.service", "rescan-fru-device@5.service"],
+            "FALLING": ["rescan-fru-device@5.service"]
+        },
+        "Continue": true
+    },
+    {
+        "Name": "PWRGD_SLOT6_STBY",
+        "ChipId": "0",
+        "GpioNum": 15,
+        "EventMon": "BOTH",
+        "Targets": {
+            "RISING": ["probe-slot-device@6.service", "rescan-fru-device@6.service"],
+            "FALLING": ["rescan-fru-device@6.service"]
+        },
+        "Continue": true
+    },
+    {
+        "Name": "PWRGD_SLOT7_STBY",
+        "ChipId": "3",
+        "GpioNum": 12,
+        "EventMon": "BOTH",
+        "Targets": {
+            "RISING": ["probe-slot-device@7.service", "rescan-fru-device@7.service"],
+            "FALLING": ["rescan-fru-device@7.service"]
+        },
+        "Continue": true
+    },
+    {
+        "Name": "PWRGD_SLOT8_STBY",
+        "ChipId": "3",
+        "GpioNum": 13,
+        "EventMon": "BOTH",
+        "Targets": {
+            "RISING": ["probe-slot-device@8.service", "rescan-fru-device@8.service"],
+            "FALLING": ["rescan-fru-device@8.service"]
+        },
+        "Continue": true
+    }
+]
