@@ -1,0 +1,53 @@
+From 6f6439b1ac4af115e36f5040d5334d6a26a86d14 Mon Sep 17 00:00:00 2001
+From: RickyWu-wiwynn <ricky_cx_wu@wiwynn.com>
+Date: Tue, 20 Feb 2024 16:24:30 +0800
+Subject: [PATCH] arm64: dts: yosemite4-n: add flash 1 in DTS
+
+---
+ .../dts/nuvoton/nuvoton-npcm845-yosemite4.dts | 22 +++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-yosemite4.dts b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-yosemite4.dts
+index b3aab4e77bd5..fe57bd923721 100644
+--- a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-yosemite4.dts
++++ b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-yosemite4.dts
+@@ -236,7 +236,10 @@ &gmac3 {
+ };
+ 
+ &fiu0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi0cs1_pins>;
+ 	status = "okay";
++
+ 	spi-nor@0 {
+ 		compatible = "jedec,spi-nor";
+ 		#address-cells = <1>;
+@@ -275,6 +278,25 @@ rwfs@3c00000 {
+ 				};
+ 		};
+ 	};
++
++	spi-nor@1 {
++		compatible = "jedec,spi-nor";
++		#address-cells = <1>;
++		#size-cells = <1>;
++		spi-rx-bus-width = <2>;
++		spi-tx-bus-width = <2>;
++		reg = <1>;
++		spi-max-frequency = <5000000>;
++		partitions@80000000 {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++			bmc2@0 {
++				label = "bmc2";
++				reg = <0x00000000 0x08000000>;
++				};
++		};
++	};
+ };
+ 
+ &fiux {
+-- 
+2.25.1
+
