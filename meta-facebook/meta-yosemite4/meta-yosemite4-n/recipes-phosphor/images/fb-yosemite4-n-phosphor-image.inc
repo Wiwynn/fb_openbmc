@@ -5,6 +5,6 @@ OBMC_IMAGE_EXTRA_INSTALL:append = " \
     bios-fw-update \
     cpld-fw-handler \
     cxl-fw-update \
-    jtag-tool \
     i3c-tools \
+    loadsvf \
 "
