@@ -14,4 +14,8 @@ SRC_URI += "file://yosemite4-common.cfg \
             file://0005-yosemite4-n-dts-add-slew-rate-for-spi-and-i3c.patch \
             file://0006-yosemite4-n-dts-add-tpm-setting.patch \
             file://0007-yosemite4-n-dts-revise-GPIO-setting.patch \
+            file://0008-hwmon-max31790-support-to-config-PWM-as-TACH.patch \
+            file://0009-hwmon-max31790-add-fanN_enable-for-all-fans.patch \
+            file://0010-hwmon-ina233-Add-ina233-driver.patch \
+            file://0011-Add-adm1281-driver.patch \
            "
