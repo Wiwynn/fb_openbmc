@@ -1,0 +1,25 @@
+From 5bdfdcaf8af531d1d63e32d72e104310b4d2e203 Mon Sep 17 00:00:00 2001
+From: RickyWu-wiwynn <ricky_cx_wu@wiwynn.com>
+Date: Mon, 25 Mar 2024 13:35:01 +0800
+Subject: [PATCH] driver: i3c: handle stop signal well
+
+---
+ drivers/i3c/master/svc-i3c-master.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/i3c/master/svc-i3c-master.c b/drivers/i3c/master/svc-i3c-master.c
+index 43831c0052b0..f2fbf64f6228 100644
+--- a/drivers/i3c/master/svc-i3c-master.c
++++ b/drivers/i3c/master/svc-i3c-master.c
+@@ -890,7 +890,7 @@ static int svc_i3c_master_bus_init(struct i3c_master_controller *m)
+ 	div = DIV_ROUND_UP(i2c_period_ns, od_low_period_ns);
+ 	i2cbaud = (div / 2) + (div % 2);
+ 
+-	if (bus->mode != I3C_BUS_MODE_PURE)
++	// if (bus->mode != I3C_BUS_MODE_PURE)
+ 		odstop = 1;
+ 
+ 	reg = SVC_I3C_MCONFIG_MASTER_EN |
+-- 
+2.25.1
+
