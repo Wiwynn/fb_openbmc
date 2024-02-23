@@ -3,7 +3,7 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/linux-nuvoton:${THISDIR}/../../../../reci
 KSRC = "git://github.com/Wiwynn/linux-nuvoton.git;protocol=https;branch=${KBRANCH}"
 KBRANCH = "NPCM-6.1-OpenBMC"
 LINUX_VERSION = "6.1.12"
-SRCREV = "844feba31d1f127c8370753b51c42be2765fb6b0"
+SRCREV = "bde7d51c162671bde79e7d5755ebc66d358fd18a"
 
 SRC_URI += "file://yosemite4-common.cfg \
             file://yosemite4.cfg \
