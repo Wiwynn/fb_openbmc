@@ -13,4 +13,6 @@ SRC_URI += "file://yosemite4-common.cfg \
             file://0004-arm64-dts-yosemite4-n-add-flash-1-in-DTS.patch \
             file://0005-yosemite4-n-dts-add-slew-rate-for-spi-and-i3c.patch \
             file://0006-yosemite4-n-dts-add-tpm-setting.patch \
+            file://0007-hwmon-max31790-support-to-config-PWM-as-TACH.patch \
+            file://0008-hwmon-max31790-add-fanN_enable-for-all-fans.patch \
            "
