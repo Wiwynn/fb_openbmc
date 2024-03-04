@@ -23,5 +23,6 @@ SRC_URI += " \
     file://0520-ARM-dts-aspeed-g6-Add-I3C-controller-nodes.patch \
     file://0521-i3c-export-send-CCC-command-API.patch \
     file://0522-mctp-i3c-MCTP-I3C-driver.patch \
+    file://0523-mctp-i3c-Add-config-option-for-PEC-calculation.patch \
 "
 
