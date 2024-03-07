@@ -3,7 +3,7 @@
 # If multi-user.target doesn't complete,
 # the obmc-host-startmin@.target couldn't start.
 # In that case, BMC couldn't set current host state to "Running".
-IMAGE_FEATURES:remove = " \
+IMAGE_FEATURES:remove:yosemite4 = " \
     obmc-leds \
 "
 
