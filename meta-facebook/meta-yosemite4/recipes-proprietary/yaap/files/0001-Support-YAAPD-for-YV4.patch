@@ -1,0 +1,1522 @@
+From a08bd09b10275b3e05e5bbe3c6bc0685b45a21ac Mon Sep 17 00:00:00 2001
+From: PeterHo-wiwynn <Peter_MH_Ho@wiwynn.com>
+Date: Thu, 20 Jun 2024 13:11:04 +0800
+Subject: [PATCH] Support YAAPD for YV4
+
+---
+ Source/Linux/bmc/hw/aspeed.h             |  10 -
+ Source/Linux/bmc/hw/bic_jtag_handler.cpp | 368 +++++++++++++++++++++++
+ Source/Linux/bmc/hw/bic_jtag_handler.h   |  63 ++++
+ Source/Linux/bmc/hw/hdt_hw.cpp           | 162 +++++++---
+ Source/Linux/bmc/hw/header_hw.cpp        |   1 +
+ Source/Linux/bmc/hw/jtag_hw.cpp          |   1 +
+ Source/Linux/bmc/hw/psp_sfmon.cpp        |  82 ++---
+ Source/Linux/bmc/hw/psp_sfmon.h          |   8 +-
+ Source/Linux/bmc/hw/relay_hw.cpp         |  21 +-
+ Source/Linux/bmc/hw/system_hw.cpp        |   1 +
+ Source/Linux/bmc/main.cpp                | 196 ++++++------
+ Source/Linux/bmc/meson.build             |  40 +++
+ Source/Linux/bmc/plat/plat_def.cpp       |  28 ++
+ Source/Linux/bmc/plat/plat_def.h         |  64 ++++
+ Source/Shared/infrastructure/debug.h     |   4 +-
+ Source/Shared/meson.build                |  41 +++
+ Source/meson.build                       |   2 +
+ meson.build                              |  30 ++
+ meson_options.txt                        |   2 +
+ 19 files changed, 900 insertions(+), 224 deletions(-)
+ create mode 100644 Source/Linux/bmc/hw/bic_jtag_handler.cpp
+ create mode 100644 Source/Linux/bmc/hw/bic_jtag_handler.h
+ create mode 100644 Source/Linux/bmc/meson.build
+ create mode 100644 Source/Linux/bmc/plat/plat_def.cpp
+ create mode 100644 Source/Linux/bmc/plat/plat_def.h
+ create mode 100644 Source/Shared/meson.build
+ create mode 100644 Source/meson.build
+ create mode 100644 meson.build
+ create mode 100644 meson_options.txt
+
+diff --git a/Source/Linux/bmc/hw/aspeed.h b/Source/Linux/bmc/hw/aspeed.h
+index 66b58d3..56457cf 100644
+--- a/Source/Linux/bmc/hw/aspeed.h
++++ b/Source/Linux/bmc/hw/aspeed.h
+@@ -66,16 +66,6 @@
+ #define BITS_PER_BYTE    0x08
+ #define BYTECOUNT(bits)  ((bits + 7) >> 3)
+ 
+-extern const std::string hdtSelName;
+-extern const std::string hdtDbgReqName;
+-extern const std::string PwrOkName;
+-
+-extern const std::string powerButtonName;
+-extern const std::string resetButtonName;
+-extern const std::string warmResetButtonName;
+-extern const std::string fpgaReservedButtonName;
+-extern const std::string jtagTRSTName;
+-
+ extern bool is2PSystem;
+ 
+ extern int  getGPIOValue(const std::string& name);
+diff --git a/Source/Linux/bmc/hw/bic_jtag_handler.cpp b/Source/Linux/bmc/hw/bic_jtag_handler.cpp
+new file mode 100644
+index 0000000..13f7d0b
+--- /dev/null
++++ b/Source/Linux/bmc/hw/bic_jtag_handler.cpp
+@@ -0,0 +1,368 @@
++#include "bic_jtag_handler.h"
++#include "infrastructure/debug.h"
++#ifndef ENABLE_PLDM
++#include <facebook/bic_ipmi.h>
++#include <facebook/bic_xfer.h>
++#else
++#include <iomanip>
++#include <ios>
++#endif
++#include <openbmc/ipmi.h>
++#include <vector>
++
++#define IANA_SIZE 3
++#define MIN( a , b ) ( ( a ) < ( b ) ) ? ( a ) : ( b )
++#define MAX( a , b ) ( ( a ) > ( b ) ) ? ( a ) : ( b )
++#define MAX_TRANSFER_BITS 0x400
++
++namespace bmc
++{
++
++typedef struct {
++    uint8_t tmsbits;
++    uint8_t count;
++} TmsCycle;
++
++static uint8_t IANA[IANA_SIZE] = {0x15, 0xA0, 0x00};
++
++// this is the complete set TMS cycles for going from any TAP state to any other TAP state, following a “shortest path” rule
++static const TmsCycle tmsCycleLookup[][16] = {
++/*   start*/ /*TLR      RTI      SelDR    CapDR    SDR      Ex1DR    PDR      Ex2DR    UpdDR    SelIR    CapIR    SIR      Ex1IR    PIR      Ex2IR    UpdIR    destination*/
++/*     TLR*/{ {0x00,0},{0x00,1},{0x02,2},{0x02,3},{0x02,4},{0x0a,4},{0x0a,5},{0x2a,6},{0x1a,5},{0x06,3},{0x06,4},{0x06,5},{0x16,5},{0x16,6},{0x56,7},{0x36,6} },
++/*     RTI*/{ {0x07,3},{0x00,0},{0x01,1},{0x01,2},{0x01,3},{0x05,3},{0x05,4},{0x15,5},{0x0d,4},{0x03,2},{0x03,3},{0x03,4},{0x0b,4},{0x0b,5},{0x2b,6},{0x1b,5} },
++/*   SelDR*/{ {0x03,2},{0x03,3},{0x00,0},{0x00,1},{0x00,2},{0x02,2},{0x02,3},{0x0a,4},{0x06,3},{0x01,1},{0x01,2},{0x01,3},{0x05,3},{0x05,4},{0x15,5},{0x0d,4} },
++/*   CapDR*/{ {0x1f,5},{0x03,3},{0x07,3},{0x00,0},{0x00,1},{0x01,1},{0x01,2},{0x05,3},{0x03,2},{0x0f,4},{0x0f,5},{0x0f,6},{0x2f,6},{0x2f,7},{0xaf,8},{0x6f,7} },
++/*     SDR*/{ {0x1f,5},{0x03,3},{0x07,3},{0x07,4},{0x00,0},{0x01,1},{0x01,2},{0x05,3},{0x03,2},{0x0f,4},{0x0f,5},{0x0f,6},{0x2f,6},{0x2f,7},{0xaf,8},{0x6f,7} },
++/*   Ex1DR*/{ {0x0f,4},{0x01,2},{0x03,2},{0x03,3},{0x02,3},{0x00,0},{0x00,1},{0x02,2},{0x01,1},{0x07,3},{0x07,4},{0x07,5},{0x17,5},{0x17,6},{0x57,7},{0x37,6} },
++/*     PDR*/{ {0x1f,5},{0x03,3},{0x07,3},{0x07,4},{0x01,2},{0x05,3},{0x00,0},{0x01,1},{0x03,2},{0x0f,4},{0x0f,5},{0x0f,6},{0x2f,6},{0x2f,7},{0xaf,8},{0x6f,7} },
++/*   Ex2DR*/{ {0x0f,4},{0x01,2},{0x03,2},{0x03,3},{0x00,1},{0x02,2},{0x02,3},{0x00,0},{0x01,1},{0x07,3},{0x07,4},{0x07,5},{0x17,5},{0x17,6},{0x57,7},{0x37,6} },
++/*   UpdDR*/{ {0x07,3},{0x00,1},{0x01,1},{0x01,2},{0x01,3},{0x05,3},{0x05,4},{0x15,5},{0x00,0},{0x03,2},{0x03,3},{0x03,4},{0x0b,4},{0x0b,5},{0x2b,6},{0x1b,5} },
++/*   SelIR*/{ {0x01,1},{0x01,2},{0x05,3},{0x05,4},{0x05,5},{0x15,5},{0x15,6},{0x55,7},{0x35,6},{0x00,0},{0x00,1},{0x00,2},{0x02,2},{0x02,3},{0x0a,4},{0x06,3} },
++/*   CapIR*/{ {0x1f,5},{0x03,3},{0x07,3},{0x07,4},{0x07,5},{0x17,5},{0x17,6},{0x57,7},{0x37,6},{0x0f,4},{0x00,0},{0x00,1},{0x01,1},{0x01,2},{0x05,3},{0x03,2} },
++/*     SIR*/{ {0x1f,5},{0x03,3},{0x07,3},{0x07,4},{0x07,5},{0x17,5},{0x17,6},{0x57,7},{0x37,6},{0x0f,4},{0x0f,5},{0x00,0},{0x01,1},{0x01,2},{0x05,3},{0x03,2} },
++/*   Ex1IR*/{ {0x0f,4},{0x01,2},{0x03,2},{0x03,3},{0x03,4},{0x0b,4},{0x0b,5},{0x2b,6},{0x1b,5},{0x07,3},{0x07,4},{0x02,3},{0x00,0},{0x00,1},{0x02,2},{0x01,1} },
++/*     PIR*/{ {0x1f,5},{0x03,3},{0x07,3},{0x07,4},{0x07,5},{0x17,5},{0x17,6},{0x57,7},{0x37,6},{0x0f,4},{0x0f,5},{0x01,2},{0x05,3},{0x00,0},{0x01,1},{0x03,2} },
++/*   Ex2IR*/{ {0x0f,4},{0x01,2},{0x03,2},{0x03,3},{0x03,4},{0x0b,4},{0x0b,5},{0x2b,6},{0x1b,5},{0x07,3},{0x07,4},{0x00,1},{0x02,2},{0x02,3},{0x00,0},{0x01,1} },
++/*   UpdIR*/{ {0x07,3},{0x00,1},{0x01,1},{0x01,2},{0x01,3},{0x05,3},{0x05,4},{0x15,5},{0x0d,4},{0x03,2},{0x03,3},{0x03,4},{0x0b,4},{0x0b,5},{0x2b,6},{0x00,0} },
++};
++
++static void jtagIpmbBufferPrint(uint8_t *buffer, size_t length)
++{
++    // DEBUG_PRINT(DEBUG_VERBOSE,"========================================");
++    // DEBUG_BUFFER(DEBUG_VERBOSE, buffer, length);
++    // DEBUG_PRINT(DEBUG_VERBOSE,"========================================");
++}
++
++#ifdef ENABLE_PLDM
++std::string uint8ToHexString(uint8_t value) {
++    std::stringstream stream;
++    stream << "0x" << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(value);
++    return stream.str();
++}
++
++std::string uint8ArrayToHexString(const uint8_t* array, int length) {
++    std::ostringstream oss;
++    for (int i = 0; i < length; ++i) {
++        oss << "0x" << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(array[i]);
++        if (i != length - 1) {
++            oss << " ";
++        }
++    }
++    return oss.str();
++}
++#endif
++
++STATUS jtagIpmbWrapper(
++    uint8_t fru, uint8_t netfn, uint8_t cmd,
++    uint8_t *txbuf, size_t txlen,
++    uint8_t *rxbuf, size_t *rxlen)
++{
++    if (txbuf == NULL || rxbuf == NULL) {
++        return ST_ERR;
++    }
++#ifndef ENABLE_PLDM
++    uint8_t u8_rxlen;
++
++    if (bic_ipmb_wrapper(fru, netfn, cmd, txbuf, txlen, rxbuf, &u8_rxlen)) {
++        DEBUG_PRINT(DEBUG_ERROR, "bic_ipmb_wrapper failed, slot%u\n", fru);
++        DEBUG_PRINT(DEBUG_ERROR,"[DEBUG][TX_BUF]");
++        DEBUG_BUFFER(DEBUG_ERROR, txbuf, txlen);
++        return ST_ERR;
++    }
++
++    *rxlen = u8_rxlen;
++#else
++    FILE *fp;
++    char buffer[1024];
++    auto eid = fru * 10;
++    netfn = netfn << 2;
++
++    auto command = "pldmtool raw -m " + std::to_string(eid) + " -d 0x80 0x3f 0x01 0x15 0xA0 0x00 "
++            + uint8ToHexString(netfn) + " " + uint8ToHexString(cmd)
++            + " " + uint8ArrayToHexString(txbuf, txlen);
++        fp = popen(command.c_str(), "r");
++    if (fp == NULL) {
++        perror("popen() failed");
++        return ST_ERR;
++    }
++    std::string output;
++    while (fgets(buffer, sizeof(buffer), fp) != NULL) {
++        output += buffer;
++    }
++    pclose(fp);
++
++    std::vector<uint8_t> rx_data;
++    size_t rx_pos = output.find("Rx:");
++    if (rx_pos != std::string::npos) {
++        std::istringstream rx_stream(output.substr(rx_pos + 4));
++        int hex_byte;
++        while (rx_stream >> std::hex >> hex_byte) {
++            rx_data.push_back(hex_byte);
++        }
++
++        if (rx_data[9] != CC_SUCCESS) {
++            return ST_ERR;
++        }
++
++        *rxlen = rx_data.size() - 10;
++        std::copy(rx_data.begin() + 10, rx_data.end(), rxbuf);
++    }
++
++#endif
++    return ST_OK;
++}
++
++STATUS jtagIpmbShiftWrapper(
++    uint8_t fru,
++    uint32_t write_bit_length, uint8_t *write_data,
++    uint32_t read_bit_length, uint8_t *read_data,
++    uint32_t last_transaction)
++{
++    uint8_t tbuf[256] = {0x00};
++    uint8_t rbuf[256] = {0x00};
++    uint8_t write_len_bytes = ((write_bit_length+7) >> 3);
++    size_t rlen = sizeof(rbuf);
++    size_t tlen = 0;
++
++    // tbuf[0:2]   = IANA ID
++    // tbuf[3]     = write bit length (LSB)
++    // tbuf[4]     = write bit length (MSB)
++    // tbuf[5:n-1] = write data
++    // tbuf[n]     = read bit length (LSB)
++    // tbuf[n+1]   = read bit length (MSB)
++    // tbuf[n+2]   = last transactions
++    memcpy(tbuf, IANA, IANA_SIZE);
++    tbuf[3] = write_bit_length & 0xFF;
++    tbuf[4] = (write_bit_length >> 8) & 0xFF;
++    if (write_data) {
++        memcpy(&tbuf[5], write_data, write_len_bytes);
++    }
++    tbuf[5 + write_len_bytes] = read_bit_length & 0xFF;
++    tbuf[6 + write_len_bytes] = (read_bit_length >> 8) & 0xFF;
++    tbuf[7 + write_len_bytes] = last_transaction;
++
++    tlen = write_len_bytes + 8;
++    if (jtagIpmbWrapper(fru, NETFN_OEM_1S_REQ, CMD_OEM_1S_JTAG_SHIFT, tbuf, tlen, rbuf, &rlen) != ST_OK) {
++        return ST_ERR;
++    }
++    if (read_bit_length && read_data && (rlen > IANA_SIZE)) {
++        memcpy(read_data, &rbuf[IANA_SIZE], (rlen - IANA_SIZE));
++    }
++
++    return ST_OK;
++}
++
++STATUS jtagIpmbSetTapState(
++    uint8_t fru,
++    enum yaap::hal::jtagState curState,
++    enum yaap::hal::jtagState endState)
++{
++    uint8_t tbuf[8] = {0x00};
++    uint8_t rbuf[8] = {0x00};
++    size_t tlen = 5;
++    size_t rlen = sizeof(rbuf);
++
++    // Jtag state is tap_state already.
++    if (endState != JTAG_STATE_TLR && curState == endState) {
++        return ST_OK;
++    }
++
++    memcpy(tbuf, IANA, IANA_SIZE);
++
++    if (endState == JTAG_STATE_TLR) {
++        tbuf[3] = 8;
++        tbuf[4] = 0xff;
++    } else {
++        tbuf[3] = tmsCycleLookup[curState][endState].count;
++        tbuf[4] = tmsCycleLookup[curState][endState].tmsbits;
++    }
++
++    // add delay count for 2 special cases
++    if ((endState == JTAG_STATE_RTI) || (endState == JTAG_STATE_PAUSE_DR)) {
++        tbuf[3] += 5;
++    }
++
++    DEBUG_PRINT(DEBUG_VERBOSE,"[DEBUG] jtagIpmbSetTapState(): fru: %u, curState: %d, endState: %d, count: %u, tms: 0x%02x", fru, curState, endState, tbuf[3], tbuf[4]);
++    if (jtagIpmbWrapper(fru, NETFN_OEM_1S_REQ, CMD_OEM_1S_SET_TAP_STATE, tbuf, tlen, rbuf, &rlen) != ST_OK) {
++        DEBUG_PRINT(DEBUG_ERROR, "Failed to set tap state, fru: %u, curState: %d, endState: %d",
++                    fru, curState, endState);
++        return ST_ERR;
++    }
++
++    return ST_OK;
++}
++
++STATUS jtagIpmbResetState(uint8_t fru)
++{
++    uint8_t tbuf[8] = {0x00};
++    uint8_t rbuf[8] = {0x00};
++    size_t tlen = 5;
++    size_t rlen = sizeof(rbuf);
++
++    memcpy(tbuf, IANA, IANA_SIZE);
++    tbuf[3] = 8;
++    tbuf[4] = 0xff;
++
++    DEBUG_PRINT(DEBUG_VERBOSE,"[DEBUG] jtagIpmbResetState(): fru: %u", fru);
++    if (jtagIpmbWrapper(fru, NETFN_OEM_1S_REQ, CMD_OEM_1S_SET_TAP_STATE, tbuf, tlen, rbuf, &rlen) != ST_OK) {
++        DEBUG_PRINT(DEBUG_ERROR, "Failed to reset tap state");
++        return ST_ERR;
++    }
++
++    return ST_OK;
++}
++
++
++BicJtagHandler::BicJtagHandler(uint8_t fruid) :
++    m_fruid(fruid),
++    m_state(yaap::hal::JTAG_STATE_TLR),
++    m_freq(8250000)
++{}
++
++BicJtagHandler::~BicJtagHandler()
++{}
++
++uint32_t BicJtagHandler::shift(enum jtagOp operation, uint8_t *inData, uint8_t *outData, int bits, [[maybe_unused]] int preTck, [[maybe_unused]] int postTck, enum jtagState termState)
++{
++    int last_transaction = 0;
++    int transfer_bit_length = bits;
++    int write_bit_length = bits;
++    int read_bit_length = bits;
++    int this_write_bit_length = MIN(write_bit_length, MAX_TRANSFER_BITS);
++    int this_read_bit_length  = MIN(read_bit_length, MAX_TRANSFER_BITS);
++    uint8_t *tdi_buffer = inData;
++    uint8_t *tdo_buffer = outData;
++    STATUS ret;
++
++    DEBUG_PRINT(DEBUG_INFO, "YAAP IOCTL SHIFT Operation:%d, BITs Count: 0x%x, TermState: 0x%x\n", operation, bits, termState);
++    
++    // go to shift state
++    enum jtagState shiftState = (operation == yaap::hal::JTAG_OP_SHIFT_DR) ? JTAG_STATE_SHIFT_DR : JTAG_STATE_SHIFT_IR;
++    DEBUG_PRINT(DEBUG_VERBOSE, "[DEBUG] m_state = %u, shiftState = %u", m_state, shiftState);
++    if (m_state != shiftState) {
++        if (jtagIpmbSetTapState(m_fruid, m_state, shiftState) != ST_OK) {
++            DEBUG_PRINT(DEBUG_ERROR, "Failed to go state %d (shiftState)", shiftState);
++            return E_SERVER_ERROR;
++        }
++    }
++    
++    // shift
++    while (transfer_bit_length)
++    {
++        int this_write_bit_length = MIN(write_bit_length, MAX_TRANSFER_BITS);
++        int this_read_bit_length  = MIN(read_bit_length, MAX_TRANSFER_BITS);
++
++        // check if we entered illegal state
++        if (this_write_bit_length < 0 || this_read_bit_length < 0 ||
++            last_transaction == 1 ||
++            (this_write_bit_length == 0 && this_read_bit_length == 0)) {
++            DEBUG_PRINT(DEBUG_ERROR, "slot=%d, ERROR: invalid read write length. read=%d, write=%d, last_transaction=%d\n",
++                    m_fruid, this_read_bit_length, this_write_bit_length,
++                    last_transaction);
++            return E_SERVER_ERROR;
++        }
++
++        transfer_bit_length -= MAX(this_write_bit_length, this_read_bit_length);
++        write_bit_length -= this_write_bit_length;
++        read_bit_length  -= this_read_bit_length;
++        last_transaction = (transfer_bit_length <= 0) ? 1 : 0;
++
++        ret = jtagIpmbShiftWrapper(m_fruid,
++                                   this_write_bit_length, tdi_buffer,
++                                   this_read_bit_length, tdo_buffer,
++                                   last_transaction);
++
++        if (ret != ST_OK) {
++            DEBUG_PRINT(DEBUG_ERROR, "%s: ERROR, jtagIpmbShiftWrapper failed, slot%d",
++                   __FUNCTION__, m_fruid);
++            return E_SERVER_ERROR;
++        }
++
++        tdi_buffer += (this_write_bit_length >> 3);
++        tdo_buffer += (this_read_bit_length >> 3);
++    }
++
++    m_state = (operation == yaap::hal::JTAG_OP_SHIFT_DR) ? JTAG_STATE_EXIT1_DR : JTAG_STATE_EXIT1_IR;
++
++    DEBUG_PRINT(DEBUG_VERBOSE,"[DEBUG] inData (bits: %u)", bits);
++    jtagIpmbBufferPrint(inData, ((bits+7) >> 3));
++    DEBUG_PRINT(DEBUG_VERBOSE,"[DEBUG] outData (bits: %u)", bits);
++    jtagIpmbBufferPrint(outData, ((bits+7) >> 3));
++
++    // go to end_tap_state as requested
++    DEBUG_PRINT(DEBUG_VERBOSE, "[DEBUG] m_state = %u, termState = %u", m_state, termState);
++    if (m_state != termState) {
++        if (jtagIpmbSetTapState(m_fruid, m_state, termState) != ST_OK) {
++            DEBUG_PRINT(DEBUG_ERROR, "Failed to go state %d (endState)", termState);
++            return E_SERVER_ERROR;
++        }
++    }
++
++    m_state = termState;
++    return E_SUCCESS;
++}
++
++uint32_t BicJtagHandler::resetTap(void)
++{
++    DEBUG_PRINT(DEBUG_INFO, "tapState reset");
++    if (jtagIpmbResetState(m_fruid) != ST_OK) {
++        DEBUG_PRINT(DEBUG_ERROR, "Failed to reset state");
++        return E_SERVER_ERROR;
++    }
++
++    m_state = yaap::hal::JTAG_STATE_TLR;
++    return E_SUCCESS;
++}
++
++uint32_t BicJtagHandler::tapStateGet(enum jtagState& state)
++{
++    state = m_state;
++    return E_SUCCESS;
++}
++
++uint32_t BicJtagHandler::tapStateSet(enum jtagState state)
++{
++    DEBUG_PRINT(DEBUG_INFO, "tapState to Set %d", state);
++    if (jtagIpmbSetTapState(m_fruid, m_state, state) != ST_OK) {
++        DEBUG_PRINT(DEBUG_ERROR, "Failed to set state %d", state);
++        return E_SERVER_ERROR;
++    }
++
++    m_state = state;
++    return E_SUCCESS;
++}
++
++uint32_t BicJtagHandler::tckFreqSet(uint32_t& freqHz)
++{
++    DEBUG_PRINT(DEBUG_INFO, "input freq is %u", freqHz);
++    m_freq = freqHz;
++    return E_SUCCESS;
++}
++
++uint32_t BicJtagHandler::tckFreqGet(uint32_t& freqHz)
++{
++    freqHz = m_freq;
++    return E_SUCCESS;
++}
++
++} // namespace bmc
+diff --git a/Source/Linux/bmc/hw/bic_jtag_handler.h b/Source/Linux/bmc/hw/bic_jtag_handler.h
+new file mode 100644
+index 0000000..70001a0
+--- /dev/null
++++ b/Source/Linux/bmc/hw/bic_jtag_handler.h
+@@ -0,0 +1,63 @@
++#ifndef BMC_HW_BIC_JTAG_HANDLER_H
++#define BMC_HW_BIC_JTAG_HANDLER_H
++
++#include "aspeed.h"
++#include "hal/jtag.h"
++
++using namespace yaap::hal;
++
++namespace bmc
++{
++
++typedef enum
++{
++    ST_OK,
++    ST_ERR,
++    ST_TIMEOUT
++} STATUS;
++
++STATUS jtagIpmbWrapper(
++    uint8_t fru, uint8_t netfn, uint8_t cmd,
++    uint8_t *txbuf, size_t txlen,
++    uint8_t *rxbuf, size_t *rxlen);
++
++STATUS jtagIpmbShiftWrapper(
++    uint8_t fru,
++    uint32_t write_bit_length, uint8_t *write_data,
++    uint32_t read_bit_length, uint8_t *read_data,
++    uint32_t last_transaction);
++
++STATUS jtagIpmbSetTapState(
++    uint8_t fru,
++    enum yaap::hal::jtagState curState,
++    enum yaap::hal::jtagState endState);
++
++STATUS jtagIpmbResetState(uint8_t fru);
++
++
++class BicJtagHandler : public IJtag, public IJtag_tapState, public IJtag_tckFrequency
++{
++public:
++    BicJtagHandler(uint8_t fruid);
++    virtual ~BicJtagHandler();
++
++    // IJtag
++    uint32_t shift(enum jtagOp operation, uint8_t *inData, uint8_t *outData, int bits, int preTck, int postTck, enum jtagState termState);
++    uint32_t resetTap(void);
++
++    // IJtag_tapState
++    uint32_t tapStateGet(enum jtagState& state);
++    uint32_t tapStateSet(enum jtagState state);
++
++    // IJtag_tckFrequency
++    uint32_t tckFreqSet(uint32_t& freqHz);
++    uint32_t tckFreqGet(uint32_t& freqHz);
++
++private:
++    uint8_t                     m_fruid;
++    enum yaap::hal::jtagState   m_state;
++    uint32_t                    m_freq;
++};
++
++} // namespace bmc
++#endif
+diff --git a/Source/Linux/bmc/hw/hdt_hw.cpp b/Source/Linux/bmc/hw/hdt_hw.cpp
+index 87f74f3..958e579 100644
+--- a/Source/Linux/bmc/hw/hdt_hw.cpp
++++ b/Source/Linux/bmc/hw/hdt_hw.cpp
+@@ -61,81 +61,70 @@
+ #include <sys/ioctl.h>
+ #include <unistd.h>
+ #include <stdio.h>
+-#include <gpiod.hpp>
++#include <openbmc/libgpio.hpp>
+ #include <inttypes.h>
+ #include "hdt_hw.h"
+ #include "infrastructure/debug.h"
++#include "plat/plat_def.h"
+ 
++#define HDT_DELAY	(100000)
+ #define MSB_MASK	(0xFFFFFFFF)
+ #define LSB_MASK	(0xFFFFFFFF00000000)
+ #define SHIFT_32	(32)
+ 
+-int JTAG_get_idcode (int fd, int device)
+-{
+-    uint64_t idcode=0;
+-    uint32_t idcode32_l=0;
+-    uint32_t idcode32_h=0;
+-    struct jtag_tap_state tap_state;
+-    struct jtag_xfer xfer;
+-    struct jtag_mode mode;
+-    int test;
+-
+-    if(device)
+-    {
+-        //select jtag mux setting '0'
+-        setGPIOValue(hdtSelName, 1);
++#include "bic_jtag_handler.h"
++#include <openbmc/ipmi.h>
++#define IANA_SIZE 3
+ 
+-    }else{
+-        //select jtag mux setting '1'
+-        setGPIOValue(hdtSelName, 0);
+-    }
++using namespace bmc;
++using namespace yaap::hal;
++
++int BIC_JTAG_get_idcode(uint8_t fruid)
++{
++    uint64_t idcode = 0;
++    uint32_t idcode32_l = 0;
++    uint32_t idcode32_h = 0;
+ 
+-    // TEST LOGIC RESET
+-    tap_state.reset = JTAG_FORCE_RESET;
+-    tap_state.from = JTAG_STATE_CURRENT;
+-    tap_state.endstate = JTAG_STATE_TLRESET;
+-    tap_state.tck = 10;
++    //select jtag mux setting '0'
++    setGPIOValue(hdtSelName, 1);
++    usleep(HDT_DELAY);
+ 
+-    test = ioctl (fd, JTAG_SIOCSTATE, &tap_state);
+-    if (test < 0) {
+-        DEBUG_PRINT(DEBUG_INFO, "JTAG_get_idcode::JTAG_SIOCSTATE Failure: 0x%x, errno: %d.\n error message:%s", test, errno, strerror(errno));
++    // Set Tap to TLR
++    if (jtagIpmbResetState(fruid) != ST_OK) {
++        DEBUG_PRINT(DEBUG_ERROR, "BIC_JTAG_get_idcode(): Reset Tap to TLR Failed");
+         return -1;
+     }
+ 
+-    memset(&xfer, 0, sizeof(struct jtag_xfer));
+-    xfer.type = JTAG_SDR_XFER;
+-    xfer.tdio = (uint64_t)(&idcode);
+-    xfer.length = sizeof(idcode) * BITS_PER_BYTE;
+-    xfer.from = JTAG_STATE_CURRENT;
+-    xfer.endstate = JTAG_STATE_IDLE;
+-    xfer.direction = JTAG_READ_XFER;
+-
+-    DEBUG_PRINT(DEBUG_INFO, "JTAG_get_idcode::xfer.tdio: %p, idcode: %p", xfer.tdio, &idcode);
+-
+-    test = ioctl (fd, JTAG_IOCXFER, &xfer);
+-    if (test < 0) {
+-     DEBUG_PRINT(DEBUG_INFO, "JTAG_get_idcode::XFER Failure: 0x%x, errno: %d.\n error message:%s", test, errno, strerror(errno));
+-     return -1;
++    // Set Tap to SDR
++    if (jtagIpmbSetTapState(fruid, JTAG_STATE_TLR, JTAG_STATE_SHIFT_DR) != ST_OK) {
++        DEBUG_PRINT(DEBUG_ERROR, "BIC_JTAG_get_idcode(): Set Tap to SDR Failed");
++        return -1;
+     }
+ 
+-    idcode = *(uint64_t *)(xfer.tdio);
++    // Shift data
++    if (jtagIpmbShiftWrapper(fruid, 0, NULL, 64, (uint8_t*)&idcode, 1) != ST_OK) {
++        DEBUG_PRINT(DEBUG_ERROR, "BIC_JTAG_get_idcode(): Shift Failed");
++        return -1;
++    }
+ 
+-    DEBUG_PRINT(DEBUG_INFO, "%s_IDCODE=0x%" PRIx64 "\n",device?"CPU":"FPGA",idcode);
++    // Set Tap to RTI
++    if (jtagIpmbSetTapState(fruid, JTAG_STATE_EXIT1_DR, JTAG_STATE_RTI) != ST_OK) {
++        DEBUG_PRINT(DEBUG_ERROR, "BIC_JTAG_get_idcode(): Set Tap to TLR Failed");
++        return -1;
++    }
+ 
++    DEBUG_PRINT(DEBUG_INFO, "fruid=%u, %s_IDCODE=0x%llx\n", fruid, "CPU", idcode);
+     idcode32_l = (uint32_t)(idcode & MSB_MASK);
+     idcode32_h = (uint32_t)((idcode & LSB_MASK) >> SHIFT_32);
+-
+     DEBUG_PRINT(DEBUG_INFO, "Lower_IDCODE=0x%x, Higher_IDCODE=0x%x\n",idcode32_l, idcode32_h);
+ 
+     if (idcode32_l == idcode32_h)
+     {
+-      DEBUG_PRINT(DEBUG_INFO, "2P System\n");
+-      is2PSystem = true;
++        DEBUG_PRINT(DEBUG_INFO, "2P System\n");
++        is2PSystem = true;
+     }
+-
+     else
+-      DEBUG_PRINT(DEBUG_INFO, "1P System\n");
+-
++        DEBUG_PRINT(DEBUG_INFO, "1P System\n");
+ 
+     //select jtag mux setting '1',default
+     setGPIOValue(hdtSelName, 0);
+@@ -143,6 +132,79 @@ int JTAG_get_idcode (int fd, int device)
+     return 0;
+ }
+ 
++// int JTAG_get_idcode (int fd, int device)
++// {
++//     uint64_t idcode=0;
++//     uint32_t idcode32_l=0;
++//     uint32_t idcode32_h=0;
++//     struct jtag_tap_state tap_state;
++//     struct jtag_xfer xfer;
++//     struct jtag_mode mode;
++//     int test;
++
++//     if(device)
++//     {
++//         //select jtag mux setting '0'
++//         setGPIOValue(hdtSelName, 1);
++
++//     }else{
++//         //select jtag mux setting '1'
++//         setGPIOValue(hdtSelName, 0);
++//     }
++
++//     // TEST LOGIC RESET
++//     tap_state.reset = JTAG_FORCE_RESET;
++//     tap_state.from = JTAG_STATE_CURRENT;
++//     tap_state.endstate = JTAG_STATE_TLRESET;
++//     tap_state.tck = 10;
++
++//     test = ioctl (fd, JTAG_SIOCSTATE, &tap_state);
++//     if (test < 0) {
++//         DEBUG_PRINT(DEBUG_INFO, "JTAG_get_idcode::JTAG_SIOCSTATE Failure: 0x%x, errno: %d.\n error message:%s", test, errno, strerror(errno));
++//         return -1;
++//     }
++
++//     memset(&xfer, 0, sizeof(struct jtag_xfer));
++//     xfer.type = JTAG_SDR_XFER;
++//     xfer.tdio = (uint64_t)(&idcode);
++//     xfer.length = sizeof(idcode) * BITS_PER_BYTE;
++//     xfer.from = JTAG_STATE_CURRENT;
++//     xfer.endstate = JTAG_STATE_IDLE;
++//     xfer.direction = JTAG_READ_XFER;
++
++//     DEBUG_PRINT(DEBUG_INFO, "JTAG_get_idcode::xfer.tdio: %p, idcode: %p", xfer.tdio, &idcode);
++
++//     test = ioctl (fd, JTAG_IOCXFER, &xfer);
++//     if (test < 0) {
++//      DEBUG_PRINT(DEBUG_INFO, "JTAG_get_idcode::XFER Failure: 0x%x, errno: %d.\n error message:%s", test, errno, strerror(errno));
++//      return -1;
++//     }
++
++//     idcode = *(uint64_t *)(xfer.tdio);
++
++//     DEBUG_PRINT(DEBUG_INFO, "%s_IDCODE=0x%" PRIx64 "\n",device?"CPU":"FPGA",idcode);
++
++//     idcode32_l = (uint32_t)(idcode & MSB_MASK);
++//     idcode32_h = (uint32_t)((idcode & LSB_MASK) >> SHIFT_32);
++
++//     DEBUG_PRINT(DEBUG_INFO, "Lower_IDCODE=0x%x, Higher_IDCODE=0x%x\n",idcode32_l, idcode32_h);
++
++//     if (idcode32_l == idcode32_h)
++//     {
++//       DEBUG_PRINT(DEBUG_INFO, "2P System\n");
++//       is2PSystem = true;
++//     }
++
++//     else
++//       DEBUG_PRINT(DEBUG_INFO, "1P System\n");
++
++
++//     //select jtag mux setting '1',default
++//     setGPIOValue(hdtSelName, 0);
++
++//     return 0;
++// }
++
+ bmc::HdtHw::HdtHw(int driver)
+     : m_dbreq(false), m_dbreqOnDbrdy(true), m_dbreqOnReset(false), m_dbreqOnTrigger(false), m_dbreqTrigger(yaap::hal::TRIG_SRC_A_OR_B),
+       m_dbreqOnTriggerInvert(false), m_dbreqTriggerEvent(yaap::hal::TRIG_EVENT_BOTH_EDGES), m_dbreqPulseWidth(24750)
+@@ -157,7 +219,7 @@ bmc::HdtHw::HdtHw(int driver)
+         m_dbreq = false;
+     }
+ 
+-    JTAG_get_idcode (fd, 1);
++    BIC_JTAG_get_idcode(driver);
+ }
+ 
+ /***************************************************************/
+diff --git a/Source/Linux/bmc/hw/header_hw.cpp b/Source/Linux/bmc/hw/header_hw.cpp
+index abe333b..58579f1 100644
+--- a/Source/Linux/bmc/hw/header_hw.cpp
++++ b/Source/Linux/bmc/hw/header_hw.cpp
+@@ -64,6 +64,7 @@
+ #include "infrastructure/debug.h"
+ 
+ #include "aspeed.h"
++#include "plat/plat_def.h"
+ 
+ bmc::HeaderHw::HeaderHw(int driver)
+     : m_enabled(true)
+diff --git a/Source/Linux/bmc/hw/jtag_hw.cpp b/Source/Linux/bmc/hw/jtag_hw.cpp
+index 855acd7..6ef26be 100644
+--- a/Source/Linux/bmc/hw/jtag_hw.cpp
++++ b/Source/Linux/bmc/hw/jtag_hw.cpp
+@@ -76,6 +76,7 @@
+ #include <vector>
+ #include <unistd.h>
+ 
++#include "plat/plat_def.h"
+ 
+ #define  COOL_RESET_MAX_SIZE  (64)
+ #define  SHIFT_IR             (0)
+diff --git a/Source/Linux/bmc/hw/psp_sfmon.cpp b/Source/Linux/bmc/hw/psp_sfmon.cpp
+index d9dcacf..095ab4e 100644
+--- a/Source/Linux/bmc/hw/psp_sfmon.cpp
++++ b/Source/Linux/bmc/hw/psp_sfmon.cpp
+@@ -3,62 +3,62 @@
+ void pspSfMonitor::scheduleEventHandler()
+ {
+ 
+-    DEBUG_PRINT(DEBUG_INFO, "pspSfMonitor scheduleEventHandler()\n");
+-    gpioEventDescriptor.async_wait(
+-        boost::asio::posix::stream_descriptor::wait_read,
+-        [this](const boost::system::error_code& ec) {
+-            if (ec)
+-            {
+-                std::string msg = "event handler error" +
+-                                  std::string(ec.message());
+-                DEBUG_PRINT(DEBUG_FATAL, "%s\n", msg.c_str());
+-                return;
+-            }
+-            gpioEventHandler();
+-        });
++    // DEBUG_PRINT(DEBUG_INFO, "pspSfMonitor scheduleEventHandler()\n");
++    // gpioEventDescriptor.async_wait(
++    //     boost::asio::posix::stream_descriptor::wait_read,
++    //     [this](const boost::system::error_code& ec) {
++    //         if (ec)
++    //         {
++    //             std::string msg = "event handler error" +
++    //                               std::string(ec.message());
++    //             DEBUG_PRINT(DEBUG_FATAL, "%s\n", msg.c_str());
++    //             return;
++    //         }
++    //         gpioEventHandler();
++    //     });
+ }
+ 
+ void pspSfMonitor::gpioEventHandler()
+ {
+-    gpiod::line_event gpioLineEvent = gpioLine.event_read();
++    // gpiod::line_event gpioLineEvent = gpioLine.event_read();
+ 
+-    DEBUG_PRINT(DEBUG_INFO, "PSP Soft Fuse Notify Event Received\n");
++    // DEBUG_PRINT(DEBUG_INFO, "PSP Soft Fuse Notify Event Received\n");
+ 
+-    if (gpioLineEvent.event_type == gpiod::line_event::RISING_EDGE)
+-    {
+-        coolresetJtagHw->coolreset();
+-    }
++    // if (gpioLineEvent.event_type == gpiod::line_event::RISING_EDGE)
++    // {
++    //     coolresetJtagHw->coolreset();
++    // }
+ 
+-    /* Schedule a wait event */
+-    scheduleEventHandler();
++    // /* Schedule a wait event */
++    // scheduleEventHandler();
+ }
+ 
+ void pspSfMonitor::requestGPIOEvents()
+ {
+ 
+-    DEBUG_PRINT(DEBUG_INFO, "pspSfMonitor requestGPIOEvents()\n");
+-    /* Request an event to monitor for respected gpio line */
+-    try {
+-        gpioLine.request( { "yaapd", gpiod::line_request::EVENT_BOTH_EDGES });
+-    }
+-    catch (std::exception &exc) {
+-        DEBUG_PRINT(DEBUG_FATAL, "Failed to request gpioLineEvent\n");
+-        //return -1;
+-    }
++    // DEBUG_PRINT(DEBUG_INFO, "pspSfMonitor requestGPIOEvents()\n");
++    // /* Request an event to monitor for respected gpio line */
++    // try {
++    //     gpioLine.request( { "yaapd", gpiod::line_request::EVENT_BOTH_EDGES });
++    // }
++    // catch (std::exception &exc) {
++    //     DEBUG_PRINT(DEBUG_FATAL, "Failed to request gpioLineEvent\n");
++    //     //return -1;
++    // }
+ 
+-    int gpioLineFd = gpioLine.event_get_fd();
+-    if (gpioLineFd < 0)
+-    {
+-        DEBUG_PRINT(DEBUG_FATAL, "Failed to get fd for gpioLineEvent\n");
+-        //return -1;
+-    }
++    // int gpioLineFd = gpioLine.event_get_fd();
++    // if (gpioLineFd < 0)
++    // {
++    //     DEBUG_PRINT(DEBUG_FATAL, "Failed to get fd for gpioLineEvent\n");
++    //     //return -1;
++    // }
+ 
+ 
+-    /* Assign line fd to descriptor for monitoring */
+-    gpioEventDescriptor.assign(gpioLineFd);
++    // /* Assign line fd to descriptor for monitoring */
++    // gpioEventDescriptor.assign(gpioLineFd);
+ 
+-    /* Schedule a wait event */
+-    scheduleEventHandler();
++    // /* Schedule a wait event */
++    // scheduleEventHandler();
+ 
+-    io_service.run();
++    // io_service.run();
+ }
+diff --git a/Source/Linux/bmc/hw/psp_sfmon.h b/Source/Linux/bmc/hw/psp_sfmon.h
+index 6f9cd81..d8211b2 100644
+--- a/Source/Linux/bmc/hw/psp_sfmon.h
++++ b/Source/Linux/bmc/hw/psp_sfmon.h
+@@ -1,4 +1,4 @@
+-#include <gpiod.hpp>
++#include <openbmc/libgpio.hpp>
+ 
+ #include <boost/asio/io_service.hpp>
+ #include <boost/asio/posix/stream_descriptor.hpp>
+@@ -27,11 +27,11 @@ class pspSfMonitor
+      *  @param[in] io          - io service
+      *  @param[in] jtagHw      - coolreset object
+      */
+-    pspSfMonitor( gpiod::line& line,
++    pspSfMonitor( //gpiod::line& line,
+                   bmc::JtagHw *cpuDebugJtagHw
+                 ):gpioEventDescriptor(io_service)
+     {
+-        gpioLine = line;
++        // gpioLine = line;
+         coolresetJtagHw = cpuDebugJtagHw;
+         DEBUG_PRINT(DEBUG_INFO, "pspSfMonitor Constructor()\n");
+     };
+@@ -41,7 +41,7 @@ class pspSfMonitor
+     boost::asio::io_service io_service;
+ 
+     /** @brief GPIO line */
+-    gpiod::line gpioLine;
++    //gpiod::line gpioLine;
+ 
+     /** @brief GPIO line */
+     bmc::JtagHw *coolresetJtagHw;
+diff --git a/Source/Linux/bmc/hw/relay_hw.cpp b/Source/Linux/bmc/hw/relay_hw.cpp
+index 213cf0f..e75b440 100644
+--- a/Source/Linux/bmc/hw/relay_hw.cpp
++++ b/Source/Linux/bmc/hw/relay_hw.cpp
+@@ -62,36 +62,36 @@
+ #include <stdio.h>
+ #include <unistd.h>
+ #include "aspeed.h"
++#include "plat/plat_def.h"
+ 
+ bmc::RelayHw::RelayHw(int fd, int channel)
+     : m_state(false)
+ {
+     m_fd = fd;
+     m_channel = channel;
+-    bool ret;
++    // bool ret;
+ 
+     switch(m_channel)
+     {
+             case 0:
+-                ret = setGPIOValue(powerButtonName, 1);
++                setGPIOValue(powerButtonName, 1);
+                 break;
+ 
+             case 1:
+-                ret = setGPIOValue(resetButtonName, 1);
++                setGPIOValue(resetButtonName, 1);
+                 break;
+ 
+             case 2:
+-                ret = setGPIOValue(warmResetButtonName, 1);
++                setGPIOValue(warmResetButtonName, 1);
+                 break;
+ 
+             case 3:
+-                ret = setGPIOValue(fpgaReservedButtonName, 1);
++                setGPIOValue(fpgaReservedButtonName, 1);
+                 break;
+ 
+             default:
+                 DEBUG_PRINT(DEBUG_WARNING, "bmc::RelayHw::RelayHw, Relay Unsupported.\n");
+     }
+-
+ }
+ 
+ 
+@@ -99,25 +99,24 @@ bmc::RelayHw::RelayHw(int fd, int channel)
+ 
+ uint32_t bmc::RelayHw::set(bool state)
+ {
+-    bool ret;
+     DEBUG_PRINT(DEBUG_FATAL, "bmc::RelayHw::set, state = %d.\n", state);
+     m_state = state;
+     state = !state;
+     switch(m_channel) {
+         case 0:
+-            ret = setGPIOValue(powerButtonName, state);
++            setGPIOValue(powerButtonName, state);
+         break;
+ 
+         case 1:
+-            ret = setGPIOValue(resetButtonName, state);
++            setGPIOValue(resetButtonName, state);
+         break;
+ 
+         case 2:
+-            ret = setGPIOValue(warmResetButtonName, state);
++            setGPIOValue(warmResetButtonName, state);
+         break;
+ 
+         case 3:
+-            ret = setGPIOValue(fpgaReservedButtonName, state);
++            setGPIOValue(fpgaReservedButtonName, state);
+ 
+         break;
+ 
+diff --git a/Source/Linux/bmc/hw/system_hw.cpp b/Source/Linux/bmc/hw/system_hw.cpp
+index 436ad76..7c973f3 100755
+--- a/Source/Linux/bmc/hw/system_hw.cpp
++++ b/Source/Linux/bmc/hw/system_hw.cpp
+@@ -62,6 +62,7 @@
+ #include <unistd.h>
+ #include <stdio.h>
+ #include "infrastructure/debug.h"
++#include "plat/plat_def.h"
+ 
+ static const uint8_t yaapKey[] = { 0x76, 0x07, 0x97, 0x22, 0x99, 0x1C, 0x4D, 0x10, 0x9F, 0xAB, 0x43, 0x26, 0x70, 0xCB, 0x45, 0x67 };
+ 
+diff --git a/Source/Linux/bmc/main.cpp b/Source/Linux/bmc/main.cpp
+index c302a38..82b2faa 100755
+--- a/Source/Linux/bmc/main.cpp
++++ b/Source/Linux/bmc/main.cpp
+@@ -59,10 +59,10 @@
+ 
+ #include <fcntl.h>
+ 
+-#ifdef FIRMWARE_SOFT_FUSE
+-#include <thread>
+-#endif
+-#include <gpiod.hpp>
++// #ifdef FIRMWARE_SOFT_FUSE
++// #include <thread>
++// #endif
++#include <openbmc/libgpio.hpp>
+ #include <system_error>
+ 
+ #include "infrastructure/server.h"
+@@ -91,27 +91,20 @@
+ #include "hw/lpcRomEmu_hw.h"
+ 
+ #include "hw/mux_hw.h"
+-#ifdef FIRMWARE_SOFT_FUSE
+-#include "hw/psp_sfmon.h"
+-#endif
++// #ifdef FIRMWARE_SOFT_FUSE
++// #include "hw/psp_sfmon.h"
++// #endif
+ 
+ #include "infrastructure/socketHandler.h"
+ 
++#include "hw/bic_jtag_handler.h"
++#include "plat/plat_def.h"
++
+ #define DEFAULT_TCK_FREQ	(5000000)
+ #define HDT_SEL_MUX_DELAY	(200000)
+ 
+ using namespace yaap;
+ 
+-const std::string hdtSelName = "HDT_SEL";
+-const std::string hdtDbgReqName = "HDT_DBREQ_L";
+-const std::string PwrOkName = "MON_POST_COMPLETE";
+-
+-const std::string powerButtonName = "ASSERT_PWR_BTN_L";
+-const std::string resetButtonName = "ASSERT_RST_BTN_L";
+-const std::string warmResetButtonName = "ASSERT_WARM_RST_BTN_L";
+-const std::string fpgaReservedButtonName = "ASSERT_SOC_RST_BTN_L";
+-const std::string jtagTRSTName = "JTAG_TRST_N";
+-
+ #ifndef CONSUMER
+ #define CONSUMER "Consumer"
+ #endif
+@@ -129,71 +122,55 @@ int get_board_id(void)
+ 
+ int  getGPIOValue(const std::string& name)
+ {
+-    int value;
+-    gpiod::line gpioLine;
+-
+-    // Find the GPIO line
+-    gpioLine = gpiod::find_line(name);
+-    if (!gpioLine)
+-    {
+-        DEBUG_PRINT(DEBUG_FATAL, "Can't find line: %s\n", name.c_str());
+-        return -1;
+-    }
+-    try
+-    {
+-        gpioLine.request({__FUNCTION__, gpiod::line_request::DIRECTION_INPUT});
+-    }
+-    catch (std::system_error& exc)
++    for (auto gpioPtr : GpioHelper::helperVec)
+     {
+-        DEBUG_PRINT(DEBUG_FATAL, "Error setting gpio as Input:: %s, Err Message:%s\n", name.c_str(), exc.what());
+-        return -1;
++        if (gpioPtr->name() == name)
++        {
++            return gpioPtr->getValue();
++        }
+     }
+ 
+-    try
+-    {
+-        value = gpioLine.get_value();
+-    }
+-    catch (std::system_error& exc)
+-    {
+-        DEBUG_PRINT(DEBUG_FATAL, "Error getting gpio value for: %s, Err Message:%s\n", name.c_str(), exc.what());
++    try {
++        gpio_value_t val;
++        GPIO gpio(name.c_str());
++        gpio.open();
++        val = gpio.get_value();
++        if (val == GPIO_VALUE_LOW) {
++            return 0;
++        } else if (val == GPIO_VALUE_HIGH) {
++            return 1;
++        } else {
++            throw std::runtime_error("unknow gpio value, " + std::to_string(val));
++        }
++    } catch (std::exception &e) {
++        DEBUG_PRINT(DEBUG_FATAL, "%s(): %s, name: %s\n", __func__, e.what(), name.c_str());
+         return -1;
+     }
+ 
+-    return value;
++    return -1;
+ }
+ 
+ bool setGPIOValue(const std::string& name, const int value)
+ {
+-    gpiod::line gpioLine;
+-
+-    // Find the GPIO line
+-    gpioLine = gpiod::find_line(name);
+-    if (!gpioLine)
++    for (auto gpioPtr : GpioHelper::helperVec)
+     {
+-        DEBUG_PRINT(DEBUG_FATAL, "Can't find line: %s\n", name.c_str());
+-        return false;
+-    }
+-    try
+-    {
+-        gpioLine.request({__FUNCTION__, gpiod::line_request::DIRECTION_OUTPUT});
+-    }
+-    catch (std::system_error& exc)
+-    {
+-        DEBUG_PRINT(DEBUG_FATAL, "Error setting gpio as Output:: %s, Err Message:%s\n", name.c_str(), exc.what());
+-        return false;
++        if (gpioPtr->name() == name)
++        {
++            return gpioPtr->setValue(value);
++        }
+     }
+ 
+-    try
+-    {
+-        // Request GPIO output to specified value
+-        gpioLine.set_value(value);
+-    }
+-    catch (std::exception& exc)
+-    {
+-        DEBUG_PRINT(DEBUG_FATAL, "Error setting gpio value for: %s, Err Message:%s\n", name.c_str(), exc.what());
++    try {
++        GPIO gpio(name.c_str());
++        gpio.open();
++        gpio.set_value((value == 1) ? GPIO_VALUE_HIGH : GPIO_VALUE_LOW);
++    } catch (std::exception &e) {
++        DEBUG_PRINT(DEBUG_FATAL, "%s(): %s, name: %s\n", __func__, e.what(), name.c_str());
+         return false;
+     }
+ 
++    return true;
++
+     if (name.compare(hdtSelName) == 0)
+     {
+         usleep(HDT_SEL_MUX_DELAY);
+@@ -209,12 +186,12 @@ int main(int argc, char *argv[])
+     uint32_t postTck = 5;
+     int yaapPort = DEFAULT_YAAP_PORT;
+     int yaapTimeout = -1;
+-    bool jtag_sw_mode = false;
++    // bool jtag_sw_mode = false;
+ 
+-#ifdef FIRMWARE_SOFT_FUSE
+-    boost::asio::io_service io;
+-    const std::string pspSFName = "PSP_SOFT_FUSE_NOTIFY";
+-#endif
++// #ifdef FIRMWARE_SOFT_FUSE
++//     boost::asio::io_service io;
++//     const std::string pspSFName = "PSP_SOFT_FUSE_NOTIFY";
++// #endif
+ 
+     // Parse command line
+     if (argc > 1) {
+@@ -234,27 +211,33 @@ int main(int argc, char *argv[])
+             } else if ((strcmp(argv[i], "--timeout") == 0) && ((i + 1) < argc)) {
+                 sscanf(argv[i + 1], "%i", &yaapTimeout);
+                 i++;
+-            } else if (strcmp(argv[i], "--jtag_sw_mode") == 0)  {
+-                jtag_sw_mode = true;
+-            } else if (strcmp(argv[i], "-h") == 0)  {
+-                printf("%s [ -v { 0 - 5 } ] [ -p TCP_PORT_NUMBER ] [ --pre TCK_PRE_SHIFT_CYCLES ] [ --post TCK_POST_SHIFT_CYCLES ] [ --timeout YAAP_TIMEOUT_TIME ] [ --jtag_sw_mode ]  \n", argv[0]);
++            } else if (strcmp(argv[i], "--fruid") == 0)  {
++                sscanf(argv[i + 1], "%hhu", &hostFruId);
++                i++;
++            // } else if (strcmp(argv[i], "--jtag_sw_mode") == 0)  {
++            //     jtag_sw_mode = true;
++            } else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)  {
++                std::string cmdOptions = "[ -v { 0 - 5 } ] [ -p TCP_PORT_NUMBER ] [ --pre TCK_PRE_SHIFT_CYCLES ] [ --post TCK_POST_SHIFT_CYCLES ] [ --timeout YAAP_TIMEOUT_TIME ] [ --jtag_sw_mode ]";
++                cmdOptions += " [ --fruid FRUID ]";
++                printf("%s %s \n", argv[0], cmdOptions.c_str());
+                 exit(0);
+             }
+         }
+     }
+-
++    plat_init();
+     setGPIOValue(jtagTRSTName, 1);
+ 
+     // System/board initialization code goes here...
+-    int driver = open ("/dev/jtag0", O_RDWR);
++    // int driver = open ("/dev/jtag0", O_RDWR);
+ 
+-    if (driver < 0) {
+-        printf("Can't open JTAG device /dev/jtag0!\n");
+-        DEBUG_PRINT(DEBUG_FATAL, "Can't open JTAG device /dev/jtag0!");
+-        return 0;
+-    }
++    // if (driver < 0) {
++    //     printf("Can't open JTAG device /dev/jtag0!\n");
++    //     DEBUG_PRINT(DEBUG_FATAL, "Can't open JTAG device /dev/jtag0!");
++    //     return 0;
++    // }
+ 
+     // Instantiate HW drivers (i.e. instances implementing HAL interfaces)...
++    int driver = -1;
+     bmc::SystemHw systemHw(driver);
+ 
+     // Instantiate YAAP classes.  Note that HDT expects specific names for the classes it interacts with.
+@@ -263,11 +246,12 @@ int main(int argc, char *argv[])
+     classes::yaapPrivate yaap_private("private");
+ 
+ 
+-
+-    bmc::JtagHw cpuDebugJtagHw(driver, DEFAULT_TCK_FREQ, jtag_sw_mode );
++    bmc::BicJtagHandler cpuDebugJtagHw(hostFruId);
++    // bmc::JtagHw cpuDebugJtagHw(driver, DEFAULT_TCK_FREQ, jtag_sw_mode );
+     bmc::HeaderHw cpuDebugHeaderHw(driver);
+     bmc::TriggersHw triggersHw;
+-    bmc::HdtHw hdtHw(driver);
++    bmc::HdtHw hdtHw(hostFruId);
++    // bmc::HdtHw hdtHw(driver);
+ 
+ 
+     bmc::csJtagHw cs1JtagHw(driver);
+@@ -304,27 +288,27 @@ int main(int argc, char *argv[])
+     if (yaapTimeout > 0) {
+         socketHandler::setConnectionTimeout(yaapTimeout);
+     }
+-#ifdef JTAG_MODE_BMC_ONLY
+-    // Set BMC as default JTAG controller using mux
+-    DEBUG_PRINT(DEBUG_INFO, "Setting HDT SEL for BMC\n");
+-    setGPIOValue(hdtSelName, 1);
+-#endif
+-
+-#ifdef FIRMWARE_SOFT_FUSE
+-    gpiod::line gpioLine;
+-
+-    gpioLine = gpiod::find_line(pspSFName);
+-    if (!gpioLine)
+-    {
+-       	DEBUG_PRINT(DEBUG_FATAL, "Failed to find the: %s line\n", pspSFName.c_str());
+-        return false;
+-    }
+-
+-    DEBUG_PRINT(DEBUG_INFO, "creating PSP Soft Fuse Notify Monitor Object\n");
+-    pspSfMonitor *pspSfMonObj = new pspSfMonitor(gpioLine, &cpuDebugJtagHw);
+-    std::thread th(&pspSfMonitor::requestGPIOEvents, pspSfMonObj);
+-    th.detach();
+-#endif
++// #ifdef JTAG_MODE_BMC_ONLY
++//     // Set BMC as default JTAG controller using mux
++//     DEBUG_PRINT(DEBUG_INFO, "Setting HDT SEL for BMC\n");
++//     setGPIOValue(hdtSelName, 1);
++// #endif
++
++// #ifdef FIRMWARE_SOFT_FUSE
++//     gpiod::line gpioLine;
++
++//     gpioLine = gpiod::find_line(pspSFName);
++//     if (!gpioLine)
++//     {
++//        	DEBUG_PRINT(DEBUG_FATAL, "Failed to find the: %s line\n", pspSFName.c_str());
++//         return false;
++//     }
++
++//     DEBUG_PRINT(DEBUG_INFO, "creating PSP Soft Fuse Notify Monitor Object\n");
++//     pspSfMonitor *pspSfMonObj = new pspSfMonitor(gpioLine, &cpuDebugJtagHw);
++//     std::thread th(&pspSfMonitor::requestGPIOEvents, pspSfMonObj);
++//     th.detach();
++// #endif
+ 
+     // Start the YAAP server...
+     return startServer(yaapPort, __debugLevel__);
+diff --git a/Source/Linux/bmc/meson.build b/Source/Linux/bmc/meson.build
+new file mode 100644
+index 0000000..54e04ca
+--- /dev/null
++++ b/Source/Linux/bmc/meson.build
+@@ -0,0 +1,40 @@
++bic_jtag_src = []
++bic_jtag_dep = []
++plat_src = []
++plat_dep = []
++
++subdir('plat')
++
++if (get_option('bic-jtag').enabled())
++	bic_jtag_src += 'hw/bic_jtag_handler.cpp'
++	bic_jtag_dep += dependency('libbic')
++endif
++
++executable(
++    'yaapd',
++    'main.cpp',
++	'hw/csjtag_hw.cpp',
++	'hw/gpuDebug_hw.cpp',
++	'hw/hdt_hw.cpp',
++	'hw/header_hw.cpp',
++	'hw/i2c_hw.cpp',
++	'hw/jtag_hw.cpp',
++	'hw/lpcPostCode_hw.cpp',
++	'hw/lpcRomEmu_hw.cpp',
++	'hw/mux_hw.cpp',
++	'hw/psp_sfmon.cpp',
++	'hw/relay_hw.cpp',
++	'hw/system_hw.cpp',
++	'hw/triggers_hw.cpp',
++	'plat/plat_def.cpp',
++	bic_jtag_src,
++	plat_src,
++
++    dependencies: [
++        gpiodcxx_dep,
++        yaap_shared_dep,
++		bic_jtag_dep,
++		plat_dep,
++    ],
++    install: true,
++)
+diff --git a/Source/Linux/bmc/plat/plat_def.cpp b/Source/Linux/bmc/plat/plat_def.cpp
+new file mode 100644
+index 0000000..c77c279
+--- /dev/null
++++ b/Source/Linux/bmc/plat/plat_def.cpp
+@@ -0,0 +1,28 @@
++#include "plat_def.h"
++
++std::string hdtSelName = "HDT_SEL";
++// std::string jtagMuxOEName = "JTAG_MUX_OE";
++// std::string jtagMuxSName = "JTAG_MUX_S";
++std::string hdtDbgReqName = "HDT_DBREQ";
++std::string PwrOkName = "MON_PWROK";
++// std::string boardID0Name = "BRD_ID_0";
++// std::string boardID1Name = "BRD_ID_1";
++// std::string boardID2Name = "BRD_ID_2";
++// std::string boardID3Name = "BRD_ID_3";
++std::string powerButtonName = "ASSERT_PWR_BTN";
++std::string resetButtonName = "ASSERT_RST_BTN";
++std::string warmResetButtonName = "ASERT_WARM_RST_BTN";
++std::string fpgaReservedButtonName = "FPGA_RSVD";
++std::string jtagTRSTName = "JTAG_TRST_N";
++uint8_t hostFruId = 1;
++
++// int plat_board_id = 0;
++
++GpioHelperVec GpioHelper::helperVec;
++
++void __attribute__((weak))
++plat_init(void)
++{
++    // overwrite this function to modify gpio shadows name and board id in
++    // platform layer
++}
+\ No newline at end of file
+diff --git a/Source/Linux/bmc/plat/plat_def.h b/Source/Linux/bmc/plat/plat_def.h
+new file mode 100644
+index 0000000..d47878b
+--- /dev/null
++++ b/Source/Linux/bmc/plat/plat_def.h
+@@ -0,0 +1,64 @@
++#ifndef __BMC_PLAT_DEF_H__
++#define __BMC_PLAT_DEF_H__
++
++#include <cstdint>
++#include <string>
++#include <memory>
++#include <vector>
++#include "infrastructure/debug.h"
++
++extern std::string hdtSelName;
++extern std::string hdtDbgReqName;
++extern std::string PwrOkName;
++extern std::string powerButtonName;
++extern std::string resetButtonName;
++extern std::string warmResetButtonName;
++extern std::string fpgaReservedButtonName;
++extern std::string jtagTRSTName;
++extern uint8_t hostFruId;
++
++class GpioHelper;
++typedef std::shared_ptr<GpioHelper> GpioHelperPtr;
++typedef std::vector<GpioHelperPtr> GpioHelperVec;
++
++
++class GpioHelper
++{
++public:
++    GpioHelper(const std::string& name): m_name(name) {}
++    virtual ~GpioHelper() {}
++
++    const std::string& name() {return m_name;}
++    virtual int getValue() = 0;
++    virtual bool setValue(int value) = 0;
++
++    static GpioHelperVec helperVec;
++
++protected:
++    const std::string m_name;
++};
++
++class DummyGpio : public GpioHelper
++{
++public:
++    DummyGpio(const std::string& name, uint8_t init_val):
++        GpioHelper(name), m_val(init_val) {}
++
++    virtual int getValue()
++    {
++        return m_val;
++    }
++
++    virtual bool setValue(int value)
++    {
++        m_val = value;
++        return true;
++    }
++private:
++    uint8_t m_val;
++};
++
++void plat_init(void);
++
++#endif
++
+diff --git a/Source/Shared/infrastructure/debug.h b/Source/Shared/infrastructure/debug.h
+index df461ac..bc8c16b 100644
+--- a/Source/Shared/infrastructure/debug.h
++++ b/Source/Shared/infrastructure/debug.h
+@@ -60,9 +60,9 @@
+ #ifndef YAAP_DEBUG_H
+ #define YAAP_DEBUG_H
+ 
+-//#define DEBUGGING_ENABLED
++#define DEBUGGING_ENABLED
+ #ifndef DEBUG_LEVEL
+-#define DEBUG_LEVEL DEBUG_VERBOSE
++#define DEBUG_LEVEL DEBUG_INFO
+ #endif
+ 
+ #define DEBUG_FATAL    0
+diff --git a/Source/Shared/meson.build b/Source/Shared/meson.build
+new file mode 100644
+index 0000000..4d17d98
+--- /dev/null
++++ b/Source/Shared/meson.build
+@@ -0,0 +1,41 @@
++cc = meson.get_compiler('cpp')
++
++yaap_shared_a = static_library(
++    'yaap_shared_a',
++    'classes/csJtag.cpp',
++    'classes/lpcPostCode.cpp',
++    'classes/relay.cpp',
++    'classes/gpuDebug.cpp',
++    'classes/device.cpp',
++    'classes/hdt.cpp',
++    'classes/lpc.cpp',
++    'classes/private.cpp',
++    'classes/system.cpp',
++    'classes/jtag.cpp',
++    'classes/i2c.cpp',
++    'classes/lpcRomEmulation.cpp',
++    'classes/gpuScan.cpp',
++    'classes/cpuDebug.cpp',
++    'classes/mux.cpp',
++    'classes/base.cpp',
++    'classes/wombatUvdMux.cpp',
++    'hal/hal_instances.cpp',
++    'infrastructure/connectionHandler.cpp',
++    'infrastructure/socketHandler.cpp',
++    'infrastructure/server.cpp',
++    'yaarp/src/error_status_stream.cpp',
++    'yaarp/src/input_stream.cpp',
++    'yaarp/src/output_stream.cpp',
++    include_directories: [
++        '.',
++        'yaarp/include',
++    ],
++)
++
++yaap_shared_dep = declare_dependency(
++    link_with: [ yaap_shared_a ],
++    include_directories: [
++        '.',
++        'yaarp/include',
++    ],
++)
+diff --git a/Source/meson.build b/Source/meson.build
+new file mode 100644
+index 0000000..141ea04
+--- /dev/null
++++ b/Source/meson.build
+@@ -0,0 +1,2 @@
++subdir('Shared')
++subdir('Linux/bmc')
+diff --git a/meson.build b/meson.build
+new file mode 100644
+index 0000000..515bcfc
+--- /dev/null
++++ b/meson.build
+@@ -0,0 +1,30 @@
++project(
++    'YAAP',
++    'cpp',
++    version: '1.1.0',
++    default_options: [
++        'buildtype=debugoptimized',
++    ],
++)
++
++add_project_arguments(
++    '-DDEBUGGING_ENABLED',
++    '-DDEBUG_LEVEL=DEBUG_FATAL',
++    '-DUNALIGNED_ACCESSES_SUPPORTED=false',
++    '-DYAAP_LITTLE_ENDIAN',
++    language: 'cpp',
++)
++
++gpiodcxx_dep = [
++    dependency('libgpio-ctrl'),
++]
++
++if (get_option('bic-jtag').enabled())
++  add_project_arguments('-DBIC_JTAG', language: 'cpp')
++endif
++
++if (get_option('enabled-pldm').enabled())
++  add_project_arguments('-DENABLE_PLDM', language: 'cpp')
++endif
++
++subdir('Source')
+diff --git a/meson_options.txt b/meson_options.txt
+new file mode 100644
+index 0000000..247c4c0
+--- /dev/null
++++ b/meson_options.txt
+@@ -0,0 +1,2 @@
++option('bic-jtag', type: 'feature', value : 'disabled')
++option('enabled-pldm', type: 'feature', value: 'disabled')
+-- 
+2.25.1
+

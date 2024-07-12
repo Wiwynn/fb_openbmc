@@ -2,16 +2,17 @@
 DEFAULT_PREFERENCE = "1"
 FILESEXTRAPATHS:append := "${THISDIR}/files:"
 
-EXTRA_OECMAKE = "-DNO_SYSTEMD=ON -DBIC_APML_INTF=ON -DENABLE_PLDM=ON"
+EXTRA_OEMESON:append = " -Dbic-apml-intf=true -Denabled-pldm=true"
 
 DEPENDS += " libbic cli11 apml"
-DEPENDS:remove = "libgpiod"
+DEPENDS:remove = "libgpiodcxx"
 
 inherit systemd
 
 RDEPENDS:${PN}:append = " bash"
 
 SRC_URI += " \
+    file://0001-Support-addc-for-YV4.patch \
     file://ras-polling.sh \
     file://ras-polling@.service \
 "

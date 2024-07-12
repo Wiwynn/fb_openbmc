@@ -1,0 +1,1569 @@
+From 8034433469076852d13b64bb6a652eaf126af8ce Mon Sep 17 00:00:00 2001
+From: PeterHo-wiwynn <Peter_MH_Ho@wiwynn.com>
+Date: Thu, 20 Jun 2024 10:56:52 +0800
+Subject: [PATCH] Support addc for YV4
+
+---
+ config/config_file         |  81 +++++
+ inc/bic_apml_interface.hpp |  17 +
+ inc/ras.hpp                |  31 +-
+ meson.build                |  30 +-
+ meson_options.txt          |  13 +
+ src/bic_apml_interface.cpp | 690 +++++++++++++++++++++++++++++++++++++
+ src/fatal_error.cpp        |  51 ++-
+ src/main.cpp               | 103 +++++-
+ src/runtime_errors.cpp     |  20 +-
+ src/write_cper_data.cpp    |  26 +-
+ 10 files changed, 998 insertions(+), 64 deletions(-)
+ create mode 100644 config/config_file
+ create mode 100644 inc/bic_apml_interface.hpp
+ create mode 100644 src/bic_apml_interface.cpp
+
+diff --git a/config/config_file b/config/config_file
+new file mode 100644
+index 0000000..925a2fa
+--- /dev/null
++++ b/config/config_file
+@@ -0,0 +1,81 @@
++{
++    "DramCeccErrCounter": 2,
++    "DramCeccPollingEn": false,
++    "DramCeccPollingPeriod": 5,
++    "DramCeccThresholdEn": false,
++    "McaErrCounter": 2,
++    "McaPollingEn": false,
++    "McaPollingPeriod": 3,
++    "McaThresholdEn": false,
++    "P0_DIMM_LABELS": {
++        "P0_DIMM_A": "null",
++        "P0_DIMM_A1": "null",
++        "P0_DIMM_B": "null",
++        "P0_DIMM_B1": "null",
++        "P0_DIMM_C": "null",
++        "P0_DIMM_C1": "null",
++        "P0_DIMM_D": "null",
++        "P0_DIMM_D1": "null",
++        "P0_DIMM_E": "null",
++        "P0_DIMM_E1": "null",
++        "P0_DIMM_F": "null",
++        "P0_DIMM_F1": "null",
++        "P0_DIMM_G": "null",
++        "P0_DIMM_G1": "null",
++        "P0_DIMM_H": "null",
++        "P0_DIMM_H1": "null",
++        "P0_DIMM_I": "null",
++        "P0_DIMM_I1": "null",
++        "P0_DIMM_J": "null",
++        "P0_DIMM_J1": "null",
++        "P0_DIMM_K": "null",
++        "P0_DIMM_K1": "null",
++        "P0_DIMM_L": "null",
++        "P0_DIMM_L1": "null"
++    },
++    "P1_DIMM_LABELS": {
++        "P1_DIMM_A": "null",
++        "P1_DIMM_A1": "null",
++        "P1_DIMM_B": "null",
++        "P1_DIMM_B1": "null",
++        "P1_DIMM_C": "null",
++        "P1_DIMM_C1": "null",
++        "P1_DIMM_D": "null",
++        "P1_DIMM_D1": "null",
++        "P1_DIMM_E": "null",
++        "P1_DIMM_E1": "null",
++        "P1_DIMM_F": "null",
++        "P1_DIMM_F1": "null",
++        "P1_DIMM_G": "null",
++        "P1_DIMM_G1": "null",
++        "P1_DIMM_H": "null",
++        "P1_DIMM_H1": "null",
++        "P1_DIMM_I": "null",
++        "P1_DIMM_I1": "null",
++        "P1_DIMM_J": "null",
++        "P1_DIMM_J1": "null",
++        "P1_DIMM_K": "null",
++        "P1_DIMM_K1": "null",
++        "P1_DIMM_L": "null",
++        "P1_DIMM_L1": "null"
++    },
++    "PcieAerErrCounter": 2,
++    "PcieAerPollingEn": false,
++    "PcieAerPollingPeriod": 7,
++    "PcieAerThresholdEn": false,
++    "ResetSignal": "SYS_RST",
++    "apmlRetries": 10,
++    "harvestPpin": true,
++    "harvestuCodeVersion": true,
++    "sigIDOffset": [
++        "0x30",
++        "0x34",
++        "0x28",
++        "0x2c",
++        "0x08",
++        "0x0c",
++        "null",
++        "null"
++    ],
++    "systemRecovery": 0
++}
+diff --git a/inc/bic_apml_interface.hpp b/inc/bic_apml_interface.hpp
+new file mode 100644
+index 0000000..8f38993
+--- /dev/null
++++ b/inc/bic_apml_interface.hpp
+@@ -0,0 +1,17 @@
++#ifndef __BIC_APML_INTERFACE_HPP__
++#define __BIC_APML_INTERFACE_HPP__
++
++#include <cstdint>
++
++extern "C" {
++#include "apml.h"
++#include "esmi_cpuid_msr.h"
++#include "esmi_mailbox.h"
++#include "esmi_mailbox_nda.h"
++#include "esmi_rmi.h"
++}
++
++uint8_t get_current_target_fruid();
++void set_current_target_fruid(uint8_t fruid);
++
++#endif /* __BIC_APML_INTERFACE_HPP__ */
+\ No newline at end of file
+diff --git a/inc/ras.hpp b/inc/ras.hpp
+index 3ad9738..93028a6 100644
+--- a/inc/ras.hpp
++++ b/inc/ras.hpp
+@@ -8,14 +8,16 @@
+ #include <boost/date_time/posix_time/posix_time.hpp>
+ #include <filesystem>
+ #include <fstream>
++#ifndef BIC_APML_INTF
+ #include <gpiod.hpp>
++#endif
+ #include <mutex>
+ #include <nlohmann/json.hpp>
+ #include <phosphor-logging/log.hpp>
+ #include <regex>
+ #include <sdbusplus/asio/connection.hpp>
+ #include <sdbusplus/asio/object_server.hpp>
+-
++#ifndef BIC_APML_INTF
+ extern "C" {
+ #include "apml.h"
+ #include "esmi_cpuid_msr.h"
+@@ -23,6 +25,11 @@ extern "C" {
+ #include "esmi_mailbox_nda.h"
+ #include "esmi_rmi.h"
+ }
++#endif
++
++#ifdef BIC_APML_INTF
++#include "bic_apml_interface.hpp"
++#endif
+ 
+ #define GENOA_FAMILY_ID (0x19)
+ #define TURIN_FAMILY_ID (0x1A)
+@@ -69,8 +76,9 @@ extern "C" {
+ #define BASE_16 (16)
+ #define MAX_RETRIES (10)
+ #define RAS_STATUS_REGISTER (0x4C)
+-#define index_file ("/var/lib/amd-ras/current_index")
+-#define config_file ("/var/lib/amd-ras/config_file")
++#define index_file ("/var/lib/amd-ras/fru%d_current_index")
++// #define config_file ("/var/lib/amd-ras/config_file")
++constexpr const char* config_file = "/var/lib/amd-ras/config_file";
+ #define COMMAND_BOARD_ID ("/sbin/fw_printenv -n board_id")
+ #define BAD_DATA (0xBAADDA7A)
+ #define PCIE_VENDOR_ID (0x1022)
+@@ -97,15 +105,16 @@ extern "C" {
+ void RunTimeErrorPolling();
+ oob_status_t SetOobConfig();
+ oob_status_t SetErrThreshold();
+-void RunTimeErrorInfoCheck(uint8_t, uint8_t);
++void RunTimeErrorInfoCheck(uint8_t, uint8_t, uint8_t);
+ void write_to_cper_file(std::string);
+ void ErrorPollingHandler(uint8_t, uint16_t);
+ void CreateDbusInterface();
+-
++#ifndef BIC_APML_INTF
+ bool requestGPIOEvents(const std::string&, const std::function<void()>&,
+                        gpiod::line&, boost::asio::posix::stream_descriptor&);
+-bool harvest_ras_errors(uint8_t, std::string);
+-
++#endif
++bool harvest_ras_errors(uint8_t, std::string, uint8_t);
++#ifndef BIC_APML_INTF
+ void P0AlertEventHandler();
+ void P1AlertEventHandler();
+ void P0PmicAfEventHandler();
+@@ -113,11 +122,11 @@ void P0PmicGlEventHandler();
+ void P1PmicAfEventHandler();
+ void P1PmicGlEventHandler();
+ void HPMFPGALockoutEventHandler();
+-
++#endif
+ template <typename T>
+ void calculate_time_stamp(const std::shared_ptr<T>&);
+ template <typename T>
+-void write_to_cper_file(const std::shared_ptr<T>&, std::string, uint16_t);
++void write_to_cper_file(const std::shared_ptr<T>&, std::string, uint16_t, uint8_t);
+ template <typename T>
+ void dump_cper_header_section(const std::shared_ptr<T>&, uint16_t, uint32_t,
+                               std::string);
+@@ -139,7 +148,7 @@ void write_register(uint8_t, uint32_t, uint32_t);
+ 
+ extern boost::asio::io_service io;
+ extern std::vector<uint8_t> BlockId;
+-
++#ifndef BIC_APML_INTF
+ extern gpiod::line P0_apmlAlertLine;
+ extern gpiod::line P1_apmlAlertLine;
+ extern gpiod::line P0_pmicAfAlertLine;
+@@ -159,7 +168,7 @@ extern boost::asio::posix::stream_descriptor HPMFPGALockoutAlertEvent;
+ extern boost::asio::deadline_timer* McaErrorPollingEvent;
+ extern boost::asio::deadline_timer* DramCeccErrorPollingEvent;
+ extern boost::asio::deadline_timer* PcieAerErrorPollingEvent;
+-
++#endif
+ extern uint8_t p0_info;
+ extern uint8_t p1_info;
+ extern int num_of_proc;
+diff --git a/meson.build b/meson.build
+index 0b4e21b..77b7b4a 100644
+--- a/meson.build
++++ b/meson.build
+@@ -4,32 +4,47 @@ project(
+   default_options: [
+     'warning_level=3',
+     'werror=true',
+-    'cpp_std=c++17'
++    'cpp_std=c++20'
+   ],
+   license: 'Apache-2.0',
+   version: '1.0',
+ )
+ 
++# Load options
++bic_apml_intf = get_option('bic-apml-intf')
++enabled_pldm = get_option('enabled-pldm')
+ 
++# Add the configuration data for the config.h file
+ conf_data = configuration_data()
+ conf_data.set_quoted('DBUS_OBJECT_NAME', 'com/amd/crashdump')
+-conf_data.set_quoted('DBUS_SERVICE_NAME','com.amd.crashdump')
++conf_data.set_quoted('DBUS_SERVICE_NAME', 'com.amd.crashdump')
+ 
+ cpp_args = []
+ 
++# Check if BIC_APML_INTF should be defined
++if bic_apml_intf
++  cpp_args += ['-DBIC_APML_INTF']
++endif
++
++# Check if enabled-pldm should be defined
++if enabled_pldm
++  cpp_args += ['-DENABLE_PLDM']
++endif
++
+ cpp = meson.get_compiler('cpp')
+ 
+-configure_file(output: 'config.h',
++configure_file(
++  output: 'config.h',
+   configuration: conf_data
+ )
+ 
+ # (Meson requires an absolute path for find_library().)
+ libdir = meson.current_source_dir() + './lib/'
+ 
+-apml_dep = cpp.find_library('apml64', dirs : libdir) # ./lib/libapml64.lib
++apml_dep = cpp.find_library('apml64', dirs: libdir) # ./lib/libapml64.lib
+ 
+ deps = [
+-  dependency('libgpiodcxx', default_options: ['bindings=cxx']),
++#  dependency('libgpiodcxx', default_options: ['bindings=cxx']),
+   dependency('systemd'),
+   dependency('sdbusplus'),
+   dependency('sdeventplus'),
+@@ -47,11 +62,13 @@ executable(
+   'src/dbus_ras.cpp',
+   'src/fatal_error.cpp',
+   'src/Config.cpp',
++  'src/bic_apml_interface.cpp',
+   include_directories: include_directories('inc'),
+   cpp_args: cpp_args,
+   dependencies: deps,
+   install: true,
+-  install_dir: get_option('bindir'))
++  install_dir: get_option('bindir')
++)
+ 
+ systemd = dependency('systemd')
+ 
+@@ -59,4 +76,3 @@ install_data(
+   ['service_files/com.amd.crashdump.service'],
+   install_dir: systemd.get_pkgconfig_variable('systemdsystemunitdir')
+ )
+-
+diff --git a/meson_options.txt b/meson_options.txt
+index 9aa930b..92c4c7f 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -4,3 +4,16 @@ option(
+     type: 'string'
+ )
+ 
++option(
++  'bic-apml-intf',
++  type: 'boolean',
++  value: false,
++  description: 'Enable BIC_APML_INTF'
++)
++
++option(
++  'enabled-pldm',
++  type: 'boolean',
++  value: false,
++  description: 'PLDM enabled'
++)
+diff --git a/src/bic_apml_interface.cpp b/src/bic_apml_interface.cpp
+new file mode 100644
+index 0000000..237ec70
+--- /dev/null
++++ b/src/bic_apml_interface.cpp
+@@ -0,0 +1,690 @@
++#include "bic_apml_interface.hpp"
++
++#include <cstdint>
++#include <cstring>
++#include <unistd.h>
++#include <iostream>
++#include <sstream>
++#include <iomanip>
++#include <vector>
++#include <string>
++#ifndef ENABLE_PLDM
++#include <facebook/bic_xfer.h>
++#endif
++#include <openbmc/ipmi.h>
++
++/* one byte mask for DDR bandwidth */
++#define ONE_BYTE_MASK		0XFF
++/* Teo byte mask */
++#define TWO_BYTE_MASK		0xFFFF
++/* Four byte mask used in raplcoreenergy, raplpackageenergy */
++#define FOUR_BYTE_MASK		0xFFFFFFFF
++/* LO_WORD_REG used in rapl package energy and read RAS
++ * last transaction address */
++#define LO_WORD_REG		0
++/* HI_WORD_REG used in rapl package energy and read RAS
++ * last transaction address */
++#define HI_WORD_REG		1
++/* READ MODE */
++#define READ_MODE		1
++/* WRITE MODE */
++#define WRITE_MODE		0
++
++#define MAX_RETRIES              5
++// #define MAX_RETRY_INTERVAL_MSEC  128
++#define IANA_SIZE 3
++
++enum IPMB_APML_OEM_CMD
++{
++    CMD_OEM_APML_READ_DATA = 0x2C,
++    CMD_OEM_APML_WRITE_DATA = 0x2D,
++    CMD_OEM_APML_SEND_REQ = 0x2E,
++    CMD_OEM_APML_GET_RES = 0x2F,
++};
++
++enum APML_INTERFACE_TYPE
++{
++    APML_RMI = 0x00,
++    APML_TSI = 0x01,
++};
++
++enum APML_DATA_FUNC
++{
++    APML_DATA_WRITE = 0x00,
++    APML_DATA_READ = 0x01,
++};
++
++enum APML_MSG_TYPE
++{
++	APML_MSG_TYPE_MAILBOX = 0x00,
++	APML_MSG_TYPE_CPUID,
++	APML_MSG_TYPE_MCA,
++};
++
++static uint8_t g_fruid = 0;
++
++uint8_t get_current_target_fruid()
++{
++    return g_fruid;
++}
++
++void set_current_target_fruid(uint8_t fruid)
++{
++    g_fruid = fruid;
++}
++#ifdef ENABLE_PLDM
++std::string uint8ToHexString(uint8_t value) {
++    std::stringstream stream;
++    stream << "0x" << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(value);
++    return stream.str();
++}
++
++std::string uint8ArrayToHexString(const uint8_t* array, int length) {
++    std::ostringstream oss;
++    for (int i = 0; i < length; ++i) {
++        oss << "0x" << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(array[i]);
++        if (i != length - 1) {
++            oss << " ";
++        }
++    }
++    return oss.str();
++}
++#endif
++oob_status_t bic_ipmb_apml_read_byte(struct apml_message *msg, uint8_t intf_type)
++{
++    const uint8_t iana[IANA_SIZE] = {0x15, 0xa0, 0x00};
++    uint8_t tbuf[256] = {0x00};
++    // uint8_t rbuf[256] = {0x00};
++    uint8_t tlen = 0;
++    // uint8_t rlen = 255;
++    // int ret;
++
++    memcpy(tbuf, iana, sizeof(iana));
++    tbuf[3] = intf_type;
++    tbuf[4] = msg->data_in.reg_in[0];
++    tlen = 5;
++
++#ifndef ENABLE_PLDM
++    ret = bic_ipmb_wrapper(g_fruid, NETFN_OEM_1S_REQ, CMD_OEM_APML_READ_DATA, tbuf, tlen, rbuf, &rlen);
++    if (ret != BIC_STATUS_SUCCESS)
++        return OOB_UNKNOWN_ERROR;
++
++    msg->data_out.reg_out[0] = rbuf[3];
++#else
++    FILE *fp;
++    char buffer[1024];
++    auto eid = g_fruid * 10;
++    auto netfn = (uint8_t)(NETFN_OEM_1S_REQ << 2);
++    auto command = "pldmtool raw -m " + std::to_string(eid) + " -d 0x80 0x3f 0x01 0x15 0xA0 0x00 "
++                 + uint8ToHexString(netfn) + " " + uint8ToHexString(CMD_OEM_APML_READ_DATA)
++                 + " " + uint8ArrayToHexString(tbuf, tlen);
++
++    fp = popen(command.c_str(), "r");
++    if (fp == NULL) {
++        perror("popen() failed");
++        return OOB_UNKNOWN_ERROR;
++    }
++    std::string output;
++    while (fgets(buffer, sizeof(buffer), fp) != NULL) {
++        output += buffer;
++    }
++    pclose(fp);
++
++    size_t rx_pos = output.find("Rx:");
++    if (rx_pos != std::string::npos) {
++        std::istringstream rx_stream(output.substr(rx_pos + 4));
++        std::vector<uint8_t> rx_data;
++        int hex_byte;
++        while (rx_stream >> std::hex >> hex_byte) {
++            rx_data.push_back(hex_byte);
++        }
++
++        if (rx_data[9] != CC_SUCCESS) {
++            return OOB_UNKNOWN_ERROR;
++        }
++
++        msg->data_out.reg_out[0] = rx_data[13];
++    }
++#endif
++    return OOB_SUCCESS;
++}
++
++oob_status_t bic_ipmb_apml_write_byte(struct apml_message *msg, uint8_t intf_type)
++{
++    const uint8_t iana[IANA_SIZE] = {0x15, 0xa0, 0x00};
++    uint8_t tbuf[256] = {0x00};
++    // uint8_t rbuf[256] = {0x00};
++    uint8_t tlen = 0;
++    // uint8_t rlen = 255;
++    // int ret;
++
++    memcpy(tbuf, iana, sizeof(iana));
++    tbuf[3] = intf_type;
++    tbuf[4] = msg->data_in.reg_in[0];
++    tbuf[5] = msg->data_in.reg_in[4];
++    tlen = 6;
++
++#ifndef ENABLE_PLDM
++    ret = bic_ipmb_wrapper(g_fruid, NETFN_OEM_1S_REQ, CMD_OEM_APML_WRITE_DATA, tbuf, tlen, rbuf, &rlen);
++    if (ret != BIC_STATUS_SUCCESS)
++        return OOB_UNKNOWN_ERROR;
++#else
++    FILE *fp;
++    char buffer[1024];
++    auto eid = g_fruid * 10;
++    auto netfn = (uint8_t)(NETFN_OEM_1S_REQ << 2);
++    auto command = "pldmtool raw -m " + std::to_string(eid) + " -d 0x80 0x3f 0x01 0x15 0xA0 0x00 "
++                 + uint8ToHexString(netfn) + " " + uint8ToHexString(CMD_OEM_APML_WRITE_DATA)
++                 + " " + uint8ArrayToHexString(tbuf, tlen);
++
++    fp = popen(command.c_str(), "r");
++    if (fp == NULL) {
++        perror("popen() failed");
++        return OOB_UNKNOWN_ERROR;
++    }
++    std::string output;
++    while (fgets(buffer, sizeof(buffer), fp) != NULL) {
++        output += buffer;
++    }
++    pclose(fp);
++
++    size_t rx_pos = output.find("Rx:");
++    if (rx_pos != std::string::npos) {
++        std::istringstream rx_stream(output.substr(rx_pos + 4));
++        std::vector<uint8_t> rx_data;
++        int hex_byte;
++        while (rx_stream >> std::hex >> hex_byte) {
++            rx_data.push_back(hex_byte);
++        }
++
++        if (rx_data[9] != CC_SUCCESS) {
++            return OOB_UNKNOWN_ERROR;
++        }
++    }
++#endif
++    return OOB_SUCCESS;
++}
++
++oob_status_t bic_ipmb_apml_request(struct apml_message *msg)
++{
++    const uint8_t iana[IANA_SIZE] = {0x15, 0xa0, 0x00};
++    uint8_t tbuf[256] = {0x00};
++    // uint8_t rbuf[256] = {0x00};
++    uint8_t tlen = 0;
++    // uint8_t rlen = 255;
++    uint16_t retries = 0;
++    int ret;
++
++    memcpy(tbuf, iana, sizeof(iana));
++    ((uint32_t*)(tbuf+5))[0] = msg->data_in.mb_in[0];
++    if (msg->cmd == 0x1000)
++    {
++        tbuf[3] = APML_MSG_TYPE_CPUID;
++        tbuf[4] = msg->data_in.reg_in[4];
++        tbuf[9] = msg->data_in.reg_in[6];
++        tlen = 10;
++    }
++    else if (msg->cmd == 0x1001)
++    {
++        tbuf[3] = APML_MSG_TYPE_MCA;
++        tbuf[4] = msg->data_in.reg_in[4];
++        tlen = 9;
++    }
++    else
++    {
++        tbuf[3] = APML_MSG_TYPE_MAILBOX;
++        tbuf[4] = (uint8_t)msg->cmd;
++        tlen = 9;
++    }
++
++#ifndef ENABLE_PLDM
++    ret = bic_ipmb_wrapper(g_fruid, NETFN_OEM_1S_REQ, CMD_OEM_APML_SEND_REQ, tbuf, tlen, rbuf, &rlen);
++    if (ret != BIC_STATUS_SUCCESS)
++        return OOB_UNKNOWN_ERROR;
++
++    memcpy(tbuf, iana, sizeof(iana));
++    tbuf[3] = rbuf[3];
++    tlen = 4;
++    memset(rbuf, 0, sizeof(rbuf));
++    rlen = 255;
++#else
++    FILE *fp;
++    char buffer[1024];
++    auto eid = g_fruid * 10;
++    auto netfn = (uint8_t)(NETFN_OEM_1S_REQ << 2);
++    auto command = "pldmtool raw -m " + std::to_string(eid) + " -d 0x80 0x3f 0x01 0x15 0xA0 0x00 "
++                    + uint8ToHexString(netfn) + " " + uint8ToHexString(CMD_OEM_APML_SEND_REQ)
++                    + " " + uint8ArrayToHexString(tbuf, tlen);
++
++    fp = popen(command.c_str(), "r");
++    if (fp == NULL) {
++        perror("popen() failed");
++        return OOB_UNKNOWN_ERROR;
++    }
++    std::string output;
++    while (fgets(buffer, sizeof(buffer), fp) != NULL) {
++        output += buffer;
++    }
++    pclose(fp);
++
++    std::vector<uint8_t> rx_data;
++    size_t rx_pos = output.find("Rx:");
++    if (rx_pos != std::string::npos) {
++        std::istringstream rx_stream(output.substr(rx_pos + 4));
++        int hex_byte;
++        while (rx_stream >> std::hex >> hex_byte) {
++            rx_data.push_back(hex_byte);
++        }
++
++        if (rx_data[9] != CC_SUCCESS) {
++            return OOB_UNKNOWN_ERROR;
++        }
++    }
++
++    memset(tbuf, 0, sizeof(tbuf));
++    memcpy(tbuf, iana, sizeof(iana));
++    tbuf[3] = rx_data[13];
++    tlen = 4;
++    rx_data.clear();
++#endif
++
++    while (retries < MAX_RETRIES)
++    {
++        sleep(1);
++#ifndef ENABLE_PLDM
++        ret = bic_ipmb_wrapper(g_fruid, NETFN_OEM_1S_REQ, CMD_OEM_APML_GET_RES, tbuf, tlen, rbuf, &rlen);
++        if (ret == BIC_STATUS_SUCCESS)
++            break;
++#else
++        FILE *fp;
++        char buffer[1024];
++        auto eid = g_fruid * 10;
++        auto netfn = (uint8_t)(NETFN_OEM_1S_REQ << 2);
++        auto command = "pldmtool raw -m " + std::to_string(eid) + " -d 0x80 0x3f 0x01 0x15 0xA0 0x00 "
++                     + uint8ToHexString(netfn) + " " + uint8ToHexString(CMD_OEM_APML_GET_RES)
++                     + " " + uint8ArrayToHexString(tbuf, tlen);
++
++        fp = popen(command.c_str(), "r");
++        if (fp == NULL) {
++            perror("popen() failed");
++            return OOB_UNKNOWN_ERROR;
++        }
++        std::string output;
++        while (fgets(buffer, sizeof(buffer), fp) != NULL) {
++            output += buffer;
++        }
++        pclose(fp);
++
++        size_t rx_pos = output.find("Rx:");
++        if (rx_pos != std::string::npos) {
++            std::istringstream rx_stream(output.substr(rx_pos + 4));
++            int hex_byte;
++            while (rx_stream >> std::hex >> hex_byte) {
++                rx_data.push_back(hex_byte);
++            }
++
++            if (rx_data[9] == CC_SUCCESS) {
++                break;
++            }
++            if (rx_data[9] != CC_SUCCESS && retries == MAX_RETRIES) {
++                return OOB_UNKNOWN_ERROR;
++            }
++        }
++#endif
++        retries++;
++    }
++
++#ifdef ENABLE_PLDM
++    if (msg->cmd == 0x1000 || msg->cmd == 0x1001)
++    {
++        msg->fw_ret_code = rx_data[13];
++        msg->data_out.cpu_msr_out = *reinterpret_cast<uint64_t*>(&rx_data[14]);
++        if (rx_data[13])
++            ret = OOB_CPUID_MSR_ERR_BASE + msg->fw_ret_code;
++        else
++            ret = OOB_SUCCESS;
++    }
++    else
++    {
++        msg->data_out.mb_out[0] = *reinterpret_cast<uint32_t*>(&rx_data[14]);
++        ret = OOB_SUCCESS;
++    }
++#else
++    if (ret != BIC_STATUS_SUCCESS)
++        return OOB_UNKNOWN_ERROR;
++
++    if (msg->cmd == 0x1000 || msg->cmd == 0x1001)
++    {
++        msg->fw_ret_code = rbuf[3] ;
++        msg->data_out.cpu_msr_out = ((uint64_t*)(rbuf + 4))[0];
++        if (rbuf[3])
++            ret = OOB_CPUID_MSR_ERR_BASE + msg->fw_ret_code;
++        else
++            ret = OOB_SUCCESS;
++    }
++    else
++    {
++        msg->data_out.mb_out[0] = ((uint32_t*)(rbuf + 4))[0];
++        ret = OOB_SUCCESS;
++    }
++#endif
++    return (oob_status_t)ret;
++}
++
++//===================================================================
++// src/esmi_oob/apml.c
++//===================================================================
++
++oob_status_t sbrmi_xfer_msg([[maybe_unused]]uint8_t socket_num, char *filename, struct apml_message *msg)
++{
++    oob_status_t ret;
++
++    if (!(msg->cmd & 0xF000) || msg->cmd == 0x1000 || msg->cmd == 0x1001)
++    {
++        ret = bic_ipmb_apml_request(msg);
++    }
++    else if (msg->cmd == 0x1002 && msg->data_in.reg_in[7] == APML_DATA_READ)
++    {
++        ret = bic_ipmb_apml_read_byte(msg, (std::string(filename) == SBRMI) ? APML_RMI : APML_TSI);
++    }
++    else if (msg->cmd == 0x1002 && msg->data_in.reg_in[7] == APML_DATA_WRITE)
++    {
++        ret = bic_ipmb_apml_write_byte(msg, (std::string(filename) == SBRMI) ? APML_RMI : APML_TSI);
++    }
++    else
++    {
++        ret = OOB_NOT_SUPPORTED;
++    }
++
++    return ret;
++}
++
++oob_status_t esmi_oob_read_byte(uint8_t soc_num, uint16_t reg_offset, char *file_name, uint8_t *buffer)
++{
++    struct apml_message msg = {
++        .cmd = 0,
++        .data_out = {0},
++        .data_in = {0},
++        .fw_ret_code = 0
++    };
++    oob_status_t ret;
++
++    /* NULL Pointer check */
++    if (!buffer)
++        return OOB_ARG_PTR_NULL;
++    /* Readi/write register command is 0x1002 */
++    msg.cmd = 0x1002;
++    /* Assign register_offset to msg.data_in[0] */
++    msg.data_in.reg_in[0] = reg_offset;
++    /* Assign 1  to the msg.data_in[7] for the read operation */
++    msg.data_in.reg_in[7] = 1;
++
++    ret = sbrmi_xfer_msg(soc_num, file_name, &msg);
++    if (ret)
++        return ret;
++
++    *buffer = msg.data_out.reg_out[0];
++
++    return OOB_SUCCESS;
++}
++
++oob_status_t esmi_oob_write_byte(uint8_t soc_num, uint16_t reg_offset, char *file_name, uint8_t value)
++{
++    struct apml_message msg = {
++        .cmd = 0,
++        .data_out = {0},
++        .data_in = {0},
++        .fw_ret_code = 0
++    };
++    /* Read/Write register command is 0x1002 */
++    msg.cmd = 0x1002;
++    /* Assign register_offset to msg.data_in[0] */
++    msg.data_in.reg_in[0] = reg_offset;
++
++    /* Assign value to write to the data_in[4] */
++    msg.data_in.reg_in[4] = value;
++
++    /* Assign 0 to the msg.data_in[7] */
++    msg.data_in.reg_in[7] = 0;
++
++    return sbrmi_xfer_msg(soc_num, file_name, &msg);
++}
++
++oob_status_t esmi_oob_read_mailbox(uint8_t soc_num, uint32_t cmd, uint32_t input, uint32_t *buffer)
++{
++    struct apml_message msg = {
++        .cmd = 0,
++        .data_out = {0},
++        .data_in = {0},
++        .fw_ret_code = 0
++    };
++
++    oob_status_t ret = OOB_SUCCESS;
++
++    /* NULL pointer check */
++    if (!buffer)
++        return OOB_ARG_PTR_NULL;
++
++    msg.cmd = cmd;
++    msg.data_in.mb_in[0] = input;
++
++    msg.data_in.mb_in[1] = (uint32_t)READ_MODE << 24;
++    ret = sbrmi_xfer_msg(soc_num, SBRMI, &msg);
++    if (ret)
++        return ret;
++
++    *buffer = msg.data_out.mb_out[0];
++    return OOB_SUCCESS;
++}
++
++//===================================================================
++// src/esmi_oob/esmi_cpuid_msr.c
++//===================================================================
++
++oob_status_t esmi_oob_cpuid(uint8_t soc_num, uint32_t thread, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx)
++{
++    uint32_t fn_eax, fn_ecx;
++    oob_status_t ret;
++
++    fn_eax = *eax;
++    fn_ecx = *ecx;
++
++    ret = esmi_oob_cpuid_eax(soc_num, thread, fn_eax, fn_ecx, eax);
++    if (ret)
++        return ret;
++    
++    ret = esmi_oob_cpuid_ebx(soc_num, thread, fn_eax, fn_ecx, ebx);
++    if (ret)
++        return ret;
++    
++    ret = esmi_oob_cpuid_ecx(soc_num, thread, fn_eax, fn_ecx, ecx);
++    if (ret)
++        return ret;
++
++    return esmi_oob_cpuid_edx(soc_num, thread, fn_eax, fn_ecx, edx);
++}
++
++static oob_status_t esmi_oob_cpuid_fn(uint8_t soc_num, uint32_t thread, uint32_t fn_eax, uint32_t fn_ecx, uint8_t mode, uint32_t *value)
++{
++    struct apml_message msg = {
++        .cmd = 0,
++        .data_out = {0},
++        .data_in = {0},
++        .fw_ret_code = 0
++    };
++
++    uint8_t ext = 0, read_reg = 0;
++    oob_status_t ret;
++
++    if (!value)
++        return OOB_ARG_PTR_NULL;
++
++    /* cmd for CPUID is 0x1000 */
++    msg.cmd = 0x1000;
++    msg.data_in.cpu_msr_in = fn_eax;
++
++    /* Assign thread number to data_in[4:5] */
++    msg.data_in.cpu_msr_in = msg.data_in.cpu_msr_in
++                 | ((uint64_t)thread << 32);
++
++    /* Assign extended function to data_in[6][4:7] */
++    if (mode == EAX || mode == EBX)
++        /* read eax/ebx */
++        read_reg = 0;
++    else
++        /* read ecx/edx */
++        read_reg = 1;
++
++    ext = (uint8_t)fn_ecx;
++        ext = ext << 4 | read_reg;
++        msg.data_in.cpu_msr_in = msg.data_in.cpu_msr_in | ((uint64_t) ext << 48);
++    /* Assign 7 byte to READ Mode */
++    msg.data_in.reg_in[7] = 1;
++        ret = sbrmi_xfer_msg(soc_num, SBRMI, &msg);
++        if (ret)
++                return ret;
++
++    if (mode == EAX || mode == ECX)
++        /* Read low word/mbout[0] */
++        *value = msg.data_out.mb_out[0];
++    else
++        /* Read high word/mbout[1] */
++        *value = msg.data_out.mb_out[1];
++
++    return OOB_SUCCESS;
++}
++
++oob_status_t esmi_oob_cpuid_eax(uint8_t soc_num,
++                uint32_t thread, uint32_t fn_eax,
++                uint32_t fn_ecx, uint32_t *eax)
++{
++    return esmi_oob_cpuid_fn(soc_num, thread, fn_eax, fn_ecx,
++                 EAX, eax);
++}
++
++oob_status_t esmi_oob_cpuid_ebx(uint8_t soc_num,
++                uint32_t thread, uint32_t fn_eax,
++                uint32_t fn_ecx, uint32_t *ebx)
++{
++    return esmi_oob_cpuid_fn(soc_num, thread, fn_eax, fn_ecx,
++                 EBX, ebx);
++}
++
++oob_status_t esmi_oob_cpuid_ecx(uint8_t soc_num,
++                uint32_t thread, uint32_t fn_eax,
++                uint32_t fn_ecx, uint32_t *ecx)
++{
++        return esmi_oob_cpuid_fn(soc_num, thread, fn_eax, fn_ecx,
++                 ECX, ecx);
++}
++
++oob_status_t esmi_oob_cpuid_edx(uint8_t soc_num,
++                uint32_t thread, uint32_t fn_eax,
++                uint32_t fn_ecx, uint32_t *edx)
++{
++        return esmi_oob_cpuid_fn(soc_num, thread, fn_eax, fn_ecx,
++                 EDX, edx);
++}
++
++//===================================================================
++// src/esmi_oob/esmi_mailbox.c
++//===================================================================
++
++oob_status_t read_bmc_ras_mca_msr_dump(
++    uint8_t soc_num, struct mca_bank mca_dump, uint32_t *buffer)
++{
++    uint32_t input;
++
++    input = mca_dump.index << 16 | mca_dump.offset;
++    return esmi_oob_read_mailbox(soc_num, READ_BMC_RAS_MCA_MSR_DUMP, input, buffer);
++}
++
++oob_status_t read_bmc_ras_mca_validity_check(
++    uint8_t soc_num, uint16_t *bytes_per_mca, uint16_t *mca_banks)
++{
++    uint32_t output;
++    oob_status_t ret;
++
++    if ((!mca_banks) || (!bytes_per_mca))
++        return OOB_ARG_PTR_NULL;
++
++    ret = esmi_oob_read_mailbox(soc_num, READ_BMC_RAS_MCA_VALIDITY_CHECK, 0, &output);
++    if (ret)
++        return ret;
++
++    *bytes_per_mca = output >> 16;
++    *mca_banks = output & TWO_BYTE_MASK;
++
++    return ret;
++}
++
++oob_status_t reset_on_sync_flood(uint8_t soc_num, uint32_t *ack_resp)
++{
++	/* At present, Only P0 handles this request */
++	soc_num = 0;
++	return esmi_oob_read_mailbox(soc_num, READ_BMC_RAS_RESET_ON_SYNC_FLOOD,
++				     0, ack_resp);
++}
++
++//===================================================================
++// src/esmi_oob/esmi_rmi.c
++//===================================================================
++
++oob_status_t read_sbrmi_ras_status(uint8_t soc_num,
++                   uint8_t *buffer)
++{
++    oob_status_t ret;
++
++    ret = esmi_oob_read_byte(soc_num,
++                 SBRMI_RASSTATUS, SBRMI, buffer);
++    if (ret)
++        return ret;
++
++    /* BMC should write 1 to clear them, make way for next update */
++    return esmi_oob_write_byte(soc_num,
++                   SBRMI_RASSTATUS, SBRMI, *buffer);
++}
++
++//===================================================================
++// src/esmi_oob/esmi_mailbox_nda.c
++//===================================================================
++oob_status_t read_ras_df_err_validity_check(uint8_t soc_num,
++					    uint8_t df_block_id,
++					    struct ras_df_err_chk *err_chk)
++{
++	uint32_t buffer;
++	oob_status_t ret;
++
++	if (!err_chk)
++		return OOB_ARG_PTR_NULL;
++
++	if (df_block_id > (MAX_DF_BLOCK_IDS - 1))
++		return OOB_INVALID_INPUT;
++
++	ret = esmi_oob_read_mailbox(soc_num, READ_RAS_LAST_TRANS_ADDR_CHK,
++				    (uint32_t)df_block_id, &buffer);
++	if (!ret) {
++		/* Number of df block instances */
++		err_chk->df_block_instances = buffer;
++		/* bits 16 - 24 of buffer will length of error log */
++		/* in bytes per instance  */
++		err_chk->err_log_len = buffer >> 16;
++	}
++
++	return ret;
++}
++
++oob_status_t read_ras_df_err_dump(uint8_t soc_num,
++                                  union ras_df_err_dump ras_err,
++                                  uint32_t *data)
++{
++	/* Validate error log offset, DF_BLOCK_ID and DF_BLOCK_INSTANCE */
++	if ((ras_err.input[0] & 3) != 0 ||
++	     ras_err.input[0] > (MAX_ERR_LOG_LEN - 1) ||
++	     ras_err.input[1] > (MAX_DF_BLOCK_IDS - 1) ||
++	     ras_err.input[2] > (MAX_DF_BLOCK_INSTS - 1))
++		return OOB_INVALID_INPUT;
++
++	return esmi_oob_read_mailbox(soc_num, READ_RAS_LAST_TRANS_ADDR_DUMP,
++				     ras_err.data_in, data);
++}
+\ No newline at end of file
+diff --git a/src/fatal_error.cpp b/src/fatal_error.cpp
+index 8e49eec..cb55514 100644
+--- a/src/fatal_error.cpp
++++ b/src/fatal_error.cpp
+@@ -295,6 +295,7 @@ void requestHostTransition(std::string command)
+ 
+ void triggerRsmrstReset()
+ {
++#ifndef BIC_APML_INTF
+     boost::system::error_code ec;
+     boost::asio::io_context io;
+     auto conn = std::make_shared<sdbusplus::asio::connection>(io);
+@@ -327,16 +328,33 @@ void triggerRsmrstReset()
+ 
+         requestHostTransition(command);
+     }
++#endif
+ }
+ 
+-void triggerSysReset()
++void triggerSysReset(uint8_t fru)
+ {
++#ifndef BIC_APML_INTF
+     std::string command = "xyz.openbmc_project.State.Host.Transition.Reboot";
+ 
+     requestHostTransition(command);
++#else
++    FILE *fp;
++    char buffer[1024];
++    auto command = "mfg-tool power-control -p " + std::to_string(fru) + " -s runtime -a cycle";
++
++    fp = popen(command.c_str(), "r");
++    if (fp == NULL) {
++        perror("popen() failed. Failed to execute DC cycle.");
++    }
++    std::string output;
++    while (fgets(buffer, sizeof(buffer), fp) != NULL) {
++        output += buffer;
++    }
++    pclose(fp);
++#endif
+ }
+ 
+-void triggerColdReset()
++void triggerColdReset(uint8_t fru)
+ {
+     if (Configuration::getResetSignal() == RSMRST)
+     {
+@@ -346,7 +364,7 @@ void triggerColdReset()
+     else if (Configuration::getResetSignal() == SYS_RESET)
+     {
+         sd_journal_print(LOG_INFO, "SYS RESET triggered\n");
+-        triggerSysReset();
++        triggerSysReset(fru);
+     }
+ }
+ 
+@@ -360,7 +378,7 @@ void write_register(uint8_t info, uint32_t reg, uint32_t value)
+         sd_journal_print(LOG_ERR, "Failed to write register: 0x%x\n", reg);
+         return;
+     }
+-    sd_journal_print(LOG_DEBUG, "Write to register 0x%x is successful\n", reg);
++    sd_journal_print(LOG_INFO, "Write to register 0x%x is successful\n", reg);
+ }
+ 
+ void dump_processor_error_section(uint8_t info)
+@@ -677,7 +695,7 @@ static bool harvest_mca_validity_check(uint8_t info, uint16_t* numbanks,
+     return mac_validity_check;
+ }
+ 
+-void SystemRecovery(uint8_t buf)
++void SystemRecovery(uint8_t buf, uint8_t fru)
+ {
+ 
+     oob_status_t ret;
+@@ -687,7 +705,7 @@ void SystemRecovery(uint8_t buf)
+     {
+         if ((buf & SYS_MGMT_CTRL_ERR))
+         {
+-            triggerColdReset();
++            triggerColdReset(fru);
+         }
+         else
+         {
+@@ -707,7 +725,7 @@ void SystemRecovery(uint8_t buf)
+     }
+     else if (Configuration::getSystemRecovery() == COLD_RESET)
+     {
+-        triggerColdReset();
++        triggerColdReset(fru);
+     }
+     else if (Configuration::getSystemRecovery() == NO_RESET)
+     {
+@@ -728,7 +746,7 @@ void harvest_fatal_errors(uint8_t info, uint16_t numbanks, uint16_t bytespermca)
+     }
+ }
+ 
+-bool harvest_ras_errors(uint8_t info, std::string alert_name)
++bool harvest_ras_errors(uint8_t info, std::string alert_name, uint8_t fru)
+ {
+     std::unique_lock lock(harvest_in_progress_mtx);
+ 
+@@ -740,10 +758,12 @@ bool harvest_ras_errors(uint8_t info, std::string alert_name)
+     bool ResetReady = false;
+     bool RuntimeError = false;
+ 
++    rcd = std::make_shared<CPER_RECORD>();
++
+     // Check if APML ALERT is because of RAS
+     if (read_sbrmi_ras_status(info, &buf) == OOB_SUCCESS)
+     {
+-        sd_journal_print(LOG_DEBUG, "Read RAS status register. Value: 0x%x\n",
++        sd_journal_print(LOG_INFO, "Read RAS status register. Value: 0x%x\n",
+                          buf);
+ 
+         // check RAS Status Register
+@@ -788,7 +808,7 @@ bool harvest_ras_errors(uint8_t info, std::string alert_name)
+             else if (buf & MCA_ERR_OVERFLOW)
+             {
+ 
+-                RunTimeErrorInfoCheck(MCA_ERR, INTERRUPT_MODE);
++                RunTimeErrorInfoCheck(MCA_ERR, INTERRUPT_MODE, fru);
+ 
+                 std::string mca_err_overflow_msg =
+                     "MCA runtime error counter overflow occured";
+@@ -803,7 +823,7 @@ bool harvest_ras_errors(uint8_t info, std::string alert_name)
+             }
+             else if (buf & DRAM_CECC_ERR_OVERFLOW)
+             {
+-                RunTimeErrorInfoCheck(DRAM_CECC_ERR, INTERRUPT_MODE);
++                RunTimeErrorInfoCheck(DRAM_CECC_ERR, INTERRUPT_MODE, fru);
+ 
+                 std::string dram_err_overflow_msg =
+                     "DRAM CECC runtime error counter overflow occured";
+@@ -819,7 +839,7 @@ bool harvest_ras_errors(uint8_t info, std::string alert_name)
+             else if (buf & PCIE_ERR_OVERFLOW)
+             {
+ 
+-                RunTimeErrorInfoCheck(PCIE_ERR, INTERRUPT_MODE);
++                RunTimeErrorInfoCheck(PCIE_ERR, INTERRUPT_MODE, fru);
+ 
+                 std::string pcie_err_overflow_msg =
+                     "PCIE runtime error counter overflow occured";
+@@ -884,12 +904,12 @@ bool harvest_ras_errors(uint8_t info, std::string alert_name)
+ 
+                 if (ControlFabricError == false)
+                 {
+-                    write_to_cper_file(rcd, FATAL_ERR, INDEX_2);
++                    write_to_cper_file(rcd, FATAL_ERR, INDEX_2, fru);
+                 }
+ 
+                 rcd = nullptr;
+ 
+-                SystemRecovery(buf);
++                SystemRecovery(buf, fru);
+ 
+                 P0_AlertProcessed = false;
+                 P1_AlertProcessed = false;
+@@ -903,7 +923,7 @@ bool harvest_ras_errors(uint8_t info, std::string alert_name)
+ 
+     return true;
+ }
+-
++#ifndef BIC_APML_INTF
+ /* Schedule a wait event */
+ void P0AlertEventHandler()
+ {
+@@ -1169,3 +1189,4 @@ bool requestGPIOEvents(
+ 
+     return true;
+ }
++#endif
+diff --git a/src/main.cpp b/src/main.cpp
+index 9cde308..17b4a28 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -3,6 +3,7 @@
+ #include "cper_runtime.hpp"
+ #include "ras.hpp"
+ 
++#include <CLI/CLI.hpp>
+ //#undef LOG_DEBUG
+ //#define LOG_DEBUG LOG_ERR
+ 
+@@ -30,6 +31,7 @@ constexpr int kCrashdumpTimeInSec = 300;
+ static std::string BoardName;
+ uint32_t err_count = 0;
+ uint32_t FamilyId = 0;
++#ifndef BIC_APML_INTF
+ gpiod::line P0_apmlAlertLine;
+ gpiod::line P1_apmlAlertLine;
+ gpiod::line P0_pmicAfAlertLine;
+@@ -45,7 +47,7 @@ boost::asio::posix::stream_descriptor P0_pmicGlAlertEvent(io);
+ boost::asio::posix::stream_descriptor P1_pmicAfAlertEvent(io);
+ boost::asio::posix::stream_descriptor P1_pmicGlAlertEvent(io);
+ boost::asio::posix::stream_descriptor HPMFPGALockoutAlertEvent(io);
+-
++#endif
+ uint8_t p0_info = 0;
+ uint8_t p1_info = 1;
+ 
+@@ -68,7 +70,7 @@ uint64_t p1_last_transact_addr = 0;
+ std::vector<uint8_t> BlockId;
+ uint8_t ProgId = 0;
+ bool apmlInitialized = false;
+-
++#ifndef BIC_APML_INTF
+ /**
+  * Check number of CPU's of the current platform.
+  *
+@@ -246,12 +248,12 @@ void getPpinFuse()
+         }
+     }
+ }
+-
++#endif
+ /**
+  * Create Index file in /var/lib/amd-ras location
+  * to store the index of the CPER file
+  */
+-void CreateIndexFile()
++void CreateIndexFile(uint8_t fru)
+ {
+     int dir;
+     struct stat buffer;
+@@ -270,9 +272,11 @@ void CreateIndexFile()
+ 
+     memset(&buffer, 0, sizeof(buffer));
+     /*Create index file to store error file count */
+-    if (stat(index_file, &buffer) != 0)
++    char fname[128] = {0};
++    snprintf(fname, sizeof(fname), index_file, fru);
++    if (stat(fname, &buffer) != 0)
+     {
+-        file = fopen(index_file, "w");
++        file = fopen(fname, "w");
+ 
+         if (file != NULL)
+         {
+@@ -282,7 +286,7 @@ void CreateIndexFile()
+     }
+     else
+     {
+-        file = fopen(index_file, "r");
++        file = fopen(fname, "r");
+ 
+         if (file != NULL)
+         {
+@@ -403,7 +407,7 @@ void CreateConfigFile()
+ 
+     jsonRead.close();
+ }
+-
++#ifndef BIC_APML_INTF
+ oob_status_t read_register(uint8_t info, uint32_t reg, uint8_t* value)
+ {
+     oob_status_t ret;
+@@ -618,9 +622,10 @@ void findProgramId()
+         }
+     }
+ }
+-
+-int main()
++#endif
++int main(int argc, char *argv[])
+ {
++#ifndef BIC_APML_INTF
+     if (getNumberOfCpu() == false)
+     {
+         sd_journal_print(LOG_ERR,
+@@ -636,11 +641,67 @@ int main()
+     getCpuID();
+ 
+     getBoardID();
++#else
++    std::vector<std::string> cpuid_str_vec;
++    CLI::App app("amd-ras");
++    int target_cpu = 0;
++    uint8_t fru;
++    static uint8_t ras_status = 0;
++
++    app.failure_message(CLI::FailureMessage::help);
++    app.add_option("--fru", fru, "FRU number")->required();
++    app.add_option("--ncpu", num_of_proc, "number of cpu")->check(CLI::Range(1, TWO_SOCKET))->required();
++    app.add_option("--tcpu", target_cpu, "target cpu")->check(CLI::Range(0, 1));
++    app.add_option("--bid", board_id, "board id");
++    app.add_option("--cid", cpuid_str_vec, "cpu id")->required();
++    app.add_option("--ras", ras_status, "RAS status");
++
++    CLI11_PARSE(app, argc, argv);
++
++    std::cout << "FRU: " << (int)fru << std::endl;
++    std::cout << "NCPU: " << (int)num_of_proc << std::endl;
++    std::cout << "TCPU: " << (int)target_cpu << std::endl;
++    std::cout << "BID: " << (int)board_id << std::endl;
++
++    if (cpuid_str_vec.size() < 4) {
++        sd_journal_print(LOG_ERR, "incorrect cpuid length, size: %u\n", cpuid_str_vec.size());
++        return 1;
++    }
++
++    for (size_t i = 0; i < cpuid_str_vec.size(); ++i) {
++        std::cout << "cid[" << i << "]: " << cpuid_str_vec[i] << std::endl;
++    }
++
++    if (target_cpu == 0 || num_of_proc == TWO_SOCKET) {
++        sscanf(cpuid_str_vec[0].c_str(), "%x", &p0_eax);
++        sscanf(cpuid_str_vec[1].c_str(), "%x", &p0_ebx);
++        sscanf(cpuid_str_vec[2].c_str(), "%x", &p0_ecx);
++        sscanf(cpuid_str_vec[3].c_str(), "%x", &p0_edx);
++        if (cpuid_str_vec.size() >= 8) {
++            sscanf(cpuid_str_vec[4].c_str(), "%x", &p1_eax);
++            sscanf(cpuid_str_vec[5].c_str(), "%x", &p1_ebx);
++            sscanf(cpuid_str_vec[6].c_str(), "%x", &p1_ecx);
++            sscanf(cpuid_str_vec[7].c_str(), "%x", &p1_edx);
++        }
++    } else if (target_cpu == 1) {
++        sscanf(cpuid_str_vec[0].c_str(), "%x", &p1_eax);
++        sscanf(cpuid_str_vec[1].c_str(), "%x", &p1_ebx);
++        sscanf(cpuid_str_vec[2].c_str(), "%x", &p1_ecx);
++        sscanf(cpuid_str_vec[3].c_str(), "%x", &p1_edx);
++    } else {
++        sd_journal_print(LOG_ERR, "incorrect target cpu: tcpu: %u\n", target_cpu);
++        return 1;
++    }
++#endif
+ 
+-    CreateIndexFile();
++#ifdef BIC_APML_INTF
++    set_current_target_fruid(fru);
++#endif
+ 
+-    CreateConfigFile();
++    CreateIndexFile(fru);
+ 
++    CreateConfigFile();
++#ifndef BIC_APML_INTF
+     findProgramId();
+ 
+     if (Configuration::getHarvestuCodeVersionFlag() == true)
+@@ -691,6 +752,24 @@ int main()
+     {
+         delete PcieAerErrorPollingEvent;
+     }
++#else
++    const int curErrCnt = err_count;
++    if (num_of_proc == TWO_SOCKET) {
++        for (target_cpu = 0; target_cpu < num_of_proc; ++target_cpu) {
++            std::string alertName = target_cpu ? "P1_ALERT" : "P0_ALERT";
++            harvest_ras_errors(target_cpu, alertName, fru);
++        }
++    } else {
++        std::string alertName = target_cpu ? "P1_ALERT" : "P0_ALERT";
++        harvest_ras_errors(target_cpu, alertName, fru);
++    }
++    const int nextErrCnt = err_count;
+ 
++    if (curErrCnt != nextErrCnt) {
++        sd_journal_print(LOG_DEBUG, "do harvest, error count:%d\n", err_count);
++    } else {
++        sd_journal_print(LOG_DEBUG, "Nothing to Harvest, error count:%d\n", err_count);
++    }
++#endif
+     return 0;
+ }
+diff --git a/src/runtime_errors.cpp b/src/runtime_errors.cpp
+index 9a79b00..738b850 100644
+--- a/src/runtime_errors.cpp
++++ b/src/runtime_errors.cpp
+@@ -31,7 +31,7 @@ oob_status_t RunTimeErrValidityCheck(uint8_t soc_num,
+ 
+     return ret;
+ }
+-
++#ifndef BIC_APML_INTF
+ oob_status_t SetErrThreshold()
+ {
+     oob_status_t ret = OOB_NOT_SUPPORTED;
+@@ -189,7 +189,7 @@ oob_status_t SetOobConfig()
+     }
+     return ret;
+ }
+-
++#endif
+ /*The function returns the highest severity out of all Section Severity for CPER
+   header Severity Order = Fatal > non-fatal uncorrected > corrected*/
+ bool calculate_highest_severity(uint32_t* Severity, uint16_t SectionCount,
+@@ -227,7 +227,8 @@ bool calculate_highest_severity(uint32_t* Severity, uint16_t SectionCount,
+ 
+ void harvest_runtime_errors(uint8_t ErrorPollingType,
+                             struct ras_rt_valid_err_inst p0_inst,
+-                            struct ras_rt_valid_err_inst p1_inst)
++                            struct ras_rt_valid_err_inst p1_inst,
++                            uint8_t fru)
+ {
+ 
+     uint32_t* Severity = nullptr;
+@@ -284,7 +285,7 @@ void harvest_runtime_errors(uint8_t ErrorPollingType,
+         dump_error_descriptor_section(mca_ptr, SectionCount, RUNTIME_MCA_ERR,
+                                       Severity);
+ 
+-        write_to_cper_file(mca_ptr, RUNTIME_MCA_ERR, SectionCount);
++        write_to_cper_file(mca_ptr, RUNTIME_MCA_ERR, SectionCount, fru);
+ 
+         if (mca_ptr->SectionDescriptor != nullptr)
+         {
+@@ -342,7 +343,7 @@ void harvest_runtime_errors(uint8_t ErrorPollingType,
+         dump_error_descriptor_section(dram_ptr, SectionCount, RUNTIME_DRAM_ERR,
+                                       Severity);
+ 
+-        write_to_cper_file(dram_ptr, RUNTIME_DRAM_ERR, SectionCount);
++        write_to_cper_file(dram_ptr, RUNTIME_DRAM_ERR, SectionCount, fru);
+ 
+         if (dram_ptr->SectionDescriptor != nullptr)
+         {
+@@ -397,7 +398,7 @@ void harvest_runtime_errors(uint8_t ErrorPollingType,
+         dump_error_descriptor_section(pcie_ptr, SectionCount, RUNTIME_PCIE_ERR,
+                                       Severity);
+ 
+-        write_to_cper_file(pcie_ptr, RUNTIME_PCIE_ERR, SectionCount);
++        write_to_cper_file(pcie_ptr, RUNTIME_PCIE_ERR, SectionCount, fru);
+ 
+         if (pcie_ptr->SectionDescriptor != nullptr)
+         {
+@@ -425,7 +426,7 @@ void harvest_runtime_errors(uint8_t ErrorPollingType,
+     }
+ }
+ 
+-void RunTimeErrorInfoCheck(uint8_t ErrType, uint8_t ReqType)
++void RunTimeErrorInfoCheck(uint8_t ErrType, uint8_t ReqType, uint8_t fru)
+ {
+ 
+     struct ras_rt_valid_err_inst p0_inst, p1_inst;
+@@ -474,10 +475,10 @@ void RunTimeErrorInfoCheck(uint8_t ErrType, uint8_t ReqType)
+             }
+         }
+ 
+-        harvest_runtime_errors(ErrType, p0_inst, p1_inst);
++        harvest_runtime_errors(ErrType, p0_inst, p1_inst, fru);
+     }
+ }
+-
++#ifndef BIC_APML_INTF
+ void McaErrorPollingHandler(uint16_t PollingPeriod)
+ {
+ 
+@@ -590,3 +591,4 @@ void RunTimeErrorPolling()
+             "Runtime error threshold is not supported for this platform\n");
+     }
+ }
++#endif
+diff --git a/src/write_cper_data.cpp b/src/write_cper_data.cpp
+index 8542e29..03d8be4 100644
+--- a/src/write_cper_data.cpp
++++ b/src/write_cper_data.cpp
+@@ -786,14 +786,14 @@ void dump_proc_error_info_section(const std::shared_ptr<T>& ProcPtr,
+     }
+ }
+ 
+-inline std::string getCperFilename(int num)
++inline std::string getCperFilename(int num, uint8_t fru)
+ {
+-    return "ras-error" + std::to_string(num) + ".cper";
++    return "fru" + std::to_string(fru) + "_ras-error" + std::to_string(num) + ".cper";
+ }
+ 
+ template <typename T>
+ void write_to_cper_file(const std::shared_ptr<T>& data, std::string ErrorType,
+-                        uint16_t SectionCount)
++                        uint16_t SectionCount, uint8_t fru)
+ {
+ 
+     static std::mutex index_file_mtx;
+@@ -819,7 +819,7 @@ void write_to_cper_file(const std::shared_ptr<T>& data, std::string ErrorType,
+         FatalPtr = std::static_pointer_cast<CPER_RECORD>(data);
+     }
+ 
+-    cperFileName = getCperFilename(err_count);
++    cperFileName = getCperFilename(err_count, fru);
+ 
+     for (const auto& entry : std::filesystem::directory_iterator(kRasDir))
+     {
+@@ -863,8 +863,9 @@ void write_to_cper_file(const std::shared_ptr<T>& data, std::string ErrorType,
+ 
+             fwrite(ProcPtr->ProcErrorSection,
+                    sizeof(proc_error_section) * SectionCount, 1, file);
+-
++#ifndef BIC_APML_INTF
+             exportCrashdumpToDBus(err_count, ProcPtr->Header.TimeStamp);
++#endif
+         }
+     }
+     else if (ErrorType == FATAL_ERR)
+@@ -875,8 +876,9 @@ void write_to_cper_file(const std::shared_ptr<T>& data, std::string ErrorType,
+                              "Generating CPER file for the fatal error\n");
+ 
+             fwrite(FatalPtr.get(), FatalPtr->Header.RecordLength, 1, file);
+-
++#ifndef BIC_APML_INTF
+             exportCrashdumpToDBus(err_count, FatalPtr->Header.TimeStamp);
++#endif
+         }
+     }
+     else if (ErrorType == RUNTIME_PCIE_ERR)
+@@ -887,7 +889,9 @@ void write_to_cper_file(const std::shared_ptr<T>& data, std::string ErrorType,
+                sizeof(error_section_descriptor) * SectionCount, 1, file);
+         fwrite(PciePtr->PcieErrorSection,
+                sizeof(pcie_error_section) * SectionCount, 1, file);
++#ifndef BIC_APML_INTF
+         exportCrashdumpToDBus(err_count, PciePtr->Header.TimeStamp);
++#endif
+     }
+     fclose(file);
+ 
+@@ -900,7 +904,9 @@ void write_to_cper_file(const std::shared_ptr<T>& data, std::string ErrorType,
+         err_count = (err_count % MAX_ERROR_FILE);
+     }
+ 
+-    file = fopen(index_file, "w");
++    char fname[128] = {0};
++    snprintf(fname, sizeof(fname), index_file, fru);
++    file = fopen(fname, "w");
+     if (file != NULL)
+     {
+         fprintf(file, "%d", err_count);
+@@ -939,11 +945,11 @@ template void dump_cper_header_section<PCIE_RUNTIME_ERR_RECORD>(
+ 
+ template void
+     write_to_cper_file<CPER_RECORD>(const std::shared_ptr<CPER_RECORD>&,
+-                                    std::string, uint16_t);
++                                    std::string, uint16_t, uint8_t);
+ template void write_to_cper_file<PROC_RUNTIME_ERR_RECORD>(
+-    const std::shared_ptr<PROC_RUNTIME_ERR_RECORD>&, std::string, uint16_t);
++    const std::shared_ptr<PROC_RUNTIME_ERR_RECORD>&, std::string, uint16_t, uint8_t);
+ template void write_to_cper_file<PCIE_RUNTIME_ERR_RECORD>(
+-    const std::shared_ptr<PCIE_RUNTIME_ERR_RECORD>&, std::string, uint16_t);
++    const std::shared_ptr<PCIE_RUNTIME_ERR_RECORD>&, std::string, uint16_t, uint8_t);
+ 
+ template void dump_proc_error_section<PROC_RUNTIME_ERR_RECORD>(
+     const std::shared_ptr<PROC_RUNTIME_ERR_RECORD>&, uint8_t,
+-- 
+2.25.1
+
