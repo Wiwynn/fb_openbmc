@@ -1,0 +1,256 @@
+From f51f24cc1fd25673dde8f9ec0eca120fd4d1f263 Mon Sep 17 00:00:00 2001
+From: JayZhang-wiwynn <jay_zhang@wiwynn.com>
+Date: Thu, 11 Jul 2024 15:55:17 +0800
+Subject: [PATCH 4/4] proprietary: intel: BHS crashdump v0.9 to support add
+ PECI Write function in ipmb_peci
+
+Description:
+ 1.Add peci_WrPkgConfig_dom for PECI Write Package Caonfiguration.
+ 2.Add peci_WrEndPointConfigMmio_dom and peci_WrEndPointConfigMmio_seq_dom for PECI Memory Mapping I/O function.
+
+Motivation:
+ Support ACD 0.9 PECI write function in ipmb_peci
+---
+ ipmb_peci_interface.c | 153 ++++++++++++++++++++++++++++++++++++++++++
+ ipmb_peci_interface.h |  33 +++++----
+ 2 files changed, 173 insertions(+), 13 deletions(-)
+
+diff --git a/ipmb_peci_interface.c b/ipmb_peci_interface.c
+index 8ee52f3..d7dac9f 100644
+--- a/ipmb_peci_interface.c
++++ b/ipmb_peci_interface.c
+@@ -468,6 +468,43 @@ EPECIStatus peci_WrPkgConfig(uint8_t target, uint8_t u8Index, uint16_t u16Param,
+ 	return ret;
+ }
+ 
++/*-------------------------------------------------------------------------
++ * This function provides write access to the package configuration
++ * space within the processor in the specified domain.
++ *------------------------------------------------------------------------*/
++EPECIStatus peci_WrPkgConfig_dom(uint8_t target, uint8_t domainId,
++    uint8_t u8Index, uint16_t u16Param,
++    const void* pPkgData, uint8_t u8WriteLen,
++    uint8_t* cc)
++{
++	int peci_fd = -1;
++	EPECIStatus ret = PECI_CC_SUCCESS;
++
++	if (pPkgData == NULL || cc == NULL)
++	{
++		return PECI_CC_INVALID_REQ;
++	}
++
++	// The target address must be in the valid range
++	if (target < MIN_CLIENT_ADDR || target > MAX_CLIENT_ADDR)
++	{
++		return PECI_CC_INVALID_REQ;
++	}
++
++	if (peci_Open(&peci_fd) != PECI_CC_SUCCESS)
++	{
++		return PECI_CC_DRIVER_ERR;
++	}
++
++	const uint32_t* ptr = (const uint32_t*) pPkgData;
++	uint32_t u32Value = *ptr;
++
++	ret = peci_WrPkgConfig_seq(target, u8Index, u16Param, u32Value, u8WriteLen, 0, cc);
++
++	peci_Close(peci_fd);
++	return ret;
++}
++
+ /*-------------------------------------------------------------------------
+  * This function allows sequential WrPkgConfig with the provided
+  * peci file descriptor.
+@@ -1389,6 +1426,122 @@ EPECIStatus peci_WrEndPointPCIConfig_dom(uint8_t target, uint8_t domainId,
+ 	return ret;
+ }
+ 
++/*-------------------------------------------------------------------------
++ * This function provides write access to PCI MMIO space at
++ * the requested PCI configuration address in the specified domain.
++ *------------------------------------------------------------------------*/
++EPECIStatus peci_WrEndPointConfigMmio_dom(uint8_t target, uint8_t domainId,
++	uint8_t u8Seg, uint8_t u8Bus,
++    uint8_t u8Device, uint8_t u8Fcn,
++	uint8_t u8Bar, uint8_t u8AddrType,
++    uint64_t u64Offset, uint8_t u8DataLen,
++	uint64_t u64DataVal, uint8_t* cc)
++{
++	int peci_fd = -1;
++	EPECIStatus ret = PECI_CC_SUCCESS;
++
++	if (cc == NULL)
++	{
++		return PECI_CC_INVALID_REQ;
++	}
++
++	// The target address must be in the valid range
++	if (target < MIN_CLIENT_ADDR || target > MAX_CLIENT_ADDR)
++	{
++		return PECI_CC_INVALID_REQ;
++	}
++
++	if (peci_Open(&peci_fd) != PECI_CC_SUCCESS)
++	{
++		return PECI_CC_DRIVER_ERR;
++	}
++
++	ret = peci_WrEndPointConfigMmio_seq_dom(
++		target, domainId, u8Seg, u8Bus, u8Device, u8Fcn, u8Bar, u8AddrType,
++		u64Offset, u8DataLen, u64DataVal, peci_fd, cc);
++
++	peci_Close(peci_fd);
++	return ret;
++}
++
++/*-------------------------------------------------------------------------
++ * This function allows sequential WrEndPointConfig to PCI MMIO with the
++ * provided peci file descriptor in the specified domain.
++ *------------------------------------------------------------------------*/
++EPECIStatus peci_WrEndPointConfigMmio_seq_dom(uint8_t target, uint8_t domainId,
++	uint8_t u8Seg, uint8_t u8Bus,
++	uint8_t u8Device, uint8_t u8Fcn,
++	uint8_t u8Bar, uint8_t u8AddrType,
++	uint64_t u64Offset, uint8_t u8DataLen,
++	uint64_t u64DataVal, int peci_fd, uint8_t* cc)
++{
++	EPECIStatus ret;
++	peci_cmd_t  *peci_cmd;
++	ipmb_req_t  *ipmb_req;
++	ipmb_res_t  *ipmb_res;
++
++	if (cc == NULL)
++	{
++		return PECI_CC_INVALID_REQ;
++	}
++
++	if (u8AddrType == PECI_ENDPTCFG_ADDR_TYPE_MMIO_D){ //Write Length (32-bit Address)
++		// Per the PECI spec, the write length must be a byte, word, dword
++		if (u8DataLen != 1 && u8DataLen != 2 && u8DataLen != 4)
++		{
++			return PECI_CC_INVALID_REQ;
++		}
++	} else { //Write Length (64-bit Address)
++		// Per the PECI spec, the write length must be a byte, word, dword, or qword
++		if (u8DataLen != 1 && u8DataLen != 2 && u8DataLen != 4 && u8DataLen != 8)
++		{
++			return PECI_CC_INVALID_REQ;
++		}
++	}
++
++	ipmb_req = ipmb_txb();
++	ipmb_res = ipmb_rxb();
++	peci_cmd = (peci_cmd_t *)(ipmb_req->data + IANA_SIZE);
++	memset(peci_cmd, 0, sizeof(peci_cmd_t));
++	peci_cmd->target = target;
++	peci_cmd->read_len = PECI_WRENDPTCFG_READ_LEN; // 1 byte completion code
++	if (u8AddrType == PECI_ENDPTCFG_ADDR_TYPE_MMIO_D) {
++		// Address Type 0x05
++		peci_cmd->write_len = PECI_WRENDPTCFG_MMIO_D_WRITE_LEN_BASE + u8DataLen; // 15 bytes + u8DataLen
++	} else {
++		// Address Type 0x06
++		peci_cmd->write_len = PECI_WRENDPTCFG_MMIO_Q_WRITE_LEN_BASE + u8DataLen; // 19 bytes + u8DataLen
++	}
++
++	peci_cmd->write_buffer[0] = PECI_WRENDPTCFG_CMD;
++	peci_cmd->write_buffer[1] = (domainId << 1) | 0x0;                              // DomainID[7:1] & Retry[0]
++	peci_cmd->write_buffer[2] = PECI_ENDPTCFG_TYPE_MMIO;                            // MessageType = 0x05
++	peci_cmd->write_buffer[3] = 0;                                                  // EndPointID = 0x0
++	peci_cmd->write_buffer[4] = 0;                                                  // Rsvd = 0x0
++	peci_cmd->write_buffer[5] = u8Bar;                                              // Bar ID
++	peci_cmd->write_buffer[6] = u8AddrType;                                         // AddressType = 0x5/0x6
++	peci_cmd->write_buffer[7] = u8Seg;                                              // Segment[7:0]
++	peci_cmd->write_buffer[8] = ((u8Device & 0x1F) << 3) | (u8Fcn & 0x07);          // Device[7:3] & Function[2:0]
++	peci_cmd->write_buffer[9] = u8Bus;                                              // Bus
++
++	// 32-bit or 64-bit address
++	memcpy(&peci_cmd->write_buffer[10], (uint8_t *)&u64Offset, sizeof(uint64_t));   // Address
++
++	memcpy(&peci_cmd->write_buffer[18], (uint8_t *)&u64DataVal, u8DataLen);	        // Register Value
++
++	// FCS is calculated and invert the MSB to get AW FCS.
++	peci_cmd->write_buffer[peci_cmd->write_len - 1] = calculate_fcs(peci_cmd) ^ 0x80;
++
++	ret = IPMB_peci_issue_cmd(ipmb_req, ipmb_res, true, true);
++	if (ret == PECI_CC_IPMB_SUCCESS)
++	{
++		// PECI completion code in the 1st byte
++		*cc = ipmb_res->data[0];
++	}
++
++	return ret;
++}
++
+ /*-------------------------------------------------------------------------
+  *  This function provides crashdump discovery data over PECI
+  *------------------------------------------------------------------------*/
+diff --git a/ipmb_peci_interface.h b/ipmb_peci_interface.h
+index 494756f..d51015d 100644
+--- a/ipmb_peci_interface.h
++++ b/ipmb_peci_interface.h
+@@ -127,13 +127,6 @@ EPECIStatus peci_RdPkgConfig_dom(uint8_t target, uint8_t domainId,
+ 	uint8_t u8Index, uint16_t u16Value,
+ 	uint8_t u8ReadLen, uint8_t* pPkgConfig,
+ 	uint8_t* cc);
+-
+-// Provides write access to the package configuration space within the
+-// processor in the specified domain
+-EPECIStatus peci_WrPkgConfig_dom(uint8_t target, uint8_t domainId,
+-    uint8_t u8Index, uint16_t u16Param,
+-    const void* pPkgData, uint8_t u8WriteLen,
+-    uint8_t* cc);
+ 								
+ // Allows sequential RdPkgConfig with the provided peci file descriptor
+ EPECIStatus peci_RdPkgConfig_seq(uint8_t target, uint8_t u8Index,
+@@ -152,6 +145,13 @@ EPECIStatus peci_WrPkgConfig(uint8_t target, uint8_t u8Index, uint16_t u16Param,
+ 	uint32_t u32Value, uint8_t u8WriteLen,
+ 	uint8_t* cc);
+ 
++// Provides write access to the package configuration space within the
++// processor in the specified domain
++EPECIStatus peci_WrPkgConfig_dom(uint8_t target, uint8_t domainId,
++    uint8_t u8Index, uint16_t u16Param,
++    const void* pPkgData, uint8_t u8WriteLen,
++    uint8_t* cc);
++
+ // Allows sequential WrPkgConfig with the provided peci file descriptor
+ EPECIStatus peci_WrPkgConfig_seq(uint8_t target, uint8_t u8Index,
+ 	uint16_t u16Param, uint32_t u32Value,
+@@ -292,12 +292,6 @@ EPECIStatus peci_RdEndPointConfigMmio_dom(
+ 	uint8_t u8Device, uint8_t u8Fcn, uint8_t u8Bar, uint8_t u8AddrType,
+ 	uint64_t u64Offset, uint8_t u8ReadLen, uint8_t* pMmioData, uint8_t* cc);
+ 
+-// Provides write access to PCI MMIO space in the specified domain
+-EPECIStatus peci_WrEndPointConfigMmio_dom(
+-	uint8_t target, uint8_t domainId,uint8_t u8Seg, uint8_t u8Bus,
+-    uint8_t u8Device, uint8_t u8Fcn,uint8_t u8Bar, uint8_t u8AddrType,
+-    uint64_t u64Offset, uint8_t u8DataLen,uint64_t u64DataVal, uint8_t* cc);
+-
+ // Allows sequential RdEndPointConfig to PCI MMIO space
+ EPECIStatus peci_RdEndPointConfigMmio_seq(
+ 	uint8_t target, uint8_t u8Seg, uint8_t u8Bus, uint8_t u8Device,
+@@ -358,6 +352,19 @@ EPECIStatus peci_WrEndPointConfig_seq_dom(uint8_t target, uint8_t domainId,
+ 	uint8_t DataLen, uint32_t DataVal,
+ 	int peci_fd, uint8_t* cc);
+ 
++// Provides write access to PCI MMIO space in the specified domain
++EPECIStatus peci_WrEndPointConfigMmio_dom(
++	uint8_t target, uint8_t domainId,uint8_t u8Seg, uint8_t u8Bus,
++    uint8_t u8Device, uint8_t u8Fcn,uint8_t u8Bar, uint8_t u8AddrType,
++    uint64_t u64Offset, uint8_t u8DataLen, uint64_t u64DataVal, uint8_t* cc);
++
++// Allows sequential WrEndPointConfig to PCI MMIO space in the specified
++// domain
++EPECIStatus peci_WrEndPointConfigMmio_seq_dom(
++	uint8_t target, uint8_t domainId, uint8_t u8Seg, uint8_t u8Bus,
++    uint8_t u8Device, uint8_t u8Fcn, uint8_t u8Bar, uint8_t u8AddrType,
++    uint64_t u64Offset, uint8_t u8DataLen, uint64_t u64DataVal, int peci_fd, uint8_t* cc);
++
+ // Provides access to the Crashdump Discovery API
+ EPECIStatus peci_CrashDump_Discovery(uint8_t target, uint8_t subopcode,
+ 	uint8_t param0, uint16_t param1,
+-- 
+2.25.1
+

@@ -1,0 +1,12 @@
+[Unit]
+Description=Intel BMC CPU Crashdump
+
+[Service]
+Restart=always
+# ExecStart=/usr/bin/crashdump --peci-i3c-enable # Enable /dev/peci-i3c
+ExecStart=/usr/bin/crashdump
+Type=dbus
+BusName=com.intel.crashdump
+
+[Install]
+WantedBy=multi-user.target

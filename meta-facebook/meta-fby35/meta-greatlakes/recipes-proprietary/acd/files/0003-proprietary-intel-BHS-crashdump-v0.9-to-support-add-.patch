@@ -1,0 +1,88 @@
+From 7157b8f5eb4c2e0f8507be08a43d2656bd92b7f2 Mon Sep 17 00:00:00 2001
+From: JayZhang-wiwynn <jay_zhang@wiwynn.com>
+Date: Thu, 11 Jul 2024 15:46:02 +0800
+Subject: [PATCH 3/4] proprietary: intel: BHS crashdump v0.9 to support add fru
+ name in dump file
+
+Description:
+ Add variable, "crashdumpFruName", to support add fru name in dump filename
+ e.g. separate dump file for slot1
+ crashdump_slot1_1-2024-07-10T02_05_35Z.json
+
+Motivation:
+ Distinguish crashdump file for slot 1.
+---
+ PlatInfo.cpp  |  2 ++
+ crashdump.cpp | 15 +++++++++------
+ 2 files changed, 11 insertions(+), 6 deletions(-)
+
+diff --git a/PlatInfo.cpp b/PlatInfo.cpp
+index c4b89b9..410695a 100644
+--- a/PlatInfo.cpp
++++ b/PlatInfo.cpp
+@@ -26,6 +26,8 @@ extern "C" {
+ extern int node_bus_id;
+ #endif
+ 
++extern std::string crashdumpFruName;
++
+ void getBmcVersion(char *ver, size_t) {
+   (void)ver;
+ }
+diff --git a/crashdump.cpp b/crashdump.cpp
+index 643f091..530d2b2 100644
+--- a/crashdump.cpp
++++ b/crashdump.cpp
+@@ -78,6 +78,8 @@ extern void platformInit(uint8_t);
+ #include "pmt_crashlog.hpp"
+ #endif
+ 
++std::string crashdumpFruName("");
++
+ namespace crashdump
+ {
+ static CPUInfo cpus[MAX_CPUS];
+@@ -92,9 +94,9 @@ static constexpr const int MAX_CHECK_INTERVALS(3 * 60 /
+ 
+ int scandir_filter(const struct dirent* dirEntry)
+ {
+-    // Filter for just the crashdump files
+-    return (strncmp(dirEntry->d_name, crashdumpPrefix.c_str(),
+-                    crashdumpPrefix.size()) == 0);
++    const std::string filePrefix(crashdumpPrefix + crashdumpFruName);
++    return (strncmp(dirEntry->d_name, filePrefix.c_str(),
++                    filePrefix.size()) == 0);
+ }
+ 
+ #ifndef NO_SYSTEMD
+@@ -429,7 +431,8 @@ void incrementCrashdumpCount()
+ void dbusAddStoredLog(char** storedLogContents, const std::string& timestamp,
+                       char const* crashdumpStatusStr, char const* modifier)
+ {
+-    constexpr char const* crashdumpFile = "crashdump_%" PRIu64 "";
++    const std::string dumpFile(crashdumpPrefix + crashdumpFruName + "%" PRIu64);
++    char const* crashdumpFile = dumpFile.c_str();
+     uint64_t crashdumpNum = 0;
+     struct dirent** namelist = NULL;
+     FILE* fpJson = NULL;
+@@ -536,7 +539,7 @@ void dbusAddStoredLog(char** storedLogContents, const std::string& timestamp,
+     std::string new_logfile_name;
+     if (modifier[0] == '\0')
+     {
+-        new_logfile_name = crashdumpPrefix + std::to_string(crashdumpNum) +
++        new_logfile_name = crashdumpPrefix + crashdumpFruName + std::to_string(crashdumpNum) +
+                            "-" + timestamp + ".json";
+     }
+     else
+@@ -550,7 +553,7 @@ void dbusAddStoredLog(char** storedLogContents, const std::string& timestamp,
+                             "Failed to append lowercase modifier %s\n",
+                             modifier);
+         }
+-        new_logfile_name = crashdumpPrefix + std::to_string(crashdumpNum) +
++        new_logfile_name = crashdumpPrefix + crashdumpFruName + std::to_string(crashdumpNum) +
+                            "-" + timestamp + "_" + lowerCaseModifier + ".json";
+     }
+     std::filesystem::path out_file = crashdumpDir / new_logfile_name;
+-- 
+2.25.1
+
