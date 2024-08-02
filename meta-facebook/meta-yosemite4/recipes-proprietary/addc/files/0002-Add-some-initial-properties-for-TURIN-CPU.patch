@@ -1,0 +1,134 @@
+From 9f1d0df876bce3c4b16ffd694674f3d00e2c8877 Mon Sep 17 00:00:00 2001
+From: PeterHo-wiwynn <Peter_MH_Ho@wiwynn.com>
+Date: Tue, 25 Jun 2024 15:31:51 +0800
+Subject: [PATCH 1/2] Add some initial properties for TURIN CPU
+
+---
+ src/bic_apml_interface.cpp | 47 +++++++++++++++++++++++---------------
+ src/fatal_error.cpp        |  4 ++--
+ src/main.cpp               | 10 +++++---
+ 3 files changed, 37 insertions(+), 24 deletions(-)
+
+diff --git a/src/bic_apml_interface.cpp b/src/bic_apml_interface.cpp
+index 237ec70..4b3079b 100644
+--- a/src/bic_apml_interface.cpp
++++ b/src/bic_apml_interface.cpp
+@@ -626,28 +626,18 @@ oob_status_t reset_on_sync_flood(uint8_t soc_num, uint32_t *ack_resp)
+ 				     0, ack_resp);
+ }
+ 
+-//===================================================================
+-// src/esmi_oob/esmi_rmi.c
+-//===================================================================
+-
+-oob_status_t read_sbrmi_ras_status(uint8_t soc_num,
+-                   uint8_t *buffer)
++oob_status_t get_bmc_ras_run_time_error_info(uint8_t soc_num,
++					     struct run_time_err_d_in d_in,
++					     uint32_t *err_info)
+ {
+-    oob_status_t ret;
++	uint32_t d_input = 0;
+ 
+-    ret = esmi_oob_read_byte(soc_num,
+-                 SBRMI_RASSTATUS, SBRMI, buffer);
+-    if (ret)
+-        return ret;
+-
+-    /* BMC should write 1 to clear them, make way for next update */
+-    return esmi_oob_write_byte(soc_num,
+-                   SBRMI_RASSTATUS, SBRMI, *buffer);
++	d_input = (uint32_t) d_in.valid_inst_index << WORD_BITS
++		   | (uint32_t)d_in.category << BYTE_BITS | d_in.offset;
++	return esmi_oob_read_mailbox(soc_num, GET_BMC_RAS_RUNTIME_ERR_INFO,
++				     d_input, err_info);
+ }
+ 
+-//===================================================================
+-// src/esmi_oob/esmi_mailbox_nda.c
+-//===================================================================
+ oob_status_t read_ras_df_err_validity_check(uint8_t soc_num,
+ 					    uint8_t df_block_id,
+ 					    struct ras_df_err_chk *err_chk)
+@@ -687,4 +677,23 @@ oob_status_t read_ras_df_err_dump(uint8_t soc_num,
+ 
+ 	return esmi_oob_read_mailbox(soc_num, READ_RAS_LAST_TRANS_ADDR_DUMP,
+ 				     ras_err.data_in, data);
+-}
+\ No newline at end of file
++}
++
++//===================================================================
++// src/esmi_oob/esmi_rmi.c
++//===================================================================
++
++oob_status_t read_sbrmi_ras_status(uint8_t soc_num,
++                   uint8_t *buffer)
++{
++    oob_status_t ret;
++
++    ret = esmi_oob_read_byte(soc_num,
++                 SBRMI_RASSTATUS, SBRMI, buffer);
++    if (ret)
++        return ret;
++
++    /* BMC should write 1 to clear them, make way for next update */
++    return esmi_oob_write_byte(soc_num,
++                   SBRMI_RASSTATUS, SBRMI, *buffer);
++}
+diff --git a/src/fatal_error.cpp b/src/fatal_error.cpp
+index cb55514..5351ef4 100644
+--- a/src/fatal_error.cpp
++++ b/src/fatal_error.cpp
+@@ -340,11 +340,11 @@ void triggerSysReset(uint8_t fru)
+ #else
+     FILE *fp;
+     char buffer[1024];
+-    auto command = "mfg-tool power-control -p " + std::to_string(fru) + " -s runtime -a cycle";
++    auto command = "mfg-tool power-control -p " + std::to_string(fru) + " -s acpi -a cycle";
+ 
+     fp = popen(command.c_str(), "r");
+     if (fp == NULL) {
+-        perror("popen() failed. Failed to execute DC cycle.");
++        perror("popen() failed. Failed to execute sys reset.");
+     }
+     std::string output;
+     while (fgets(buffer, sizeof(buffer), fp) != NULL) {
+diff --git a/src/main.cpp b/src/main.cpp
+index 17b4a28..c422b79 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -30,7 +30,7 @@ constexpr int kCrashdumpTimeInSec = 300;
+ 
+ static std::string BoardName;
+ uint32_t err_count = 0;
+-uint32_t FamilyId = 0;
++uint32_t FamilyId = TURIN_FAMILY_ID;
+ #ifndef BIC_APML_INTF
+ gpiod::line P0_apmlAlertLine;
+ gpiod::line P1_apmlAlertLine;
+@@ -67,8 +67,10 @@ uint64_t p1_ppin = 0;
+ uint64_t p0_last_transact_addr = 0;
+ uint64_t p1_last_transact_addr = 0;
+ 
+-std::vector<uint8_t> BlockId;
+-uint8_t ProgId = 0;
++std::vector<uint8_t> BlockId = {BLOCK_ID_1,  BLOCK_ID_2,  BLOCK_ID_3,
++                   BLOCK_ID_24, BLOCK_ID_33, BLOCK_ID_36,
++                   BLOCK_ID_37, BLOCK_ID_38, BLOCK_ID_40};;
++uint8_t ProgId = EPYC_PROG_SEG_ID;
+ bool apmlInitialized = false;
+ #ifndef BIC_APML_INTF
+ /**
+@@ -642,6 +644,8 @@ int main(int argc, char *argv[])
+ 
+     getBoardID();
+ #else
++    apmlInitialized = true; // Assume we have done initialization in BIC.
++
+     std::vector<std::string> cpuid_str_vec;
+     CLI::App app("amd-ras");
+     int target_cpu = 0;
+-- 
+2.25.1
+

@@ -1,0 +1,26 @@
+From f47e1f4369a780242a67ea01ed8461fd8adb14bd Mon Sep 17 00:00:00 2001
+From: PeterHo-wiwynn <Peter_MH_Ho@wiwynn.com>
+Date: Fri, 2 Aug 2024 10:54:08 +0800
+Subject: [PATCH 2/2] Improve efficiency for mailbox command
+
+Reduce sleep time from 1s to 100ms per mailbox command
+---
+ src/bic_apml_interface.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/bic_apml_interface.cpp b/src/bic_apml_interface.cpp
+index 4b3079b..120f888 100644
+--- a/src/bic_apml_interface.cpp
++++ b/src/bic_apml_interface.cpp
+@@ -290,7 +290,7 @@ oob_status_t bic_ipmb_apml_request(struct apml_message *msg)
+ 
+     while (retries < MAX_RETRIES)
+     {
+-        sleep(1);
++        usleep(100);
+ #ifndef ENABLE_PLDM
+         ret = bic_ipmb_wrapper(g_fruid, NETFN_OEM_1S_REQ, CMD_OEM_APML_GET_RES, tbuf, tlen, rbuf, &rlen);
+         if (ret == BIC_STATUS_SUCCESS)
+-- 
+2.25.1
+

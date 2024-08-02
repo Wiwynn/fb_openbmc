@@ -13,6 +13,8 @@ RDEPENDS:${PN}:append = " bash"
 
 SRC_URI += " \
     file://0001-Support-addc-for-YV4.patch \
+    file://0002-Add-some-initial-properties-for-TURIN-CPU.patch \
+    file://0003-Improve-efficiency-for-mailbox-command.patch \
     file://ras-polling.sh \
     file://ras-polling@.service \
 "
