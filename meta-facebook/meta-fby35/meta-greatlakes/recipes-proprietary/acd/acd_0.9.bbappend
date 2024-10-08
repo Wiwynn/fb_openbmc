@@ -8,6 +8,8 @@ LOCAL_URI += " \
     file://0003-proprietary-intel-BHS-crashdump-v0.9-to-support-add-.patch \
     file://0004-proprietary-intel-BHS-crashdump-v0.9-to-support-add-.patch \
     file://0005-greatlakes-olympic-2.0-Add-OP2-Platinfo-for-support-.patch \
+    file://0006-proprietary-intel-BHS-crashdump-v0.9-adjust-timeout-.patch \
+    file://0007-proprietary-intel-BHS-crashdump-v0.9-disable-compres.patch \
     "
 
 DEPENDS += "libipmb libipmi"

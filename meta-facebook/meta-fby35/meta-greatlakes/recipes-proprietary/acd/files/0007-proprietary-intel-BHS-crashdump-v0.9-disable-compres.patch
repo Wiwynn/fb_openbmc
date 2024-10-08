@@ -1,0 +1,31 @@
+From 71c4c04cb00faa5f505c76b46845375e4e4ccfc1 Mon Sep 17 00:00:00 2001
+From: JayZhang-wiwynn <jay_zhang@wiwynn.com>
+Date: Fri, 4 Oct 2024 11:15:36 +0800
+Subject: [PATCH] proprietary: intel: BHS crashdump v0.9 disable compression
+ for output json file
+
+Description:
+ Disable the "Enable compression for output json file" option
+
+Motivation:
+ The ACD json file compressed inside the archive which breaks Meta existing tooling.
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 8013759..f8784bd 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -26,7 +26,7 @@ option (BAFI_NDA_OUTPUT
+ )
+ # changed flag name to temporarily remove PMT_NAC_CRASHLOG feature
+ option (PMT_NAC_CRASHLOG "Add NAC section to the crashdump contents." OFF)
+-option (USE_GZIP_COMPRESSION "Enable compression for output json file" ON)
++option (USE_GZIP_COMPRESSION "Enable compression for output json file" OFF)
+ option (REMOTE_MODULE_EXAMPLE "Add example module" OFF)
+ 
+ project (crashdump)
+-- 
+2.25.1
+

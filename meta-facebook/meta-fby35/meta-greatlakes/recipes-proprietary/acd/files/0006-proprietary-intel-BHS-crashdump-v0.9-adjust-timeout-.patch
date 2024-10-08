@@ -1,0 +1,40 @@
+From 9f06ee550be0f71e9c353c7d94096e918f9a6425 Mon Sep 17 00:00:00 2001
+From: JayZhang-wiwynn <jay_zhang@wiwynn.com>
+Date: Fri, 4 Oct 2024 11:39:10 +0800
+Subject: [PATCH] proprietary: intel: BHS crashdump v0.9 adjust timeout value
+ in crashdump_input_srf.json
+
+Description:
+ Adjust timeout value from Intel recommend in crashdump_input_srf.json .
+
+Motivation:
+ BMC to BIC interface because of which the PECI is slow which leads to timeouts in the collection and thus the loss of crashdump data.
+---
+ crashdump_input_srf.json | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/crashdump_input_srf.json b/crashdump_input_srf.json
+index ac1bc97..a92edab 100644
+--- a/crashdump_input_srf.json
++++ b/crashdump_input_srf.json
+@@ -675,7 +675,7 @@
+         "Revision": "0x12",
+         "SkipOnFail": false,
+         "LoopOnCPU": true,
+-        "MaxTimeSec": 30,
++        "MaxTimeSec": 70,
+         "OutputPath": "crash_data/PROCESSORS/cpu%d/soc/uncore",
+         "PreReq": {
+           "Commands": []
+@@ -25594,7 +25594,7 @@
+         "OutputPath": "crash_data/PROCESSORS/cpu%d/%domain/crashlog/",
+         "RootAtLevel": 5,
+         "FailThreshold": 1,
+-        "MaxTimeSec": 10,
++        "MaxTimeSec": 50,
+         "PreReq": {
+           "Commands": [
+             {
+-- 
+2.25.1
+
