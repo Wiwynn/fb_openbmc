@@ -7,8 +7,8 @@ show_dpm_ver() {
   name=$1
   bus=$2
   addr=$3
-  dump=$(i2cdump -f -y "${bus}" "${addr}" s 0x9e | grep -v abcdef)
-  dpm_ver="${dump##* }"
+  dump=$(i2cget -f -y "${bus}" "${addr}" 0x9e s | sed 's/\s*0x/\\x/g')
+  dpm_ver=$(echo -e "$dump")
   echo "$name" "$dpm_ver"
 }
 echo "!!!"
@@ -58,8 +58,8 @@ show_isl_ver() {
   bus="$2"
   addr="$3"
 
-  mdl=$(i2cdump -f -y "${bus}" "${addr}" s 0x9a | grep 00: | awk '{print $5$4$3$2}')
-  mfr=$(i2cdump -f -y "${bus}" "${addr}" s 0x9b | grep 00: | awk '{print $5$4$3$2}')
+  mdl=$(i2cget -f -y "${bus}" "${addr}" 0x9a s | sed 's/0x//g' | awk '{print $4$3$2$1}')
+  mfr=$(i2cget -f -y "${bus}" "${addr}" 0x9b s | sed 's/0x//g' | awk '{print $4$3$2$1}')
   rstr="SFT${mdl:1:5}${mdl:6:2}$(printf "%02d" "0x$mfr")"
   echo "$name: $rstr"
 }
