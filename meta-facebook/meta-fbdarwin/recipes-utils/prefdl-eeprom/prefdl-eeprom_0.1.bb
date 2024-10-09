@@ -1,4 +1,4 @@
-# Copyright 2022-present Facebook. All Rights Reserved.
+# Copyright 2024-present Facebook. All Rights Reserved.
 #
 # This program file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -14,14 +14,21 @@
 # Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
+LICENSE = "GPL-2.0-or-later"
+LIC_FILES_CHKSUM = "file://prefdl_weutil.c;beginline=4;endline=16;md5=da35978751a9d71b73679307c4d296ec"
+SRC_URI += " \
+          file://utils \
+          "
+S = "${WORKDIR}/utils"
 
-lib: libfbdarwin_eeprom.so
+do_install() {
+    install -d ${D}${bindir}
+    install -m 0755 weutil_prefdl ${D}${bindir}/weutil_prefdl
+    install -m 0755 weutil-compat-wrapper.sh ${D}${bindir}/weutil
+}
 
-libfbdarwin_eeprom.so: fbdarwin_eeprom.c
-	$(CC) $(CFLAGS) -fPIC -c -o fbdarwin_eeprom.o fbdarwin_eeprom.c
-	$(CC) -shared -o libfbdarwin_eeprom.so fbdarwin_eeprom.o -lc $(LDFLAGS)
-
-.PHONY: clean
-
-clean:
-	rm -rf *.o libfbdarwin_eeprom.so
+RDEPENDS:${PN} += "bash"
+RDEPENDS:${PN} += "libprefdl-eeprom"
+DEPENDS += "libprefdl-eeprom"
+FILES:${PN} = "${bindir}"

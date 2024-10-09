@@ -3,6 +3,7 @@
 require recipes-core/images/fboss-lite-image.inc
 
 IMAGE_INSTALL += " \
+  prefdl-eeprom \
   serfmon-cache \
   show-tech \
   "

@@ -1,4 +1,4 @@
-# Copyright 2022-present Facebook. All Rights Reserved.
+# Copyright 2024-present Facebook. All Rights Reserved.
 #
 # This program file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -14,11 +14,7 @@
 # Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
-FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
-LIC_FILES_CHKSUM = "file://fbdarwin_weutil.c;beginline=4;endline=16;md5=da35978751a9d71b73679307c4d296ec"
-SRC_URI += " \
-          file://utils/fbdarwin_weutil.c \
-          file://utils/Makefile \
-          "
-RDEPENDS:${PN} += "libfbdarwin-eeprom"
-DEPENDS += "libfbdarwin-eeprom"
+
+do_install:append () {
+   mv -f ${D}${bindir}/weutil ${D}${bindir}/weutil_meta
+}

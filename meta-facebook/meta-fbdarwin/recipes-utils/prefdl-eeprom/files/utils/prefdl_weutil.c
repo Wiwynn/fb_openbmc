@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-present Facebook. All Rights Reserved.
+ * Copyright 2024-present Facebook. All Rights Reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,8 +19,7 @@
 #include <errno.h>
 #include <stdio.h>
 
-#include <facebook/wedge_eeprom.h>
-#include <facebook/fbdarwin_eeprom.h>
+#include <facebook/prefdl_eeprom.h>
 #include <string.h>
 #define BMC_MGMT_MACADDR "/sys/class/net/eth0/address"
 

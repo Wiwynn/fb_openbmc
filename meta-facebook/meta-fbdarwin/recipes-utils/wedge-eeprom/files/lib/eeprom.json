@@ -1,0 +1,13 @@
+{
+  "platform" : "fbdarwin" ,
+  "eeprom devices" : [
+  {
+      "name" : "chassis_eeprom",
+      "sysfs_path" : "/mnt/data1/.chassis_eeprom"
+  },
+  {
+      "name" : "bmc",
+      "sysfs_path" : "/sys/bus/i2c/drivers/at24/0-0050/eeprom"
+  }
+  ]
+}
