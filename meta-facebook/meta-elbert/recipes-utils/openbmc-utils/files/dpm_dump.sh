@@ -23,12 +23,14 @@ source /usr/local/bin/openbmc-utils.sh
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
 
-logfile="/mnt/data1/log/dpm_log"
+logdir="/mnt/data1/log"
+logfile="${logdir}/dpm_log"
 logfile_old="${logfile}.1"
 max_loglines=1000
 switchcard_bus=3
 
 # Check to see if the log file needs to be rotated
+mkdir -p $logdir
 touch $logfile $logfile_old
 lines="$(wc -l $logfile|cut -d' ' -f1)"
 if [ "$lines" -gt $max_loglines ]

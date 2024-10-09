@@ -56,6 +56,7 @@ LOCAL_URI += "\
     file://bmc_board_rev.sh \
     file://mount_data1.service \
     file://setup_gpio.service \
+    file://dpm_dump.service \
     "
 
 OPENBMC_UTILS_FILES += " \
@@ -161,6 +162,8 @@ do_work_systemd() {
 
   install -m 0644 setup_gpio.service ${D}${systemd_system_unitdir}
 
+  install -m 0644 dpm_dump.service ${D}${systemd_system_unitdir}
+
 }
 
 do_install_board() {
@@ -185,7 +188,7 @@ do_install:append() {
 
 FILES:${PN} += "${sysconfdir}"
 
-SYSTEMD_SERVICE:${PN} += "mount_data1.service setup_gpio.service"
+SYSTEMD_SERVICE:${PN} += "mount_data1.service setup_gpio.service dpm_dump.service"
 
 #Not needed for elbert
 SYSTEMD_SERVICE:${PN}:remove = "enable_watchdog_ext_signal.service"
