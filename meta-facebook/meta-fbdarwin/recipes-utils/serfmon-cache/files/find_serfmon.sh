@@ -27,15 +27,63 @@
 ### END INIT INFO
 
 # shellcheck disable=SC1091
-# shellcheck disable=SC2034
 . /usr/local/bin/openbmc-utils.sh
 
 MTERM_LOGFILE="/var/log/mTerm_wedge.log"
 SERFMON_CACHE="/mnt/data1/.serfmon.txt"
 MACMON_CACHE="/mnt/data1/.macmon.txt"
 CHASSIS_EEPROM_CACHE="/mnt/data1/.chassis_eeprom"
+META_EEPROM_CACHE="/mnt/data1/.chassis_meta_eeprom"
 SERFMON_REGEX="\!serfmon\:.*\:.*\:.*$"
 MACMON_REGEX="\!macmon\:.*\:.*\:.*$"
+
+crc16_ccitt() {
+    # Calculate CRC16-CCITT for the given bytes as specified in
+    # https://srecord.sourceforge.net/crc16-ccitt.html#overview
+    local data_file=$1
+    local crc_work_file=/tmp/.crc16_ccitt
+    crc=0xffff
+
+   cp "$data_file" "$crc_work_file"
+   printf "\x00\x00" >> "$crc_work_file"
+
+    while IFS= read -r -n 1 -d '' input_byte
+    do
+        printf -v byte_val "%d" \'"$input_byte"
+        for (( i=7; i>=0; i-- )); do
+            new_crc=$(( ((crc << 1) & 0xffff) | ((byte_val >> i)) & 0x1 ))
+            if [ $((crc & 0x8000)) != 0 ]; then
+                crc=$((new_crc ^ 0x1021))
+            else
+                crc=$new_crc
+            fi
+        done
+    done < "$crc_work_file"
+
+    # Enforce 4 digits in return value.
+    rm -f "$crc_work_file"
+    printf -v crc "%04x" $crc
+    echo $crc
+}
+
+write_pad_bytes() {
+    # Write num_bytes of all \xFF to the file tmpfile.
+    local num_bytes=$1
+    local tmpfile=$2
+    dd if=/dev/zero bs=1 count="$num_bytes" \
+       2>/dev/null | tr "\000" "\377" >> "$tmpfile"
+}
+
+write_raw_bytes() {
+    # Given string in the format 00112233, write the bytes to the
+    # given file as 8-bit characters \x00\x11\x22\x33
+    local bytes=$1
+    local tmpfile=$2
+    for (( i=0; i<${#bytes}; i=i+2 )); do
+       # shellcheck disable=SC2059
+       printf "\\x$(printf "%x" 0x"${bytes:$i:2}")" >> "$tmpfile"
+    done
+}
 
 create_dummy_chassis_eeprom() {
     dummy_pca="PCA000000000"
@@ -51,7 +99,7 @@ create_dummy_chassis_eeprom() {
     TMP="${CHASSIS_EEPROM_CACHE}.tmp"
 
     # Create Fake EEPROM file for weutil in expected format
-    printf "\x00\x00\x00\x03\x00\x00\x00\x00\x30\x30\x30\x32%s%s\x31\x31\x31"\
+    printf "\x00\x00\x00\x03\x00\x00\x00\x00\x30\x30\x30\x32%s%s\x31\x31\x31" \
         "$dummy_pca" "$chassis_serial" > "$TMP"
 
     # How many bytes to pad EEPROM file
@@ -60,7 +108,6 @@ create_dummy_chassis_eeprom() {
     # If a cached Macmon string exists, add that to the EEPROM
     if [ -f "$MACMON_CACHE" ]; then
        chassis_mac="$(awk -F":" '{print $3}' "$MACMON_CACHE")"
-
        # Add MAC TLV. MAC is 12 (0x43 = C) bytes in length
        printf "\x30\x35\x30\x30\x30\x43%s" "$chassis_mac" >> "$TMP"
        pad_bytes=$((pad_bytes - 18))
@@ -69,9 +116,43 @@ create_dummy_chassis_eeprom() {
     # Add an end TLV.
     printf "\x30\x30\x30\x30\x30\x30" >> "$TMP"
 
-    # Pad file with all 0xFFs to size
-    dd if=/dev/zero bs=1 count=$pad_bytes \
-       2>/dev/null | tr "\000" "\377" >> "$TMP"
+    # Pad file with all 0xFFs to size 255.
+    write_pad_bytes $pad_bytes "$TMP"
+
+    # If the BMC EEPROM has been programmed with Meta EEPROM format, then assume
+    # the chassis EEPROM should as well.
+    if bmc_has_meta_eeprom; then
+        META_FMT_TMP="${META_EEPROM_CACHE}.tmp"
+
+        # Write the header and chassis fields.
+        printf "\xfb\xfb\x05\xff\x01\x09%s\x06\x0c%s\x0b\x0b%s" \
+            "DARWIN48V" "$dummy_pca" "$chassis_serial" > "$META_FMT_TMP"
+
+        # Write a TLV for the CPU MAC address and a TLV for the Switch Asic MAC
+        # address.
+        if [ -f "$MACMON_CACHE" ]; then
+            # size 8 = 6 bytes of MAC + 2 bytes for number of addresses.
+            printf "\x11\x08" >> "$META_FMT_TMP"
+            write_raw_bytes "$chassis_mac" "$META_FMT_TMP"
+            printf "\x00\x01" >> "$META_FMT_TMP"
+
+            # Switch ASIC MAC base = x86 CPU MAC base + 1.
+            printf "\x13\x08" >> "$META_FMT_TMP"
+            chassis_mac_dec=$(printf '%d\n' 0x"$chassis_mac")
+            asic_mac=$(printf '%X' $((chassis_mac_dec + 1)))
+            write_raw_bytes "$asic_mac" "$META_FMT_TMP"
+            printf "\x01\x03" >> "$META_FMT_TMP"
+        fi
+
+        # Write the CRC TLV, then calculate the CRC value and write it.
+        crc=$(crc16_ccitt "$META_FMT_TMP")
+        printf "\xfa\x02" >> "$META_FMT_TMP"
+        write_raw_bytes "$crc" "$META_FMT_TMP"
+
+        # Pad bytes to Meta EEPROM, then write the Meta EEPROM data.
+        write_pad_bytes $((META_EEPROM_OFFSET-255)) "$TMP"
+        cat "$META_FMT_TMP" >> "$TMP"
+    fi
 
     mv $TMP $CHASSIS_EEPROM_CACHE
 }
@@ -104,6 +185,7 @@ maybe_update_cache() {
             echo "Registered new $name string!"
             cached_value="$(cat "$cache_file")"
             echo "$read_value"
+            # shellcheck disable=SC2034
             cache_updated=1
         fi
     fi
