@@ -1,4 +1,4 @@
-From 6ce3660f58ccbd161968e1f0dfaebd5f00c3d6c0 Mon Sep 17 00:00:00 2001
+From 89c47be4dd8221c3add634b96b6f38eddf698b8d Mon Sep 17 00:00:00 2001
 From: Delphine CC Chiu <Delphine_CC_Chiu@wiwynn.com>
 Date: Thu, 7 Mar 2024 10:41:16 +0800
 Subject: [PATCH 4/6] configurations: yosemite4: Add IANA for sentinel dome
@@ -22,7 +22,7 @@ Signed-off-by: Delphine CC Chiu <Delphine_CC_Chiu@wiwynn.com>
  5 files changed, 10 insertions(+)
 
 diff --git a/configurations/yosemite4_sentineldome_t1.json b/configurations/yosemite4_sentineldome_t1.json
-index 524d41b..f68ac2e 100644
+index cc0f86d..19e9358 100644
 --- a/configurations/yosemite4_sentineldome_t1.json
 +++ b/configurations/yosemite4_sentineldome_t1.json
 @@ -344,6 +344,7 @@
@@ -34,7 +34,7 @@ index 524d41b..f68ac2e 100644
              "Type": "MCTPEndpoint"
          }
 diff --git a/configurations/yosemite4_sentineldome_t1_retimer.json b/configurations/yosemite4_sentineldome_t1_retimer.json
-index 11a2bb4..3bfa366 100644
+index 45e3307..bc2e8c8 100644
 --- a/configurations/yosemite4_sentineldome_t1_retimer.json
 +++ b/configurations/yosemite4_sentineldome_t1_retimer.json
 @@ -404,6 +404,7 @@
@@ -46,7 +46,7 @@ index 11a2bb4..3bfa366 100644
              "Type": "MCTPEndpoint"
          }
 diff --git a/configurations/yosemite4_sentineldome_t2.json b/configurations/yosemite4_sentineldome_t2.json
-index 32814db..f5064cf 100644
+index 2ebede8..f1076cc 100644
 --- a/configurations/yosemite4_sentineldome_t2.json
 +++ b/configurations/yosemite4_sentineldome_t2.json
 @@ -405,6 +405,7 @@
@@ -58,7 +58,7 @@ index 32814db..f5064cf 100644
              "Type": "MCTPEndpoint"
          }
 diff --git a/configurations/yosemite4_sentineldome_t2_retimer.json b/configurations/yosemite4_sentineldome_t2_retimer.json
-index f2c34e0..058a9f5 100644
+index 1859b58..4cc0ea5 100644
 --- a/configurations/yosemite4_sentineldome_t2_retimer.json
 +++ b/configurations/yosemite4_sentineldome_t2_retimer.json
 @@ -465,6 +465,7 @@
@@ -70,7 +70,7 @@ index f2c34e0..058a9f5 100644
              "Type": "MCTPEndpoint"
          }
 diff --git a/schemas/legacy.json b/schemas/legacy.json
-index 17db8d1..5a9e558 100644
+index 54837c2..0d1999b 100644
 --- a/schemas/legacy.json
 +++ b/schemas/legacy.json
 @@ -83,6 +83,9 @@
@@ -83,7 +83,7 @@ index 17db8d1..5a9e558 100644
                  "Index": {
                      "$ref": "#/$defs/Types/Index"
                  },
-@@ -892,6 +895,9 @@
+@@ -1039,6 +1042,9 @@
              "GpioPolarity": {
                  "enum": ["Low"]
              },

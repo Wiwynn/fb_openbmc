@@ -1,4 +1,4 @@
-From c540a04ed40e83b351353b85978b71385f30a756 Mon Sep 17 00:00:00 2001
+From cd1ecc812103e0620e2a96688436594a65261e1d Mon Sep 17 00:00:00 2001
 From: Delphine CC Chiu <Delphine_CC_Chiu@wiwynn.com>
 Date: Mon, 25 Sep 2023 11:10:46 +0800
 Subject: [PATCH 3/6] Add mctp eids configuration for Yosemite 4
@@ -56,7 +56,7 @@ index 1ee4e91..5a9cb31 100644
      "Probe": "xyz.openbmc_project.FruDevice({'BOARD_PRODUCT_NAME': 'Floating Falls', 'PRODUCT_PRODUCT_NAME': 'Yosemite V4'})",
      "Type": "Board",
 diff --git a/configurations/yosemite4_sentineldome_t1.json b/configurations/yosemite4_sentineldome_t1.json
-index 6c0096b..524d41b 100644
+index 21b93eb..cc0f86d 100644
 --- a/configurations/yosemite4_sentineldome_t1.json
 +++ b/configurations/yosemite4_sentineldome_t1.json
 @@ -338,6 +338,14 @@
@@ -75,7 +75,7 @@ index 6c0096b..524d41b 100644
      ],
      "Name": "Yosemite 4 Sentinel Dome T1 Slot $bus % 15",
 diff --git a/configurations/yosemite4_sentineldome_t1_retimer.json b/configurations/yosemite4_sentineldome_t1_retimer.json
-index 6bf37b4..11a2bb4 100644
+index 2ee102d..45e3307 100644
 --- a/configurations/yosemite4_sentineldome_t1_retimer.json
 +++ b/configurations/yosemite4_sentineldome_t1_retimer.json
 @@ -398,6 +398,14 @@
@@ -94,7 +94,7 @@ index 6bf37b4..11a2bb4 100644
      ],
      "Name": "Yosemite 4 Sentinel Dome T1 with Retimer Slot $bus % 15",
 diff --git a/configurations/yosemite4_sentineldome_t2.json b/configurations/yosemite4_sentineldome_t2.json
-index 322e400..32814db 100644
+index 2244d36..2ebede8 100644
 --- a/configurations/yosemite4_sentineldome_t2.json
 +++ b/configurations/yosemite4_sentineldome_t2.json
 @@ -399,6 +399,14 @@
@@ -113,7 +113,7 @@ index 322e400..32814db 100644
      ],
      "Name": "Yosemite 4 Sentinel Dome T2 Slot $bus % 15",
 diff --git a/configurations/yosemite4_sentineldome_t2_retimer.json b/configurations/yosemite4_sentineldome_t2_retimer.json
-index 74695e7..f2c34e0 100644
+index 75bae2c..1859b58 100644
 --- a/configurations/yosemite4_sentineldome_t2_retimer.json
 +++ b/configurations/yosemite4_sentineldome_t2_retimer.json
 @@ -459,6 +459,14 @@
@@ -132,10 +132,10 @@ index 74695e7..f2c34e0 100644
      ],
      "Name": "Yosemite 4 Sentinel Dome T2 with Retimer Slot $bus % 15",
 diff --git a/configurations/yosemite4_wailuafalls.json b/configurations/yosemite4_wailuafalls.json
-index 9ba7fd9..f1b566a 100644
+index 0c1045b..e956619 100644
 --- a/configurations/yosemite4_wailuafalls.json
 +++ b/configurations/yosemite4_wailuafalls.json
-@@ -214,6 +214,30 @@
+@@ -257,6 +257,30 @@
              "Zones": [
                  "Zone 1"
              ]
@@ -167,7 +167,7 @@ index 9ba7fd9..f1b566a 100644
      ],
      "Name": "Yosemite 4 Wailua Falls Slot $bus % 15",
 diff --git a/schemas/legacy.json b/schemas/legacy.json
-index e56e8e9..17db8d1 100644
+index 2ff537e..54837c2 100644
 --- a/schemas/legacy.json
 +++ b/schemas/legacy.json
 @@ -68,6 +68,9 @@
@@ -180,7 +180,7 @@ index e56e8e9..17db8d1 100644
                  "FaultIndex": {
                      "$ref": "#/$defs/Types/FaultIndex"
                  },
-@@ -871,6 +874,9 @@
+@@ -1018,6 +1021,9 @@
              "EntityInstance": {
                  "type": "number"
              },

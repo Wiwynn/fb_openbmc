@@ -126,16 +126,6 @@ SRC_URI:append = " \
 "
 
 #
-# Aspeed fixes for GPIO
-#
-SRC_URI:append = " \
-    file://0230-gpio-aspeed-Remove-the-name-for-bank-array.patch \
-    file://0231-gpio-aspeed-Create-llops-to-handle-hardware-access.patch \
-    file://0232-gpio-aspeed-Support-G7-Aspeed-gpio-controller.patch \
-    file://0233-gpio-aspeed-Change-the-macro-to-support-deferred-pro.patch \
-    file://0234-gpio-aspeed-Add-the-flush-write-to-ensure-the-write-.patch \
-"
-#
 # Device drivers for OpenBMC platforms.
 #
 SRC_URI:append = " \

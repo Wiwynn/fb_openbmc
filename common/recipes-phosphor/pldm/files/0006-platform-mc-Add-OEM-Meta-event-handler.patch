@@ -1,7 +1,7 @@
-From e03adb2f1bfcf73bad093777dce4ea8ef04e6263 Mon Sep 17 00:00:00 2001
+From 985568983e5266eedc95e1453cb8370d4b4f84e5 Mon Sep 17 00:00:00 2001
 From: lora <lora.lin.wiwynn@gmail.com>
 Date: Fri, 27 Sep 2024 14:51:48 +0800
-Subject: [PATCH 05/13] platform-mc: Add OEM Meta event handler
+Subject: [PATCH 06/14] platform-mc: Add OEM Meta event handler
 
 Add OEM Meta handler with event type 0xFB. It will print the logs
 with prefix "BIOS_IPMI_SEL", so the user can utilize it to filter
@@ -80,7 +80,7 @@ index e9177e6..e849a9b 100644
      install: true,
 diff --git a/oem/meta/platform-mc/event_oem_meta.cpp b/oem/meta/platform-mc/event_oem_meta.cpp
 new file mode 100644
-index 0000000..b3c15ea
+index 0000000..6d9b250
 --- /dev/null
 +++ b/oem/meta/platform-mc/event_oem_meta.cpp
 @@ -0,0 +1,814 @@
@@ -926,7 +926,7 @@ index 0000000..55822a8
 +} // namespace platform_mc
 +} // namespace pldm
 diff --git a/platform-mc/event_manager.cpp b/platform-mc/event_manager.cpp
-index 694d06b..9c86adb 100644
+index 139438b..f6de8fb 100644
 --- a/platform-mc/event_manager.cpp
 +++ b/platform-mc/event_manager.cpp
 @@ -3,8 +3,10 @@
@@ -972,7 +972,7 @@ index 694d06b..9c86adb 100644
  int EventManager::handlePlatformEvent(
      pldm_tid_t tid, uint16_t eventId, uint8_t eventClass,
      const uint8_t* eventData, size_t eventDataSize)
-@@ -89,6 +109,22 @@ int EventManager::handlePlatformEvent(
+@@ -101,6 +121,22 @@ int EventManager::handlePlatformEvent(
          return PLDM_SUCCESS;
      }
  
@@ -996,7 +996,7 @@ index 694d06b..9c86adb 100644
  
      return PLDM_ERROR;
 diff --git a/platform-mc/event_manager.hpp b/platform-mc/event_manager.hpp
-index 758e485..6420b73 100644
+index 14b6c8e..5ee657b 100644
 --- a/platform-mc/event_manager.hpp
 +++ b/platform-mc/event_manager.hpp
 @@ -6,6 +6,7 @@
@@ -1022,9 +1022,9 @@ index 758e485..6420b73 100644
      {
          // Default response handler for PollForPlatFormEventMessage
          registerPolledEventHandler(
-@@ -185,6 +188,10 @@ class EventManager
-         uint8_t& eventClass, uint32_t& eventDataSize, uint8_t*& eventData,
-         uint32_t& eventDataIntegrityChecksum);
+@@ -201,6 +204,10 @@ class EventManager
+         uint32_t nextDataTransferHandle, uint8_t* transferOperationFlag,
+         uint32_t* dataTransferHandle, uint32_t* eventIdToAcknowledge);
  
 +    bool checkMetaIana(
 +        pldm_tid_t tid,
@@ -1033,7 +1033,7 @@ index 758e485..6420b73 100644
      /** @brief Reference of terminusManager */
      TerminusManager& terminusManager;
  
-@@ -196,6 +203,8 @@ class EventManager
+@@ -212,6 +219,8 @@ class EventManager
  
      /** @brief map of PLDM event type of polled event to EventHandlers */
      pldm::platform_mc::EventMap eventHandlers;
@@ -1043,7 +1043,7 @@ index 758e485..6420b73 100644
  } // namespace platform_mc
  } // namespace pldm
 diff --git a/platform-mc/manager.hpp b/platform-mc/manager.hpp
-index 864906e..34773b0 100644
+index 0cb0178..ee7dffb 100644
 --- a/platform-mc/manager.hpp
 +++ b/platform-mc/manager.hpp
 @@ -6,11 +6,14 @@
@@ -1082,7 +1082,7 @@ index 864906e..34773b0 100644
      {}
  
      /** @brief Helper function to do the actions before discovering terminus
-@@ -169,6 +176,18 @@ class Manager : public pldm::MctpDiscoveryHandlerIntf
+@@ -170,6 +177,18 @@ class Manager : public pldm::MctpDiscoveryHandlerIntf
          return PLDM_SUCCESS;
      }
  
@@ -1101,7 +1101,7 @@ index 864906e..34773b0 100644
      /** @brief The function to trigger the event polling
       *
       *  @param[in] tid - Terminus ID
-@@ -194,6 +213,7 @@ class Manager : public pldm::MctpDiscoveryHandlerIntf
+@@ -196,6 +215,7 @@ class Manager : public pldm::MctpDiscoveryHandlerIntf
  
      /** @brief Store event manager handler */
      EventManager eventManager;
@@ -1151,5 +1151,5 @@ index 8ebb9ce..bf74b28 100644
  
      auto platformHandler = std::make_unique<platform::Handler>(
 -- 
-2.25.1
+2.44.2
 

@@ -1,7 +1,7 @@
-From 6ca0de7a524a3caf403ff14c27745234c2608751 Mon Sep 17 00:00:00 2001
+From d7c79e64f53e6a0fafc5f9e1a90efdcc77d6d0c2 Mon Sep 17 00:00:00 2001
 From: Delphine CC Chiu <Delphine_CC_Chiu@wiwynn.com>
 Date: Mon, 23 Oct 2023 17:06:54 +0800
-Subject: [PATCH 04/13] Support OEM-META write file request for post code
+Subject: [PATCH 05/14] Support OEM-META write file request for post code
  history
 
 Support write file req when multiple hosts send postcode to BMC
