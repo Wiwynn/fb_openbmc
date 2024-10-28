@@ -32,9 +32,9 @@ FW_TOOLS = "\
     hmc-hgx-fw-fpga-0,catalina-sys-init.service,multi-user.target,multi-user.target,0 \
     hmc-hgx-fw-fpga-1,catalina-sys-init.service,multi-user.target,multi-user.target,0 \
     hmc-hgx-fw-gpu-0,catalina-sys-init.service,multi-user.target,multi-user.target,0 \
-    hmc-hgx-fw-gpu-1,catalina-sys-init.service,multi-user.target,multi-user.target,0 \
+    hmc-hgx-fw-gpu-2,catalina-sys-init.service,multi-user.target,multi-user.target,0 \
     hmc-hgx-inforom-gpu-0,catalina-sys-init.service,multi-user.target,multi-user.target,0 \
-    hmc-hgx-inforom-gpu-1,catalina-sys-init.service,multi-user.target,multi-user.target,0 \
+    hmc-hgx-inforom-gpu-2,catalina-sys-init.service,multi-user.target,multi-user.target,0 \
 "
 
 LOCAL_URI = " \
