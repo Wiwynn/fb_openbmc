@@ -18,11 +18,30 @@
 
 using namespace std;
 
-//NIC Component
-NicExtComponent nic0("nic0", "nic0", "nic0_fw_ver", FRU_NIC0, 0, 0x00);
-NicExtComponent nic1("nic1", "nic1", "nic1_fw_ver", FRU_NIC1, 1, 0x00);
+class FwComponentConfig
+{
+public:
+  FwComponentConfig()
+  {
+    char value[MAX_VALUE_LEN] = {0};
 
-//VR Component
-VrComponent pdb_vr_n1("pdb", "vr_n1", "PDB_P12V_N1_VR");
-VrComponent pdb_vr_n2("pdb", "vr_n2", "PDB_P12V_N2_VR");
-VrComponent pdb_vr_aux("pdb", "vr_aux", "PDB_P12V_AUX_VR");
+    // NIC Component
+    kv_get("pdb_hw_rev", value, NULL, 0);
+    if (std::string(value) == "EVT")
+    {
+      static NicExtComponent nic1_evt("nic1", "nic1", "nic1_fw_ver", FRU_NIC1, 1, 0x00);
+    }
+    else
+    {
+      static NicExtComponent nic0("nic0", "nic0", "nic0_fw_ver", FRU_NIC0, 0, 0x00);
+      static NicExtComponent nic1("nic1", "nic1", "nic1_fw_ver", FRU_NIC1, 1, 0x20);
+    }
+
+    // VR Component
+    static VrComponent pdb_vr_n1("pdb", "vr_n1", "PDB_P12V_N1_VR");
+    static VrComponent pdb_vr_n2("pdb", "vr_n2", "PDB_P12V_N2_VR");
+    static VrComponent pdb_vr_aux("pdb", "vr_aux", "PDB_P12V_AUX_VR");
+  }
+};
+
+FwComponentConfig _fw_comp_conf;

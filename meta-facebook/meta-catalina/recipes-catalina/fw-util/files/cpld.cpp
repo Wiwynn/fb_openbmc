@@ -32,6 +32,15 @@ enum {
   CFM_IMAGE_2,
 };
 
+std::optional<std::string> getEnvVar(const std::string& key) {
+    const char* value = std::getenv(key.c_str());
+    if (value) {
+        return std::string(value);
+    } else {
+        return std::nullopt;
+    }
+}
+
 class CpldComponent : public Component {
   private:
     uint8_t pld_type;
@@ -166,14 +175,44 @@ private:
   std::string linename;
 };
 
-static altera_max10_attr_t scm_cpld_attr = {
-  7, 0x31, CFM_IMAGE_1, CFM0_10M16_START_ADDR, CFM0_10M16_END_ADDR,
-  ON_CHIP_FLASH_IP_CSR_BASE, ON_CHIP_FLASH_IP_DATA_REG, DUAL_BOOT_IP_BASE,
-  I2C_BIG_ENDIAN
-};
-static i2c_attr_t pdb_cpld_attr = {14, 0x40, nullptr};
-static i2c_attr_t hdd_cpld_attr = {3, 0x30, nullptr};
+class CpldComponentConfig
+{
+public:
+  CpldComponentConfig()
+  {
+    // SCM CPLD
+    static altera_max10_attr_t scm_cpld_attr = {
+      7, 0x31, CFM_IMAGE_1, CFM0_10M16_START_ADDR, CFM0_10M16_END_ADDR,
+      ON_CHIP_FLASH_IP_CSR_BASE, ON_CHIP_FLASH_IP_DATA_REG, DUAL_BOOT_IP_BASE,
+      I2C_LITTLE_ENDIAN
+    };
+    auto altera_endian_env = getEnvVar("ALTERA_I2C_VAL_ENDIAN");
+    if (altera_endian_env)
+    {
+      if (*altera_endian_env == "BIG" || *altera_endian_env == "big")
+      {
+        scm_cpld_attr.i2c_val_endian = I2C_BIG_ENDIAN;
+      }
+    }
+    static GpioControlCpld scm_cpld("scm", "cpld", MAX10_10M16, &scm_cpld_attr, "USBDBG_IPMI_EN_L", true);
 
-GpioControlCpld scm_cpld("scm", "cpld", MAX10_10M16, &scm_cpld_attr, "USBDBG_IPMI_EN_L", true);
-CpldComponent pdb_cpld("pdb", "cpld", LCMXO3_2100C, &pdb_cpld_attr);
-CpldComponent hdd_cpld("hdd", "cpld", LCMXO2_4000HC, &hdd_cpld_attr);
+    // PDB CPLD
+    static i2c_attr_t pdb_cpld_attr = {14, 0x40, nullptr};
+    static CpldComponent pdb_cpld("pdb", "cpld", LCMXO3_2100C, &pdb_cpld_attr);
+
+    // HDD CPLD
+    char value[MAX_VALUE_LEN] = {0};
+    static i2c_attr_t hdd_cpld_attr = {5, 0x30, nullptr};
+    i2c_attr_t* sys_hdd_cpld_attr = &hdd_cpld_attr;
+    if (kv_get("hdd_hw_rev", value, NULL, 0) == 0)
+    {
+      if (std::string(value) == "EVT")
+      {
+        hdd_cpld_attr.bus_id = 3;
+      }
+    }
+    static CpldComponent hdd_cpld("hdd", "cpld", LCMXO2_4000HC, sys_hdd_cpld_attr);
+  }
+};
+
+CpldComponentConfig _cpld_comp_conf;

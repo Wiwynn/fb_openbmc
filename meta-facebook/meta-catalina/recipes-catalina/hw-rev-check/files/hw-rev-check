@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Delay 30 seconds to wait entity manager fully populate the system configs.
+# Needs to enhance this in future.
+sleep 30
+
+INVENTORY_OUTPUT="$(mfg-tool inventory 2>/dev/null)"
+
+HDD_HW_REV="$(echo "${INVENTORY_OUTPUT}" | jq -r '."system/board/Catalina_HDD_Carrier"."Decorator.Revision"."Version"')"
+SCM_HW_REV="$(echo "${INVENTORY_OUTPUT}" | jq -r '."system/board/Catalina_SCM"."Decorator.Revision"."Version"')"
+PDB_HW_REV="$(echo "${INVENTORY_OUTPUT}" | jq -r '."system/board/Catalina_PDB"."Decorator.Revision"."Version"')"
+
+kv set hdd_hw_rev "${HDD_HW_REV}"
+kv set scm_hw_rev "${SCM_HW_REV}"
+kv set pdb_hw_rev "${PDB_HW_REV}"

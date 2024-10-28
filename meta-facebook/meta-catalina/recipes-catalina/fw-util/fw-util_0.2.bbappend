@@ -56,4 +56,5 @@ CXXFLAGS += " -DCONFIG_TPM2"
 RDEPENDS:${PN} += " \
     ncsi-util \
     hmc-util \
+    hw-rev-check \
     "

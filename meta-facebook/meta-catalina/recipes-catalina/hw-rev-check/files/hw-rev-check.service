@@ -1,0 +1,12 @@
+[Unit]
+Description=Board Hardware Revision Checking
+After=xyz.openbmc_project.EntityManager.service
+Requires=xyz.openbmc_project.EntityManager.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/hw-rev-check/hw-rev-check
+
+[Install]
+WantedBy=multi-user.target
