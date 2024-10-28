@@ -34,6 +34,7 @@
 #define PMBUS_PAGE         (0x00)
 #define PMBUS_VOUT_MODE    (0x20)
 #define PMBUS_VOUT_COMMAND (0x21)
+#define PMBUS_READ_EIN     (0x86)
 #define PMBUS_READ_VIN     (0x88)
 #define PMBUS_READ_IIN     (0x89)
 #define PMBUS_READ_VOUT    (0x8B)
@@ -89,6 +90,15 @@ typedef struct {
   PAL_SENSOR_THRESHOLD snr_thresh;
   uint8_t units;
 } PAL_SENSOR_MAP;
+
+struct HSC_EIN {
+  const uint32_t wrap_energy;
+  const uint32_t wrap_rollover;
+  const uint32_t wrap_sample;
+  uint32_t energy;
+  uint32_t rollover;
+  uint32_t sample;
+};
 
 struct EIN_INFO {
   uint64_t energy;

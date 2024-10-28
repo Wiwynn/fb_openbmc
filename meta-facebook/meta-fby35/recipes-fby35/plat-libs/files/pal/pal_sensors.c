@@ -89,6 +89,9 @@ static int read_hsc_pin(uint8_t hsc_id, float *value);
 static int read_hsc_iout(uint8_t hsc_id, float *value);
 static int read_hsc_peak_iout(uint8_t hsc_id, float *value);
 static int read_hsc_peak_pin(uint8_t hsc_id, float *value);
+#ifdef CONFIG_JAVAISLAND
+static int read_mp5990_ein(uint8_t hsc_id, float *value);
+#endif
 static int read_medusa_val(uint8_t snr_number, float *value);
 static int read_medusa_adc_val(uint8_t snr_number, float *value);
 static int read_cached_val(uint8_t snr_number, float *value);
@@ -2951,6 +2954,18 @@ exit:
 
 static int
 read_hsc_pin(uint8_t hsc_id, float *value) {
+#ifdef CONFIG_JAVAISLAND
+  // NOTE: The MP5990 lacks a programmable averaging register for input power 
+  // calculation, leading to significant fluctuations in the input power values.
+  // Workaround: Calculate the input power based on the input energy instead. 
+  // This workaround is currently implemented exclusively for JavaIsland.
+  if (hsc_id == HSC_MP5990) {
+    int ret = read_mp5990_ein(hsc_id, value);
+    if (ret != READING_NA) { *value += 3; } // improve the accuracy to +-2%
+    return ret;
+  }
+#endif
+
   if ( get_hsc_reading(hsc_id, I2C_WORD, HSC_POWER, PMBUS_READ_PIN, value, NULL) < 0 ) {
     return READING_NA;
   }
@@ -3062,6 +3077,78 @@ read_hsc_peak_pin(uint8_t hsc_id, float *value) {
 
   return PAL_EOK;
 }
+
+#ifdef CONFIG_JAVAISLAND
+static int
+calculate_ein(struct HSC_EIN *st_ein, float *value) {
+  int ret = READING_NA;
+  uint32_t energy, rollover, sample;
+  uint32_t sample_diff;
+  double energy_diff;
+  static uint32_t last_energy = 0, last_rollover = 0, last_sample = 0;
+  static bool pre_ein = false;
+
+  do {
+    if (pre_ein == false) {  // data isn't enough
+      pre_ein = true;
+      break;
+    }
+
+    energy   = st_ein->energy;
+    rollover = st_ein->rollover;
+    sample   = st_ein->sample;
+    if ((last_rollover > rollover) || 
+       ((last_rollover == rollover) && (last_energy > energy))) {
+      rollover += st_ein->wrap_rollover;
+    }
+    if (last_sample > sample) {
+      sample += st_ein->wrap_sample;
+    }
+
+    energy_diff = (((double)rollover - last_rollover)*st_ein->wrap_energy + energy - last_energy);
+    if (energy_diff < 0) {
+      break;
+    }
+    sample_diff = sample - last_sample;
+    if (sample_diff == 0) {
+      break;
+    }
+
+    *value = (float)(energy_diff/sample_diff);
+    ret = PAL_EOK;
+  } while (0);
+
+  last_energy   = st_ein->energy;
+  last_rollover = st_ein->rollover;
+  last_sample   = st_ein->sample;
+
+  return ret;
+}
+
+static int
+read_mp5990_ein(uint8_t hsc_id, float *value) {
+  uint8_t buf[12] = {0};
+  static struct HSC_EIN st_ein = {
+    .wrap_energy = 0x8000,
+    .wrap_rollover = 0x100,
+    .wrap_sample = 0x1000000,
+  };
+
+  if (get_hsc_reading(hsc_id, I2C_BLOCK, HSC_POWER, PMBUS_READ_EIN, value, buf) ||
+      buf[0] != 6 ) {
+    return READING_NA;
+  }
+
+  st_ein.energy   = (buf[2]<<8) | buf[1];
+  st_ein.rollover = buf[3];
+  st_ein.sample   = (buf[6]<<16) | (buf[5]<<8) | buf[4];
+  if (calculate_ein(&st_ein, value)) {
+    return READING_NA;
+  }
+  
+  return PAL_EOK;
+}
+#endif
 
 static int
 read_dpv2_efuse(uint8_t info, float *value) {
