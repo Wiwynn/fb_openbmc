@@ -36,7 +36,7 @@ wait_for_update_complete() {
             break
         fi
         counter=$((counter+5))
-        if [ "${counter}" == 600 ]; then
+        if [ "${counter}" == 900 ]; then
             echo -ne \\n"Time out. Fail"\\n
             break
         fi
