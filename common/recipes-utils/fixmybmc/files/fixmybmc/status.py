@@ -1,6 +1,8 @@
 # pyre
 from subprocess import CompletedProcess
-from typing import List
+from typing import List, Optional
+
+from fixmybmc.remediation import Remediation
 
 from fixmybmc.utils import Color
 
@@ -14,6 +16,10 @@ class Status:
 
     @property
     def has_manual_remediation(self) -> bool:
+        return False
+
+    @property
+    def has_auto_remediation(self) -> bool:
         return False
 
     @property
@@ -64,7 +70,8 @@ class Problem(Status):
         description=None,
         exception=None,
         cmd_status=None,
-        manual_remediation=None,
+        manual_remediation: Optional[str] = None,
+        remediation: Optional[Remediation] = None,
     ) -> None:
         if description is None and exception is None:
             raise TypeError("either description or exception must be provided")
@@ -72,10 +79,15 @@ class Problem(Status):
         self.exception = exception
         self.cmd_status = cmd_status
         self.manual_remediation = manual_remediation
+        self.remediation = remediation
 
     @property
     def has_manual_remediation(self) -> bool:
         return self.manual_remediation is not None
+
+    @property
+    def has_auto_remediation(self) -> bool:
+        return self.remediation is not None
 
     @property
     def info(self):

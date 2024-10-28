@@ -12,5 +12,5 @@ if [ -z "$HOSTNAME" ]; then
   exit 1
 fi
 
-scp -r "$SOURCE_DIR/fixmybmc/" "root@$HOSTNAME:$DESTINATION_DIR"
+scp -O -r "$SOURCE_DIR/fixmybmc/" "root@$HOSTNAME:$DESTINATION_DIR"
 scp -p "$SOURCE_DIR/fixmybmc.sh" "root@$HOSTNAME:/usr/bin/fixmybmc"

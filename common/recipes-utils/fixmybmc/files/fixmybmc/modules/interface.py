@@ -1,4 +1,5 @@
 from fixmybmc.bmccheck import bmcCheck
+from fixmybmc.remediation import remediation
 from fixmybmc.status import Error, Problem
 from fixmybmc.utils import run_cmd
 
@@ -20,8 +21,14 @@ def eth0_up():
         return None
     return Problem(
         description="eth0 is not up.",
-        manual_remediation=(
-            "Try to restart eth0 interface with 'ip link set eth0 down && ip "
-            "link set eth0 up'"
-        ),
+        remediation=restart_eth0,
     )
+
+
+@remediation
+def restart_eth0():
+    """
+    Restart eth0 interface via `ip link set eth0 down && ip link set eth0 up`
+    """
+    run_cmd("ip link set eth0 down".split(" "), capture_output=False)
+    run_cmd("ip link set eth0 up".split(" "), capture_output=False)
