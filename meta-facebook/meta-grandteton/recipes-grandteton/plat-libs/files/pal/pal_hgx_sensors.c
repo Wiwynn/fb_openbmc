@@ -142,9 +142,7 @@ struct hgx_snr_info {
   {"NVSwitch3", "TEMP_GB_NVS3", "HGX_NVSwitch_3", "HGX_NVSwitch_3_TEMP_0"},
 
   //NV Link0
-  {"NULL", "NULL", "HGX_NVLINK_0", "HGX_NVLinkManagementNIC_0_Temp_0"},
-  {"NULL", "NULL", "HGX_NVLINK_0_PORT_0", "HGX_NVLinkManagementNIC_0_Port_0_Temp_0"},
-  {"NULL", "NULL", "HGX_NVLINK_0_PORT_1", "HGX_NVLinkManagementNIC_0_Port_1_Temp_0"},
+  {"NULL", "NULL", "HGX_NVLinkManagementNIC_0", "HGX_NVLinkManagementNIC_0_Temp_0"}
 };
 
 
@@ -514,9 +512,7 @@ const uint8_t hgx_h100_snr_list[] = {
 };
 
 const uint8_t hgx_b100_snr_list[] = {
-  TEMP_NVLINK0_0,
-  TEMP_NVLINK0_PORT_0,
-  TEMP_NVLINK0_PORT_1
+  TEMP_NVLINK0_0
 };
 
 size_t hgx_common_snr_cnt = sizeof(hgx_common_snr_list)/sizeof(uint8_t);
