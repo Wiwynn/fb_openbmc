@@ -11,8 +11,8 @@ struct command
 {
     void init(CLI::App& app)
     {
-        auto cmd = app.add_subcommand("bmc-arch",
-                                      "Get architecture of the BMC");
+        auto cmd =
+            app.add_subcommand("bmc-arch", "Get architecture of the BMC");
         init_callback(cmd, *this);
     }
 
@@ -25,8 +25,8 @@ struct command
                 .interface("org.freedesktop.systemd1.Manager");
 
         info("Calling systemd to get architecture.");
-        auto arch = co_await systemd.get_property<std::string>(ctx,
-                                                               "Architecture");
+        auto arch =
+            co_await systemd.get_property<std::string>(ctx, "Architecture");
 
         json::display(arch);
 

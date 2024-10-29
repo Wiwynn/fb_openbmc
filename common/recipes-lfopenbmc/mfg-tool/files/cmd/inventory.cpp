@@ -38,35 +38,36 @@ struct command
 
             [&](const auto& path, const auto& service,
                 const auto& interface) -> sdbusplus::async::task<> {
-            if (!interface.starts_with(InventoryIfacePrefix))
-            {
-                co_return;
-            }
-
-            // Insert the interface into the JSON so it shows up even if it
-            // doesn't have any properties.
-            auto& iface_result =
-                result[strip_path(path)][strip_intf(interface)];
-            iface_result = json::empty_map();
-
-            debug("Getting properties.");
-            for (const auto& [property, value] :
-                 co_await sdbusplus::async::proxy()
-                     .service(service)
-                     .path(path)
-                     .interface(interface)
-                     .template get_all_properties<InventoryTypes>(ctx))
-            {
-                // Ignore the entity-manager Probe statement because nobody
-                // is going to be interested in that.
-                if (property == "Probe")
+                if (!interface.starts_with(InventoryIfacePrefix))
                 {
-                    continue;
+                    co_return;
                 }
-                std::visit([&](const auto& v) { iface_result[property] = v; },
-                           value);
-            }
-        });
+
+                // Insert the interface into the JSON so it shows up even if it
+                // doesn't have any properties.
+                auto& iface_result =
+                    result[strip_path(path)][strip_intf(interface)];
+                iface_result = json::empty_map();
+
+                debug("Getting properties.");
+                for (const auto& [property, value] :
+                     co_await sdbusplus::async::proxy()
+                         .service(service)
+                         .path(path)
+                         .interface(interface)
+                         .template get_all_properties<InventoryTypes>(ctx))
+                {
+                    // Ignore the entity-manager Probe statement because nobody
+                    // is going to be interested in that.
+                    if (property == "Probe")
+                    {
+                        continue;
+                    }
+                    std::visit(
+                        [&](const auto& v) { iface_result[property] = v; },
+                        value);
+                }
+            });
 
         json::display(result);
     }

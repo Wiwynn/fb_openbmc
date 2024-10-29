@@ -29,44 +29,49 @@ struct command
         auto result = json::empty_map();
 
         debug("Finding chasses.");
-        co_await subtree_for_each(ctx, chassis::ns_path, chassis::interface,
+        co_await subtree_for_each(
+            ctx, chassis::ns_path, chassis::interface,
 
-                                  [&](const auto& path, const auto& service)
-                                      -> sdbusplus::async::task<> {
-            static auto pathPrefix = chassis::path_prefix();
-            if (path.str.size() <= pathPrefix.size())
-            {
-                error("Unexpected chassis path found: {PATH}", "PATH", path);
-                co_return;
-            }
+            [&](const auto& path,
+                const auto& service) -> sdbusplus::async::task<> {
+                static auto pathPrefix = chassis::path_prefix();
+                if (path.str.size() <= pathPrefix.size())
+                {
+                    error("Unexpected chassis path found: {PATH}", "PATH",
+                          path);
+                    co_return;
+                }
 
-            auto proxy = chassis::Proxy(ctx).service(service).path(path.str);
-            auto state = mapChassisState(co_await proxy.current_power_state());
+                auto proxy =
+                    chassis::Proxy(ctx).service(service).path(path.str);
+                auto state =
+                    mapChassisState(co_await proxy.current_power_state());
 
-            info("State for {PATH}: {STATE}", "PATH", path, "STATE", state);
-            auto id = path.str.substr(pathPrefix.size());
-            result[id]["standby"] = state;
-        });
+                info("State for {PATH}: {STATE}", "PATH", path, "STATE", state);
+                auto id = path.str.substr(pathPrefix.size());
+                result[id]["standby"] = state;
+            });
 
         debug("Finding hosts.");
-        co_await subtree_for_each(ctx, host::ns_path, host::interface,
+        co_await subtree_for_each(
+            ctx, host::ns_path, host::interface,
 
-                                  [&](const auto& path, const auto& service)
-                                      -> sdbusplus::async::task<> {
-            static auto pathPrefix = host::path_prefix();
-            if (path.str.size() <= pathPrefix.size())
-            {
-                error("Unexpected host path found: {PATH}", "PATH", path);
-                co_return;
-            }
+            [&](const auto& path,
+                const auto& service) -> sdbusplus::async::task<> {
+                static auto pathPrefix = host::path_prefix();
+                if (path.str.size() <= pathPrefix.size())
+                {
+                    error("Unexpected host path found: {PATH}", "PATH", path);
+                    co_return;
+                }
 
-            auto proxy = host::Proxy(ctx).service(service).path(path.str);
-            auto state = mapHostState(co_await proxy.current_host_state());
+                auto proxy = host::Proxy(ctx).service(service).path(path.str);
+                auto state = mapHostState(co_await proxy.current_host_state());
 
-            info("State for {PATH}: {STATE}", "PATH", path, "STATE", state);
-            auto id = path.str.substr(pathPrefix.size());
-            result[id]["runtime"] = state;
-        });
+                info("State for {PATH}: {STATE}", "PATH", path, "STATE", state);
+                auto id = path.str.substr(pathPrefix.size());
+                result[id]["runtime"] = state;
+            });
 
         json::display(result);
 

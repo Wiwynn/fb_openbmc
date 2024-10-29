@@ -95,8 +95,9 @@ struct command
         // ranges::to<std::vector> but ranges::to isn't ready until GCC14.
 
         std::vector<std::string> r{};
-        std::ranges::for_each(std::views::keys(m),
-                              [&](const auto& v) { r.push_back(v); });
+        std::ranges::for_each(std::views::keys(m), [&](const auto& v) {
+            r.push_back(v);
+        });
 
         return r;
     }
@@ -146,8 +147,8 @@ MFGTOOL_REGISTER(command);
 template <action Action, scope Scope>
 struct execute
 {
-    static auto op(sdbusplus::async::context&, size_t)
-        -> sdbusplus::async::task<>
+    static auto op(sdbusplus::async::context&,
+                   size_t) -> sdbusplus::async::task<>
     {
         error("Execution method undefined.");
         throw std::invalid_argument("execution method");
@@ -157,14 +158,14 @@ struct execute
 template <action Action>
 struct execute<Action, scope::standby>
 {
-    static auto op(sdbusplus::async::context& ctx, size_t pos)
-        -> sdbusplus::async::task<>
+    static auto op(sdbusplus::async::context& ctx,
+                   size_t pos) -> sdbusplus::async::task<>
     {
         using namespace dbuspath;
         auto path = chassis::path(pos);
 
-        auto service = co_await mapper::object_service(ctx, path,
-                                                       chassis::interface);
+        auto service =
+            co_await mapper::object_service(ctx, path, chassis::interface);
 
         if (!service)
         {
@@ -197,14 +198,14 @@ struct execute<Action, scope::standby>
 template <action Action>
 struct execute<Action, scope::runtime>
 {
-    static auto op(sdbusplus::async::context& ctx, size_t pos)
-        -> sdbusplus::async::task<>
+    static auto op(sdbusplus::async::context& ctx,
+                   size_t pos) -> sdbusplus::async::task<>
     {
         using namespace dbuspath;
 
         auto path = host::path(pos);
-        auto service = co_await mapper::object_service(ctx, path,
-                                                       host::interface);
+        auto service =
+            co_await mapper::object_service(ctx, path, host::interface);
 
         if (!service)
         {
@@ -236,21 +237,21 @@ struct execute<Action, scope::runtime>
 template <>
 struct execute<action::cycle, scope::acpi>
 {
-    static auto op(sdbusplus::async::context& ctx, size_t pos)
-        -> sdbusplus::async::task<>
+    static auto op(sdbusplus::async::context& ctx,
+                   size_t pos) -> sdbusplus::async::task<>
     {
         using namespace dbuspath;
 
         auto path = host::path(pos);
-        auto service = co_await mapper::object_service(ctx, path,
-                                                       host::interface);
+        auto service =
+            co_await mapper::object_service(ctx, path, host::interface);
 
         if (!service)
         {
             warning("Can't find {PATH}", "PATH", path);
             info("Trying to escalate to scope=standby");
-            co_return co_await execute<action::cycle, scope::standby>::op(ctx,
-                                                                          pos);
+            co_return co_await execute<action::cycle, scope::standby>::op(
+                ctx, pos);
         }
 
         auto proxy = host::Proxy(ctx).service(*service).path(path);

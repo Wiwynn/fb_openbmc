@@ -35,8 +35,9 @@ auto register_command(Args... args) -> command_t<T>
 {
     auto c = std::make_unique<T>(args...);
 
-    details::register_command(
-        [command = c.get()](auto& app) { command->init(app); });
+    details::register_command([command = c.get()](auto& app) {
+        command->init(app);
+    });
 
     return c;
 }
@@ -69,8 +70,9 @@ void init_callback(CLI::App* cmd, T& t)
 {
     cmd->callback([&]() {
         sdbusplus::async::context ctx;
-        ctx.spawn(t.run(ctx) | sdbusplus::async::execution::then(
-                                   [&]() { ctx.request_stop(); }));
+        ctx.spawn(t.run(ctx) | sdbusplus::async::execution::then([&]() {
+                      ctx.request_stop();
+                  }));
         ctx.run();
     });
 }

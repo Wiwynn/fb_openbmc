@@ -17,8 +17,8 @@ struct command
 {
     void init(CLI::App& app)
     {
-        auto cmd = app.add_subcommand("version-display",
-                                      "Display software versions.");
+        auto cmd =
+            app.add_subcommand("version-display", "Display software versions.");
 
         init_callback(cmd, *this);
     }
@@ -33,39 +33,41 @@ struct command
 
             [&](const auto& path,
                 const auto& service) -> sdbusplus::async::task<> {
-            auto proxy = version::Proxy(ctx).service(service).path(path.str);
+                auto proxy =
+                    version::Proxy(ctx).service(service).path(path.str);
 
-            auto version = co_await proxy.version();
+                auto version = co_await proxy.version();
 
-            if (!version.size())
-            {
-                co_return;
-            }
-
-            // BMC versions have a hash number as the path, but have Purpose
-            // set.
-            if (co_await proxy.purpose() == version::Proxy::VersionPurpose::BMC)
-            {
-                result["bmc"] = version;
-            }
-            else
-            {
-                // Non-BMC versions are current something like:
-                // "xyz/openbmc_project/version/device/location"
-                auto id = path.str.substr(version::path_prefix().size());
-                auto device = utils::string::first_element(id);
-                auto location = utils::string::last_element(id);
-
-                if (!result.contains(device))
+                if (!version.size())
                 {
-                    result[device] = json::empty_map();
+                    co_return;
                 }
 
-                result[device][location] = version;
-            }
+                // BMC versions have a hash number as the path, but have Purpose
+                // set.
+                if (co_await proxy.purpose() ==
+                    version::Proxy::VersionPurpose::BMC)
+                {
+                    result["bmc"] = version;
+                }
+                else
+                {
+                    // Non-BMC versions are current something like:
+                    // "xyz/openbmc_project/version/device/location"
+                    auto id = path.str.substr(version::path_prefix().size());
+                    auto device = utils::string::first_element(id);
+                    auto location = utils::string::last_element(id);
 
-            co_return;
-        });
+                    if (!result.contains(device))
+                    {
+                        result[device] = json::empty_map();
+                    }
+
+                    result[device][location] = version;
+                }
+
+                co_return;
+            });
 
         json::display(result);
         co_return;

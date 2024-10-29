@@ -76,8 +76,8 @@ auto object_service(sdbusplus::async::context& ctx, const auto& path,
  *
  */
 auto subtree_services(sdbusplus::async::context& ctx, const auto& subpath,
-                      const auto& interface, size_t depth = 0)
-    -> sdbusplus::async::task<services_t>
+                      const auto& interface,
+                      size_t depth = 0) -> sdbusplus::async::task<services_t>
 {
     co_return details::subtree_to_services(
         co_await details::subtree(ctx, subpath, interface, depth));
@@ -140,10 +140,9 @@ auto subtree_for_each(sdbusplus::async::context& ctx, const auto& subpath,
  *  @return A map of paths to services.
  *
  */
-auto subtree_for_each_interface(sdbusplus::async::context& ctx,
-                                const auto& subpath, const auto& interface,
-                                const auto& coroutine, size_t depth = 0)
-    -> sdbusplus::async::task<>
+auto subtree_for_each_interface(
+    sdbusplus::async::context& ctx, const auto& subpath, const auto& interface,
+    const auto& coroutine, size_t depth = 0) -> sdbusplus::async::task<>
 {
     PHOSPHOR_LOG2_USING;
 
@@ -173,9 +172,9 @@ auto subtree_for_each_interface(sdbusplus::async::context& ctx,
  *
  *  @return An optional string of the service or nullopt.
  */
-auto object_service(sdbusplus::async::context& ctx, const auto& path,
-                    const auto& interface)
-    -> sdbusplus::async::task<std::optional<std::string>>
+auto object_service(
+    sdbusplus::async::context& ctx, const auto& path,
+    const auto& interface) -> sdbusplus::async::task<std::optional<std::string>>
 {
     // Mapper look up will return an exception of ResourceNotFound if the path
     // doesn't exist.  Catch the exception and turn it into a nullopt.

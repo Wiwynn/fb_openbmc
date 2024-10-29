@@ -35,11 +35,12 @@ struct command
 
             [&](const auto& path,
                 const auto& service) -> sdbusplus::async::task<> {
-            result[last_element(path)] = co_await pid_zone::Proxy(ctx)
-                                             .service(service)
-                                             .path(path.str)
-                                             .leader();
-        });
+                result[last_element(path)] =
+                    co_await pid_zone::Proxy(ctx)
+                        .service(service)
+                        .path(path.str)
+                        .leader();
+            });
 
         json::display(result);
     }

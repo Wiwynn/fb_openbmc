@@ -17,8 +17,8 @@ struct command
     void init(CLI::App& app)
     {
         auto cmd = app.add_subcommand("fan-mode", "Manipulate the fan mode");
-        auto manual = cmd->add_flag("-m,--manual", arg_manual,
-                                    "Set manual mode");
+        auto manual =
+            cmd->add_flag("-m,--manual", arg_manual, "Set manual mode");
         cmd->add_flag("-a,--auto", arg_auto, "Set auto mode")->excludes(manual);
 
         init_callback(cmd, *this);
@@ -37,25 +37,25 @@ struct command
 
             [&](const auto& path,
                 const auto& service) -> sdbusplus::async::task<> {
-            if (!path.str.starts_with(FanControlPrefix))
-            {
-                co_return;
-            }
+                if (!path.str.starts_with(FanControlPrefix))
+                {
+                    co_return;
+                }
 
-            auto mode =
-                control::mode::Proxy(ctx).service(service).path(path.str);
+                auto mode =
+                    control::mode::Proxy(ctx).service(service).path(path.str);
 
-            if (arg_manual || arg_auto)
-            {
-                co_await mode.manual(arg_manual);
-                result[last_element(path)] = arg_manual ? "manual" : "auto";
-            }
-            else
-            {
-                result[last_element(path)] = (co_await mode.manual()) ? "manual"
-                                                                      : "auto";
-            }
-        });
+                if (arg_manual || arg_auto)
+                {
+                    co_await mode.manual(arg_manual);
+                    result[last_element(path)] = arg_manual ? "manual" : "auto";
+                }
+                else
+                {
+                    result[last_element(path)] =
+                        (co_await mode.manual()) ? "manual" : "auto";
+                }
+            });
 
         json::display(result);
     }
