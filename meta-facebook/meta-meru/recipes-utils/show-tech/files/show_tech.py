@@ -95,6 +95,24 @@ def dumpOobStatus():
     print(runCmd("/usr/local/bin/oob-status.sh", echo=True, verbose=True))
 
 
+def switchcardDebugInfo(verbose=False):
+    print("################################")
+    print("##### SWITCHCARD DEBUG INFO ####")
+    print("################################\n")
+    if verbose:
+        print("##### SMB CPLD I2CDUMP #####\n")
+        print(runCmd("i2cdump -f -y 9 0x23 b", echo=True))
+
+
+def scmDebugInfo(verbose=False):
+    print("################################")
+    print("##### SUPERVISOR DEBUG INFO ####")
+    print("################################\n")
+    if verbose:
+        print("##### SCM CPLD I2CDUMP #####\n")
+        print(runCmd("i2cdump -f -y 12 0x43 b", echo=True))
+
+
 def logDump():
     print("################################")
     print("########## DEBUG LOGS ##########")
@@ -169,6 +187,8 @@ def showtech(quietLevel=0):
         dumpWeutil("bmc", verbose=verbose)
         dumpWeutil("scm", verbose=verbose)
         dumpWeutil("smb", verbose=verbose)
+        switchcardDebugInfo(verbose=verbose)
+        scmDebugInfo(verbose=verbose)
         dumpBootInfo()
         dumpOobStatus()
         i2cDetectDump()
