@@ -383,15 +383,13 @@ gpio_monitor_poll(void *ptr) {
   int board_rev = UNKNOWN_REV;
   int delay = 0;
 
-  do {
-    slot_type = fby35_common_get_slot_type(fru);
-    board_rev = (fby35_common_get_sb_rev(fru) & 0xF);
-    if (slot_type < 0 || board_rev < 0) {
-      syslog(LOG_WARNING, "fail to get slot_type:%d or board_rev:%d for fru %u", slot_type, board_rev, fru);
-    } else {
-      syslog(LOG_INFO, "get slot_type:%d or board_rev:%d for fru %u", slot_type, board_rev, fru);
-    }
-  } while (slot_type < 0 || board_rev < 0);
+  slot_type = fby35_common_get_slot_type(fru);
+  board_rev = fby35_common_get_sb_rev(fru) & 0xF;
+  if (slot_type < 0 || board_rev < 0) {
+    syslog(LOG_WARNING, "fail to get slot_type:%d or board_rev:%d for fru %u", slot_type, board_rev, fru);
+  } else {
+    syslog(LOG_INFO, "get slot_type:%d or board_rev:%d for fru %u", slot_type, board_rev, fru);
+  }
 
   /* Check for initial Asserts */
   gpios = get_struct_gpio_pin(fru);
