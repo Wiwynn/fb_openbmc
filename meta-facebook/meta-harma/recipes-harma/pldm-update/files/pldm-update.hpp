@@ -8,7 +8,7 @@
 class PldmUpdateApp {
 public:
     std::string pldmdBusName = "";
-    PldmUpdateApp(const std::string& description) : app(description) {
+    explicit PldmUpdateApp(const std::string& description) : app(description) {
         app.failure_message(CLI::FailureMessage::help);
         app.fallthrough();
     }

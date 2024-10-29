@@ -10,6 +10,11 @@
 #include <filesystem> // path, copy
 #include <thread>     // sleep_for
 #include <chrono>     // seconds
+#include <sys/file.h>
+
+namespace fs = std::filesystem;
+
+static constexpr auto softwareRoot = "/xyz/openbmc_project/software";
 
 class FileDescriptor {
 public:
@@ -19,6 +24,48 @@ public:
 private:
     int fd;
 };
+
+struct PldmUpdateLock
+{
+  int fd = -1;
+  PldmUpdateLock() 
+  {
+    fd = open("/tmp/pldm-update-ag.lock", O_CREAT | O_RDWR, 0666);
+    if (fd < 0)
+    {
+      std::cerr << "Cannot create/open /tmp/pldm-update-ag.lock" << std::endl;
+      throw std::runtime_error("Cannot create!");
+    }
+    if (flock(fd, LOCK_EX | LOCK_NB) < 0)
+    {
+      close(fd);
+      fd = -1;
+      throw std::runtime_error(
+        "Update aborted: The same process is still ongoing.");
+    }
+  }
+  ~PldmUpdateLock()
+  {
+    if (fd < 0)
+      return;
+    flock(fd, LOCK_UN);
+    close(fd);
+  }
+};
+
+template <typename Func>
+bool retry(Func func, int maxRetries, int delayS = 1)
+{
+    for (int attempt = 1; attempt <= maxRetries; ++attempt)
+    {
+        if (func())
+        {
+            return true;
+        }
+        std::this_thread::sleep_for(std::chrono::seconds(delayS));
+    }
+    return false;
+}
 
 bool
 is_pldmd_service_running(std::string& _pldmdBusName)
@@ -87,15 +134,17 @@ is_pldmd_service_running(std::string& _pldmdBusName)
     return true;
 }
 
-size_t
+std::string
 get_compute_software_id(const std::string& file)
 {
+    std::string softwareId{};
+
     FileDescriptor fd(open(file.c_str(), O_RDONLY));
     if (fd < 0) {
         std::cerr << "Cannot open "
                 << file
                 << std::endl;
-        return -1;
+        return softwareId;
     }
 
     auto offset = sizeof(pldm_package_header_information);
@@ -107,7 +156,7 @@ get_compute_software_id(const std::string& file)
         std::cerr << "Can not read "
                 << file
                 << std::endl;
-        return -1;
+        return softwareId;
     }
     auto pkgVerLen = pkgHdr->package_version_string_length;
     pkgData.resize(offset + pkgVerLen);
@@ -115,27 +164,28 @@ get_compute_software_id(const std::string& file)
         std::cerr << "Can not read "
                 << file
                 << std::endl;
-        return -1;
+        return softwareId;
     }
     auto str = std::string(
         reinterpret_cast<const char*>(pkgData.data()+offset), pkgVerLen);
 
-    return std::hash<std::string>{}(str);
+    softwareId = std::to_string(std::hash<std::string>{}(str));
+    return softwareId;
 }
 
 bool
-check_pldmd_software_object(std::string pldmdBusName, size_t softwareId)
+check_pldmd_software_object(const std::string& pldmdBusName, 
+                            const std::string& softwareId)
 {
     try {
         auto bus = sdbusplus::bus::new_default();
-        auto objPath = std::string(
-            "/xyz/openbmc_project/software/" + std::to_string(softwareId));
+        auto swObjPath = std::string(softwareRoot) + "/" + softwareId;
         auto interface = "org.freedesktop.DBus.Introspectable";
         auto method = "Introspect";
 
         auto msg = bus.new_method_call(
             pldmdBusName.c_str(),
-            objPath.c_str(),
+            swObjPath.c_str(),
             interface,
             method);
         auto reply = bus.call(msg);
@@ -147,13 +197,68 @@ check_pldmd_software_object(std::string pldmdBusName, size_t softwareId)
     return true;
 }
 
+bool
+delete_software_id(const std::string& pldmdBusName, 
+                   const std::string& softwareId)
+{
+    if (!check_pldmd_software_object(pldmdBusName, softwareId))
+    {
+        // software id object doesn't exist, we assume this operation success
+        return true;
+    }
+
+    auto bus = sdbusplus::bus::new_default();
+    auto swObjPath = std::string(softwareRoot) + "/" + softwareId;
+
+    auto method = bus.new_method_call(pldmdBusName.c_str(), 
+                                      swObjPath.c_str(), 
+                                      "org.freedesktop.DBus.Properties", 
+                                      "Get");
+    method.append("xyz.openbmc_project.Software.Activation", "Activation");
+    auto activationState = std::variant<std::string>();
+
+    try
+    {
+        auto reply = bus.call(method);
+        reply.read(activationState);
+
+        // if pldm update is activating, cannot call the delete method
+        if (std::get<std::string>(activationState) == 
+            "xyz.openbmc_project.Software.Activation.Activations.Activating")
+        {
+            return false;
+        }
+    }
+    catch(const sdbusplus::exception_t& e)
+    {
+        std::cerr << "Failed to get activation state: " << e.what() << std::endl;
+        return false;
+    }
+
+    method = bus.new_method_call(pldmdBusName.c_str(), 
+                                 swObjPath.c_str(), 
+                                 "xyz.openbmc_project.Object.Delete", 
+                                 "Delete");
+    try
+    {
+        bus.call_noreply(method);
+    }
+    catch(const sdbusplus::exception_t& e)
+    {
+        std::cerr << "Error deleting software ID " << softwareId << ": "
+                  << e.what() << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
 void
-active_update(std::string pldmdBusName, size_t softwareId)
+active_update(const std::string& pldmdBusName, const std::string& softwareId)
 {
     try {
         auto bus = sdbusplus::bus::new_default();
-        auto objPath = std::string(
-            "/xyz/openbmc_project/software/" + std::to_string(softwareId));
+        auto swObjPath = std::string(softwareRoot) + "/" + softwareId;
         auto interface = "xyz.openbmc_project.Software.Activation";
         auto property = "RequestedActivation";
         auto value = std::variant<std::string>{
@@ -161,7 +266,7 @@ active_update(std::string pldmdBusName, size_t softwareId)
 
         auto msg = bus.new_method_call(
             pldmdBusName.c_str(),
-            objPath.c_str(),
+            swObjPath.c_str(),
             "org.freedesktop.DBus.Properties",
             "Set");
 
@@ -174,18 +279,17 @@ active_update(std::string pldmdBusName, size_t softwareId)
 }
 
 uint8_t
-get_progress(std::string pldmdBusName, size_t softwareId)
+get_progress(const std::string& pldmdBusName, const std::string& softwareId)
 {
     try {
         auto bus = sdbusplus::bus::new_default();
-        auto objPath = std::string(
-            "/xyz/openbmc_project/software/" + std::to_string(softwareId));
+        auto swObjPath = std::string(softwareRoot) + "/" + softwareId;
         auto interface = "xyz.openbmc_project.Software.ActivationProgress";
         auto property = "Progress";
 
         auto msg = bus.new_method_call(
             pldmdBusName.c_str(),
-            objPath.c_str(),
+            swObjPath.c_str(),
             "org.freedesktop.DBus.Properties",
             "Get");
         msg.append(interface, property);
@@ -201,68 +305,90 @@ get_progress(std::string pldmdBusName, size_t softwareId)
     }
 }
 
-
 void
 PldmUpdateApp::pldm_update(const std::string& file)
 {
+    std::unique_ptr<PldmUpdateLock> lock;
+    try
+    {
+        lock = std::make_unique<PldmUpdateLock>();
+    }
+    catch (const std::runtime_error& e)
+    {
+        std::cerr << e.what() << std::endl;
+        return;
+    }
+
+    if (!fs::exists(file))
+    {
+        std::cerr << "Error: file " << file << " does not exist." << std::endl;
+        return;
+    }
+
     auto softwareId = get_compute_software_id(file);
-    auto pldmdBusCtlName = pldmdBusName;
+    if (softwareId.empty())
+    {
+        std::cerr << "Error: software ID is invalid." << std::endl;
+        return;
+    }
+
     std::cout << "pldm_update: " << file << std::endl;
     std::cout << "softwareId: " << softwareId << std::endl;
 
-    // copy file to /tmp/pldm_images/
     try {
-        auto src = std::filesystem::path(file);
-        auto dest = std::filesystem::path("/tmp/pldm_images/");
-        std::filesystem::copy(src, dest / src.filename());
-    } catch (const std::filesystem::filesystem_error& e) {
+        auto src = fs::path(file);
+        auto dest = fs::path("/tmp/pldm_images") / src.filename();
+        fs::copy(src, dest, fs::copy_options::overwrite_existing);
+    } catch (const fs::filesystem_error& e) {
         std::cerr << "Filesystem error: " << e.what() << std::endl;
+        return;
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
+        return;
     }
-
+    
     // wait for pldmd.service process
-    bool is_processed = false;
-    for (int retry = 0; retry <= 5; ++retry) {
-        std::this_thread::sleep_for(std::chrono::seconds(5));
-        is_processed = check_pldmd_software_object(pldmdBusCtlName, softwareId);
-        if (is_processed)
-            break;
-        if (retry == 5) {
-            std::cerr
-                << "Time out : "
-                << "pldmd.service did not process image."
-                << std::endl;
-            return;
-        }
+    if (!retry([&]() {
+        return check_pldmd_software_object(pldmdBusName, softwareId);
+    }, 10 /* attempts */, 3 /* delay in seconds */))
+    {
+        std::cerr << "Time out: pldmd.service did not process image.\n";
+        return;
     }
 
-    active_update(pldmdBusCtlName, softwareId);
-    for (int time = 0; time <= 200; ++time) {
+    active_update(pldmdBusName, softwareId);
+    for (int time = 0; time <= 200; ++time)
+    {
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        auto progress = get_progress(pldmdBusCtlName, softwareId);
+        auto progress = get_progress(pldmdBusName, softwareId);
 
         if (progress == 0xFF) {
             break;
         } else if (time == 200) {
-            std::cout
-                << std::endl
-                << "Time out : "
-                << "pldmd.service did not finish update.";
+            std::cout << "\nTime out : pldmd.service did not finish update."
+                      << std::endl;
             break;
         } else if (progress <= 100) {
             std::cout << "\rCurrent progress: "
-                << static_cast<int>(progress)
-                << "/100 ("
-                << time
-                << "s)"
-                << std::flush;
-            if (progress == 100)
+                      << static_cast<int>(progress) << "/100 (" << time << "s)" 
+                      << std::flush;
+            if (progress == 100) {
+                std::cout << "\nUpdate of software ID " << softwareId 
+                          << ": succeeded." << std::endl;
                 break;
+            }
         }
     }
 
-    std::cout << std::endl;
+    if (!retry([&]() { 
+        return delete_software_id(pldmdBusName, softwareId);
+    }, 10 /* attempts */))
+    {
+        std::cerr << "Failed to delete software ID: "
+                  << "Object " << softwareRoot << "/" << softwareId
+                  << " is stuck in \"Activating\" state." << std::endl;
+        return;
+    }
 }
 
 int
