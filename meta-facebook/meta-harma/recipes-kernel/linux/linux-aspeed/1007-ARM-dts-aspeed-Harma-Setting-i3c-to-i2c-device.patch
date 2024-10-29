@@ -13,13 +13,14 @@ diff --git a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-harma.dts b/arch/arm/b
 index 9d3010c6d93b..89e2ee7af5ca 100644
 --- a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-harma.dts
 +++ b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-harma.dts
-@@ -756,3 +756,51 @@ &sgpiom0 {
+@@ -756,3 +756,53 @@ &sgpiom0 {
  	/*P4-P7 line 248-255*/
  	"","","","","","","","";
  };
 +
 +&i3c0 {
 +	status = "okay";
++	i2c-scl-hz = <100000>;
 +//PMIC
 +	eeprom@48 {
 +		compatible = "eeprom";
@@ -44,6 +45,7 @@ index 9d3010c6d93b..89e2ee7af5ca 100644
 +
 +&i3c1 {
 +	status = "okay";
++	i2c-scl-hz = <100000>;
 +//PMIC
 +	eeprom@48 {
 +		compatible = "eeprom";
