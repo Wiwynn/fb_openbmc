@@ -11578,8 +11578,9 @@ int pal_is_bic_ready(uint8_t fru, uint8_t *status) {
 }
 
 int
-pal_bic_self_test(__attribute__((unused)) uint8_t fru) {
-  return PAL_EOK;
+pal_bic_self_test(uint8_t fru) {
+  uint8_t result[SIZE_SELF_TEST_RESULT] = {0};
+  return bic_get_self_test_result(fru, result);
 }
 
 #if defined CONFIG_FBY2_ND
