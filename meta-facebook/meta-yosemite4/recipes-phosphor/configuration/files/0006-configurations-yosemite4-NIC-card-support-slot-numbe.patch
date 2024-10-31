@@ -1,7 +1,7 @@
-From b1a6239ecccac697a073709b50b72e72d491aca4 Mon Sep 17 00:00:00 2001
+From e9d09e8b03a6e89efae7b5af17d018ba86f2dc09 Mon Sep 17 00:00:00 2001
 From: IngridChen-wiwynn <Ingrid_Chen@wiwynn.com>
 Date: Mon, 12 Aug 2024 11:41:09 +0800
-Subject: [PATCH 6/6] configurations: yosemite4: NIC card support slot number
+Subject: [PATCH 4/4] configurations: yosemite4: NIC card support slot number
 
 Support NIC card with slot number.
 ---
@@ -50,5 +50,5 @@ index 19e8548..d9ddd14 100644
      }
  }
 -- 
-2.44.2
+2.25.1
 

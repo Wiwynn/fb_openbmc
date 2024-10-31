@@ -1,7 +1,7 @@
-From 89c47be4dd8221c3add634b96b6f38eddf698b8d Mon Sep 17 00:00:00 2001
+From 0ade2ee9b87e5e52bcacc163dcfe3014d3af02c9 Mon Sep 17 00:00:00 2001
 From: Delphine CC Chiu <Delphine_CC_Chiu@wiwynn.com>
 Date: Thu, 7 Mar 2024 10:41:16 +0800
-Subject: [PATCH 4/6] configurations: yosemite4: Add IANA for sentinel dome
+Subject: [PATCH 2/4] configurations: yosemite4: Add IANA for sentinel dome
 
 Configuring IANA for devices indicates which OEM sets we should be
 using on which hardware.
@@ -22,48 +22,48 @@ Signed-off-by: Delphine CC Chiu <Delphine_CC_Chiu@wiwynn.com>
  5 files changed, 10 insertions(+)
 
 diff --git a/configurations/yosemite4_sentineldome_t1.json b/configurations/yosemite4_sentineldome_t1.json
-index cc0f86d..19e9358 100644
+index 2663d1a..9e1718d 100644
 --- a/configurations/yosemite4_sentineldome_t1.json
 +++ b/configurations/yosemite4_sentineldome_t1.json
 @@ -344,6 +344,7 @@
-             "Bus": "$bus % 16",
-             "Class": "I2C",
+             "Bus": "$bus / 4 - 4",
+             "Class": "I3C",
              "EndpointId": "$bus % 15 * 10",
 +            "IANA": "0015A000",
              "Name": "BIC",
              "Type": "MCTPEndpoint"
          }
 diff --git a/configurations/yosemite4_sentineldome_t1_retimer.json b/configurations/yosemite4_sentineldome_t1_retimer.json
-index 45e3307..bc2e8c8 100644
+index aaa8cd2..e4fc931 100644
 --- a/configurations/yosemite4_sentineldome_t1_retimer.json
 +++ b/configurations/yosemite4_sentineldome_t1_retimer.json
 @@ -404,6 +404,7 @@
-             "Bus": "$bus % 16",
-             "Class": "I2C",
+             "Bus": "$bus / 4 - 4",
+             "Class": "I3C",
              "EndpointId": "$bus % 15 * 10",
 +            "IANA": "0015A000",
              "Name": "BIC",
              "Type": "MCTPEndpoint"
          }
 diff --git a/configurations/yosemite4_sentineldome_t2.json b/configurations/yosemite4_sentineldome_t2.json
-index 2ebede8..f1076cc 100644
+index d765305..f8e7b9e 100644
 --- a/configurations/yosemite4_sentineldome_t2.json
 +++ b/configurations/yosemite4_sentineldome_t2.json
 @@ -405,6 +405,7 @@
-             "Bus": "$bus % 16",
-             "Class": "I2C",
+             "Bus": "$bus / 4 - 4",
+             "Class": "I3C",
              "EndpointId": "$bus % 15 * 10",
 +            "IANA": "0015A000",
              "Name": "BIC",
              "Type": "MCTPEndpoint"
          }
 diff --git a/configurations/yosemite4_sentineldome_t2_retimer.json b/configurations/yosemite4_sentineldome_t2_retimer.json
-index 1859b58..4cc0ea5 100644
+index 38a26ed..84f5e65 100644
 --- a/configurations/yosemite4_sentineldome_t2_retimer.json
 +++ b/configurations/yosemite4_sentineldome_t2_retimer.json
 @@ -465,6 +465,7 @@
-             "Bus": "$bus % 16",
-             "Class": "I2C",
+             "Bus": "$bus / 4 - 4",
+             "Class": "I3C",
              "EndpointId": "$bus % 15 * 10",
 +            "IANA": "0015A000",
              "Name": "BIC",
@@ -94,5 +94,5 @@ index 54837c2..0d1999b 100644
                  "type": "number"
              },
 -- 
-2.44.2
+2.25.1
 
