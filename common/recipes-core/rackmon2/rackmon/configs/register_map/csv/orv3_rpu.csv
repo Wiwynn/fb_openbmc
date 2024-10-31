@@ -84,7 +84,7 @@ begin,length,keep,changes_only,flags_bit,flags_name,format,endian,interval,preci
 37137,1,,,,,FLOAT,,,0,,0.1,,HEX_Air_Inlet2_Temp_C
 37138,1,,,,,FLOAT,,,0,,0.1,,HEX_Water_Inlet_Temp_C
 37139,1,,,,,INTEGER,,,,,,,HEX_Bladder_Level_Status
-37140,1,,,,,FLOAT,,,0,,0.1,,HEX_External_Y_Filter_Pressure
+37140,1,,,,,FLOAT,,,0,True,0.1,,HEX_External_Y_Filter_Pressure
 37141,1,,,,,INTEGER,,,,,,,HEX_Static_Pressure
 37142,1,,,,,INTEGER,,,,,,,HEX_Vertical_Bladder_Level
 37375,1,,,,,FLAGS,,,,,,,AALC_Sensor_Alarm

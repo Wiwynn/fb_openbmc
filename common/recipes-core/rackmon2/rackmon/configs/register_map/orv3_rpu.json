@@ -549,6 +549,7 @@
             "length": 1,
             "format": "FLOAT",
             "precision": 0,
+            "sign": true,
             "scale": 0.1,
             "name": "HEX_External_Y_Filter_Pressure"
         },
