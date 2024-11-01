@@ -1,0 +1,22 @@
+#!/bin/bash
+# shellcheck source=meta-facebook/meta-yosemite4/recipes-yosemite4/plat-tool/files/yosemite4-common-functions
+source /usr/libexec/yosemite4-common-functions
+
+is_nuvoton_board="$(check_nuvoton_board)"
+
+if [ -z "$is_nuvoton_board" ]
+then
+    # adjust base clock 3 divisor for 100khz busses
+    devmem 0x1E78A010 32 0xC6421208
+
+    # adjust i2c CLK low time margin for bus 10
+    devmem 0x1E78A584 32 0x009AE002
+
+    # adjust i2c CLK high time margin for bus 11
+    devmem 0x1E78A604 32 0x00DEF003
+
+    # adjust i2c frequency for bus 14
+    devmem 0x1E78A784 32 0x0078C002
+fi
+
+exit 0
