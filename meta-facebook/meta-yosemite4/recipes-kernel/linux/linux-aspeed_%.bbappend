@@ -24,5 +24,5 @@ SRC_URI += " \
     file://1021-ARM-dts-aspeed-yosemite4-add-Spider-Board-SQ52205-dr.patch \
     file://1022-ARM-dts-aspeed-yosemite4-add-GPIO-I6-to-dts.patch \
     file://1023-ARM-dts-aspeed-yosemite4-modify-I2C-mode-and-freq.patch \
-    file://yosemite4.cfg \
+    file://yosemite4-local.cfg \
 "
