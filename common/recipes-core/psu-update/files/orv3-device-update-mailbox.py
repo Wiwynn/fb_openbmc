@@ -115,9 +115,13 @@ def boot_mode(addr, boot_mode):
         verify_firmware_status(addr, NORMAL_OPERATION_MODE)
 
 
+def get_firmware_status(addr):
+    return rmd.read(addr, 0x302, timeout=1000)[0]
+
+
 def verify_firmware_status_noretry(addr, expected_status):
     # ensure 0x302 register contains expected status
-    a = rmd.read(addr, 0x302, timeout=1000)[0]
+    a = get_firmware_status(addr)
     if a != expected_status:
         raise ValueError(
             "Bad firmware state: 0x%02x expected: 0x%02x"
@@ -184,11 +188,34 @@ def verify_firmware(addr):
     rmd.write(addr, 0x303, 0x55AA, 10000)
 
 
+def workaround_bad_mode(addr):
+    curr_mode = get_firmware_status(addr)
+    if curr_mode == NORMAL_OPERATION_MODE:
+        return
+    print(
+        "WARNING: Current firmware in status %02x. Expected %02x"
+        % (curr_mode, NORMAL_OPERATION_MODE)
+    )
+    print("Initiating remediation")
+    # Assume previous aborted upgrade.
+    verify_firmware(addr)
+    time.sleep(10.0)
+    exit_boot_mode(addr)
+    time.sleep(1.0)
+    curr_mode = get_firmware_status(addr)
+    if curr_mode != NORMAL_OPERATION_MODE:
+        print("ERROR: Workaround to recover firmware from mode failed.")
+        print("Current status: %02x" % (curr_mode))
+        print("Continuing upgrade hoping for the best")
+    unlock_firmware(addr)
+
+
 def update_device(addr, filename, vendor_param):
     print("Parsing Firmware...")
     binimg = load_file(filename)
     print("Unlock Engineering Mode")
     unlock_firmware(addr)
+    workaround_bad_mode(addr)
     with boot_mode(addr, vendor_param["boot_mode"]):
         print("Transferring image")
         time.sleep(5.0)
