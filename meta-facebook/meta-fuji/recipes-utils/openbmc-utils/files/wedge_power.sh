@@ -121,6 +121,12 @@ do_on() {
         fi
     fi
 
+    # S460320: adjust clock settings if needed.
+    if ! /usr/local/bin/improve_aura_pll.sh; then
+        echo "Error: unable to fixup clock settings (S460320)!"
+        exit 1
+    fi
+
     # power on sequence
     do_on_com_e
     ret=$?
@@ -209,6 +215,12 @@ do_reset() {
                 ;;
         esac
     done
+
+    # S460320: adjust clock settings if needed.
+    if ! /usr/local/bin/improve_aura_pll.sh; then
+        echo "Error: unable to fixup clock settings (S460320)!"
+        exit 1
+    fi
 
     if [ $system -eq 1 ]; then
             if [ $timer -eq 1 ]; then

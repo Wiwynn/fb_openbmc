@@ -53,6 +53,7 @@ LOCAL_URI += " \
     file://setup_gpio.service \
     file://i2c_sensor_fixup.sh \
     file://reset_pim_i2c_mux.sh \
+    file://improve_aura_pll.sh \
     "
 
 OPENBMC_UTILS_FILES += " \
@@ -81,6 +82,7 @@ OPENBMC_UTILS_FILES += " \
     wedge_us_mac.sh \
     i2c_sensor_fixup.sh \
     reset_pim_i2c_mux.sh \
+    improve_aura_pll.sh \
     "
 DEPENDS:append = " update-rc.d-native"
 inherit systemd
