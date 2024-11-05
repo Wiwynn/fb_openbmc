@@ -91,7 +91,7 @@ int CpldComponent::get_version(json& j) {
   string fru  = this->fru();
   transform(comp.begin(), comp.end(),comp.begin(), ::toupper);
   transform(fru.begin(), fru.end(),fru.begin(), ::toupper);
-  j["PRETTY_COMPONENT"] = comp;
+  j["PRETTY_COMPONENT"] = fru + "_" + comp;
 
   if (!cpld_intf_open(pld_type, INTF_I2C, attr)) {
     ret = cpld_get_ver((uint32_t *)ver);
