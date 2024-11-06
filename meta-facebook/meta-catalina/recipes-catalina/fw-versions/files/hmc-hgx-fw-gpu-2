@@ -14,7 +14,7 @@ do
         echo "version: $version"
         busctl set-property \
             xyz.openbmc_project.Settings \
-            /xyz/openbmc_project/software/chassis/HGX_FW_GPU_2 \
+            /xyz/openbmc_project/software/chassis/HGX_gpu_2 \
             xyz.openbmc_project.Software.Version \
             Version "s" "$version"
         exit 0

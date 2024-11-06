@@ -6,6 +6,6 @@ echo "version: $version"
 
 busctl set-property \
     xyz.openbmc_project.Settings \
-    /xyz/openbmc_project/software/chassis/bmc_tpm \
+    /xyz/openbmc_project/software/chassis/Catalina_SCM_tpm \
     xyz.openbmc_project.Software.Version \
     Version "s" "$version"
