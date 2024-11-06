@@ -7,6 +7,7 @@ HMC_URL_PREFIX="http://${HMC_IP}"
 FW_UPDATE_URL="${HMC_URL_PREFIX}/redfish/v1/UpdateService/update-multipart"
 FW_INVENTORY_URL="${HMC_URL_PREFIX}/redfish/v1/UpdateService/FirmwareInventory"
 MANAGERS_HGX_BMC_0="${HMC_URL_PREFIX}/redfish/v1/Managers/HGX_BMC_0"
+CURL_CONNECT_TIMEOUT=3
 
 HMC_MANG_COMP_LIST=(
     "HGX_FW_BMC_0"
@@ -43,7 +44,7 @@ is_hmc_managed_fw_comp()
 
 get_comp_version()
 {
-    CURL_CMD="curl -s '${FW_INVENTORY_URL}/$1'"
+    CURL_CMD="curl --connect-timeout ${CURL_CONNECT_TIMEOUT} -s '${FW_INVENTORY_URL}/$1'"
     if ! CURL_DATA=$(eval "${CURL_CMD}"); then
         # HMC not response
         echo "$1 : NA"
@@ -60,7 +61,7 @@ get_comp_version()
 
 get_all_comp_version()
 {
-    CURL_CMD="curl -s '${FW_INVENTORY_URL}?\$expand=.(\$levels=1)'"
+    CURL_CMD="curl --connect-timeout ${CURL_CONNECT_TIMEOUT} -s '${FW_INVENTORY_URL}?\$expand=.(\$levels=1)'"
     if ! CURL_DATA=$(eval "${CURL_CMD}"); then
         echo "failed: HMC not response."
         return 1
@@ -72,7 +73,7 @@ get_all_comp_version()
 
 get_all_firmware_path_without_sbios()
 {
-    CURL_CMD="curl -s '${FW_INVENTORY_URL}'"
+    CURL_CMD="curl --connect-timeout ${CURL_CONNECT_TIMEOUT} -s '${FW_INVENTORY_URL}'"
     if ! CURL_DATA=$(eval "${CURL_CMD}"); then
         return 1
     fi
@@ -126,7 +127,7 @@ update_comp()
         FORCE_UPDATE=", \"ForceUpdate\":true"
     fi
 
-    CURL_CMD="curl -s -u root:0penBmc -H 'Expect:' -L -X POST '${FW_UPDATE_URL}' -F 'UpdateParameters={\"Targets\":[$TARGET_STR]$FORCE_UPDATE} ;type=application/json' -F UpdateFile=@$2"
+    CURL_CMD="curl --connect-timeout ${CURL_CONNECT_TIMEOUT} -s -u root:0penBmc -H 'Expect:' -L -X POST '${FW_UPDATE_URL}' -F 'UpdateParameters={\"Targets\":[$TARGET_STR]$FORCE_UPDATE} ;type=application/json' -F UpdateFile=@$2"
     echo "CMD: ${CURL_CMD}"
     if ! CURL_DATA=$(eval "${CURL_CMD}"); then
         echo "failed: HMC not response."
@@ -141,7 +142,7 @@ update_comp()
     for (( retry = 0; retry < 500; retry++ ))
     do
         sleep 10
-        CURL_CMD="curl -s http://${HMC_IP}${TASK_ID}"
+        CURL_CMD="curl --connect-timeout ${CURL_CONNECT_TIMEOUT} -s http://${HMC_IP}${TASK_ID}"
         if ! CURL_DATA=$(eval "${CURL_CMD}"); then
             echo "failed: HMC not response."
             return 1
@@ -184,7 +185,7 @@ update_comp()
 set_hmc_datetime()
 {
     BMC_DATETIME=$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")
-    CURL_CMD="curl -s -X PATCH '${MANAGERS_HGX_BMC_0}' -d '{\"DateTime\":\"${BMC_DATETIME}\"}'"
+    CURL_CMD="curl --connect-timeout ${CURL_CONNECT_TIMEOUT} -s -X PATCH '${MANAGERS_HGX_BMC_0}' -d '{\"DateTime\":\"${BMC_DATETIME}\"}'"
 
     if ! eval "${CURL_CMD}"; then
         echo "HMC datetime set failed."

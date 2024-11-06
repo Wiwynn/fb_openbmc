@@ -3,7 +3,7 @@ Description=Sync HMC Datetime
 After=catalina-sys-init.service
 
 [Service]
-Type=oneshot
+Type=simple
 ExecStart=/usr/bin/hmc-util --sync-datetime 30 10
 SyslogIdentifier=sync-hmc-datetime
 
