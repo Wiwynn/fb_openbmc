@@ -52,7 +52,7 @@ enum UnifiedErrorType
 
 std::string formatHex(uint32_t value, int width = 2);
 int addOemSectionHandlerMap(SectionHandlerMap& sectionHandlerMap);
-int parseCperFile(const std::string& file, std::vector<std::string>& results);
+int parseCperFile(const std::string& file, std::vector<std::string>& entries);
 int createCperDumpEntry(const uint8_t& payloadId, 
                         const uint8_t* data, const size_t& dataSize);
 

@@ -34,6 +34,9 @@ namespace cper
 namespace fs = std::filesystem;
 using ordered_json = nlohmann::ordered_json;
 
+static constexpr auto aerMaskBits = 32;
+static constexpr auto pcieDpcErrorId = 0x53;
+
 // PCI Express Base Specification Revision 5.0 Version 1.0/Section 7.8.4
 struct AerInfo
 {
@@ -56,7 +59,7 @@ struct PCIeErrorIdInfo{
   std::string errorDesc;
 };
 
-static const PCIeErrorIdInfo uncorrectableErrorIdTable[] = {
+static const PCIeErrorIdInfo uncorrectableErrorIdTable[aerMaskBits] = {
     {INVALID_ID, INVALID_ERROR_DESC},
     {INVALID_ID, INVALID_ERROR_DESC},
     {INVALID_ID, INVALID_ERROR_DESC},
@@ -91,7 +94,7 @@ static const PCIeErrorIdInfo uncorrectableErrorIdTable[] = {
     {INVALID_ID, INVALID_ERROR_DESC},
 };
 
-static const PCIeErrorIdInfo correctableErrorIdTable[] = {
+static const PCIeErrorIdInfo correctableErrorIdTable[aerMaskBits] = {
     {0x00, "Receiver Error"},
     {INVALID_ID, INVALID_ERROR_DESC},
     {INVALID_ID, INVALID_ERROR_DESC},
@@ -126,6 +129,29 @@ static const PCIeErrorIdInfo correctableErrorIdTable[] = {
     {INVALID_ID, INVALID_ERROR_DESC},
 };
 
+std::string getErrorDescription(const uint8_t& errorId)
+{
+  if (errorId == pcieDpcErrorId)
+  {
+    return "DPC triggered by uncorrectable error";
+  }
+
+  auto errorIdInfo = correctableErrorIdTable;
+  if (errorId >= 0x20) // Uncorrectable error ID starts at 0x20
+  {
+    errorIdInfo = uncorrectableErrorIdTable;
+  }
+  
+  for (size_t i = 0; i < aerMaskBits; ++i)
+  {
+    if (errorId == errorIdInfo[i].errorId)
+    {
+      return errorIdInfo[i].errorDesc;
+    }
+  }
+  return INVALID_ERROR_DESC;
+}
+
 std::string formatHex(uint32_t value, int width)
 {
   std::ostringstream oss;
@@ -134,9 +160,82 @@ std::string formatHex(uint32_t value, int width)
   return oss.str();
 }
 
+static std::string formatProcessorSEL(const int& socket,
+                                      const std::string& errorType,
+                                      const std::string& severity)
+{
+  std::ostringstream oss;
+  oss << "Record: Facebook Unified SEL (0xFB), GeneralInfo: ProcessorErr"
+      << "(0x" << formatHex(UNIFIED_PROC_ERR) << "), "
+      << "Location: Socket " << formatHex(socket) << ", "
+      << "Error Type: " << errorType << ", "
+      << "Error Severity: " << severity;
+  return oss.str();
+}
+
+static std::string formatMemorySEL(const int& sled,
+                                   const int& socket,
+                                   const int& channel,
+                                   const std::string& errorType)
+{
+  std::ostringstream oss;
+  oss << "Record: Facebook Unified SEL (0xFB), GeneralInfo: MEMORY_ECC_ERR"
+      << "(0x" << formatHex(UNIFIED_MEM_ERR) << "), "
+      << "DIMM Slot Location: "
+      << "Sled " << formatHex(sled) << "/" 
+      << "Socket " << formatHex(socket) << ", "
+      << "Channel " << formatHex(channel) << ", "
+      << "DIMM Failure Event: " << errorType;
+  return oss.str();
+}
+
+static std::string formatPCIeSEL(const int& segment, const int& bus,
+                                 const int& dev, const int& fun,
+                                 const uint8_t& errorId1,
+                                 const uint8_t& errorId2)
+{
+  auto errorDesc1 = getErrorDescription(errorId1);
+  auto errorDesc2 = getErrorDescription(errorId2);
+
+  std::ostringstream oss;
+  oss << "Record: Facebook Unified SEL (0xFB), GeneralInfo: PCIeErr"
+      << "(0x" << formatHex(UNIFIED_PCIE_ERR) << "), "
+      << "Segment " << formatHex(segment) << "/"
+      << "Bus " << formatHex(bus) << "/"
+      << "Dev " << formatHex(dev) << "/"
+      << "Fun " << formatHex(fun) << ", "
+      << "ErrID2: 0x" << formatHex(errorId2) << "(" << errorDesc2 << "), "
+      << "ErrID1: 0x" << formatHex(errorId1) << "(" << errorDesc1 << ")";
+  return oss.str();
+}
+
+static std::string formatNvidiaSEL(const std::string& sectionType, 
+                                   const std::string& severity,
+                                   const ordered_json& sectionData)
+{
+  int errorType = sectionData["errorType"];
+  int instanceBase = sectionData["errorInstance"];
+  int numberRegs = sectionData["numberRegs"];
+  std::string signature = sectionData["signature"];
+  uint32_t regValue = 0;
+
+  std::ostringstream oss;
+  oss << "Section Type: " << sectionType << ", "
+      << "Error Severity: " << severity << ", "
+      << "Signature: " << signature << ", "
+      << "Error Type: 0x" << formatHex(errorType) << ", "
+      << "Instance Base: 0x" << formatHex(instanceBase);
+
+  for (int reg = 0; reg < numberRegs; ++reg)
+  {
+    regValue = sectionData["registers"][reg]["value"];
+    oss << ", Reg" << reg + 1 << " value: 0x" << formatHex(regValue);
+  }
+  return oss.str();
+}
+
 static int parsePCIeAerData(const ordered_json& aerdata,
-                            uint8_t& errorId1, uint8_t& errorId2,
-                            std::string& errorDesc1, std::string& errorDesc2)
+                            uint8_t& errorId1, uint8_t& errorId2)
 {
   auto encoded = aerdata.get<std::string>();
 
@@ -152,9 +251,7 @@ static int parsePCIeAerData(const ordered_json& aerdata,
 
   errorId1 = INVALID_ID;
   errorId2 = INVALID_ID;
-  errorDesc1 = INVALID_ERROR_DESC;
-  errorDesc2 = INVALID_ERROR_DESC;
-  std::bitset<32> statusBits;
+  std::bitset<aerMaskBits> statusBits;
   const PCIeErrorIdInfo* errorIdInfo = nullptr;
   auto aerInfo = reinterpret_cast<const AerInfo*>(decoded.data());
 
@@ -173,19 +270,17 @@ static int parsePCIeAerData(const ordered_json& aerdata,
     return CPER_HANDLE_SUCCESS;
   }
 
-  for (int i = 0; i < 32; ++i)
+  for (int i = 0; i < aerMaskBits; ++i)
   {
     if (statusBits[i])
     {
       if (errorId1 == INVALID_ID)
       {
         errorId1 = errorIdInfo[i].errorId;
-        errorDesc1 = errorIdInfo[i].errorDesc;
       }
       else if (errorId2 == INVALID_ID)
       {
         errorId2 = errorIdInfo[i].errorId;
-        errorDesc2 = errorIdInfo[i].errorDesc;
       }
       else
       {
@@ -210,14 +305,7 @@ static int processorSectionHandler(const ordered_json& sectionDescriptor,
   std::string errorType = sectionData["errorInfo"][0]["errorType"]["name"];
   std::string severity = sectionDescriptor["severity"]["name"];
 
-  std::ostringstream oss;
-  oss << "Record: Facebook Unified SEL (0xFB), GeneralInfo: ProcessorErr"
-      << "(0x" << formatHex(UNIFIED_PROC_ERR) << "), "
-      << "Location: Socket 00, "
-      << "Error Type: " << errorType << ", "
-      << "Error Severity: " << severity;
-
-  errorMsg = oss.str();
+  errorMsg = formatProcessorSEL(0x00, errorType, severity);
   return CPER_HANDLE_SUCCESS;
 }
 
@@ -235,16 +323,8 @@ static int memorySectionHandler(const ordered_json& sectionDescriptor,
   int socket = sectionData["node"];
   int channel = sectionData["device"];
   std::string errorType = sectionData["memoryErrorType"]["name"];
-
-  std::ostringstream oss;
-  oss << "Record: Facebook Unified SEL (0xFB), GeneralInfo: MEMORY_ECC_ERR"
-      << "(0x" << formatHex(UNIFIED_MEM_ERR) << "), "
-      << "DIMM Slot Location: "
-      << "Sled 00/" << "Socket " << formatHex(socket) << ", "
-      << "Channel " << formatHex(channel) << ", "
-      << "DIMM Failure Event: " << errorType;
-
-  errorMsg = oss.str();
+  
+  errorMsg = formatMemorySEL(0x00, socket, channel, errorType);
   return CPER_HANDLE_SUCCESS;
 }
 
@@ -258,11 +338,10 @@ static int pcieSectionHandler(const ordered_json& sectionDescriptor,
     return CPER_HANDLE_FAIL;
   }
 
-  auto& aerdata = sectionData["aerInfo"]["data"];
+  const auto& aerdata = sectionData["aerInfo"]["data"];
   uint8_t errorId1, errorId2;
-  std::string errorDesc1, errorDesc2;
 
-  if (parsePCIeAerData(aerdata, errorId1, errorId2, errorDesc1, errorDesc2))
+  if (parsePCIeAerData(aerdata, errorId1, errorId2))
   {
     return CPER_HANDLE_FAIL;
   }
@@ -272,17 +351,7 @@ static int pcieSectionHandler(const ordered_json& sectionDescriptor,
   int dev = sectionData["deviceID"]["deviceNumber"];
   int func = sectionData["deviceID"]["functionNumber"];
 
-  std::ostringstream oss;
-  oss << "Record: Facebook Unified SEL (0xFB), GeneralInfo: PCIeErr"
-      << "(0x" << formatHex(UNIFIED_PCIE_ERR) << "), "
-      << "Segment " << formatHex(segment) << "/"
-      << "Bus " << formatHex(bus) << "/"
-      << "Dev " << formatHex(dev) << "/"
-      << "Fun " << formatHex(func) << ", "
-      << "ErrID2: 0x" << formatHex(errorId2) << "(" << errorDesc2 << "), "
-      << "ErrID1: 0x" << formatHex(errorId1) << "(" << errorDesc1 << ")";
-
-  errorMsg = oss.str();
+  errorMsg = formatPCIeSEL(segment, bus, dev, func, errorId1, errorId2);
   return CPER_HANDLE_SUCCESS;
 }
 
@@ -292,7 +361,11 @@ static int nvidiaSectionHandler(const ordered_json& sectionDescriptor,
 {
   static const std::vector<std::string> procSignatures = {
     "MCF", "DCC-COH", "DCC-ECC", "CLink", "CCPLEXGIC", "CCPLEXSCF",
-    "C2C", "C2C-IP-FAIL",
+    "C2C", "C2C-IP-FAIL", "SOCHUB", "HSM",
+  };
+
+  static const std::vector<std::string> pcieSignatures = {
+    "PCIe", "PCIe-DPC",
   };
 
   if (!sectionDescriptor.contains("severity") ||
@@ -307,37 +380,33 @@ static int nvidiaSectionHandler(const ordered_json& sectionDescriptor,
   std::string severity = sectionDescriptor["severity"]["name"];
   std::string signature = sectionData["signature"];
 
-  std::ostringstream oss;
   if (std::find(procSignatures.begin(), procSignatures.end(), signature)
       != procSignatures.end())
   {
-    oss << "Record: Facebook Unified SEL (0xFB), GeneralInfo: ProcessorErr"
-        << "(0x" << formatHex(UNIFIED_PROC_ERR) << "), "
-        << "Location: Socket 00, "
-        << "Error Type: " << signature << ", "
-        << "Error Severity: " << severity;
+    errorMsg = formatProcessorSEL(0x00, signature, severity);
+  }
+  else if (std::find(pcieSignatures.begin(), pcieSignatures.end(), signature)
+          != pcieSignatures.end())
+  {
+    // TODO: Populate the BDF and error IDs with valid values. 
+    // The BDF is first assigned an initial value of 00 to establish the 
+    // PCIe unified SEL until we confirm with NVIDIA how to retrieve the BDF 
+    // from the NVIDIA CPER.
+    int segment = 0x00, bus = 0x00, dev = 0x00, fun = 0x00;
+    uint8_t errorId1 = INVALID_ID, errorId2 = INVALID_ID;
+
+    if (signature == "PCIe-DPC")
+    {
+      errorId1 = pcieDpcErrorId;
+    }
+
+    errorMsg = formatPCIeSEL(segment, bus, dev, fun, errorId1, errorId2);
   }
   else
   {
-    int errorType = sectionData["errorType"];
-    int instanceBase = sectionData["errorInstance"];
-    int numberRegs = sectionData["numberRegs"];
-    uint32_t regValue = 0;
-
-    oss << "Section Type: " << sectionType << ", "
-        << "Error Severity: " << severity << ", "
-        << "Signature: " << signature << ", "
-        << "Error Type: 0x" << formatHex(errorType) << ", "
-        << "Instance Base: 0x" << formatHex(instanceBase);
-
-    for (int reg = 0; reg < numberRegs; ++reg)
-    {
-      regValue = sectionData["registers"][reg]["value"];
-      oss << ", Reg" << reg + 1 << " value: 0x" << formatHex(regValue);
-    }
+    errorMsg = formatNvidiaSEL(sectionType, severity, sectionData);
   }
-
-  errorMsg = oss.str();
+  
   return CPER_HANDLE_SUCCESS;
 }
 
