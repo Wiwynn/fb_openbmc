@@ -1,4 +1,4 @@
-From 985568983e5266eedc95e1453cb8370d4b4f84e5 Mon Sep 17 00:00:00 2001
+From 8a0370f271d2db6238f61044e66e9964574586d7 Mon Sep 17 00:00:00 2001
 From: lora <lora.lin.wiwynn@gmail.com>
 Date: Fri, 27 Sep 2024 14:51:48 +0800
 Subject: [PATCH 04/12] platform-mc: Add OEM Meta event handler
@@ -67,11 +67,11 @@ Signed-off-by: Delphine CC Chiu <Delphine_CC_Chiu@wiwynn.com>
  create mode 100644 oem/meta/platform-mc/event_oem_meta.hpp
 
 diff --git a/meson.build b/meson.build
-index e9177e6..e849a9b 100644
+index 6e5c57a..acb022b 100644
 --- a/meson.build
 +++ b/meson.build
-@@ -253,6 +253,7 @@ executable(
-     'platform-mc/event_manager.cpp',
+@@ -260,6 +260,7 @@ executable(
+     oem_files,
      'requester/mctp_endpoint_discovery.cpp',
      'requester/configuration_discovery_handler.cpp',
 +    'oem/meta/platform-mc/event_oem_meta.cpp',
@@ -1123,10 +1123,10 @@ index 0e8bc87..d1bf36e 100644
      include_directories: ['../../requester', '../../pldmd'],
  )
 diff --git a/pldmd/pldmd.cpp b/pldmd/pldmd.cpp
-index 8ebb9ce..bf74b28 100644
+index 7907961..5d83747 100644
 --- a/pldmd/pldmd.cpp
 +++ b/pldmd/pldmd.cpp
-@@ -287,7 +287,8 @@ int main(int argc, char** argv)
+@@ -290,7 +290,8 @@ int main(int argc, char** argv)
      // Platform handler.
  
      std::unique_ptr<platform_mc::Manager> platformManager =
@@ -1136,7 +1136,7 @@ index 8ebb9ce..bf74b28 100644
  
      pldm::responder::platform::EventMap addOnEventHandlers{
          {PLDM_CPER_EVENT,
-@@ -310,6 +311,13 @@ int main(int argc, char** argv)
+@@ -313,6 +314,13 @@ int main(int argc, char** argv)
                               size_t eventDataOffset) {
               return platformManager->handleSensorEvent(
                   request, payloadLength, formatVersion, tid, eventDataOffset);

@@ -1,4 +1,4 @@
-From 49715aba72abc14f5944a6c35e00db066744de4c Mon Sep 17 00:00:00 2001
+From 6c3217f3aa56cd8ce77de3ba3ec8493332d1b6aa Mon Sep 17 00:00:00 2001
 From: PeterHo-wiwynn <Peter_MH_Ho@wiwynn.com>
 Date: Fri, 28 Jun 2024 11:19:43 +0800
 Subject: [PATCH 08/12] oem-meta: Add APML alert handler

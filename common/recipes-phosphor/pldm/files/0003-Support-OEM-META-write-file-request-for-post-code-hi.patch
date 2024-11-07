@@ -1,4 +1,4 @@
-From d7c79e64f53e6a0fafc5f9e1a90efdcc77d6d0c2 Mon Sep 17 00:00:00 2001
+From afd990ad0ca93165e42c42b33270ae63480601a6 Mon Sep 17 00:00:00 2001
 From: Delphine CC Chiu <Delphine_CC_Chiu@wiwynn.com>
 Date: Mon, 23 Oct 2023 17:06:54 +0800
 Subject: [PATCH 03/12] Support OEM-META write file request for post code
@@ -20,8 +20,8 @@ Signed-off-by: Delphine CC Chiu <Delphine_CC_Chiu@wiwynn.com>
  .../oem_meta_file_io_by_type.hpp              |  32 +++++
  .../oem_meta_file_io_type_post_code.cpp       | 131 ++++++++++++++++++
  .../oem_meta_file_io_type_post_code.hpp       |  54 ++++++++
- pldmd/pldmd.cpp                               |  10 ++
- 11 files changed, 398 insertions(+)
+ pldmd/pldmd.cpp                               |   9 ++
+ 11 files changed, 397 insertions(+)
  create mode 100644 oem/meta/libpldmresponder/oem_meta_file_io.cpp
  create mode 100644 oem/meta/libpldmresponder/oem_meta_file_io.hpp
  create mode 100644 oem/meta/libpldmresponder/oem_meta_file_io_by_type.hpp
@@ -127,10 +127,10 @@ index cf6ecf5..459f4ba 100644
      'pldmresponder',
      sources,
 diff --git a/meson.build b/meson.build
-index b03f7a1..e9177e6 100644
+index efe7939..6e5c57a 100644
 --- a/meson.build
 +++ b/meson.build
-@@ -140,6 +140,10 @@ conf_data.set('SENSOR_POLLING_TIME', get_option('sensor-polling-time'))
+@@ -146,6 +146,10 @@ endif
  
  configure_file(output: 'config.h', configuration: conf_data)
  
@@ -142,7 +142,7 @@ index b03f7a1..e9177e6 100644
      '-include',
      '@0@'.format(meson.current_build_dir() / 'config.h'),
 diff --git a/meson.options b/meson.options
-index 8a7138a..f6a48be 100644
+index 93ac021..adda007 100644
 --- a/meson.options
 +++ b/meson.options
 @@ -166,6 +166,14 @@ option(
@@ -523,21 +523,20 @@ index 0000000..919284e
 +
 +} // namespace pldm::responder::oem_meta
 diff --git a/pldmd/pldmd.cpp b/pldmd/pldmd.cpp
-index 9dcddb7..8ebb9ce 100644
+index e44e880..7907961 100644
 --- a/pldmd/pldmd.cpp
 +++ b/pldmd/pldmd.cpp
-@@ -65,6 +65,10 @@ PHOSPHOR_LOG2_USING;
- #include "oem_ibm.hpp"
+@@ -68,6 +68,9 @@ PHOSPHOR_LOG2_USING;
+ #ifdef OEM_AMPERE
+ #include "oem/ampere/oem_ampere.hpp"
  #endif
- 
 +#ifdef OEM_META
 +#include "libpldmresponder/oem_meta_file_io.hpp"
 +#endif
-+
+ 
  constexpr const char* PLDMService = "xyz.openbmc_project.PLDM";
  
- using namespace pldm;
-@@ -268,6 +272,12 @@ int main(int argc, char** argv)
+@@ -272,6 +275,12 @@ int main(int argc, char** argv)
              pldmTransport.getEventSource(), hostEID, instanceIdDb, &reqHandler);
      }
  

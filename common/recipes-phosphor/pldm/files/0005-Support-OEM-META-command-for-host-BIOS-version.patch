@@ -1,4 +1,4 @@
-From 48e9400792f0cf6a23927d5113cf49ecfdb6abf4 Mon Sep 17 00:00:00 2001
+From be8b9a9ab2fdddb5b160b13f69f327e8b59e3b3c Mon Sep 17 00:00:00 2001
 From: Chris Wang <Chris_Wang@wiwynn.com>
 Date: Wed, 10 Apr 2024 21:04:02 +0800
 Subject: [PATCH 05/12] Support OEM-META command for host BIOS version
@@ -351,10 +351,10 @@ index 0000000..69d898a
 +
 +} // namespace pldm::responder::oem_meta
 diff --git a/pldmd/pldmd.cpp b/pldmd/pldmd.cpp
-index bf74b28..c2646fd 100644
+index 5d83747..46f15c4 100644
 --- a/pldmd/pldmd.cpp
 +++ b/pldmd/pldmd.cpp
-@@ -275,7 +275,7 @@ int main(int argc, char** argv)
+@@ -278,7 +278,7 @@ int main(int argc, char** argv)
  #ifdef OEM_META
      invoker.registerHandler(
          PLDM_OEM, std::make_unique<pldm::responder::oem_meta::FileIOHandler>(
