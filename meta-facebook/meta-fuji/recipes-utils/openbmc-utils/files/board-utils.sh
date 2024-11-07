@@ -75,6 +75,7 @@ PIM8_DOMFPGA_SYSFS_DIR=$(i2c_device_sysfs_abspath 136-0060)
 
 PWR_USRV_SYSFS="${SCMCPLD_SYSFS_DIR}/com_exp_pwr_enable"
 PWR_USRV_FORCE_OFF="${SCMCPLD_SYSFS_DIR}/com_exp_pwr_force_off"
+PWR_USRV_ISO_COM_STAT="${SCMCPLD_SYSFS_DIR}/iso_com_sus_stat_n"
 PIM_RST_SYSFS="${SMBCPLD_SYSFS_DIR}"
 
 # 48V DC PSU P/N
@@ -114,6 +115,76 @@ wedge_is_us_on() {
     fi
 
     return 0
+}
+
+safe_to_run_aura_pll_fix() {
+    fix_safe=$(/usr/bin/find /mnt/data -name aura_fix_safe)
+    if [ "$fix_safe" == "/mnt/data/aura_fix_safe" ]; then
+        # Return OK, meaning fix available
+        return 0
+    fi
+    # Return Not OK, meaning fix not available
+    return 1
+}
+
+aura_pll_fix_applied() {
+    fix_applied=$(/usr/local/bin/improve_aura_pll.sh check)
+    if [ "$fix_applied" == "FIX_NOT_APPLIED" ]; then
+        # Return Not OK, meaning fix not available
+        return 1
+    fi
+    # Return OK, meaning fix applied, or no Aura chip found
+    return 0
+}
+
+mark_aura_pll_fix_safe() {
+    echo "DO_NOT_REMOVE_THIS_FILE" > /mnt/data/aura_fix_safe
+    /usr/bin/sync
+    sleep 1
+    /usr/bin/sync
+}
+
+# This function is for checking the actual power on status of CPU
+aura_pll_patch_needed() {
+    local val1
+    val1=$(head -n 1 < "$PWR_USRV_ISO_COM_STAT" 2> /dev/null)
+    if [ "$val1" == "0x0" ] ; then
+        echo "COMe off. Applying the fix" >> /tmp/wedge_power_log
+        # Since we will start applying the fix, from next time on, 
+        # the patch is safe to use.
+        mark_aura_pll_fix_safe
+        # Return OK. Meaning Patch needs to be applied
+        return 0
+    else
+        if safe_to_run_aura_pll_fix; then
+             echo "Safe to apply Aura Fix" >> /tmp/wedge_power_log
+             if ! aura_pll_fix_applied; then
+                  # This is the case where wedge_power.sh reset -s 
+                  # was previously executed.
+                  # Safe to run the fix, but not applied. 
+                  # Meaning wedge_power.sh reset -s was executed. 
+                  # Power off COMe, and return 0, meaning Patch needs 
+                  # to be applied
+                  echo "Aura Fix needs to be applied. Turning off COMe." >> /tmp/wedge_power_log
+                  echo 0 > "$PWR_USRV_FORCE_OFF"
+                  sleep 1
+                  return 0
+             else
+                  # Fix is available and is already applied. No op 
+                  # return 1, meaning no patch needs to be applied
+                  echo "Aura Fix already applied. No need to run fix." >> /tmp/wedge_power_log
+                  return 1
+             fi
+        else
+             # PLL fix is not yet available. Meaning, after BMC upgrade, 
+             # CPU has never been turned off. We should not do anything
+             echo "Aura fix is not yet safe to run" >> /tmp/wedge_power_log
+             # return 1, mreaning no patch needs to be applied
+             return 1
+        fi
+    fi
+
+    return 1
 }
 
 wedge_board_rev() {

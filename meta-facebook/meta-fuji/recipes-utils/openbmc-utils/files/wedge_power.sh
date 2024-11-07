@@ -121,10 +121,17 @@ do_on() {
         fi
     fi
 
-    # S460320: adjust clock settings if needed.
-    if ! /usr/local/bin/improve_aura_pll.sh; then
-        echo "Error: unable to fixup clock settings (S460320)!"
-        exit 1
+    # No matter force option is set or not (usually set on system start)
+    # we only apply Aura fix when CPU is off
+    # There is some corner case issue with wedge_is_us_on. So we use 
+    # wedge_is_forced_on to get the actual COMe on/off status
+    if aura_pll_patch_needed; then
+        echo "Executing fix" >> /tmp/wedge_power_log
+        # S460320: adjust clock settings if needed.
+        if ! /usr/local/bin/improve_aura_pll.sh; then
+            echo "Error: unable to fixup clock settings (S460320)!"
+            exit 1
+        fi
     fi
 
     # power on sequence
@@ -216,10 +223,19 @@ do_reset() {
         esac
     done
 
-    # S460320: adjust clock settings if needed.
-    if ! /usr/local/bin/improve_aura_pll.sh; then
-        echo "Error: unable to fixup clock settings (S460320)!"
-        exit 1
+    if ! safe_to_run_aura_pll_fix; then
+         # COMe will be turned off. Now it's safe to 
+         # run aura_pll fix from now on
+         mark_aura_pll_fix_safe
+    fi
+    # S460320: adjust clock settings if it's not hard powercycle.
+    # If it's hard-powercycle, this fix will be erased, so no need
+    # to do this here.
+    if [ $system -eq 0 ]; then
+        if ! /usr/local/bin/improve_aura_pll.sh; then
+            echo "Error: unable to fixup clock settings (S460320)!"
+            exit 1
+        fi
     fi
 
     if [ $system -eq 1 ]; then
