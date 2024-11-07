@@ -31,10 +31,11 @@ class BMCMacTest(BaseBMCMacTest, unittest.TestCase):
 
     def set_valid_mac_pattern(self):
         # Celestica Vendor OUI
-        # ref: https://ouilookup.com/search/CELESTICA
+        # ref: https://maclookup.app/vendors/celestica-inc
         self.mac_pattern = [
             r"(b4\:db\:91\:..\:..\:..)",
             r"(00\:e0\:ec\:..\:..\:..)",
             r"(34\:ad\:61\:..\:..\:..)",
             r"(0c\:48\:c6\:..\:..\:..)",
+            r"(dc\:da\:4d\:..\:..\:..)",
         ]
