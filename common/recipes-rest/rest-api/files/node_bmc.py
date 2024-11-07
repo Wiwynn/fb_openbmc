@@ -409,7 +409,7 @@ class bmcNode(node):
         with open("/etc/issue") as f:
             raw_version_str = f.read()
         # OpenBMC Version
-        ver = re.search(r"[v|V]([\w\d._-]*)\s", raw_version_str)
+        ver = re.search(r"-[v|V]([\w\d._-]*)\s", raw_version_str)
         if ver:
             obc_version = ver.group(1)
 
