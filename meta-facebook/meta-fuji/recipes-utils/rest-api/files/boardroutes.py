@@ -71,4 +71,7 @@ board_routes = [
     "/api/sys/piminfo",
     "/api/sys/smbinfo",
     "/api/sys/pim_present",
+    "/api/sys/improve_aura_pll",
+    "/api/sys/improve_aura_pll/program",
+    "/api/sys/improve_aura_pll/check",
 ]

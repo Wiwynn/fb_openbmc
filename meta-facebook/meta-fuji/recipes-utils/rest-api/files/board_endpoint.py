@@ -18,6 +18,8 @@
 # Boston, MA 02110-1301 USA
 #
 
+import asyncio
+
 import rest_feutil
 import rest_firmware_info
 import rest_peutil
@@ -31,6 +33,7 @@ import rest_smbinfo
 import rest_system_led_info
 from aiohttp import web
 from common_utils import dumps_bytestr
+from rest_improve_aura_pll import check_aurora_chip_check, program_aurora_chip
 
 
 class boardApp_Handler:
@@ -302,3 +305,27 @@ class boardApp_Handler:
     # Handler for sys/smbinfo resource endpoint
     async def rest_smbinfo_hdl(self, request):
         return web.json_response(rest_smbinfo.get_smbinfo(), dumps=dumps_bytestr)
+
+    # Handler for sys/improve_aura_pll/ resource endpoint
+    async def rest_improve_aura_pll_hdl(self, request):
+        details = {
+            "Information": {"Description": "Improve Aurora PLL"},
+            "Actions": [],
+            "Resources": ["program", "check"],
+        }
+        return web.json_response(details, dumps=dumps_bytestr)
+
+    # Handler for sys/improve_aura_pll/program resource endpoint
+    async def rest_improve_aura_pll_program_hdl(self, request):
+        result = await asyncio.get_event_loop().run_in_executor(
+            None,
+            program_aurora_chip,
+        )
+        return web.json_response(result, dumps=dumps_bytestr)
+
+    # Handler for sys/improve_aura_pll/check resource endpoint
+    async def rest_improve_aura_pll_check_hdl(self, request):
+        result = await asyncio.get_event_loop().run_in_executor(
+            None, check_aurora_chip_check
+        )
+        return web.json_response(result, dumps=dumps_bytestr)

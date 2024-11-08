@@ -29,6 +29,7 @@ LOCAL_URI += " \
     file://rest_pim_present.py \
     file://rest_system_led_info.py \
     file://rest_smbinfo.py \
+    file://rest_improve_aura_pll.py \
 "
 
 binfiles1 += " \
@@ -43,4 +44,5 @@ binfiles1 += " \
     rest_pim_present.py \
     rest_system_led_info.py \
     rest_smbinfo.py \
+    rest_improve_aura_pll.py \
 "
