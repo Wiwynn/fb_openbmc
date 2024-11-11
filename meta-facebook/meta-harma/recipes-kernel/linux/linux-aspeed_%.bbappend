@@ -14,4 +14,6 @@ SRC_URI:append = " \
     file://1008-ARM-dts-aspeed-Harma-update-sgpio-line-name.patch \
     file://1009-ARM-dts-aspeed-Harma-enable-uart-dma-mode.patch \
     file://1010-ARM-dts-aspeed-Harma-revise-i2c0-and-i2c2-duty-cycle.patch \
+    file://1011-ARM-dts-aspeed-Harma-add-e1s-power-monitor.patch \
+    file://1012-ARM-dts-aspeed-Harma-fan-board-io-expander.patch \
 "
