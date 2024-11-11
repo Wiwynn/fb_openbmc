@@ -5415,8 +5415,10 @@ int
 pal_clear_cmos(uint8_t slot_id) {
   int ret = 0, i2cfd = 0, retry = 0;
   uint8_t rtc_rst_reg = 0x2C + (slot_id - 1);
-  uint8_t tbuf[2] = {rtc_rst_reg, 0x00};
-  uint8_t tlen = 2;
+  uint8_t tbuf[4] = {0};
+  uint8_t rbuf[8] = {0};
+  uint8_t tlen = 0;
+  uint8_t rlen = 0;
   uint8_t bmc_location = 0, status = 0;
 
   ret = fby35_common_get_bmc_location(&bmc_location);
@@ -5454,6 +5456,15 @@ pal_clear_cmos(uint8_t slot_id) {
       return ret;
     }
     sleep(1);
+    printf("Performing CMET clear\n");
+    #define BIC_CMD_OEM_CLEAR_CMET 0xD5
+    memcpy(tbuf, (uint8_t *)&IANA_ID, IANA_ID_SIZE);
+    tlen = IANA_ID_SIZE;
+    ret = bic_data_wrapper(slot_id, NETFN_OEM_1S_REQ, BIC_CMD_OEM_CLEAR_CMET, tbuf, tlen, rbuf, &rlen);
+    if (ret < 0) {
+      printf("Failed to performing CMET clear(0x38 0xD5). This command is supported by the new BIC. \n" );
+    }
+    sleep(1);
 
     ret = pal_set_server_power(slot_id, SERVER_POWER_ON);
     if (ret < 0) {
@@ -5476,6 +5487,9 @@ pal_clear_cmos(uint8_t slot_id) {
     }
 
     while ( retry < MAX_READ_RETRY ) {
+      tbuf[0] = rtc_rst_reg;
+      tbuf[1] = 0;
+      tlen = 2;
       // to generate 200ms high pulse to clear CMOS
       ret = i2c_rdwr_msg_transfer(i2cfd, CPLD_ADDRESS, tbuf, tlen, NULL, 0);
       if ( ret < 0 ) {
