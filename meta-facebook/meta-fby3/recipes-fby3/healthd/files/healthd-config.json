@@ -82,6 +82,11 @@
     "monitor_interval": 2,
     "regenerating_interval": 1200
   },
+  "bic_health": {
+    "enabled": true,
+    "fru": [1,2,3,4],
+    "monitor_interval": 60
+  },
   "verified_boot": {
     "enabled": true
   },

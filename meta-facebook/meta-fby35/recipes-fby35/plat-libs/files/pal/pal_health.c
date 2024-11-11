@@ -70,3 +70,27 @@ pal_set_sensor_health(uint8_t fru, uint8_t value) {
 
   return pal_set_key_value(key, val);
 }
+
+int
+pal_bic_self_test(uint8_t fru) {
+  uint8_t result[SIZE_SELF_TEST_RESULT] = {0};
+  uint8_t root = fru;
+  int ret;
+  uint8_t status;
+
+  ret = pal_is_fru_prsnt(fru, &status);
+
+  // The FRU is not present or we can not confirm it, skip running the self-test against its bic.
+  if (ret < 0 || status == 0) {
+    return 0;
+  }
+
+  // Check the health of sb bic and it relies on NONE_INTF
+  pal_get_root_fru(fru, &root);
+  return bic_get_self_test_result(root, (uint8_t *)&result, NONE_INTF);
+}
+
+int
+pal_is_bic_ready(uint8_t fru, uint8_t *status) {
+  return fby35_common_is_bic_ready(fru, status);
+}
