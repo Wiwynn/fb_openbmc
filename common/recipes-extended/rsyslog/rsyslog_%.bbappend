@@ -12,9 +12,14 @@ SRC_URI += " \
         d)} \
 "
 
+SRC_URI:append = " \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'file://pidfile.conf', '', d)} \
+"
+
 do_install:append() {
     # Force rsyslog to create a PID file so that logrotate works correctly.
     if ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'true', 'false', d)}; then
-        sed -i -e 's@-iNONE@-i/var/run/rsyslogd.pid@' ${D}${base_libdir}/systemd/system/rsyslog.service
+        mkdir -p ${D}/etc/systemd/system/syslog.service.d/
+        install -m 644 ${WORKDIR}/pidfile.conf ${D}/etc/systemd/system/syslog.service.d/pidfile.conf
     fi
 }

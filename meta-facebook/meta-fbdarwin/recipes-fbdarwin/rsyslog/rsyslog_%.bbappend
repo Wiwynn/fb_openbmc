@@ -18,15 +18,3 @@
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-SRC_URI += "file://rsyslog.service \
-"
-
-do_work_systemd() {
-  install -m 644 ${WORKDIR}/rsyslog.service ${D}${systemd_unitdir}/system
-}
-
-do_install:append() {
-  if ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'true', 'false', d)}; then
-    do_work_systemd
-  fi
-}
