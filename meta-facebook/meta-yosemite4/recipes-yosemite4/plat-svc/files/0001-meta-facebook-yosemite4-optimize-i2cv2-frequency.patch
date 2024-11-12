@@ -1,0 +1,36 @@
+From 9de9f49c2c2029a49123f6b800c737322f7f150f Mon Sep 17 00:00:00 2001
+From: YikaiTsai-wiwynn <yikai_tsai@wiwynn.com>
+Date: Tue, 12 Nov 2024 14:03:36 +0800
+Subject: [PATCH] meta-facebook: yosemite4: optimize i2cv2 frequency
+
+---
+ .../plat-svc/files/yosemite4-early-sys-init         | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/yosemite4-early-sys-init b/yosemite4-early-sys-init
+index cef96b2c79c..119a383be4f 100644
+--- a/yosemite4-early-sys-init
++++ b/yosemite4-early-sys-init
+@@ -85,8 +85,17 @@ then
+     chown root:kmem /dev/mem
+     devmem 0x1e78008c 32 0x19000000
+ 
+-    # adjust the i2c clock duty cycle for bus 11
+-    devmem 0x1E78A604 32 0x00487006
++    # adjust base clock 3 divisor for 100khz busses
++    devmem 0x1E78A010 32 0xC6421208
++
++    # adjust i2c CLK low time margin for bus 10
++    devmem 0x1E78A584 32 0x009AE002
++
++    # adjust i2c CLK high time margin for bus 11
++    devmem 0x1E78A604 32 0x00DEF003
++
++    # adjust i2c frequency for bus 14
++    devmem 0x1E78A784 32 0x0078C002
+ fi
+ 
+ # Enable all fan input as early as possible
+-- 
+2.34.1
+

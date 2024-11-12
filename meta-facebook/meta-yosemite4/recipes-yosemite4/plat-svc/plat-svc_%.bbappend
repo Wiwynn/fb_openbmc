@@ -1,16 +1,9 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 SRC_URI += " \
-    file://yosemite4-i2cv2-init.service \
-    file://yosemite4-i2cv2-init \
+    file://0001-meta-facebook-yosemite4-optimize-i2cv2-frequency.patch \
     "
 
-SYSTEMD_PACKAGES = "${PN}"
-SYSTEMD_SERVICE:${PN}:append = " \
-    yosemite4-i2cv2-init.service \
-    "
-
-do_install:append:() {
-    install -d ${D}${libexecdir}
-    install -m 0755 ${WORKDIR}/yosemite4-i2cv2-init ${D}${libexecdir}
+do_patch() {
+    patch -p1 < "${WORKDIR}/0001-meta-facebook-yosemite4-optimize-i2cv2-frequency.patch"
 }
