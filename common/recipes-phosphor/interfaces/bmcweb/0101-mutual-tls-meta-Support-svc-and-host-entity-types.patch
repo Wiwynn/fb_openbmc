@@ -1,7 +1,8 @@
-From 3335ae0296c0229a2fa4a3fdf89bb9b8f8dbb125 Mon Sep 17 00:00:00 2001
+From eeda4f501a05ef518cb21af931eb3f2533b0e98c Mon Sep 17 00:00:00 2001
 From: Marco Kawajiri <kawajiri@meta.com>
 Date: Fri, 19 Jul 2024 16:07:49 -0700
-Subject: [PATCH] mutual-tls-meta: Support "svc" and "host" entity types
+Subject: [PATCH 101/101] mutual-tls-meta: Support "svc" and "host" entity
+ types
 
 Change-Id: I9aa157f34f8f7ba11706ef0c07fbb1a1e1243c13
 ---
@@ -11,10 +12,10 @@ Change-Id: I9aa157f34f8f7ba11706ef0c07fbb1a1e1243c13
  3 files changed, 83 insertions(+), 18 deletions(-)
 
 diff --git a/http/mutual_tls.cpp b/http/mutual_tls.cpp
-index f579089e..82988db1 100644
+index 5ccf722f..3d1680cc 100644
 --- a/http/mutual_tls.cpp
 +++ b/http/mutual_tls.cpp
-@@ -35,7 +35,7 @@ std::string getUsernameFromCommonName(std::string_view commonName)
+@@ -45,7 +45,7 @@ std::string getUsernameFromCommonName(std::string_view commonName)
          case persistent_data::MTLSCommonNameParseMode::Meta:
          {
              // Meta Inc. CommonName parsing
@@ -130,7 +131,7 @@ index 5e55db8e..3381dd48 100644
 +    return std::format("{}_{}", entityType, entity);
  }
 diff --git a/test/http/mutual_tls_meta.cpp b/test/http/mutual_tls_meta.cpp
-index 0e280c10..dc214d8c 100644
+index 918a9c92..29e6a0c7 100644
 --- a/test/http/mutual_tls_meta.cpp
 +++ b/test/http/mutual_tls_meta.cpp
 @@ -14,14 +14,35 @@ namespace
