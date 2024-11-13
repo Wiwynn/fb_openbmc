@@ -1,0 +1,120 @@
+From aa6fd9f19c102c3947f017bbb87cbb9092b6e72e Mon Sep 17 00:00:00 2001
+From: PeterHo-wiwynn <Peter_MH_Ho@wiwynn.com>
+Date: Fri, 30 Aug 2024 11:28:50 +0800
+Subject: [PATCH] Report CPU error to D-Bus
+
+---
+ inc/ras.hpp         |  1 +
+ src/fatal_error.cpp | 42 ++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 43 insertions(+)
+
+diff --git a/inc/ras.hpp b/inc/ras.hpp
+index 93028a6..4a3d801 100644
+--- a/inc/ras.hpp
++++ b/inc/ras.hpp
+@@ -14,6 +14,7 @@
+ #include <mutex>
+ #include <nlohmann/json.hpp>
+ #include <phosphor-logging/log.hpp>
++#include <phosphor-logging/lg2.hpp>
+ #include <regex>
+ #include <sdbusplus/asio/connection.hpp>
+ #include <sdbusplus/asio/object_server.hpp>
+diff --git a/src/fatal_error.cpp b/src/fatal_error.cpp
+index 5351ef4..29b9e71 100644
+--- a/src/fatal_error.cpp
++++ b/src/fatal_error.cpp
+@@ -28,6 +28,36 @@ bool ValidSignatureID = false;
+ #define HPM_FPGA_REGDUMP "/usr/sbin/hpm-fpga-dump.sh"
+ #define HPM_FPGA_REGDUMP_FILE "/var/lib/amd-ras/fpga_dump.txt"
+ 
++constexpr auto LOGGING_SERVICE = "xyz.openbmc_project.Logging";
++constexpr auto LOGGING_PATH = "/xyz/openbmc_project/logging";
++constexpr auto LOGGING_INTERFACE = "xyz.openbmc_project.Logging.Create";
++constexpr auto LOGGING_METHOD = "Create";
++constexpr int DBUS_TIMEOUT = 5;
++constexpr uint64_t dbusTimeout =
++    std::chrono::duration_cast<std::chrono::microseconds>(
++        std::chrono::seconds(DBUS_TIMEOUT))
++        .count();
++
++void reportError(const std::string errorMsg)
++{
++    auto bus = sdbusplus::bus::new_default();
++    try
++    {
++        auto severity = "xyz.openbmc_project.Logging.Entry.Level.Error";
++        auto method = bus.new_method_call(
++            LOGGING_SERVICE, LOGGING_PATH,
++            LOGGING_INTERFACE, LOGGING_METHOD);
++
++        std::map<std::string, std::string> addlData{};
++        method.append(errorMsg, severity, addlData);
++        bus.call_noreply(method, dbusTimeout);
++    }
++    catch (const std::exception& e)
++    {
++        lg2::error("dbus failure to Logging.Create: {ERROR}", "ERROR", e);
++    }
++}
++
+ void getLastTransAddr(uint8_t info)
+ {
+     oob_status_t ret;
+@@ -787,6 +817,8 @@ bool harvest_ras_errors(uint8_t info, std::string alert_name, uint8_t fru)
+                     "REDFISH_MESSAGE_ID=%s", "OpenBMC.0.1.CPUError",
+                     "REDFISH_MESSAGE_ARGS=%s", ras_err_msg.c_str(), NULL);
+ 
++                reportError("amd-ras: " + ras_err_msg);
++
+                 P0_AlertProcessed = true;
+                 P1_AlertProcessed = true;
+                 ControlFabricError = true;
+@@ -803,6 +835,8 @@ bool harvest_ras_errors(uint8_t info, std::string alert_name, uint8_t fru)
+                     "REDFISH_MESSAGE_ID=%s", "OpenBMC.0.1.CPUError",
+                     "REDFISH_MESSAGE_ARGS=%s", ras_err_msg.c_str(), NULL);
+ 
++                reportError("amd-ras: " + ras_err_msg);
++
+                 FchHangError = true;
+             }
+             else if (buf & MCA_ERR_OVERFLOW)
+@@ -819,6 +853,8 @@ bool harvest_ras_errors(uint8_t info, std::string alert_name, uint8_t fru)
+                                 "REDFISH_MESSAGE_ARGS=%s",
+                                 mca_err_overflow_msg.c_str(), NULL);
+ 
++                reportError("amd-ras: " + mca_err_overflow_msg);
++
+                 RuntimeError = true;
+             }
+             else if (buf & DRAM_CECC_ERR_OVERFLOW)
+@@ -834,6 +870,8 @@ bool harvest_ras_errors(uint8_t info, std::string alert_name, uint8_t fru)
+                                 "REDFISH_MESSAGE_ARGS=%s",
+                                 dram_err_overflow_msg.c_str(), NULL);
+ 
++                reportError("amd-ras: " + dram_err_overflow_msg);
++
+                 RuntimeError = true;
+             }
+             else if (buf & PCIE_ERR_OVERFLOW)
+@@ -850,6 +888,8 @@ bool harvest_ras_errors(uint8_t info, std::string alert_name, uint8_t fru)
+                                 "REDFISH_MESSAGE_ARGS=%s",
+                                 pcie_err_overflow_msg.c_str(), NULL);
+ 
++                reportError("amd-ras: " + pcie_err_overflow_msg);
++
+                 RuntimeError = true;
+             }
+             else if (buf & FATAL_ERROR)
+@@ -863,6 +903,8 @@ bool harvest_ras_errors(uint8_t info, std::string alert_name, uint8_t fru)
+                     "REDFISH_MESSAGE_ID=%s", "OpenBMC.0.1.CPUError",
+                     "REDFISH_MESSAGE_ARGS=%s", ras_err_msg.c_str(), NULL);
+ 
++                reportError("amd-ras: " + ras_err_msg);
++
+                 harvest_fatal_errors(info, numbanks, bytespermca);
+             }
+ 
+-- 
+2.25.1
+

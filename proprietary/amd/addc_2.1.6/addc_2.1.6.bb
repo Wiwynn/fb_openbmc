@@ -24,6 +24,7 @@ LOCAL_URI = " \
     file://inc/cper_runtime.hpp \
     file://inc/ras.hpp \
     file://service_files/com.amd.crashdump.service \
+    file://0001-Report-CPU-error-to-D-Bus.patch \
     "
 
 do_install:append() {
