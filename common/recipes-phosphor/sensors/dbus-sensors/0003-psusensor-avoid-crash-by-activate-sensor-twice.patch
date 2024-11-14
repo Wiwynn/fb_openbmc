@@ -1,4 +1,4 @@
-From 3663020bd62d9916c257aeb3c7b4cb5a8d684e68 Mon Sep 17 00:00:00 2001
+From 5eed4ab802fa52ade5de6a8023d433d72df6eb5b Mon Sep 17 00:00:00 2001
 From: Peter Yin <peter.yin@quantatw.com>
 Date: Tue, 25 Jun 2024 14:57:08 +0800
 Subject: [PATCH 3/5] psusensor: avoid crash by activate sensor twice
@@ -73,15 +73,15 @@ Change-Id: I3fb55c0f10ad26472470bb783ea5df5498a4c1a8
 Signed-off-by: Potin Lai <potin.lai@quantatw.com>
 Signed-off-by: Peter Yin <peter.yin@quantatw.com>
 ---
- src/PSUSensor.cpp     |  7 +---
- src/PSUSensor.hpp     |  3 +-
- src/PSUSensorMain.cpp | 86 +++++++++++++++++--------------------------
+ src/psu/PSUSensor.cpp     |  7 +---
+ src/psu/PSUSensor.hpp     |  3 +-
+ src/psu/PSUSensorMain.cpp | 86 ++++++++++++++++-----------------------
  3 files changed, 36 insertions(+), 60 deletions(-)
 
-diff --git a/src/PSUSensor.cpp b/src/PSUSensor.cpp
+diff --git a/src/psu/PSUSensor.cpp b/src/psu/PSUSensor.cpp
 index 4d410fe..40d001f 100644
---- a/src/PSUSensor.cpp
-+++ b/src/PSUSensor.cpp
+--- a/src/psu/PSUSensor.cpp
++++ b/src/psu/PSUSensor.cpp
 @@ -122,16 +122,13 @@ bool PSUSensor::isActive()
      return inputDev.is_open();
  }
@@ -109,10 +109,10 @@ index 4d410fe..40d001f 100644
  }
  
  void PSUSensor::setupRead()
-diff --git a/src/PSUSensor.hpp b/src/PSUSensor.hpp
+diff --git a/src/psu/PSUSensor.hpp b/src/psu/PSUSensor.hpp
 index 09601f8..008c632 100644
---- a/src/PSUSensor.hpp
-+++ b/src/PSUSensor.hpp
+--- a/src/psu/PSUSensor.hpp
++++ b/src/psu/PSUSensor.hpp
 @@ -28,8 +28,7 @@ class PSUSensor : public Sensor, public std::enable_shared_from_this<PSUSensor>
                const std::shared_ptr<I2CDevice>& i2cDevice);
      ~PSUSensor() override;
@@ -123,11 +123,11 @@ index 09601f8..008c632 100644
      void deactivate();
      bool isActive();
  
-diff --git a/src/PSUSensorMain.cpp b/src/PSUSensorMain.cpp
-index 7dccb10..1259cf1 100644
---- a/src/PSUSensorMain.cpp
-+++ b/src/PSUSensorMain.cpp
-@@ -301,8 +301,7 @@ static void createSensorsCallback(
+diff --git a/src/psu/PSUSensorMain.cpp b/src/psu/PSUSensorMain.cpp
+index cb8ce63..449bda7 100644
+--- a/src/psu/PSUSensorMain.cpp
++++ b/src/psu/PSUSensorMain.cpp
+@@ -302,8 +302,7 @@ static void createSensorsCallback(
      std::shared_ptr<sdbusplus::asio::connection>& dbusConnection,
      const ManagedObjectType& sensorConfigs,
      const std::shared_ptr<boost::container::flat_set<std::string>>&
@@ -137,7 +137,7 @@ index 7dccb10..1259cf1 100644
  {
      int numCreated = 0;
      bool firstScan = sensorsChanged == nullptr;
-@@ -464,10 +463,6 @@ static void createSensorsCallback(
+@@ -465,10 +464,6 @@ static void createSensorsCallback(
          std::shared_ptr<I2CDevice> i2cDev;
          if (findI2CDev != devices.end())
          {
@@ -148,7 +148,7 @@ index 7dccb10..1259cf1 100644
              i2cDev = findI2CDev->second.first;
          }
  
-@@ -945,33 +940,20 @@ static void createSensorsCallback(
+@@ -946,33 +941,20 @@ static void createSensorsCallback(
                            << "\"\n";
              }
              // destruct existing one first if already created
@@ -195,7 +195,7 @@ index 7dccb10..1259cf1 100644
              }
          }
  
-@@ -1066,15 +1048,14 @@ void createSensors(
+@@ -1067,15 +1049,14 @@ void createSensors(
      boost::asio::io_context& io, sdbusplus::asio::object_server& objectServer,
      std::shared_ptr<sdbusplus::asio::connection>& dbusConnection,
      const std::shared_ptr<boost::container::flat_set<std::string>>&
@@ -217,7 +217,7 @@ index 7dccb10..1259cf1 100644
      std::vector<std::string> types(sensorTypes.size());
      for (const auto& [type, dt] : sensorTypes)
      {
-@@ -1129,13 +1110,17 @@ void propertyInitialize()
+@@ -1130,13 +1111,17 @@ void propertyInitialize()
  static void powerStateChanged(
      PowerState type, bool newState,
      boost::container::flat_map<std::string, std::shared_ptr<PSUSensor>>&
@@ -239,7 +239,7 @@ index 7dccb10..1259cf1 100644
      }
      else
      {
-@@ -1163,16 +1148,14 @@ int main()
+@@ -1164,16 +1149,14 @@ int main()
  
      propertyInitialize();
  
@@ -260,7 +260,7 @@ index 7dccb10..1259cf1 100644
      boost::asio::steady_timer filterTimer(io);
      std::function<void(sdbusplus::message_t&)> eventHandler =
          [&](sdbusplus::message_t& message) {
-@@ -1192,8 +1175,7 @@ int main()
+@@ -1193,8 +1176,7 @@ int main()
                  {
                      std::cerr << "timer error\n";
                  }
@@ -270,7 +270,7 @@ index 7dccb10..1259cf1 100644
              });
          };
  
-@@ -1252,7 +1234,7 @@ int main()
+@@ -1253,7 +1235,7 @@ int main()
                      std::cerr << "timer error\n";
                      return;
                  }
@@ -280,5 +280,5 @@ index 7dccb10..1259cf1 100644
          };
  
 -- 
-2.44.2
+2.43.5
 

@@ -1,4 +1,4 @@
-From 95d86cd1671ea2dec7a14459500f22a0c0362019 Mon Sep 17 00:00:00 2001
+From f5a86ad73a38625393e3a65de8ce7cc676260207 Mon Sep 17 00:00:00 2001
 From: Bright Cheng <bright_cheng@wiwynn.com>
 Date: Mon, 26 Aug 2024 11:37:53 +0800
 Subject: [PATCH 5/5] Utils: support powerState for multi-node system
@@ -50,166 +50,15 @@ d 36.666
 root@bmc:~# busctl get-property xyz.openbmc_project.PSUSensor /xyz/openbmc_project/sensors/voltage/MEDUSA_MB7_12VHSC_INPUT_VOLT_V xyz.openbmc_project.Sensor.Value Value
 d 12.209
 ---
- src/HwmonTempMain.cpp |   6 +-
- src/PSUSensor.cpp     |  25 ++-
- src/PSUSensor.hpp     |   9 +-
- src/PSUSensorMain.cpp |  21 ++-
- src/Utils.cpp         | 421 ++++++++++++++++++++++++++++--------------
- src/Utils.hpp         |  38 ++--
- src/sensor.hpp        |   7 +-
+ src/Utils.cpp                    | 421 ++++++++++++++++++++-----------
+ src/Utils.hpp                    |  38 ++-
+ src/hwmon-temp/HwmonTempMain.cpp |   6 +-
+ src/psu/PSUSensor.cpp            |  25 +-
+ src/psu/PSUSensor.hpp            |   9 +-
+ src/psu/PSUSensorMain.cpp        |  21 +-
+ src/sensor.hpp                   |   7 +-
  7 files changed, 349 insertions(+), 178 deletions(-)
 
-diff --git a/src/HwmonTempMain.cpp b/src/HwmonTempMain.cpp
-index f7ccb4f..82ec61b 100644
---- a/src/HwmonTempMain.cpp
-+++ b/src/HwmonTempMain.cpp
-@@ -590,7 +590,11 @@ static void powerStateChanged(
-         {
-             if (sensor != nullptr && sensor->readState == type)
-             {
--                sensor->deactivate();
-+                if ((type == PowerState::chassisOn) &&
-+                    (!isChassisOn(sensor->slotId)))
-+                {
-+                    sensor->deactivate();
-+                }
-             }
-         }
-     }
-diff --git a/src/PSUSensor.cpp b/src/PSUSensor.cpp
-index a2913cf..7ce3430 100644
---- a/src/PSUSensor.cpp
-+++ b/src/PSUSensor.cpp
-@@ -44,23 +44,22 @@ static constexpr const char* sensorPathPrefix = "/xyz/openbmc_project/sensors/";
- 
- static constexpr bool debug = false;
- 
--PSUSensor::PSUSensor(const std::string& path, const std::string& objectType,
--                     sdbusplus::asio::object_server& objectServer,
--                     std::shared_ptr<sdbusplus::asio::connection>& conn,
--                     boost::asio::io_context& io, const std::string& sensorName,
--                     std::vector<thresholds::Threshold>&& thresholdsIn,
--                     const std::string& sensorConfiguration,
--                     const PowerState& powerState,
--                     const std::string& sensorUnits, double factor, double max,
--                     double min, double offset, const std::string& label,
--                     size_t tSize, double pollRate,
--                     const std::shared_ptr<I2CDevice>& i2cDevice) :
-+PSUSensor::PSUSensor(
-+    const std::string& path, const std::string& objectType,
-+    sdbusplus::asio::object_server& objectServer,
-+    std::shared_ptr<sdbusplus::asio::connection>& conn,
-+    boost::asio::io_context& io, const std::string& sensorName,
-+    std::vector<thresholds::Threshold>&& thresholdsIn,
-+    const std::string& sensorConfiguration, const PowerState& powerState,
-+    const std::string& sensorUnits, double factor, double max, double min,
-+    double offset, const std::string& label, size_t tSize, double pollRate,
-+    const std::shared_ptr<I2CDevice>& i2cDevice, const size_t& slotId) :
-     Sensor(escapeName(sensorName), std::move(thresholdsIn), sensorConfiguration,
--           objectType, false, false, max, min, conn, powerState),
-+           objectType, false, false, max, min, conn, powerState, slotId),
-     i2cDevice(i2cDevice), objServer(objectServer),
-     inputDev(io, path, boost::asio::random_access_file::read_only),
-     waitTimer(io), path(path), sensorFactor(factor), sensorOffset(offset),
--    thresholdTimer(io)
-+    thresholdTimer(io), slotId(slotId)
- {
-     buffer = std::make_shared<std::array<char, 128>>();
-     std::string unitPath = sensor_paths::getPathForUnits(sensorUnits);
-diff --git a/src/PSUSensor.hpp b/src/PSUSensor.hpp
-index cebe730..27609be 100644
---- a/src/PSUSensor.hpp
-+++ b/src/PSUSensor.hpp
-@@ -25,7 +25,8 @@ class PSUSensor : public Sensor, public std::enable_shared_from_this<PSUSensor>
-               const PowerState& powerState, const std::string& sensorUnits,
-               double factor, double max, double min, double offset,
-               const std::string& label, size_t tSize, double pollRate,
--              const std::shared_ptr<I2CDevice>& i2cDevice);
-+              const std::shared_ptr<I2CDevice>& i2cDevice,
-+              const size_t& slotId);
-     ~PSUSensor() override;
-     void setupRead();
-     void activate();
-@@ -61,6 +62,7 @@ class PSUSensor : public Sensor, public std::enable_shared_from_this<PSUSensor>
-     static constexpr double defaultSensorPoll = 1.0;
-     static constexpr unsigned int defaultSensorPollMs =
-         static_cast<unsigned int>(defaultSensorPoll * 1000);
-+    size_t slotId;
- };
- 
- class PSUProperty
-@@ -68,8 +70,9 @@ class PSUProperty
-   public:
-     PSUProperty(std::string name, double max, double min, double factor,
-                 double offset) :
--        labelTypeName(std::move(name)), maxReading(max), minReading(min),
--        sensorScaleFactor(factor), sensorOffset(offset)
-+        labelTypeName(std::move(name)),
-+        maxReading(max), minReading(min), sensorScaleFactor(factor),
-+        sensorOffset(offset)
-     {}
-     ~PSUProperty() = default;
- 
-diff --git a/src/PSUSensorMain.cpp b/src/PSUSensorMain.cpp
-index 84bac9d..1bb47cc 100644
---- a/src/PSUSensorMain.cpp
-+++ b/src/PSUSensorMain.cpp
-@@ -512,6 +512,7 @@ static void createSensorsCallback(
-         checkGroupEvent(directory.string(), groupEventPathList);
- 
-         PowerState readState = getPowerState(*baseConfig);
-+        size_t readSlot = getSlotId(*baseConfig);
- 
-         /* Check if there are more sensors in the same interface */
-         int i = 1;
-@@ -952,7 +953,7 @@ static void createSensorsCallback(
-                 readState, findSensorUnit->second, factor,
-                 psuProperty.maxReading, psuProperty.minReading,
-                 psuProperty.sensorOffset, labelHead, thresholdConfSize,
--                pollRate, i2cDev);
-+                pollRate, i2cDev, readSlot);
-             sensors[sensorName]->setupRead();
-             ++numCreated;
-             if constexpr (debug)
-@@ -1058,9 +1059,9 @@ void createSensors(
-     auto getter = std::make_shared<GetSensorConfiguration>(
-         dbusConnection, [&io, &objectServer, &dbusConnection, sensorsChanged](
-                             const ManagedObjectType& sensorConfigs) {
--        createSensorsCallback(io, objectServer, dbusConnection, sensorConfigs,
--                              sensorsChanged);
--    });
-+            createSensorsCallback(io, objectServer, dbusConnection,
-+                                  sensorConfigs, sensorsChanged);
-+        });
-     std::vector<std::string> types(sensorTypes.size());
-     for (const auto& [type, dt] : sensorTypes)
-     {
-@@ -1123,7 +1124,11 @@ static void powerStateChanged(
-         {
-             if (sensor != nullptr && sensor->readState == type)
-             {
--                sensor->activate();
-+                if ((type == PowerState::chassisOn) &&
-+                    (isChassisOn(sensor->slotId)))
-+                {
-+                    sensor->activate();
-+                }
-             }
-         }
-     }
-@@ -1133,7 +1138,11 @@ static void powerStateChanged(
-         {
-             if (sensor != nullptr && sensor->readState == type)
-             {
--                sensor->deactivate();
-+                if ((type == PowerState::chassisOn) &&
-+                    (!isChassisOn(sensor->slotId)))
-+                {
-+                    sensor->deactivate();
-+                }
-             }
-         }
-     }
 diff --git a/src/Utils.cpp b/src/Utils.cpp
 index ac0778d..59e989e 100644
 --- a/src/Utils.cpp
@@ -879,6 +728,157 @@ index 78a6ecd..450a20a 100644
      {}
  
      void getPath(const std::string& path, const std::string& interface,
+diff --git a/src/hwmon-temp/HwmonTempMain.cpp b/src/hwmon-temp/HwmonTempMain.cpp
+index f7ccb4f..82ec61b 100644
+--- a/src/hwmon-temp/HwmonTempMain.cpp
++++ b/src/hwmon-temp/HwmonTempMain.cpp
+@@ -590,7 +590,11 @@ static void powerStateChanged(
+         {
+             if (sensor != nullptr && sensor->readState == type)
+             {
+-                sensor->deactivate();
++                if ((type == PowerState::chassisOn) &&
++                    (!isChassisOn(sensor->slotId)))
++                {
++                    sensor->deactivate();
++                }
+             }
+         }
+     }
+diff --git a/src/psu/PSUSensor.cpp b/src/psu/PSUSensor.cpp
+index a2913cf..7ce3430 100644
+--- a/src/psu/PSUSensor.cpp
++++ b/src/psu/PSUSensor.cpp
+@@ -44,23 +44,22 @@ static constexpr const char* sensorPathPrefix = "/xyz/openbmc_project/sensors/";
+ 
+ static constexpr bool debug = false;
+ 
+-PSUSensor::PSUSensor(const std::string& path, const std::string& objectType,
+-                     sdbusplus::asio::object_server& objectServer,
+-                     std::shared_ptr<sdbusplus::asio::connection>& conn,
+-                     boost::asio::io_context& io, const std::string& sensorName,
+-                     std::vector<thresholds::Threshold>&& thresholdsIn,
+-                     const std::string& sensorConfiguration,
+-                     const PowerState& powerState,
+-                     const std::string& sensorUnits, double factor, double max,
+-                     double min, double offset, const std::string& label,
+-                     size_t tSize, double pollRate,
+-                     const std::shared_ptr<I2CDevice>& i2cDevice) :
++PSUSensor::PSUSensor(
++    const std::string& path, const std::string& objectType,
++    sdbusplus::asio::object_server& objectServer,
++    std::shared_ptr<sdbusplus::asio::connection>& conn,
++    boost::asio::io_context& io, const std::string& sensorName,
++    std::vector<thresholds::Threshold>&& thresholdsIn,
++    const std::string& sensorConfiguration, const PowerState& powerState,
++    const std::string& sensorUnits, double factor, double max, double min,
++    double offset, const std::string& label, size_t tSize, double pollRate,
++    const std::shared_ptr<I2CDevice>& i2cDevice, const size_t& slotId) :
+     Sensor(escapeName(sensorName), std::move(thresholdsIn), sensorConfiguration,
+-           objectType, false, false, max, min, conn, powerState),
++           objectType, false, false, max, min, conn, powerState, slotId),
+     i2cDevice(i2cDevice), objServer(objectServer),
+     inputDev(io, path, boost::asio::random_access_file::read_only),
+     waitTimer(io), path(path), sensorFactor(factor), sensorOffset(offset),
+-    thresholdTimer(io)
++    thresholdTimer(io), slotId(slotId)
+ {
+     buffer = std::make_shared<std::array<char, 128>>();
+     std::string unitPath = sensor_paths::getPathForUnits(sensorUnits);
+diff --git a/src/psu/PSUSensor.hpp b/src/psu/PSUSensor.hpp
+index cebe730..27609be 100644
+--- a/src/psu/PSUSensor.hpp
++++ b/src/psu/PSUSensor.hpp
+@@ -25,7 +25,8 @@ class PSUSensor : public Sensor, public std::enable_shared_from_this<PSUSensor>
+               const PowerState& powerState, const std::string& sensorUnits,
+               double factor, double max, double min, double offset,
+               const std::string& label, size_t tSize, double pollRate,
+-              const std::shared_ptr<I2CDevice>& i2cDevice);
++              const std::shared_ptr<I2CDevice>& i2cDevice,
++              const size_t& slotId);
+     ~PSUSensor() override;
+     void setupRead();
+     void activate();
+@@ -61,6 +62,7 @@ class PSUSensor : public Sensor, public std::enable_shared_from_this<PSUSensor>
+     static constexpr double defaultSensorPoll = 1.0;
+     static constexpr unsigned int defaultSensorPollMs =
+         static_cast<unsigned int>(defaultSensorPoll * 1000);
++    size_t slotId;
+ };
+ 
+ class PSUProperty
+@@ -68,8 +70,9 @@ class PSUProperty
+   public:
+     PSUProperty(std::string name, double max, double min, double factor,
+                 double offset) :
+-        labelTypeName(std::move(name)), maxReading(max), minReading(min),
+-        sensorScaleFactor(factor), sensorOffset(offset)
++        labelTypeName(std::move(name)),
++        maxReading(max), minReading(min), sensorScaleFactor(factor),
++        sensorOffset(offset)
+     {}
+     ~PSUProperty() = default;
+ 
+diff --git a/src/psu/PSUSensorMain.cpp b/src/psu/PSUSensorMain.cpp
+index fec80ef..d452704 100644
+--- a/src/psu/PSUSensorMain.cpp
++++ b/src/psu/PSUSensorMain.cpp
+@@ -513,6 +513,7 @@ static void createSensorsCallback(
+         checkGroupEvent(directory.string(), groupEventPathList);
+ 
+         PowerState readState = getPowerState(*baseConfig);
++        size_t readSlot = getSlotId(*baseConfig);
+ 
+         /* Check if there are more sensors in the same interface */
+         int i = 1;
+@@ -953,7 +954,7 @@ static void createSensorsCallback(
+                 readState, findSensorUnit->second, factor,
+                 psuProperty.maxReading, psuProperty.minReading,
+                 psuProperty.sensorOffset, labelHead, thresholdConfSize,
+-                pollRate, i2cDev);
++                pollRate, i2cDev, readSlot);
+             sensors[sensorName]->setupRead();
+             ++numCreated;
+             if constexpr (debug)
+@@ -1059,9 +1060,9 @@ void createSensors(
+     auto getter = std::make_shared<GetSensorConfiguration>(
+         dbusConnection, [&io, &objectServer, &dbusConnection, sensorsChanged](
+                             const ManagedObjectType& sensorConfigs) {
+-        createSensorsCallback(io, objectServer, dbusConnection, sensorConfigs,
+-                              sensorsChanged);
+-    });
++            createSensorsCallback(io, objectServer, dbusConnection,
++                                  sensorConfigs, sensorsChanged);
++        });
+     std::vector<std::string> types(sensorTypes.size());
+     for (const auto& [type, dt] : sensorTypes)
+     {
+@@ -1124,7 +1125,11 @@ static void powerStateChanged(
+         {
+             if (sensor != nullptr && sensor->readState == type)
+             {
+-                sensor->activate();
++                if ((type == PowerState::chassisOn) &&
++                    (isChassisOn(sensor->slotId)))
++                {
++                    sensor->activate();
++                }
+             }
+         }
+     }
+@@ -1134,7 +1139,11 @@ static void powerStateChanged(
+         {
+             if (sensor != nullptr && sensor->readState == type)
+             {
+-                sensor->deactivate();
++                if ((type == PowerState::chassisOn) &&
++                    (!isChassisOn(sensor->slotId)))
++                {
++                    sensor->deactivate();
++                }
+             }
+         }
+     }
 diff --git a/src/sensor.hpp b/src/sensor.hpp
 index 82798dc..be25504 100644
 --- a/src/sensor.hpp
@@ -919,5 +919,5 @@ index 82798dc..be25504 100644
  
      void markFunctional(bool isFunctional)
 -- 
-2.44.2
+2.43.5
 
