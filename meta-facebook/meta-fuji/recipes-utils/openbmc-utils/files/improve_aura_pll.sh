@@ -13,111 +13,37 @@ write_aura_reg() {
     /usr/sbin/i2cset -y -f 10 0x68 "$1" "$2"
 }
 
-dump_aura_page () {
-   turn_aura_page "$1"
-   for ((num=1; num <= "$2"; num++))
-   do
-      hex=$(printf '0x%x' "$a")
-      read_val=$(read_aura_reg "$hex")
-      echo "$1" : "$hex" : "$read_val"
-   done
-}
-dump_aura_all_page() {
-    echo Page 0x0
-    dump_aura_page 0x0 235
-    echo Page 0x1
-    dump_aura_page 0x1 47
-    echo Page 0x2
-    dump_aura_page 0x2 79
-    echo Page 0x3
-    dump_aura_page 0x3 111
-    echo Page 0x4
-    dump_aura_page 0x4 111
-    echo Page 0x6
-    dump_aura_page 0x6 239
-    echo Page 0x7
-    dump_aura_page 0x7 239
-    echo Page 0x0a
-    dump_aura_page 0x0a 238
-    echo Page 0x1a
-    dump_aura_page 0x1a 99
-    echo Page 0x0b
-    dump_aura_page 0x0b 238
-    echo Page 0x1b
-    dump_aura_page 0x1b 99
-    echo Page 0x0c
-    dump_aura_page 0x0c 238
-    echo Page 0x1c
-    dump_aura_page 0x1c 99
-    echo Page 0x0d
-    dump_aura_page 0x0d 238
-    echo Page 0x1d
-    dump_aura_page 0x1d 99
-}
-
-#DCO Config
-config_aura_dco () {
-    /usr/sbin/i2cset -y -f 10 0x68 0xff 0x0a
-    /usr/sbin/i2cset -y -f 10 0x68 0x17 0x0a
-    /usr/sbin/i2cset -y -f 10 0x68 0x42 0x00
-    /usr/sbin/i2cset -y -f 10 0x68 0x57 0x42
-    /usr/sbin/i2cset -y -f 10 0x68 0x0f 0x00
-    /usr/sbin/i2cset -y -f 10 0x68 0x0f 0x01
-    /usr/sbin/i2cset -y -f 10 0x68 0x0f 0x00
-    /usr/sbin/i2cset -y -f 10 0x68 0xff 0x0a
-    /usr/sbin/i2cset -y -f 10 0x68 0x0f 0x10
-    /usr/sbin/i2cset -y -f 10 0x68 0x0f 0x40
-    /usr/sbin/i2cset -y -f 10 0x68 0xff 0x0a
-    /usr/sbin/i2cset -y -f 10 0x68 0xbd 0xc3
-    /usr/sbin/i2cset -y -f 10 0x68 0xd1 0xb0
-    /usr/sbin/i2cset -y -f 10 0x68 0xff 0x1a
-    /usr/sbin/i2cset -y -f 10 0x68 0xff 0x0a
-    /usr/sbin/i2cget -y -f 10 0x68 0x57
-    /usr/sbin/i2cset -y -f 10 0x68 0x57 0x42
-    /usr/sbin/i2cset -y -f 10 0x68 0xff 0x0a
-    /usr/sbin/i2cset -y -f 10 0x68 0x51 0x00
-    /usr/sbin/i2cset -y -f 10 0x68 0x52 0x48
-    /usr/sbin/i2cset -y -f 10 0x68 0x53 0x55
-    /usr/sbin/i2cset -y -f 10 0x68 0x54 0x55
-    /usr/sbin/i2cset -y -f 10 0x68 0x55 0x35
-    /usr/sbin/i2cset -y -f 10 0x68 0x56 0x00
-    /usr/sbin/i2cset -y -f 10 0x68 0xff 0x0b
-    /usr/sbin/i2cget -y -f 10 0x68 0x57
-    /usr/sbin/i2cset -y -f 10 0x68 0x57 0x01
-    /usr/sbin/i2cset -y -f 10 0x68 0xff 0x0c
-    /usr/sbin/i2cget -y -f 10 0x68 0x57
-    /usr/sbin/i2cset -y -f 10 0x68 0x57 0x01
-    /usr/sbin/i2cset -y -f 10 0x68 0xff 0x0d
-    /usr/sbin/i2cget -y -f 10 0x68 0x57
-    /usr/sbin/i2cset -y -f 10 0x68 0x57 0x01
+config_aura_cl_parameter() {
     /usr/sbin/i2cset -y -f 10 0x68 0xff 0x00
-}
-
-# Increase Freq
-increase_aura_freq() {
-    /usr/sbin/i2cset -y -f 10 0x68 0x64 0xae
-    /usr/sbin/i2cset -y -f 10 0x68 0x64 0xee
-    /usr/sbin/i2cset -y -f 10 0x68 0x64 0xae
-}
-
-# Decrease Freq
-decrease_aura_freq () {
-    /usr/sbin/i2cset -y -f 10 0x68 0x64 0xae
-    /usr/sbin/i2cset -y -f 10 0x68 0x64 0xbe
-    /usr/sbin/i2cset -y -f 10 0x68 0x64 0xae
-}
-
-check_permanent_fix () {
-    echo "0"
+    /usr/sbin/i2cset -y -f 10 0x68 0x2c 0xa2
+    /usr/sbin/i2cset -y -f 10 0x68 0x2d 0x29
+    /usr/sbin/i2cset -y -f 10 0x68 0x0f 0x02
 }
 
 check_volatile_fix() {
+    turn_aura_page 0x0
+    reg_read=$(read_aura_reg 0x2d)
+
+    # Return values:
+    #    0: Needs fix,
+    #    1: Already fixed,
+    #    Anything Else: Unknown state
+    if [ "$reg_read" == "0x3f" ]; then
+        echo "0"
+    elif [ "$reg_read" == "0x29" ]; then
+        echo "1"
+    else
+        echo "2"
+    fi
+}
+
+check_legacy_volatile_fix() {
     # Enable Debug Mode
     /usr/sbin/i2cset -y -f 10 0x68 0xff 0x0a
     /usr/sbin/i2cset -y -f 10 0x68 0xbd 0xc3
     /usr/sbin/i2cset -y -f 10 0x68 0xb3 0x57
 
-    # Read Divider
+    # Read Driver
     reg_read=$(read_aura_reg 0xd0)
     reg_read=$(read_aura_reg 0xb5)
     driver="${reg_read}"
@@ -136,36 +62,14 @@ check_volatile_fix() {
     reg_read=$(read_aura_reg 0xbc)
     driver="${driver} ${reg_read}"
 
-    # Read Denominator
-    /usr/sbin/i2cset -y -f 10 0x68 0xb3 0x56
-    reg_read=$(read_aura_reg 0xd0)
-    reg_read=$(read_aura_reg 0xb5)
-    denominator="${reg_read}"
-    reg_read=$(read_aura_reg 0xb6)
-    denominator="${denominator} ${reg_read}"
-    reg_read=$(read_aura_reg 0xb7)
-    denominator="${denominator} ${reg_read}"
-    reg_read=$(read_aura_reg 0xb8)
-    denominator="${denominator} ${reg_read}"
-    reg_read=$(read_aura_reg 0xb9)
-    denominator="${denominator} ${reg_read}"
-    reg_read=$(read_aura_reg 0xba)
-    denominator="${denominator} ${reg_read}"
-    reg_read=$(read_aura_reg 0xbb)
-    denominator="${denominator} ${reg_read}"
-
     # Disable Debug Mode
     /usr/sbin/i2cset -y -f 10 0x68 0xbd 0x00
-    # Return values:
-    #    0: Needs fix,
-    #    1: Already fixed,
-    #    Anything Else: Unknown state
-    if [ "$driver" == "0x00 0x00 0x55 0x55 0x55 0x15 0x34 0x00" ]; then
-        echo "0"
-    elif [ "$driver" == "0x00 0x20 0xaa 0xaa 0x2a 0x16 0x34 0x00" ]; then
+
+    # Return "1" if previous fix is detected, otherwise "0"
+    if [ "$driver" == "0x00 0x20 0xaa 0xaa 0x2a 0x16 0x34 0x00" ]; then
         echo "1"
     else
-        echo "$driver"
+        echo "0"
     fi
 }
 
@@ -183,15 +87,9 @@ improve_aura_pll() {
     if [ "$aura_found" == "1" ]; then
        echo "Aura Crystal found. Moving on"
     else
-       echo "Aura chip not found. Exiting..."
+       echo "Aura chip not found. Exiting."
+       echo "AURA_NOT_FOUND"
        exit 0
-    fi
-    perma_fix=$(check_permanent_fix)
-    if [ "$perma_fix" == "1" ]; then
-       echo "Permanent Aura Fix Applied. No need to apply volatile fix."
-       exit
-    else
-       echo "No Permanent Aura Fix Found"
     fi
     retry="3"
     while [ "$retry" != "0" ]; do
@@ -203,32 +101,29 @@ improve_aura_pll() {
            echo "AURA_FIX_SUCCESS"
            exit
         elif [ "$vola_fix" == "0" ]; then
-           echo "No Volatile Aura Fix Found"
+           legacy_fix=$(check_legacy_volatile_fix)
+           if [ "$legacy_fix" == "1" ]; then
+              echo "Legacy fix applied. Skip applying the new fix."
+              echo "AURA_FIX_SUCCESS"
+              exit
+           else
+              echo "No Volatile Aura Fix Found"
+           fi
         else
            echo "Aura is in bad state. Trying soft reset of Aura."
            /usr/sbin/i2cset -y -f 10 0x68 0xff 0x00
            /usr/sbin/i2cset -y -f 10 0x68 0xfe 0x01
            /usr/sbin/i2cset -y -f 10 0x68 0xfe 0x00
-           echo "Sleeping for 10 seconds for PLL on Aura to lock"
-           sleep 10
+           sleep 1
         fi
         echo "Applying Auro Volatile Fix..."
-        echo "Configuring Aura DCO"
-        config_aura_dco
-        echo "Increasing Aura all PLL freq : Execution 1 or 4"
-        increase_aura_freq
-        echo "Increasing Aura all PLL freq : Execution 2 or 4"
-        increase_aura_freq
-        echo "Increasing Aura all PLL freq : Execution 3 or 4"
-        increase_aura_freq
-        echo "Increasing Aura all PLL freq : Execution 4 or 4"
-        increase_aura_freq
+        config_aura_cl_parameter
         vola_fix=$(check_volatile_fix)
         if [ "$vola_fix" == "1" ]; then
              echo "AURA_FIX_SUCCESS"
-             exit
+             exit 0
         else
-             echo "Unexpected driver value after programming : $vola_fix"
+             echo "Unexpected driver value after programming."
         fi
     done
     echo "AURA_FIX_FAILURE"
@@ -238,18 +133,21 @@ improve_aura_pll() {
 # Main Entry. Run the script to improve Aura Pll
 if [ "$1" == "check" ]; then
     if [ "$(check_if_aura)" != "1" ]; then
-        echo "UNSUPPORTED_HW_AURA_CRYSTAL_NOT_FOUND"
-        exit 1
+        echo "AURA_NOT_FOUND"
+        exit 0
     fi
     status=$(check_volatile_fix)
     if [ "$status" == "1" ]; then
          echo "FIX_APPLIED"
          exit 0
-    elif [ "$status" == "0" ]; then
-         echo "FIX_NOT_APPLIED"
-         exit 1
     else
-         echo "UNKNOWN_STATE"
+         legacy_fix=$(check_legacy_volatile_fix)
+         if [ "$legacy_fix" == "1" ]; then
+              echo "Legacy fix found. Mark it as fix appied." 
+              echo "FIX_APPLIED"
+              exit
+         fi
+         echo "FIX_NOT_APPLIED"
          exit 1
     fi
 else
