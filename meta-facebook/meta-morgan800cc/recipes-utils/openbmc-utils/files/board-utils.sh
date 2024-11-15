@@ -99,6 +99,7 @@ log_err_message() {
     local message=$2
 
     logger -p user.err "$func_name: $message"
+    echo "$func_name: $message"
 }
 
 log_pwr_fault_if_exists() {
