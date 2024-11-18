@@ -16,6 +16,7 @@ SRC_URI:append:openbmc-fb-lf = " \
     file://0010-Add-event-log-type-for-PMIC-error-VR-alert.patch \
     file://0011-Update-retimer-version-after-post-complete.patch \
     file://0012-Support-OEM-META-command-for-getting-Http-boot-certi.patch \
+    file://0013-platform-mc-Handle-get-PLDM-Commands-failure.patch \
 "
 
 SYSTEMD_AUTO_ENABLE:${PN}:openbmc-fb-lf = "enable"
