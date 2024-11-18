@@ -3186,6 +3186,7 @@ pal_parse_sys_sts_event(uint8_t fru, uint8_t *event_data, char *error_log) {
     SYS_FAN_SERVICE    = 0x14,
     SYS_BB_FW_EVENT    = 0x15,
     SYS_CPU_THERM_TRIP_OR_VR_HOT = 0x16,
+    SYS_RETIMER_FAULT  = 0x17,
     SYS_AMD_ALERT_L    = 0x20,
     E1S_1OU_M2_PRESENT = 0x80,
     E1S_1OU_INA230_PWR_ALERT   = 0x81,
@@ -3291,6 +3292,9 @@ pal_parse_sys_sts_event(uint8_t fru, uint8_t *event_data, char *error_log) {
       break;
     case SYS_CPU_THERM_TRIP_OR_VR_HOT:
       strcat(error_log, "CPU thermal trip/VRHOT");
+      break;
+    case SYS_RETIMER_FAULT:
+      strcat(error_log, "Retimer fault");
       break;
     case SYS_AMD_ALERT_L:
       enum {
