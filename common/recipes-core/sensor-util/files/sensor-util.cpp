@@ -748,11 +748,13 @@ print_sensor(uint8_t fru, int sensor_num, bool allow_absent, bool history, bool 
       return -1;
     }
 
-    ret = pal_is_fru_ready(fru, &status);
-    if ((ret < 0) || (status == 0)) {
-      if (json == 0)
-        printf("%s is unavailable!\n\n", fruname);
-      return ret;
+    if (!history) {
+      ret = pal_is_fru_ready(fru, &status);
+      if ((ret < 0) || (status == 0)) {
+        if (json == 0)
+          printf("%s is unavailable!\n\n", fruname);
+        return ret;
+      }
     }
 
     ret = pal_get_fru_sensor_list(fru, &sensor_list, &sensor_cnt);
