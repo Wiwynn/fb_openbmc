@@ -88,7 +88,7 @@ class BaseImageLayoutTest(unittest.TestCase):
         c. partition end
         and store it into self.mtd_part_offsets dict
         """
-        cmd = "dmesg | grep -E {} -A 10".format(spi_name)
+        cmd = "cat /var/log/dmesg | grep -E {} -A 10".format(spi_name)
         _out = run_shell_cmd(cmd).split("\n")
         pattern = (
             r'^\[.*\] 0x(?P<start>[0-9a-f]+)-0x(?P<end>[0-9a-f]+) : "(?P<name>[^"]+)"$'
