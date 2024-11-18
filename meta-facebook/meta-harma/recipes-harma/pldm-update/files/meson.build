@@ -13,6 +13,7 @@ project(
 
 src = [
   'pldm-update.cpp',
+  'mmc-recovery.cpp',
   'options.cpp',
 ]
 

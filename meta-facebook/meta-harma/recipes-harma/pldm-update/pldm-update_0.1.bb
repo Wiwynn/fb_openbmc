@@ -12,6 +12,8 @@ inherit meson pkgconfig
 LOCAL_URI = " \
     file://pldm-update.hpp \
     file://pldm-update.cpp \
+    file://mmc-recovery.hpp \
+    file://mmc-recovery.cpp \
     file://options.cpp \
     file://meson.build \
     "

@@ -5,12 +5,9 @@
 #include <libpldm/utils.h>
 #include <libpldm/firmware_update.h>
 
-#include <fcntl.h>    // open
-#include <unistd.h>   // open, read
 #include <filesystem> // path, copy
 #include <thread>     // sleep_for
 #include <chrono>     // seconds
-#include <sys/file.h>
 
 namespace fs = std::filesystem;
 
@@ -23,34 +20,6 @@ public:
     operator int() const { return fd; }  // Allow using this class wherever an int is expected.
 private:
     int fd;
-};
-
-struct PldmUpdateLock
-{
-  int fd = -1;
-  PldmUpdateLock() 
-  {
-    fd = open("/tmp/pldm-update-ag.lock", O_CREAT | O_RDWR, 0666);
-    if (fd < 0)
-    {
-      std::cerr << "Cannot create/open /tmp/pldm-update-ag.lock" << std::endl;
-      throw std::runtime_error("Cannot create!");
-    }
-    if (flock(fd, LOCK_EX | LOCK_NB) < 0)
-    {
-      close(fd);
-      fd = -1;
-      throw std::runtime_error(
-        "Update aborted: The same process is still ongoing.");
-    }
-  }
-  ~PldmUpdateLock()
-  {
-    if (fd < 0)
-      return;
-    flock(fd, LOCK_UN);
-    close(fd);
-  }
 };
 
 template <typename Func>
@@ -68,7 +37,7 @@ bool retry(Func func, int maxRetries, int delayS = 1)
 }
 
 bool
-is_pldmd_service_running(std::string& _pldmdBusName)
+is_pldmd_service_running(std::string& pldmdBusName)
 {
     try {
         // use system1 to method "GetUnit"
@@ -117,13 +86,13 @@ is_pldmd_service_running(std::string& _pldmdBusName)
             "Get"
         );
         msg.append("org.freedesktop.systemd1.Service", "BusName");
-        auto pldmdBusName = std::variant<std::string>();
+        auto busName = std::variant<std::string>();
         reply = bus.call(msg);
-        reply.read(pldmdBusName);
-        _pldmdBusName = std::get<std::string>(pldmdBusName);
+        reply.read(busName);
+        pldmdBusName = std::get<std::string>(busName);
 
         std::cout << "pldmd.service : "
-            << _pldmdBusName
+            << pldmdBusName
             << std::endl;
 
     } catch (const sdbusplus::exception_t& e) {
@@ -306,7 +275,7 @@ get_progress(const std::string& pldmdBusName, const std::string& softwareId)
 }
 
 void
-PldmUpdateApp::pldm_update(const std::string& file)
+pldm_update(const std::string& file)
 {
     std::unique_ptr<PldmUpdateLock> lock;
     try
@@ -316,6 +285,13 @@ PldmUpdateApp::pldm_update(const std::string& file)
     catch (const std::runtime_error& e)
     {
         std::cerr << e.what() << std::endl;
+        return;
+    }
+
+    std::string pldmdBusName;
+    if (!is_pldmd_service_running(pldmdBusName))
+    {
+        std::cerr << "pldmd.service is not running." << std::endl;
         return;
     }
 
@@ -389,20 +365,4 @@ PldmUpdateApp::pldm_update(const std::string& file)
                   << " is stuck in \"Activating\" state." << std::endl;
         return;
     }
-}
-
-int
-main(int argc, char** argv)
-{
-    PldmUpdateApp app("\nPLDM update tool. (Work with pldmd.service)\n");
-
-    // check pldmd.service first
-    if (!is_pldmd_service_running(app.pldmdBusName)) {
-        std::cerr << "pldmd.service is not running." << std::endl;
-        return -1;
-    }
-
-    app.add_options();
-    app.run(argc, argv);
-    return 0;
 }

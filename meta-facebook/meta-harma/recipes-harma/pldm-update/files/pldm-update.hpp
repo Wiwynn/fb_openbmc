@@ -1,34 +1,38 @@
 #pragma once
 
-#include "CLI/CLI.hpp"
 #include <string>
+#include <iostream>
+#include <stdexcept>
+#include <sys/file.h>
+#include <fcntl.h>
+#include <unistd.h>
 
-
-
-class PldmUpdateApp {
-public:
-    std::string pldmdBusName = "";
-    explicit PldmUpdateApp(const std::string& description) : app(description) {
-        app.failure_message(CLI::FailureMessage::help);
-        app.fallthrough();
+struct PldmUpdateLock
+{
+  int fd = -1;
+  PldmUpdateLock() 
+  {
+    fd = open("/tmp/pldm-update-ag.lock", O_CREAT | O_RDWR, 0666);
+    if (fd < 0)
+    {
+      std::cerr << "Cannot create/open /tmp/pldm-update-ag.lock" << std::endl;
+      throw std::runtime_error("Cannot create!");
     }
-
-    // Add options to the app in option.cpp
-    void add_options();
-
-    void pldm_update(const std::string& file);
-
-    // Run the app
-    int run(int argc, char** argv) {
-        try {
-            app.parse(argc, argv);
-        } catch(const CLI::ParseError &e) {
-            return app.exit(e);
-        }
-        return 0;
+    if (flock(fd, LOCK_EX | LOCK_NB) < 0)
+    {
+      close(fd);
+      fd = -1;
+      throw std::runtime_error(
+        "Update aborted: The same process is still ongoing.");
     }
-
-private:
-    CLI::App app;
-
+  }
+  ~PldmUpdateLock()
+  {
+    if (fd < 0)
+      return;
+    flock(fd, LOCK_UN);
+    close(fd);
+  }
 };
+
+void pldm_update(const std::string& file);
