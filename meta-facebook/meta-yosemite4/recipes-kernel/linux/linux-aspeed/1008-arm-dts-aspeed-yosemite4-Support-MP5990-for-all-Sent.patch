@@ -1,21 +1,20 @@
-From 52f557ed5654764656a5a30f676fab2f00af6425 Mon Sep 17 00:00:00 2001
+From 3948b6442321d63988bd1eda8df7ef2a071d14ea Mon Sep 17 00:00:00 2001
 From: Rush_Chen_Wiwynn <Rush_Chen@wiwynn.com>
 Date: Thu, 20 Jun 2024 15:07:00 +0800
-Subject: [PATCH 1016/1022] meta-facebook: yosemite4: update dts file to enable
- "mp5990"
+Subject: [PATCH 1008/1012] arm: dts: aspeed: yosemite4: Support MP5990 for all
+ Sentinel Domes
 
-enable mp5990 in dts file
-This change is also contributing to torvalds upstream for reviewing.
-Lore Link: https://lore.kernel.org/all/20240626090744.174351-27-Delphine_CC_Chiu@wiwynn.com/
+Support 2nd source HSC sensor MP5990 for all Sentinel Domes
+- Haven't contributed because we couldn't set multiple source in one compatible in DTS on upstream.
 ---
  .../dts/aspeed/aspeed-bmc-facebook-yosemite4.dts | 16 ++++++++--------
  1 file changed, 8 insertions(+), 8 deletions(-)
 
 diff --git a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts
-index cbcabd954afe..449804ee5d11 100644
+index 33b13bdf6c52..d43c70c6bbc0 100644
 --- a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts
 +++ b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts
-@@ -360,7 +360,7 @@ gpio@23 {
+@@ -210,7 +210,7 @@ gpio@24 {
  	};
  
  	power-sensor@40 {
@@ -24,7 +23,7 @@ index cbcabd954afe..449804ee5d11 100644
  		reg = <0x40>;
  		shunt-resistor-micro-ohms = <500>;
  	};
-@@ -406,7 +406,7 @@ gpio@23 {
+@@ -256,7 +256,7 @@ gpio@24 {
  	};
  
  	power-sensor@40 {
@@ -33,7 +32,7 @@ index cbcabd954afe..449804ee5d11 100644
  		reg = <0x40>;
  		shunt-resistor-micro-ohms = <500>;
  	};
-@@ -452,7 +452,7 @@ gpio@23 {
+@@ -302,7 +302,7 @@ gpio@24 {
  	};
  
  	power-sensor@40 {
@@ -42,7 +41,7 @@ index cbcabd954afe..449804ee5d11 100644
  		reg = <0x40>;
  		shunt-resistor-micro-ohms = <500>;
  	};
-@@ -498,7 +498,7 @@ gpio@23 {
+@@ -348,7 +348,7 @@ gpio@24 {
  	};
  
  	power-sensor@40 {
@@ -51,7 +50,7 @@ index cbcabd954afe..449804ee5d11 100644
  		reg = <0x40>;
  		shunt-resistor-micro-ohms = <500>;
  	};
-@@ -544,7 +544,7 @@ gpio@23 {
+@@ -394,7 +394,7 @@ gpio@24 {
  	};
  
  	power-sensor@40 {
@@ -60,7 +59,7 @@ index cbcabd954afe..449804ee5d11 100644
  		reg = <0x40>;
  		shunt-resistor-micro-ohms = <500>;
  	};
-@@ -590,7 +590,7 @@ gpio@23 {
+@@ -440,7 +440,7 @@ gpio@24 {
  	};
  
  	power-sensor@40 {
@@ -69,7 +68,7 @@ index cbcabd954afe..449804ee5d11 100644
  		reg = <0x40>;
  		shunt-resistor-micro-ohms = <500>;
  	};
-@@ -636,7 +636,7 @@ gpio@23 {
+@@ -486,7 +486,7 @@ gpio@24 {
  	};
  
  	power-sensor@40 {
@@ -78,7 +77,7 @@ index cbcabd954afe..449804ee5d11 100644
  		reg = <0x40>;
  		shunt-resistor-micro-ohms = <500>;
  	};
-@@ -682,7 +682,7 @@ gpio@23 {
+@@ -532,7 +532,7 @@ gpio@24 {
  	};
  
  	power-sensor@40 {
@@ -88,5 +87,5 @@ index cbcabd954afe..449804ee5d11 100644
  		shunt-resistor-micro-ohms = <500>;
  	};
 -- 
-2.44.2
+2.25.1
 

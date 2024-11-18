@@ -1,0 +1,94 @@
+From de9c844c55fd0c1251ef5f760e500ad22c804120 Mon Sep 17 00:00:00 2001
+From: RickyWu-wiwynn <ricky_cx_wu@wiwynn.com>
+Date: Fri, 1 Nov 2024 11:25:35 +0800
+Subject: [PATCH 1003/1012] arm: dts: aspeed: yosemite4: add power and adc sensors
+ on Medusa Board
+
+1. Add XDP710 for 2nd source 48V HSC devices.
+  - Haven't contributed to kernel org.
+2. Add MP5023 for P12V eFuse device.
+  - Haven't contributed because there is no binding document on upstream.
+3. Add INA233 and RTQ6065 for ADC monitor
+  - Haven't contributed because there is no drivers for INA233 on upstream.
+  - Couldn't add multiple device in one compatible on upstream.
+4. Add pmbus for P12V Delta Module devices.
+  - Haven't contributed because we couldn't use 'pmbus' in dts on upstream.
+---
+ .../aspeed/aspeed-bmc-facebook-yosemite4.dts  | 42 +++++++++++++++++++
+ 1 file changed, 42 insertions(+)
+
+diff --git a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts
+index 2cc18ea309f1..e2cc96134d0c 100644
+--- a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts
++++ b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts
+@@ -864,11 +864,21 @@ power-sensor@10 {
+ 		reg = <0x10>;
+ 	};
+ 
++	power-sensor@11 {
++		compatible = "infineon,xdp710";
++		reg = <0x11>;
++	};
++
+ 	power-sensor@12 {
+ 		compatible = "adi,adm1272";
+ 		reg = <0x12>;
+ 	};
+ 
++	power-sensor@13 {
++		compatible = "infineon,xdp710";
++		reg = <0x13>;
++	};
++
+ 	gpio@20 {
+ 		compatible = "nxp,pca9555";
+ 		reg = <0x20>;
+@@ -944,6 +954,18 @@ gpio@23 {
+ 				  "HSC7_ALERT2_R_N", "HSC8_ALERT2_R_N";
+ 	};
+ 
++	power-sensor@40 {
++		compatible = "mps,mp5023";
++		reg = <0x40>;
++	};
++
++	power-sensor@41 {
++		compatible = "ti,ina233", "richtek,rtq6056";
++		resistor-calibration = /bits/ 16 <0x0a00>;
++		current-lsb= /bits/ 16 <0x0001>;
++		reg = <0x41>;
++	};
++
+ 	temperature-sensor@48 {
+ 		compatible = "ti,tmp75";
+ 		reg = <0x48>;
+@@ -958,6 +980,26 @@ eeprom@54 {
+ 		compatible = "atmel,24c128";
+ 		reg = <0x54>;
+ 	};
++
++	power-sensor@62 {
++		compatible = "pmbus";
++		reg = <0x62>;
++	};
++
++	power-sensor@64 {
++		compatible = "pmbus";
++		reg = <0x64>;
++	};
++
++	power-sensor@65 {
++		compatible = "pmbus";
++		reg = <0x65>;
++	};
++
++	power-sensor@68 {
++		compatible = "pmbus";
++		reg = <0x68>;
++	};
+ };
+ 
+ &i2c12 {
+-- 
+2.25.1
+

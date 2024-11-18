@@ -1,0 +1,67 @@
+From 9b0c95679160e1df8d669ff577000bb1117dd00e Mon Sep 17 00:00:00 2001
+From: RickyWu-wiwynn <ricky_cx_wu@wiwynn.com>
+Date: Fri, 1 Nov 2024 14:06:29 +0800
+Subject: [PATCH 1007/1012] arm: dts: aspeed: yosemite4: add EMC1403 for Terminus
+ NICs.
+
+Add EMC1403 for the temperature sensor on Terminus NICs.
+- Haven't contributed because there is no binding document of emc1403 on upstream.
+---
+ .../aspeed/aspeed-bmc-facebook-yosemite4.dts  | 20 +++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts
+index e37e8bfd94ce..33b13bdf6c52 100644
+--- a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts
++++ b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts
+@@ -1504,6 +1504,11 @@ temperature-sensor@1f {
+ 				reg = <0x1f>;
+ 			};
+ 
++			emc1403@3c {
++				compatible = "smsc,emc1403";
++				reg = <0x3c>;
++			};
++
+ 			eeprom@50 {
+ 				compatible = "atmel,24c64";
+ 				reg = <0x50>;
+@@ -1520,6 +1525,11 @@ temperature-sensor@1f {
+ 				reg = <0x1f>;
+ 			};
+ 
++			emc1403@3c {
++				compatible = "smsc,emc1403";
++				reg = <0x3c>;
++			};
++
+ 			eeprom@50 {
+ 				compatible = "atmel,24c64";
+ 				reg = <0x50>;
+@@ -1536,6 +1546,11 @@ temperature-sensor@1f {
+ 				reg = <0x1f>;
+ 			};
+ 
++			emc1403@3c {
++				compatible = "smsc,emc1403";
++				reg = <0x3c>;
++			};
++
+ 			eeprom@50 {
+ 				compatible = "atmel,24c64";
+ 				reg = <0x50>;
+@@ -1552,6 +1567,11 @@ temperature-sensor@1f {
+ 				reg = <0x1f>;
+ 			};
+ 
++			emc1403@3c {
++				compatible = "smsc,emc1403";
++				reg = <0x3c>;
++			};
++
+ 			eeprom@50 {
+ 				compatible = "atmel,24c64";
+ 				reg = <0x50>;
+-- 
+2.25.1
+

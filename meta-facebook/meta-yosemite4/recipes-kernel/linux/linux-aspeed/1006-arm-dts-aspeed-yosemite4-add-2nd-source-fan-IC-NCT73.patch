@@ -1,22 +1,21 @@
-From 5e67565c3afd4f2d83505fb842c70dabb94bba2a Mon Sep 17 00:00:00 2001
-From: Eric <Eric_LC_Chen@wiwynn.com>
-Date: Wed, 20 Mar 2024 20:59:30 +0800
-Subject: [PATCH 1011/1022] Add nct7363 in yosemite4 dts
+From 9b1427d9f86f08c502c05fb4ac04595a12836fcb Mon Sep 17 00:00:00 2001
+From: RickyWu-wiwynn <ricky_cx_wu@wiwynn.com>
+Date: Fri, 1 Nov 2024 13:42:42 +0800
+Subject: [PATCH 1006/1012] arm: dts: aspeed: yosemite4: add 2nd source fan IC
+ NCT7363 on Fan Boards
 
-ARM: dts: aspeed: yosemite4:
-Add nct7363(0x21 and 0x23) in yosemite4.dts
-This change is also contributing to torvalds upstream for reviewing.
-lore link: https://lore.kernel.org/all/20240425060626.2558515-3-Delphine_CC_Chiu@wiwynn.com/
+Add 2nd source fan IC NCT7363 on Fan Boards.
+- Haven't contributed because there is no driver of NCT7363 on upstream.
 ---
- .../aspeed/aspeed-bmc-facebook-yosemite4.dts  | 146 +++++++++++++++++-
- 1 file changed, 145 insertions(+), 1 deletion(-)
+ .../aspeed/aspeed-bmc-facebook-yosemite4.dts  | 144 ++++++++++++++++++
+ 1 file changed, 144 insertions(+)
 
 diff --git a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts
-index b6966314f1e6..8322cf413493 100644
+index 5c4ae16168d5..e37e8bfd94ce 100644
 --- a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts
 +++ b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts
-@@ -1226,6 +1226,42 @@ pwm@20{
- 				reg = <0x20>;
+@@ -1222,6 +1222,42 @@ channel@5 {
+ 				};
  			};
  
 +			hwmon0: hwmon@21 {
@@ -58,7 +57,7 @@ index b6966314f1e6..8322cf413493 100644
  			gpio@22{
  				compatible = "ti,tca6424";
  				reg = <0x22>;
-@@ -1233,6 +1269,42 @@ gpio@22{
+@@ -1229,6 +1265,42 @@ gpio@22{
  				#gpio-cells = <2>;
  			};
  
@@ -68,32 +67,32 @@ index b6966314f1e6..8322cf413493 100644
 +				#pwm-cells = <2>;
 +
 +				fan-3 {
-+					pwms = <&hwmon0 2 20000>;
++					pwms = <&hwmon1 2 20000>;
 +					tach-ch = /bits/ 8 <0x00>;
 +				};
 +
 +				fan-4 {
-+					pwms = <&hwmon0 5 20000>;
++					pwms = <&hwmon1 5 20000>;
 +					tach-ch = /bits/ 8 <0x01>;
 +				};
 +
 +				fan-5 {
-+					pwms = <&hwmon0 5 20000>;
++					pwms = <&hwmon1 5 20000>;
 +					tach-ch = /bits/ 8 <0x02>;
 +				};
 +
 +				fan-0 {
-+					pwms = <&hwmon0 0 20000>;
++					pwms = <&hwmon1 0 20000>;
 +					tach-ch = /bits/ 8 <0x09>;
 +				};
 +
 +				fan-1 {
-+					pwms = <&hwmon0 0 20000>;
++					pwms = <&hwmon1 0 20000>;
 +					tach-ch = /bits/ 8 <0x0c>;
 +				};
 +
 +				fan-2 {
-+					pwms = <&hwmon0 2 20000>;
++					pwms = <&hwmon1 2 20000>;
 +					tach-ch = /bits/ 8 <0x0e>;
 +				};
 +			};
@@ -101,8 +100,8 @@ index b6966314f1e6..8322cf413493 100644
  			pwm@2f{
  				compatible = "maxim,max31790";
  				reg = <0x2f>;
-@@ -1274,6 +1346,42 @@ pwm@20{
- 				reg = <0x20>;
+@@ -1288,6 +1360,42 @@ channel@5 {
+ 				};
  			};
  
 +			hwmon2: hwmon@21 {
@@ -144,7 +143,7 @@ index b6966314f1e6..8322cf413493 100644
  			gpio@22{
  				compatible = "ti,tca6424";
  				reg = <0x22>;
-@@ -1281,6 +1389,42 @@ gpio@22{
+@@ -1295,6 +1403,42 @@ gpio@22{
  				#gpio-cells = <2>;
  			};
  
@@ -187,15 +186,6 @@ index b6966314f1e6..8322cf413493 100644
  			pwm@2f{
  				compatible = "maxim,max31790";
  				reg = <0x2f>;
-@@ -1437,7 +1581,7 @@ &uhci {
- };
- 
- &jtag1 {
--	status = "okay";
-+      status = "okay";
- };
- 
- &sgpiom0 {
 -- 
-2.44.2
+2.25.1
 

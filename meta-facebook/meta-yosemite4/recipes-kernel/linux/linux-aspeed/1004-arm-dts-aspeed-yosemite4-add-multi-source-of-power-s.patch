@@ -1,0 +1,64 @@
+From cfcd6ce57f8c906891615c1197b62a72338b6308 Mon Sep 17 00:00:00 2001
+From: RickyWu-wiwynn <ricky_cx_wu@wiwynn.com>
+Date: Fri, 1 Nov 2024 13:24:13 +0800
+Subject: [PATCH 1004/1012] arm: dts: aspeed: yosemite4: add multi source of power
+ sensors on Spider Board
+
+Add INA233, RTQ6056, and SQ52205 for the power sensors on Spider Board.
+- Haven't contributed because there is no INA233 and SQ52205 driver on
+upstream.
+---
+ .../aspeed/aspeed-bmc-facebook-yosemite4.dts  | 20 ++++++++++++++-----
+ 1 file changed, 15 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts
+index e2cc96134d0c..aa1a956b17f1 100644
+--- a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts
++++ b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts
+@@ -1113,28 +1113,38 @@ adc@37 {
+ 	};
+ 
+ 	power-sensor@40 {
+-		compatible = "ti,ina230";
++		compatible = "ti,ina233", "richtek,rtq6056", "silergy,sq52205";
+ 		reg = <0x40>;
++		resistor-calibration = /bits/ 16 <0x0400>;
++		current-lsb= /bits/ 16 <0x0001>;
+ 	};
+ 
+ 	power-sensor@41 {
+-		compatible = "ti,ina230";
++		compatible = "ti,ina233", "richtek,rtq6056", "silergy,sq52205";
+ 		reg = <0x41>;
++		resistor-calibration = /bits/ 16 <0x0400>;
++		current-lsb= /bits/ 16 <0x0001>;
+ 	};
+ 
+ 	power-sensor@42 {
+-		compatible = "ti,ina230";
++		compatible = "ti,ina233", "richtek,rtq6056", "silergy,sq52205";
+ 		reg = <0x42>;
++		resistor-calibration = /bits/ 16 <0x0400>;
++		current-lsb= /bits/ 16 <0x0001>;
+ 	};
+ 
+ 	power-sensor@43 {
+-		compatible = "ti,ina230";
++		compatible = "ti,ina233", "richtek,rtq6056", "silergy,sq52205";
+ 		reg = <0x43>;
++		resistor-calibration = /bits/ 16 <0x0400>;
++		current-lsb= /bits/ 16 <0x0001>;
+ 	};
+ 
+ 	power-sensor@44 {
+-		compatible = "ti,ina230";
++		compatible = "ti,ina233", "richtek,rtq6056", "silergy,sq52205";
+ 		reg = <0x44>;
++		resistor-calibration = /bits/ 16 <0x0400>;
++		current-lsb= /bits/ 16 <0x0001>;
+ 	};
+ 
+ 	temperature-sensor@4e {
+-- 
+2.25.1
+
