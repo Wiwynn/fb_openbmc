@@ -29,6 +29,7 @@ HMC_MANG_COMP_LIST=(
     "HGX_InfoROM_GPU_1"
     "HGX_InfoROM_GPU_2"
     "HGX_InfoROM_GPU_3"
+    "HGX_PCIeSwitchConfig_0"
 )
 
 is_hmc_managed_fw_comp()
@@ -66,7 +67,7 @@ get_all_comp_version()
         echo "failed: HMC not response."
         return 1
     else
-        echo "${CURL_DATA}" | jq -r '.Members[] | "\(.Id): \(.Version)"'
+        echo "${CURL_DATA}" | jq -r '.Members[] | select(.Id) | "\(.Id): \(.Version)"'
     fi
     return 0
 }
