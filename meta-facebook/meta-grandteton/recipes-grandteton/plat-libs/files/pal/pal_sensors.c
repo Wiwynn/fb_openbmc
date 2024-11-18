@@ -650,7 +650,12 @@ pal_get_sensor_threshold(uint8_t fru, uint8_t sensor_num, uint8_t thresh, void *
     switch(thresh) {
       case UCR_THRESH:
         if(pal_is_gt_hnext() && (fru == FRU_FAN_BP1 || fru == FRU_FAN_BP2)) {
-          *val = sensor_map[fru].map[sensor_num].snr_thresh.ucr_thresh + 4000;
+          if (sensor_num%2) {
+            *val = sensor_map[fru].map[sensor_num].snr_thresh.ucr_thresh + 4000;
+          }
+          else {
+            *val = sensor_map[fru].map[sensor_num].snr_thresh.ucr_thresh + 6000;
+          }
         }
         else {
           *val = sensor_map[fru].map[sensor_num].snr_thresh.ucr_thresh;

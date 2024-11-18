@@ -29,6 +29,7 @@ LOCAL_URI += " \
     file://zone-2-retimer.fsc \
     file://zone-8-retimer.fsc \
     file://zone-8-retimer-ubb.fsc \
+    file://zone-8-retimer-gt15.fsc \
     "
 
 FSC_CONFIG += "fsc-config-evt.json \
@@ -43,5 +44,6 @@ FSC_ZONE_CONFIG +="zone-evt.fsc \
                    zone-2-retimer.fsc \
                    zone-8-retimer.fsc \
                    zone-8-retimer-ubb.fsc \
+                   zone-8-retimer-gt15.fsc \
 	          "
 RDEPENDS:${PN} += "bash"

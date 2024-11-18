@@ -1,5 +1,5 @@
 {
-    "version": "inspirationpint_v1.2",
+    "version": "inspirationpint_v2.0",
     "pwm_transition_value": 100,
     "pwm_boost_value": 100,
     "sample_interval_ms": 3000,
@@ -265,15 +265,15 @@
         "positive_hysteresis": 1,
         "negative_hysteresis": 1,
         "data": [
-          [35, 25],
-          [38, 30],
-          [40, 45],
-          [49, 50],
-          [63, 60],
-          [67, 65],
-          [72, 70],
-          [75, 75],
-          [82, 100]
+          [-50, 25],
+          [-47, 30],
+          [-45, 45],
+          [-36, 50],
+          [-22, 60],
+          [-18, 65],
+          [-13, 70],
+          [-10, 75],
+          [-3 , 100]
         ]
       },
       "gpu_tray_gpu_pid": {
@@ -283,7 +283,7 @@
         "type": "pid",
         "positive_hysteresis": 0,
         "negative_hysteresis": 2,
-        "setpoint": 79,
+        "setpoint": -6,
         "kp": -5,
         "ki": -0.035,
         "kd": 0
@@ -372,6 +372,32 @@
         ]
       },
       "gpu_tray_switch_pid": {
+        "read_source" : {
+          "util" : "/usr/local/bin/sensor-util"
+        },
+        "type": "pid",
+        "positive_hysteresis": 1,
+        "negative_hysteresis": 2,
+        "setpoint": 98,
+        "kp": -3.5,
+        "ki": -0.035,
+        "kd": 0
+      },
+      "gpu_tray_nvlink_linear": {
+        "read_source" : {
+          "util" : "/usr/local/bin/sensor-util"
+        },
+        "type": "linear",
+        "positive_hysteresis": 1,
+        "negative_hysteresis": 1,
+        "data": [
+          [65, 25],
+          [90, 45],
+          [95, 50],
+          [102, 90]
+        ]
+      },
+      "gpu_tray_nvlink_pid": {
         "read_source" : {
           "util" : "/usr/local/bin/sensor-util"
         },
@@ -779,7 +805,7 @@
     "zones": {
       "zone": {
         "pwm_output": [0],
-        "expr_file": "zone-8-retimer.fsc"
+        "expr_file": "zone-8-retimer-gt15.fsc"
       }
     }
 }
