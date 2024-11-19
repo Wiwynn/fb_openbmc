@@ -1,11 +1,7 @@
-From 7f78982e9f2a232670425fcdc61eaa90d744d61e Mon Sep 17 00:00:00 2001
+From 312ebeee9bbc3e129780221298529c906f57270a Mon Sep 17 00:00:00 2001
 From: Potin Lai <potin.lai.pt@gmail.com>
 Date: Fri, 26 Jul 2024 19:03:48 +0800
-Subject: [PATCH 1002/1005] ARM: dts: aspeed: catalina: add extra ncsi
- properties
-
-The Catalina dts file was removing some properties and compatible strings which
-are not support in db-binding document and cause `CHECK_DTBS=y` check failed.
+Subject: [PATCH 1/1] ARM: dts: aspeed: catalina: add extra ncsi properties
 
 Add extra properties which only avaliable in Meta common patches.
 
@@ -16,22 +12,31 @@ Add extra properties which only avaliable in Meta common patches.
 
 Signed-off-by: Potin Lai <potin.lai.pt@gmail.com>
 ---
- arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts | 2 ++
- 1 file changed, 2 insertions(+)
+ arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
 
 diff --git a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts
-index 150545d7dfad..998be7b2a7c9 100644
+index ac3e57e9c99e9..84991a236750b 100644
 --- a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts
 +++ b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts
-@@ -165,6 +165,8 @@ &mac3 {
+@@ -158,6 +158,8 @@ &mac2 {
  	pinctrl-names = "default";
- 	pinctrl-0 = <&pinctrl_ncsi4_default>;
+ 	pinctrl-0 = <&pinctrl_ncsi3_default>;
  	use-ncsi;
 +	ncsi-ctrl,start-redo-probe;
 +	ncsi-package = <1>;
  };
  
+ &mac3 {
+@@ -165,6 +167,8 @@ &mac3 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_ncsi4_default>;
+ 	use-ncsi;
++	ncsi-ctrl,start-redo-probe;
++	ncsi-package = <2>;
+ };
+ 
  &fmc {
 -- 
-2.44.2
+2.31.1
 

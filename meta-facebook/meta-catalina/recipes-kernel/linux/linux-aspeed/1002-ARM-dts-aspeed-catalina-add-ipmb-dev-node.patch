@@ -1,10 +1,7 @@
-From da4e8eaa0bf2829ffbea3991ecfb4f6c02676556 Mon Sep 17 00:00:00 2001
+From d18845d91d9bdf84ec330459980219522f438a76 Mon Sep 17 00:00:00 2001
 From: Potin Lai <potin.lai.pt@gmail.com>
 Date: Fri, 2 Aug 2024 17:29:42 +0800
-Subject: [PATCH 1003/1005] ARM: dts: aspeed: catalina: add ipmb-dev node
-
-The Catalina dts file was removing some properties and compatible strings which
-are not support in db-binding document and cause `CHECK_DTBS=y` check failed.
+Subject: [PATCH 3/6] ARM: dts: aspeed: catalina: add ipmb-dev node
 
 ipmb-dev node was removed due to compatible string not exist on upstream.
 Add back ipmb-dev node back in this patch.
@@ -15,10 +12,10 @@ Signed-off-by: Potin Lai <potin.lai.pt@gmail.com>
  1 file changed, 10 insertions(+)
 
 diff --git a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts
-index 998be7b2a7c9..1ba886bf3177 100644
+index 7d2e5f5f7cc18..4d7ff91a02a4f 100644
 --- a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts
 +++ b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts
-@@ -678,6 +678,16 @@ rtc@6f {
+@@ -680,6 +680,16 @@ rtc@6f {
  
  &i2c7 {
  	status = "okay";
@@ -36,5 +33,5 @@ index 998be7b2a7c9..1ba886bf3177 100644
  
  &i2c8 {
 -- 
-2.44.2
+2.31.1
 

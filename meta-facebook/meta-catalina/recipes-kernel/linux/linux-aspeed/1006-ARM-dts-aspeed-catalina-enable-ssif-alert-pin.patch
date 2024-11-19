@@ -1,0 +1,31 @@
+From aa475af59ff680ee49d0d7f0c8873bee063a5fe1 Mon Sep 17 00:00:00 2001
+From: Potin Lai <potin.lai@quantatw.com>
+Date: Fri, 18 Oct 2024 15:13:23 +0800
+Subject: [PATCH 1/1] ARM: dts: aspeed: catalina: enable ssif alert pin
+
+Set GPIOC7 as SSIF alert pin for improving SSIF message performance.
+
+Signed-off-by: Potin Lai <potin.lai@quantatw.com>
+---
+This commit depends on the patches list below 
+Link: https://lore.kernel.org/all/20241019-ssif-alert-gpios-v1-1-483eee5f99d3@gmail.com/
+Link: https://lore.kernel.org/all/20241019-ssif-alert-gpios-v1-2-483eee5f99d3@gmail.com/
+---
+ arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts
+index 6fbd9e20f1659..3d618ddee8828 100644
+--- a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts
++++ b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts
+@@ -790,6 +790,7 @@ &i2c11 {
+ 	ssif-bmc@10 {
+ 		compatible = "ssif-bmc";
+ 		reg = <0x10>;
++		alert-gpios = <&gpio0 ASPEED_GPIO(C, 7) GPIO_ACTIVE_LOW>;
+ 	};
+ };
+ 
+-- 
+2.31.1
+
