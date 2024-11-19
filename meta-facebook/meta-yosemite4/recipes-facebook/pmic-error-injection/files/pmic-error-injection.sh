@@ -123,7 +123,7 @@ bit_position=5
 
 resp=$(get_hex_bit_value "$last_byte" "$bit_position")
 
-if [ "$resp" -eq "1" ]; then
+if [ "$resp" -eq "0" ]; then
         echo "Write protect is enable, can't inject/clear PMIC error, last_byte: $last_byte"
         exit 1
 fi
