@@ -1,0 +1,51 @@
+From 4b60dda7b967ffd9166026430d2f64788fad52f9 Mon Sep 17 00:00:00 2001
+From: Potin Lai <potin.lai@quantatw.com>
+Date: Wed, 25 Sep 2024 23:36:54 +0800
+Subject: [PATCH 3/6] configurations: Revise CX7 NIC card temperature sensor
+
+Revise the CX7 NIC temperature sensor name for Catalina system.
+
+Signed-off-by: Potin Lai <potin.lai@quantatw.com>
+Change-Id: I7ac22c0fb872f091141f2d77ef97b9686ddfcbae
+---
+This patch will remain in facebook openbmc.
+---
+ configurations/cx7_ocp.json | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/configurations/cx7_ocp.json b/configurations/cx7_ocp.json
+index 3f11519..ffd5ca4 100644
+--- a/configurations/cx7_ocp.json
++++ b/configurations/cx7_ocp.json
+@@ -3,7 +3,7 @@
+         {
+             "Address": "$address",
+             "Bus": "$bus",
+-            "Name": "OCP CX7 NIC FRU $bus",
++            "Name": "OCP CX7 NIC FRU $bus % 2",
+             "Type": "EEPROM"
+         },
+         {
+@@ -12,8 +12,8 @@
+             "Labels": [
+                 "temp2"
+             ],
+-            "Name": "NIC Temp $bus",
+-            "Name1": "NIC Temp $bus",
++            "Name": "NIC$bus % 2 REMOTE_TEMP_C",
++            "Name1": "NIC$bus % 2 TEMP_C",
+             "Thresholds": [
+                 {
+                     "Direction": "less than",
+@@ -33,7 +33,7 @@
+             "Type": "TMP421"
+         }
+     ],
+-    "Name": "OCP CX7 NIC $bus",
++    "Name": "OCP CX7 NIC $bus % 2",
+     "Probe": "xyz.openbmc_project.FruDevice({'BOARD_PRODUCT_NAME': 'Nvidia ConnectX-7 OCP3.0'})",
+     "Type": "Board",
+     "xyz.openbmc_project.Inventory.Decorator.Asset": {
+-- 
+2.31.1
+
