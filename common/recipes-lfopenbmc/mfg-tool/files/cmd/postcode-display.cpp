@@ -48,61 +48,13 @@ struct command
         auto proxy = host::postcode::Proxy(ctx).service(*service).path(path);
         auto raw_postcodes = co_await proxy.get_post_codes(1);
 
-        // Determine the size of the largest postcode to try to guess the length
-        // of the postcodes.
-        auto postcode_idx = 0;
-        for (auto& [code, extra] : raw_postcodes)
-        {
-            if (code <= std::numeric_limits<uint8_t>::max())
-            {
-                postcode_idx = std::max(0, postcode_idx);
-            }
-            else if (code <= std::numeric_limits<uint16_t>::max())
-            {
-                postcode_idx = std::max(1, postcode_idx);
-            }
-            else if (code <= std::numeric_limits<uint32_t>::max())
-            {
-                postcode_idx = std::max(2, postcode_idx);
-            }
-            else
-            {
-                postcode_idx = 3;
-            }
-        }
-
         // Insert the formatted postcode.
-        for (auto& [code, extra] : raw_postcodes)
+        for (const auto& [code, _] : raw_postcodes)
         {
-            if (!extra.empty())
-            {
-                std::string result;
-                for (size_t i = 0; i < extra.size(); i++)
-                {
-                    result += std::format("{:02x}", extra[i]);
-                }
-                postcodes.push_back(result);
-                continue;
-            }
-
-            switch (postcode_idx)
-            {
-                case 0:
-                    postcodes.push_back(std::format("{:02x}", code));
-                    break;
-
-                case 1:
-                    postcodes.push_back(std::format("{:04x}", code));
-                    break;
-
-                case 2:
-                    postcodes.push_back(std::format("{:08x}", code));
-                    break;
-
-                case 3:
-                    postcodes.push_back(std::format("{:016x}", code));
-                    break;
-            }
+            postcodes.emplace_back(std::ranges::fold_left(
+                code, std::string{}, [](const std::string& l, auto r) {
+                    return l + std::format("{:02x}", r);
+                }));
         }
 
         json::display(postcodes);
