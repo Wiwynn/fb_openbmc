@@ -1098,9 +1098,9 @@ pal_get_board_rev(int *rev) {
        */
       if (pal_get_key_value("smb_pwrseq_1_addr", str) == 0 ) {
         if (strncmp(str,"0x35",sizeof("0x35")) == 0) {
-          *rev = BOARD_FUJI_MP0SKU1;
+          *rev = BOARD_FUJI_MP0SKU2;
         } else if (strncmp(str,"0x68",sizeof("0x68")) == 0) {
-          *rev = BOARD_FUJI_MP1SKU7;
+          *rev = BOARD_FUJI_MP1SKU6;
         } else {
           *rev = BOARD_FUJI_UNDEFINED;
         }
