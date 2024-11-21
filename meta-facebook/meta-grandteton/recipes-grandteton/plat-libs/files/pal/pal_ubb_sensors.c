@@ -198,6 +198,32 @@ read_snr(uint8_t fru, uint8_t sensor_num, float *value) {
   return ret;
 }
 
+int
+get_state_sensor(uint8_t fru, uint8_t sensor_num, float *value)
+{
+  int ret = -1;
+  uint8_t gpu_bus = 11;
+  uint8_t gpu_eid = 0x24;
+  uint16_t snr_id;
+
+  if (!gpio_get_value_by_shadow("GPU_FPGA_READY_ISO_R"))  {
+    return ret;
+  }
+
+  switch (sensor_num) {
+    case GPU_SENSOR_SMC_HEALTH:
+      snr_id = 0x01C0;
+      break;
+    case GPU_SENSOR_vNIC_HEALTH:
+      snr_id = 0x03C0;
+      break;
+    default:
+      return ret;
+  }
+
+  return get_pldm_state_sensor(gpu_bus, gpu_eid, snr_id, value);
+}
+
 PAL_SENSOR_MAP ubb_sensor_map[] = {
   {NULL, 0, NULL, 0, {0, 0, 0, 0, 0, 0, 0, 0}, 0},                       //0x00
   {"HSC_0_Power" , 0 , read_snr, true, {0, 0, 0, 0, 0, 0, 0, 0}, POWER}, //0x01
@@ -317,6 +343,17 @@ PAL_SENSOR_MAP ubb_sensor_map[] = {
   {"OAM_7_DRAM_PWR" , 0,    NULL, false, {0, 0, 0, 0, 0, 0, 0, 0}, POWER},      //0x6D
   {"OAM_7_DRAM_TEMP", 0,read_snr, false, {105.0, 0, 0, 5.0, 0, 0, 0, 0}, TEMP}, //0x6E
   {"GPU_WARMEST_MEM_TEMP", 0, read_snr, false, {0, 0, 0, 0, 0, 0, 0, 0}, TEMP}, //0x6F
+
+  {NULL, 0, NULL, 0, {0, 0, 0, 0, 0, 0, 0, 0}, 0},                              //0x70
+  {NULL, 0, NULL, 0, {0, 0, 0, 0, 0, 0, 0, 0}, 0},                              //0x71
+  {NULL, 0, NULL, 0, {0, 0, 0, 0, 0, 0, 0, 0}, 0},                              //0x72
+  {NULL, 0, NULL, 0, {0, 0, 0, 0, 0, 0, 0, 0}, 0},                              //0x73
+  {NULL, 0, NULL, 0, {0, 0, 0, 0, 0, 0, 0, 0}, 0},                              //0x74
+  {NULL, 0, NULL, 0, {0, 0, 0, 0, 0, 0, 0, 0}, 0},                              //0x75
+  {NULL, 0, NULL, 0, {0, 0, 0, 0, 0, 0, 0, 0}, 0},                              //0x76
+  {NULL, 0, NULL, 0, {0, 0, 0, 0, 0, 0, 0, 0}, 0},                              //0x77
+  {"SMC_HEALTH",  0, get_state_sensor, false, {0, 0, 0, 0, 0, 0, 0, 0}, STATE}, //0x78
+  {"vNIC_HEALTH", 0, get_state_sensor, false, {0, 0, 0, 0, 0, 0, 0, 0}, STATE}, //0x79
 };
 
 const uint8_t ubb_sensor_list[] = {
@@ -387,4 +424,10 @@ const uint8_t ubb_sensor_list[] = {
   GPU_WARMEST_MEMORY_TEMP,
 };
 
+const uint8_t ubb_discrete_sensor_list[] = {
+  GPU_SENSOR_SMC_HEALTH,
+  GPU_SENSOR_vNIC_HEALTH,
+};
+
 size_t ubb_sensor_cnt = sizeof(ubb_sensor_list)/sizeof(uint8_t);
+size_t ubb_discrete_sensor_cnt = sizeof(ubb_discrete_sensor_list)/sizeof(uint8_t);

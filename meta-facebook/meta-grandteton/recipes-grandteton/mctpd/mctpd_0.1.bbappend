@@ -3,6 +3,7 @@ LOCAL_URI += " \
     file://setup-mctpd.sh \
     file://run-mctpd_3.sh \
     file://run-mctpd_4.sh \
+    file://run-mctpd_11.sh \
     "
 DEPENDS:append = " plat-utils update-rc.d-native"
 
@@ -18,9 +19,11 @@ do_install() {
   install -d ${D}${sysconfdir}/sv
   install -d ${D}${sysconfdir}/sv/mctpd_3
   install -d ${D}${sysconfdir}/sv/mctpd_4
+  install -d ${D}${sysconfdir}/sv/mctpd_11
   install -m 755 setup-mctpd.sh ${D}${sysconfdir}/init.d/setup-mctpd.sh
   install -m 755 run-mctpd_3.sh ${D}${sysconfdir}/sv/mctpd_3/run
   install -m 755 run-mctpd_4.sh ${D}${sysconfdir}/sv/mctpd_4/run
+  install -m 755 run-mctpd_11.sh ${D}${sysconfdir}/sv/mctpd_11/run
   update-rc.d -r ${D} setup-mctpd.sh start 57 5 .
 }
 

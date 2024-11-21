@@ -1165,6 +1165,11 @@ gpu_fpga_handler(gpiopoll_pin_t *desc, gpio_value_t last, gpio_value_t curr)
       if (system("/usr/local/bin/setup-gpu-eeprom.sh &")) {
         syslog(LOG_WARNING, "Failed to dump gpu eeprom");
       }
+      if (pal_get_gpu_fru_id() == FRU_UBB) {
+        if (system("/usr/local/bin/setup-gpu-pldmd.sh &")) {
+          syslog(LOG_WARNING, "Failed to setup gpu pldmd");
+        }
+      }
     }
     else {
       gpu_fpga_ready_mon();

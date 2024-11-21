@@ -32,6 +32,7 @@ extern const uint8_t hgx_common_snr_list[];
 extern const uint8_t hgx_h100_snr_list[];
 extern const uint8_t hgx_b100_snr_list[];
 extern const uint8_t ubb_sensor_list[];
+extern const uint8_t ubb_discrete_sensor_list[];
 
 extern const uint8_t nic0_sensor_list[];
 extern const uint8_t nic1_sensor_list[];
@@ -66,6 +67,7 @@ extern size_t hgx_common_snr_cnt;
 extern size_t hgx_h100_snr_cnt;
 extern size_t hgx_b100_snr_cnt;
 extern size_t ubb_sensor_cnt;
+extern size_t ubb_discrete_sensor_cnt;
 
 extern size_t nic0_sensor_cnt;
 extern size_t nic1_sensor_cnt;
@@ -137,6 +139,11 @@ struct snr_map sensor_map[] = {
   { FRU_UBB,  ubb_sensor_map, true },
 };
 
+struct pldm_state_snr_reading_t {
+  struct pldm_msg_hdr hdr;
+  struct pldm_get_state_sensor_readings_resp data;
+};
+
 int
 get_pldm_sensor(uint8_t bus, uint8_t eid, uint8_t sensor_num, float *value)
 {
@@ -173,6 +180,56 @@ get_pldm_sensor(uint8_t bus, uint8_t eid, uint8_t sensor_num, float *value)
       *value = (float)integer + decimal;
     else
       *value = (float)integer - decimal;
+  }
+
+exit:
+  if (rbuf)
+    free(rbuf);
+
+  return rc;
+
+}
+
+int
+get_pldm_state_sensor(uint8_t bus, uint8_t eid, uint16_t snr_id, float *value)
+{
+  uint8_t tbuf[255] = {0};
+  uint8_t* rbuf = (uint8_t *) NULL;
+  struct pldm_state_snr_reading_t* resp;
+  uint8_t tlen = 0;
+  size_t  rlen = 0;
+  uint8_t psnt_state = 0;
+
+  int rc;
+
+  struct pldm_msg* pldmbuf = (struct pldm_msg *)tbuf;
+  pldmbuf->hdr.request = 1;
+  pldmbuf->hdr.type    = PLDM_PLATFORM;
+  pldmbuf->hdr.command = PLDM_GET_STATE_SENSOR_READINGS;
+  tlen = PLDM_HEADER_SIZE;
+  tbuf[tlen++] = snr_id & 0xFF;
+  tbuf[tlen++] = (snr_id >> 8) & 0xFF;
+  tbuf[tlen++] = 0;
+  tbuf[tlen++] = 0;
+
+  rc = oem_pldm_send_recv(bus, eid, tbuf, tlen, &rbuf, &rlen);
+
+  if (rc == PLDM_SUCCESS) {
+    resp= (struct pldm_state_snr_reading_t*) rbuf;
+    if (resp->data.completion_code) {
+      rc = -1;
+      goto exit;
+    }
+
+    psnt_state = resp->data.field[0].present_state;
+
+    if (psnt_state == PLDM_SENSOR_NORMAL) {
+      *value = 0;
+    }
+    else {
+      *value = 1;
+      syslog(LOG_WARNING, "PLDM state snr id: %x, abnormal State: %d", snr_id, psnt_state);
+    }
   }
 
 exit:
@@ -376,6 +433,9 @@ pal_get_fru_discrete_list(uint8_t fru, uint8_t **sensor_list, int *cnt) {
   } else if (fru == FRU_SWB) {
     *sensor_list = (uint8_t *) swb_discrete_sensor_list;
     *cnt = swb_discrete_sensor_cnt;
+  } else if (fru == FRU_UBB) {
+    *sensor_list = (uint8_t *) ubb_discrete_sensor_list;
+    *cnt = ubb_discrete_sensor_cnt;
   } else if (fru > MAX_NUM_FRUS) {
       return -1;
   } else {

@@ -40,6 +40,7 @@ LOCAL_URI = " \
     file://setup-reboot-init.sh \
     file://setup-gpu-eeprom.sh \
     file://setup-gpu-fan-ctrl.sh \
+    file://setup-gpu-pldmd.sh \
     "
 
 pkgdir = "utils"
@@ -47,7 +48,7 @@ pkgdir = "utils"
 
 # the tools for BMC will be installed in the image
 binfiles = " sol-util setup-server-uart.sh setup-usbnet.sh usbnet_not_ready.sh \
-             setup-gpu-eeprom.sh setup-gpu-fan-ctrl.sh \
+             setup-gpu-eeprom.sh setup-gpu-fan-ctrl.sh setup-gpu-pldmd.sh \
           "
 
 DEPENDS:append = "update-rc.d-native"
