@@ -1,4 +1,4 @@
-From 8a756018dee070fc6a6d3100f2990aa8ef9786dc Mon Sep 17 00:00:00 2001
+From c043f67c07a3a9f58b7bce554ac51baa23a4e64f Mon Sep 17 00:00:00 2001
 From: PeterHo-wiwynn <Peter_MH_Ho@wiwynn.com>
 Date: Thu, 11 Apr 2024 08:27:09 +0800
 Subject: [PATCH] Add method for setting up MCTP EID by config path
@@ -13,7 +13,7 @@ https://github.com/CodeConstruct/mctp/pull/17
  1 file changed, 195 insertions(+)
 
 diff --git a/src/mctpd.c b/src/mctpd.c
-index 0478c36..2cee003 100644
+index 0478c36..684f2d8 100644
 --- a/src/mctpd.c
 +++ b/src/mctpd.c
 @@ -2160,6 +2160,189 @@ out:
@@ -57,12 +57,6 @@ index 0478c36..2cee003 100644
 +	uint64_t temp = 0;
 +	sd_bus_message_read(message, "t", &temp);
 +	mctp_eid_t eid = (mctp_eid_t)temp;
-+
-+	peer = find_peer_by_addr(ctx, eid, net);
-+	if (peer) {
-+		warnx("Endpoint ID %d already added", eid);
-+		goto err;
-+	}
 +
 +	message = sd_bus_message_unref(message);
 +
@@ -147,6 +141,12 @@ index 0478c36..2cee003 100644
 +	}
 +
 +	message = sd_bus_message_unref(message);
++
++	peer = find_peer_by_addr(ctx, eid, net);
++	if (peer) {
++		warnx("Endpoint ID %d already added", eid);
++		goto err;
++	}
 +
 +	// The s[i] is like ../chassis/device so we need to get its parent path
 +	// for the chassis path.
