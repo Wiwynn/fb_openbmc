@@ -20,6 +20,7 @@
 import re
 import time
 import unittest
+import os
 
 from common.base_fscd_test import BaseFscdTest
 from tests.fuji.helper.libpal import BoardRevision, pal_get_board_rev
@@ -34,9 +35,7 @@ class FscdTest(BaseFscdTest, unittest.TestCase):
     DEFAULT_TEMP = 26000
 
     def setUp(self, config=None, test_data_path=None):
-        self.TEST_DATA_PATH = "{}/fuji/test_data/fscd".format(
-            tests_dir()
-        )
+        self.TEST_DATA_PATH = "{}/fuji/test_data/fscd".format(tests_dir())
         super().setUp(config, test_data_path)
 
     def power_host_on(self):
@@ -136,6 +135,11 @@ class FscdTest(BaseFscdTest, unittest.TestCase):
 class FscdTestPwmFuji(FscdTest):
 
     TEST_CONFIG_PATH = "{}/fuji/test_data/fscd".format(tests_dir())
+    FSCD_ORIG_CONFIG = [
+        "/etc/fsc/zone.fsc",
+        "/etc/fsc-config-rtsw.json",
+        "/etc/fsc-config-non-rtsw.json",
+    ]
 
     def setUp(self):
         self.brd_rev = pal_get_board_rev()
@@ -156,14 +160,27 @@ class FscdTestPwmFuji(FscdTest):
             )
 
         # Backup original config
-        run_shell_cmd("cp /etc/fsc/zone.fsc /etc/fsc/zone.fsc.orig")
+        for name in self.FSCD_ORIG_CONFIG:
+            self.assertFalse(
+                os.path.exists("{}.orig".format(name)),
+                "{}.orig already exists, the previous tests"
+                " were not cleaned up properly".format(name),
+            )
+            run_shell_cmd("cp {filename} {filename}.orig".format(filename=name))
         # Overwrite fscd config
-        run_shell_cmd("cp {}/zone.fsc /etc/fsc/zone.fsc".format(self.TEST_CONFIG_PATH))
+        for name in self.FSCD_ORIG_CONFIG:
+            if name == "/etc/fsc/zone.fsc":
+                run_shell_cmd("cp {}/zone.fsc {}".format(self.TEST_CONFIG_PATH, name))
+            else:
+                run_shell_cmd(
+                    "cp {}/{} {}".format(self.TEST_CONFIG_PATH, str(config_file), name)
+                )
         super().setUp(config=config_file, test_data_path=self.TEST_CONFIG_PATH)
 
     def tearDown(self):
         # Recover original config
-        run_shell_cmd("mv /etc/fsc/zone.fsc.orig /etc/fsc/zone.fsc")
+        for name in self.FSCD_ORIG_CONFIG:
+            run_shell_cmd("mv {filename}.orig {filename}".format(filename=name))
         super().tearDown()
 
     def test_fscd_inlet_26_duty_cycle_40(self):
