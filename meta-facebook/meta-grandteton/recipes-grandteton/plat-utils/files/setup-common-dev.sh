@@ -152,6 +152,21 @@ if [ "$mb_product" != "GTA" ]; then
   gpio_set BIC_FWSPICK 0
   gpio_set BIC_UART_BMC_SEL 0
 
+  # SWB NIC
+  kv set swb_nic_present 1
+  if [ $(gpio_get SWB_HSC_PWRGD_ISO_R) -eq 1 ]; then
+    for i in {8..15}
+    do
+      output=$(i2cget -y -f 32 0x13 $i | tr -d ' \t\n\r')
+      output=${output#0x}
+      pres=$((16#${output} & 0x80 ))
+      if [ "$pres" == "0" ]; then
+        kv set swb_nic_present 0
+        break
+      fi
+    done
+  fi
+
   bic_ready=$(gpio_get FM_SWB_BIC_READY_ISO_R_N)
   #SWB HSC
   if [ "$bic_ready" -eq 0 ]; then
@@ -233,7 +248,7 @@ if [ "$mb_product" != "GTA" ]; then
 
     #SWB NIC Configuration
     cnt=3
-    while [ "$cnt" -ne 0 ]
+    while [ "$cnt" -ne 0 ] && [ "$(kv get swb_nic_present)" == "0" ]
     do
       str=$(pldmd-util -b 3 -e 0x0a raw 0x02 0x3A 0x00 0xD0 |grep "PLDM Data")
       rev=$?
@@ -259,21 +274,6 @@ if [ "$mb_product" != "GTA" ]; then
           kv set swb_nic_source "$SWB_3RD_SOURCE"
           kv set swb_nic_vendor "Broadcom "
         fi
-        break
-      fi
-    done
-  fi
-
-  # SWB NIC
-  kv set swb_nic_present 1
-  if [ $(gpio_get SWB_HSC_PWRGD_ISO_R) -eq 1 ]; then
-    for i in {8..15}
-    do
-      output=$(i2cget -y -f 32 0x13 $i | tr -d ' \t\n\r')
-      output=${output#0x}
-      pres=$((16#${output} & 0x80 ))
-      if [ "$pres" == "0" ]; then
-        kv set swb_nic_present 0
         break
       fi
     done
