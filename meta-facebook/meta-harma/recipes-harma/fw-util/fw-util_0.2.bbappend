@@ -50,4 +50,8 @@ DEPENDS += " \
     fmt \
     "
 
+RDEPENDS:${PN} += " \
+    cpld-fw-handler \
+"
+
 CXXFLAGS += " -DCONFIG_TPM2"

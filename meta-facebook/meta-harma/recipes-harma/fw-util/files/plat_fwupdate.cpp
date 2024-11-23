@@ -16,6 +16,7 @@
 
 
 #define FRU_NIC0   (4)
+#define LCMXO3D_9400HC_DEV_ID 0x212E3043
 
 using namespace std;
 
@@ -59,20 +60,37 @@ int CpldComponent::_update(const char *path, i2c_attr_t attr ) {
   int ret = -1;
   string comp = this->component();
   string fru  = this->fru();
+  uint32_t device_id = 0;
 
   if (cpld_intf_open(pld_type, INTF_I2C, &attr)) {
     cerr << "Cannot open i2c!" << endl;
+    return ret;
+  }
+
+  if(cpld_get_device_id(&device_id)) {
+    cerr << "Cannot get device id!" << endl;
     goto error_exit;
   }
 
-  ret = cpld_program((char *)path, NULL, false);
-  cpld_intf_close();
-  if (ret) {
-    cerr << "Error Occur at updating CPLD FW!" << endl;
-    goto error_exit;
+  if (device_id == LCMXO3D_9400HC_DEV_ID) {
+    string cmd = "cpld-fw-handler update";
+    cmd += " -i i2c";
+    cmd += " -b " + to_string(static_cast<int>(attr.bus_id));
+    cmd += " -a " + to_string(static_cast<int>(attr.slv_addr));
+    cmd += " -c LCMXO3D-9400";
+    cmd += " -t CFG0";
+    cmd += " -p " + string(path);
+    ret = system(cmd.c_str());
+  } else {
+    ret = cpld_program((char *)path, NULL, false);
   }
 
 error_exit:
+  cpld_intf_close();
+  if (ret) {
+    cerr << "Error Occur at updating CPLD FW!" << endl;
+  }
+
   return ret;
 }
 
