@@ -160,9 +160,9 @@ index 0000000..6d9b250
 +    }
 +}
 +
-+static inline auto to_hex_string(uint8_t value)
++static inline auto to_hex_string(uint32_t value, size_t len = 2)
 +{
-+    return std::format("{:02x}", value);
++    return std::format("{:0{}x}", value, len);
 +}
 +
 +std::string getSlotNumberString(
@@ -454,7 +454,7 @@ index 0000000..6d9b250
 +                        errorLog +=
 +                            "GeneralInfo: ARM/PCIeErr(0x" +
 +                            to_hex_string(generalInfo) + "), Aux. Info: 0x" +
-+                            to_hex_string((eventData[7] << 8) | eventData[6]) +
++                            to_hex_string((eventData[7] << 8) | eventData[6], 4) +
 +                            ", Bus " + to_hex_string(eventData[9]) + "/Dev " +
 +                            to_hex_string(eventData[8] >> 3) + "/Fun " +
 +                            to_hex_string(eventData[8] & 0x7) + ", ErrID2: 0x" +
@@ -500,7 +500,7 @@ index 0000000..6d9b250
 +                                    to_hex_string(eventData[11]) +
 +                                    ", Minor Code: 0x" +
 +                                    to_hex_string((eventData[13] << 8) |
-+                                                  eventData[12]);
++                                                  eventData[12], 4);
 +                            }
 +                            break;
 +                        }
@@ -601,7 +601,7 @@ index 0000000..6d9b250
 +                        ", Core Number: " + std::to_string(coreNumber) +
 +                        ", Machine Check Bank: " +
 +                        machineCheckBank[machineCheckBankNumber] +
-+                        ", Error Info: 0x" + to_hex_string(errorInfo) +
++                        ", Error Info: 0x" + to_hex_string(errorInfo, 6) +
 +                        ", Error Code: 0x" + to_hex_string(errorCode) +
 +                        ", Error Status: 0x" + to_hex_string(errorStatus);
 +                    break;
@@ -622,7 +622,7 @@ index 0000000..6d9b250
 +                        ", Core Number: " + std::to_string(coreNumber) +
 +                        ", Machine Check Bank: " +
 +                        machineCheckBank[machineCheckBankNumber] +
-+                        ", Error Code: 0x" + to_hex_string(errorCode);
++                        ", Error Code: 0x" + to_hex_string(errorCode, 4);
 +                    break;
 +                }
 +                case UnifiedError::UNIFIED_RP_PIO_1st:
@@ -701,7 +701,7 @@ index 0000000..6d9b250
 +                                to_hex_string(generalInfo) +
 +                                "), POST Failure Event: " + postError[estrIdx] +
 +                                ", ABL Error Code: 0x" +
-+                                to_hex_string(ablErrCode);
++                                to_hex_string(ablErrCode, 4);
 +                            break;
 +                        }
 +                        default:
@@ -733,10 +733,10 @@ index 0000000..6d9b250
 +                                "), PCIe Failure Event: " + pcieEvent[estrIdx] +
 +                                ", Status: 0x" +
 +                                to_hex_string((eventData[9] << 8) |
-+                                              eventData[8]) +
++                                              eventData[8], 4) +
 +                                ", Source ID: 0x" +
 +                                to_hex_string((eventData[11] << 8) |
-+                                              eventData[10]);
++                                              eventData[10], 4);
 +                            break;
 +                        }
 +                        default:
