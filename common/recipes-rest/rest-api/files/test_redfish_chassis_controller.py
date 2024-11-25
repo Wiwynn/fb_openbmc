@@ -140,9 +140,10 @@ class TestChassisService(AioHTTPTestCase):
             "@odata.id": "/redfish/v1/Chassis",
             "@odata.type": "#ChassisCollection.ChassisCollection",
             "Name": "Chassis Collection",
-            "Members@odata.count": 5,
+            "Members@odata.count": 6,
             "Members": [
                 {"@odata.id": "/redfish/v1/Chassis/1"},
+                {"@odata.id": "/redfish/v1/Chassis/Rack"},
                 {"@odata.id": "/redfish/v1/Chassis/server1"},
                 {"@odata.id": "/redfish/v1/Chassis/server2"},
                 {"@odata.id": "/redfish/v1/Chassis/server3"},
@@ -180,9 +181,10 @@ class TestChassisService(AioHTTPTestCase):
             "@odata.id": "/redfish/v1/Chassis",
             "@odata.type": "#ChassisCollection.ChassisCollection",
             "Name": "Chassis Collection",
-            "Members@odata.count": 4,
+            "Members@odata.count": 5,
             "Members": [
                 {"@odata.id": "/redfish/v1/Chassis/1"},
+                {"@odata.id": "/redfish/v1/Chassis/Rack"},
                 {"@odata.id": "/redfish/v1/Chassis/server1"},
                 {"@odata.id": "/redfish/v1/Chassis/accelerator0"},
                 {"@odata.id": "/redfish/v1/Chassis/accelerator1"},

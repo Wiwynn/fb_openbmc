@@ -122,6 +122,8 @@ async def _get_chassis_child_for_server_name(
 
 async def get_chassis_members_json(expand_level: int) -> t.List[t.Dict[str, t.Any]]:
     chassis_members = [await _get_chassis_child_for_server_name("1", expand_level)]
+    if expand_level == 0:
+        chassis_members.append(get_chassis_url_for_server_name("Rack"))
     # if libpal is supported, and slot4 is in the fru_name_map we are multi-slot
     if (
         redfish_chassis_helper.is_libpal_supported()
@@ -158,7 +160,27 @@ async def get_chassis_member(request: web.Request) -> web.Response:
     server_name = request.match_info["fru_name"]
     expand_level = common_utils.parse_expand_level(request)
     try:
-        body = await get_chassis_member_for_fru(server_name, expand_level)
+        if server_name == "Rack":
+            body = {
+                "@odata.context": "/redfish/v1/$metadata#Chassis.Chassis",
+                "@odata.id": "/redfish/v1/Chassis/{}".format(server_name),
+                "@odata.type": "#Chassis.v1_15_0.Chassis",
+                "Id": "1000",
+                "Name": server_name,
+                "ChassisType": "RackMount",
+                "Status": {"State": "Enabled", "Health": "OK"},
+                "Actions": {
+                    "#Chassis.Reset": {
+                        "target": "/redfish/v1/Chassis/Rack/Chassis.Reset",
+                        "ResetType@Redfish.AllowableValues": [
+                            "ForceOff",
+                        ],
+                    }
+                },
+            }
+            await validate_keys(body)
+        else:
+            body = await get_chassis_member_for_fru(server_name, expand_level)
         return web.json_response(body, dumps=common_utils.dumps_bytestr)
     except FruNotFoundError:
         return web.json_response(status=404)

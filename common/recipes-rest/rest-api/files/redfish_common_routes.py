@@ -19,7 +19,11 @@ from redfish_managers import (
     get_managers,
     get_managers_members,
 )
-from redfish_powercycle import oobcycle_post_handler, powercycle_post_handler
+from redfish_powercycle import (
+    liquid_leak_shutdown_post_handler,
+    oobcycle_post_handler,
+    powercycle_post_handler,
+)
 from redfish_service_root import get_metadata, get_odata, get_redfish, get_service_root
 from redfish_session_service import get_session, get_session_service
 
@@ -52,6 +56,10 @@ class Redfish:
         )
         app.router.add_patch(
             "/redfish/v1/Chassis/{fru_name}", redfish_chassis.set_power_state
+        )
+        app.router.add_post(
+            "/redfish/v1/Chassis/Rack/Actions/Chassis.Reset",
+            liquid_leak_shutdown_post_handler,
         )
         app.router.add_get(
             "/redfish/v1/Systems", self.computer_systems.get_collection_descriptor

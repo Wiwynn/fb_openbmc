@@ -29,6 +29,7 @@ class TestCommonRoutes(unittest.TestCase):
             "/redfish/v1/AccountService/Accounts",
             "/redfish/v1/AccountService/Roles",
             "/redfish/v1/Chassis",
+            "/redfish/v1/Chassis/Rack/Actions/Chassis.Reset",
             "/redfish/v1/Chassis/{fru_name}",
             "/redfish/v1/Chassis/{fru_name}/Sensors",
             "/redfish/v1/Chassis/{fru_name}/Sensors/{sensor_id}",
