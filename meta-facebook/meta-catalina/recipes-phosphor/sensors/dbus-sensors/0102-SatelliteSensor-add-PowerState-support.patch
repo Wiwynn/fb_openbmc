@@ -1,0 +1,66 @@
+From ab106367429eaf1f6f82703399540bcc471a5722 Mon Sep 17 00:00:00 2001
+From: Potin Lai <potin.lai@quantatw.com>
+Date: Mon, 11 Nov 2024 10:22:41 +0800
+Subject: [PATCH 2/2] SatelliteSensor: add PowerState support
+
+Add PowerState support ti allow sensors set power state in config.
+
+Change-Id: I270766d092da46f4dc3b2db0469dc3a47c255120
+---
+ src/satellite/SatelliteSensor.cpp | 10 +++++++---
+ src/satellite/SatelliteSensor.hpp |  3 ++-
+ 2 files changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/src/satellite/SatelliteSensor.cpp b/src/satellite/SatelliteSensor.cpp
+index 9be7c73..78bc5eb 100644
+--- a/src/satellite/SatelliteSensor.cpp
++++ b/src/satellite/SatelliteSensor.cpp
+@@ -60,9 +60,10 @@ SatelliteSensor::SatelliteSensor(
+     sdbusplus::asio::object_server& objectServer,
+     std::vector<thresholds::Threshold>&& thresholdData, uint8_t busId,
+     uint8_t addr, uint16_t offset, std::string& sensorType,
+-    std::string& valueType, size_t pollTime, double minVal, double maxVal) :
++    std::string& valueType, size_t pollTime, double minVal, double maxVal,
++    const PowerState& readState) :
+     Sensor(escapeName(sensorName), std::move(thresholdData),
+-           sensorConfiguration, objType, false, false, maxVal, minVal, conn),
++           sensorConfiguration, objType, false, false, maxVal, minVal, conn, readState),
+     name(escapeName(sensorName)), busId(busId), addr(addr), offset(offset),
+     sensorType(sensorType), valueType(valueType), objectServer(objectServer),
+     waitTimer(io), pollRate(pollTime)
+@@ -385,6 +386,9 @@ void createSensors(
+                 double minVal = loadVariant<double>(entry.second, "MinValue");
+ 
+                 double maxVal = loadVariant<double>(entry.second, "MaxValue");
++
++                PowerState readState = getPowerState(entry.second);
++
+                 if constexpr (debug)
+                 {
+                     lg2::info("Configuration parsed for \n\t {CONF}\nwith\n"
+@@ -412,7 +416,7 @@ void createSensors(
+                 sensor = std::make_unique<SatelliteSensor>(
+                     dbusConnection, io, name, pathPair.first, objectType,
+                     objectServer, std::move(sensorThresholds), busId, addr, off,
+-                    sensorType, valueType, rate, minVal, maxVal);
++                    sensorType, valueType, rate, minVal, maxVal, readState);
+ 
+                 sensor->init();
+             }
+diff --git a/src/satellite/SatelliteSensor.hpp b/src/satellite/SatelliteSensor.hpp
+index 200b611..97355b2 100644
+--- a/src/satellite/SatelliteSensor.hpp
++++ b/src/satellite/SatelliteSensor.hpp
+@@ -46,7 +46,8 @@ struct SatelliteSensor : public Sensor
+                     std::vector<thresholds::Threshold>&& thresholdData,
+                     uint8_t busId, uint8_t addr, uint16_t offset,
+                     std::string& sensorType, std::string& valueType,
+-                    size_t pollTime, double minVal, double maxVal);
++                    size_t pollTime, double minVal, double maxVal,
++                    const PowerState& readState);
+     ~SatelliteSensor() override;
+ 
+     void checkThresholds() override;
+-- 
+2.31.1
+
