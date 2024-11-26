@@ -29,4 +29,5 @@ RDEPENDS:${PN} += " \
 
 do_install:append() {
     install -m 755 ${S}/scripts/table-sensor-display ${D}${bindir}/table-sensor-display
+    install -m 755 ${S}/scripts/sort-log-entry ${D}${bindir}/sort-log-entry
 }
