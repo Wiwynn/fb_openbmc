@@ -74,11 +74,11 @@ get_all_comp_version()
 
 get_all_firmware_path_without_sbios()
 {
-    CURL_CMD="curl --connect-timeout ${CURL_CONNECT_TIMEOUT} -s '${FW_INVENTORY_URL}'"
+    CURL_CMD="curl --connect-timeout ${CURL_CONNECT_TIMEOUT} -s '${FW_INVENTORY_URL}?\$expand=.(\$levels=1)'"
     if ! CURL_DATA=$(eval "${CURL_CMD}"); then
         return 1
     fi
-    echo "${CURL_DATA}" | jq -r '.Members[]."@odata.id"' | grep -v HGX_FW_CPU_ | awk '{printf "\"%s\",", $0}' | sed 's/,$/\n/'
+    echo "${CURL_DATA}" | jq -r '.Members[] | select(.Id != null and .Updateable == true) | .["@odata.id"]' | grep -v HGX_FW_CPU_ | awk '{printf "\"%s\",", $0}' | sed 's/,$/\n/'
     return 0
 }
 
