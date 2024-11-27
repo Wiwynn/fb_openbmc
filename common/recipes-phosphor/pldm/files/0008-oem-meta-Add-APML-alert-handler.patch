@@ -1,7 +1,7 @@
-From 6c3217f3aa56cd8ce77de3ba3ec8493332d1b6aa Mon Sep 17 00:00:00 2001
+From a9fd32c1ab0fa73161c9c70ef93500be88047ae3 Mon Sep 17 00:00:00 2001
 From: PeterHo-wiwynn <Peter_MH_Ho@wiwynn.com>
 Date: Fri, 28 Jun 2024 11:19:43 +0800
-Subject: [PATCH 08/12] oem-meta: Add APML alert handler
+Subject: [PATCH 08/14] oem-meta: Add APML alert handler
 
 Add APML alert handler. It will call `amd-ras` to do ADDC.
 
@@ -11,8 +11,8 @@ Change-Id: I9b8587c345e20a17ae858cfb021478c5878c55ab
  .../libpldmresponder/oem_meta_file_io.cpp     |  3 +
  .../oem_meta_file_io_by_type.hpp              |  1 +
  .../oem_meta_file_io_type_apml_alert.cpp      | 85 +++++++++++++++++++
- .../oem_meta_file_io_type_apml_alert.hpp      | 44 ++++++++++
- 5 files changed, 134 insertions(+)
+ .../oem_meta_file_io_type_apml_alert.hpp      | 43 ++++++++++
+ 5 files changed, 133 insertions(+)
  create mode 100644 oem/meta/libpldmresponder/oem_meta_file_io_type_apml_alert.cpp
  create mode 100644 oem/meta/libpldmresponder/oem_meta_file_io_type_apml_alert.hpp
 
@@ -153,10 +153,10 @@ index 0000000..0967762
 +} // namespace pldm::responder::oem_meta
 diff --git a/oem/meta/libpldmresponder/oem_meta_file_io_type_apml_alert.hpp b/oem/meta/libpldmresponder/oem_meta_file_io_type_apml_alert.hpp
 new file mode 100644
-index 0000000..1a2c8a8
+index 0000000..40c3cf0
 --- /dev/null
 +++ b/oem/meta/libpldmresponder/oem_meta_file_io_type_apml_alert.hpp
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,43 @@
 +#pragma once
 +
 +#include "common/utils.hpp"
@@ -181,8 +181,7 @@ index 0000000..1a2c8a8
 +
 +    explicit APMLAlertHandler(uint8_t tid,
 +                              const pldm::utils::DBusHandler* dBusIntf) :
-+        tid(tid),
-+        dBusIntf(dBusIntf)
++        tid(tid), dBusIntf(dBusIntf)
 +    {}
 +
 +    int write(const message& data) override;

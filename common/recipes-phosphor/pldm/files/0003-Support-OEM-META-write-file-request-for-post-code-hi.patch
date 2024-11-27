@@ -1,7 +1,7 @@
-From afd990ad0ca93165e42c42b33270ae63480601a6 Mon Sep 17 00:00:00 2001
+From 436446362b1c21645fdc9a3edc4f59346ca8b0cb Mon Sep 17 00:00:00 2001
 From: Delphine CC Chiu <Delphine_CC_Chiu@wiwynn.com>
 Date: Mon, 23 Oct 2023 17:06:54 +0800
-Subject: [PATCH 03/12] Support OEM-META write file request for post code
+Subject: [PATCH 03/14] Support OEM-META write file request for post code
  history
 
 Support write file req when multiple hosts send postcode to BMC
@@ -19,9 +19,9 @@ Signed-off-by: Delphine CC Chiu <Delphine_CC_Chiu@wiwynn.com>
  .../libpldmresponder/oem_meta_file_io.hpp     |  49 +++++++
  .../oem_meta_file_io_by_type.hpp              |  32 +++++
  .../oem_meta_file_io_type_post_code.cpp       | 131 ++++++++++++++++++
- .../oem_meta_file_io_type_post_code.hpp       |  54 ++++++++
+ .../oem_meta_file_io_type_post_code.hpp       |  53 +++++++
  pldmd/pldmd.cpp                               |   9 ++
- 11 files changed, 397 insertions(+)
+ 11 files changed, 396 insertions(+)
  create mode 100644 oem/meta/libpldmresponder/oem_meta_file_io.cpp
  create mode 100644 oem/meta/libpldmresponder/oem_meta_file_io.hpp
  create mode 100644 oem/meta/libpldmresponder/oem_meta_file_io_by_type.hpp
@@ -127,10 +127,10 @@ index cf6ecf5..459f4ba 100644
      'pldmresponder',
      sources,
 diff --git a/meson.build b/meson.build
-index efe7939..6e5c57a 100644
+index bb00cc4..e11d34d 100644
 --- a/meson.build
 +++ b/meson.build
-@@ -146,6 +146,10 @@ endif
+@@ -140,6 +140,10 @@ conf_data.set('SENSOR_POLLING_TIME', get_option('sensor-polling-time'))
  
  configure_file(output: 'config.h', configuration: conf_data)
  
@@ -142,7 +142,7 @@ index efe7939..6e5c57a 100644
      '-include',
      '@0@'.format(meson.current_build_dir() / 'config.h'),
 diff --git a/meson.options b/meson.options
-index 93ac021..adda007 100644
+index bf08324..1714c7b 100644
 --- a/meson.options
 +++ b/meson.options
 @@ -166,6 +166,14 @@ option(
@@ -464,10 +464,10 @@ index 0000000..d1661cc
 +} // namespace pldm::responder::oem_meta
 diff --git a/oem/meta/libpldmresponder/oem_meta_file_io_type_post_code.hpp b/oem/meta/libpldmresponder/oem_meta_file_io_type_post_code.hpp
 new file mode 100644
-index 0000000..919284e
+index 0000000..81ff4eb
 --- /dev/null
 +++ b/oem/meta/libpldmresponder/oem_meta_file_io_type_post_code.hpp
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,53 @@
 +#pragma once
 +
 +#include "common/utils.hpp"
@@ -486,8 +486,7 @@ index 0000000..919284e
 +  public:
 +    PostCodeHandler(pldm_tid_t tid,
 +                    const std::map<std::string, MctpEndpoint>& configurations) :
-+        tid(tid),
-+        configurations(configurations)
++        tid(tid), configurations(configurations)
 +    {}
 +
 +    ~PostCodeHandler() = default;

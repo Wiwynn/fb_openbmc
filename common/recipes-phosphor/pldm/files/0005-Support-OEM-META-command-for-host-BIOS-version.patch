@@ -1,7 +1,7 @@
-From be8b9a9ab2fdddb5b160b13f69f327e8b59e3b3c Mon Sep 17 00:00:00 2001
+From 2ba6cf28be6d3495f10163398ef29eb526328b48 Mon Sep 17 00:00:00 2001
 From: Chris Wang <Chris_Wang@wiwynn.com>
 Date: Wed, 10 Apr 2024 21:04:02 +0800
-Subject: [PATCH 05/12] Support OEM-META command for host BIOS version
+Subject: [PATCH 05/14] Support OEM-META command for host BIOS version
 
 Summary:
   - Add handler for write-file command "BIOS_VERSION", which is sent
@@ -13,12 +13,12 @@ Signed-off-by: Delphine CC Chiu <Delphine_CC_Chiu@wiwynn.com>
 ---
  libpldmresponder/meson.build                  |   1 +
  .../libpldmresponder/oem_meta_file_io.cpp     |   7 +-
- .../libpldmresponder/oem_meta_file_io.hpp     |  14 +-
+ .../libpldmresponder/oem_meta_file_io.hpp     |  13 +-
  .../oem_meta_file_io_by_type.hpp              |   1 +
  .../oem_meta_file_io_type_bios_version.cpp    | 151 ++++++++++++++++++
- .../oem_meta_file_io_type_bios_version.hpp    |  85 ++++++++++
+ .../oem_meta_file_io_type_bios_version.hpp    |  84 ++++++++++
  pldmd/pldmd.cpp                               |   2 +-
- 7 files changed, 256 insertions(+), 5 deletions(-)
+ 7 files changed, 254 insertions(+), 5 deletions(-)
  create mode 100644 oem/meta/libpldmresponder/oem_meta_file_io_type_bios_version.cpp
  create mode 100644 oem/meta/libpldmresponder/oem_meta_file_io_type_bios_version.hpp
 
@@ -59,10 +59,10 @@ index c45eea6..68bb64d 100644
              error("Get invalid file io type, FILEIOTYPE={FILEIOTYPE}",
                    "FILEIOTYPE", fileIOType);
 diff --git a/oem/meta/libpldmresponder/oem_meta_file_io.hpp b/oem/meta/libpldmresponder/oem_meta_file_io.hpp
-index f25235d..6dd34c0 100644
+index f25235d..edde91d 100644
 --- a/oem/meta/libpldmresponder/oem_meta_file_io.hpp
 +++ b/oem/meta/libpldmresponder/oem_meta_file_io.hpp
-@@ -17,8 +17,10 @@ namespace pldm::responder::oem_meta
+@@ -17,8 +17,9 @@ namespace pldm::responder::oem_meta
  class FileIOHandler : public CmdHandler
  {
    public:
@@ -70,12 +70,11 @@ index f25235d..6dd34c0 100644
 -        configurationDescovery(configurationDescovery)
 +    FileIOHandler(pldm::utils::DBusHandler* dBusIntf,
 +                  pldm::ConfigurationDiscoveryHandler* configurationDiscovery) :
-+        dBusIntf(dBusIntf),
-+        configurationDiscovery(configurationDiscovery)
++        dBusIntf(dBusIntf), configurationDiscovery(configurationDiscovery)
      {
          handlers.emplace(
              PLDM_OEM_META_FILE_IO_CMD_WRITE_FILE,
-@@ -43,7 +45,13 @@ class FileIOHandler : public CmdHandler
+@@ -43,7 +44,13 @@ class FileIOHandler : public CmdHandler
      std::unique_ptr<FileHandler>
          getHandlerByType(pldm_tid_t tid, uint8_t fileIOType);
  
@@ -261,10 +260,10 @@ index 0000000..a9315c6
 +} // namespace pldm::responder::oem_meta
 diff --git a/oem/meta/libpldmresponder/oem_meta_file_io_type_bios_version.hpp b/oem/meta/libpldmresponder/oem_meta_file_io_type_bios_version.hpp
 new file mode 100644
-index 0000000..69d898a
+index 0000000..ad672f0
 --- /dev/null
 +++ b/oem/meta/libpldmresponder/oem_meta_file_io_type_bios_version.hpp
-@@ -0,0 +1,85 @@
+@@ -0,0 +1,84 @@
 +#pragma once
 +
 +#include "common/utils.hpp"
@@ -292,8 +291,7 @@ index 0000000..69d898a
 +    explicit BIOSVersionHandler(
 +        uint8_t tid, std::map<std::string, MctpEndpoint>& configurations,
 +        const pldm::utils::DBusHandler* dBusIntf) :
-+        tid(tid),
-+        configurations(configurations), dBusIntf(dBusIntf)
++        tid(tid), configurations(configurations), dBusIntf(dBusIntf)
 +    {}
 +
 +    /** @brief Method to set Host's BIOS version.

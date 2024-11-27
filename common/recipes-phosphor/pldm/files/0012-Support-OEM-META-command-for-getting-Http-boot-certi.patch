@@ -1,7 +1,7 @@
-From 173ff643f7369df2558e71a3ecdbe6c53c101599 Mon Sep 17 00:00:00 2001
+From 5753f692c82a21522cf62fa924615fb996255c1d Mon Sep 17 00:00:00 2001
 From: lora <lora.lin.wiwynn@gmail.com>
 Date: Fri, 27 Sep 2024 16:21:45 +0800
-Subject: [PATCH 12/12] Support OEM-META command for getting Http boot
+Subject: [PATCH 12/14] Support OEM-META command for getting Http boot
  certification
 
 Summary:
@@ -18,8 +18,8 @@ Signed-off-by: Lora Lin <lora.lin.wiwynn@gmail.com>
  .../libpldmresponder/oem_meta_file_io.hpp     |  17 ++
  .../oem_meta_file_io_by_type.hpp              |   1 +
  .../oem_meta_file_io_type_http_boot.cpp       | 165 ++++++++++++++++++
- .../oem_meta_file_io_type_http_boot.hpp       |  41 +++++
- 6 files changed, 303 insertions(+)
+ .../oem_meta_file_io_type_http_boot.hpp       |  40 +++++
+ 6 files changed, 302 insertions(+)
  create mode 100644 oem/meta/libpldmresponder/oem_meta_file_io_type_http_boot.cpp
  create mode 100644 oem/meta/libpldmresponder/oem_meta_file_io_type_http_boot.hpp
 
@@ -137,10 +137,10 @@ index 36ff128..f363f87 100644
 +
  } // namespace pldm::responder::oem_meta
 diff --git a/oem/meta/libpldmresponder/oem_meta_file_io.hpp b/oem/meta/libpldmresponder/oem_meta_file_io.hpp
-index 6dd34c0..3f5e216 100644
+index edde91d..e7f854b 100644
 --- a/oem/meta/libpldmresponder/oem_meta_file_io.hpp
 +++ b/oem/meta/libpldmresponder/oem_meta_file_io.hpp
-@@ -28,6 +28,12 @@ class FileIOHandler : public CmdHandler
+@@ -27,6 +27,12 @@ class FileIOHandler : public CmdHandler
                     size_t payloadLength) {
                  return this->writeFileIO(tid, request, payloadLength);
              });
@@ -153,7 +153,7 @@ index 6dd34c0..3f5e216 100644
      }
  
    private:
-@@ -42,6 +48,17 @@ class FileIOHandler : public CmdHandler
+@@ -41,6 +47,17 @@ class FileIOHandler : public CmdHandler
      Response writeFileIO(pldm_tid_t tid, const pldm_msg* request,
                           size_t payloadLength);
  
@@ -356,10 +356,10 @@ index 0000000..4195cea
 +} // namespace pldm::responder::oem_meta
 diff --git a/oem/meta/libpldmresponder/oem_meta_file_io_type_http_boot.hpp b/oem/meta/libpldmresponder/oem_meta_file_io_type_http_boot.hpp
 new file mode 100644
-index 0000000..176f7c6
+index 0000000..28b085d
 --- /dev/null
 +++ b/oem/meta/libpldmresponder/oem_meta_file_io_type_http_boot.hpp
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,40 @@
 +#pragma once
 +
 +#include "common/utils.hpp"
@@ -378,8 +378,7 @@ index 0000000..176f7c6
 +  public:
 +    HttpBootHandler(pldm_tid_t tid,
 +                    const std::map<std::string, MctpEndpoint>& configurations) :
-+        tid(tid),
-+        configurations(configurations)
++        tid(tid), configurations(configurations)
 +    {}
 +
 +    ~HttpBootHandler() = default;

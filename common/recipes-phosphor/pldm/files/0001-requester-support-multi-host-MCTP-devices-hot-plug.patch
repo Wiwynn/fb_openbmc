@@ -1,7 +1,7 @@
-From 45fae301d8209288868c39428386bafc964c0073 Mon Sep 17 00:00:00 2001
+From 93b3b7ac6ecf4c1b5553f225a13030374469ce3d Mon Sep 17 00:00:00 2001
 From: Delphine CC Chiu <Delphine_CC_Chiu@wiwynn.com>
 Date: Mon, 18 Dec 2023 18:40:23 +0800
-Subject: [PATCH 01/12] requester: support multi-host MCTP devices hot plug
+Subject: [PATCH 01/14] requester: support multi-host MCTP devices hot plug
 
 Currently, pldmd listens for new MCTP endpoint exposed by mctpd, but
 they only shows their EID, Network Id, and SupportedMessageTypes, which
@@ -152,10 +152,10 @@ index af55f92..8fda98b 100644
  using InterfaceMap = std::map<Interface, PropertyMap>;
  using ObjectValueTree = std::map<sdbusplus::message::object_path, InterfaceMap>;
 diff --git a/meson.build b/meson.build
-index 681dd7a..efe7939 100644
+index ff73738..bb00cc4 100644
 --- a/meson.build
 +++ b/meson.build
-@@ -255,6 +255,7 @@ executable(
+@@ -257,6 +257,7 @@ executable(
      'platform-mc/event_manager.cpp',
      oem_files,
      'requester/mctp_endpoint_discovery.cpp',

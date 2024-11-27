@@ -1,7 +1,7 @@
-From 8a0370f271d2db6238f61044e66e9964574586d7 Mon Sep 17 00:00:00 2001
+From d39db0d4ece036969bde9db05364d0832344e37b Mon Sep 17 00:00:00 2001
 From: lora <lora.lin.wiwynn@gmail.com>
 Date: Fri, 27 Sep 2024 14:51:48 +0800
-Subject: [PATCH 04/12] platform-mc: Add OEM Meta event handler
+Subject: [PATCH 04/14] platform-mc: Add OEM Meta event handler
 
 Add OEM Meta handler with event type 0xFB. It will print the logs
 with prefix "BIOS_IPMI_SEL", so the user can utilize it to filter
@@ -55,22 +55,22 @@ Change-Id: I722d8e09e7aea8dfa533e921d41beb505b59fb95
 Signed-off-by: Delphine CC Chiu <Delphine_CC_Chiu@wiwynn.com>
 ---
  meson.build                             |   1 +
- oem/meta/platform-mc/event_oem_meta.cpp | 814 ++++++++++++++++++++++++
+ oem/meta/platform-mc/event_oem_meta.cpp | 820 ++++++++++++++++++++++++
  oem/meta/platform-mc/event_oem_meta.hpp |  21 +
  platform-mc/event_manager.cpp           |  36 ++
  platform-mc/event_manager.hpp           |  15 +-
  platform-mc/manager.hpp                 |  26 +-
  platform-mc/test/meson.build            |   2 +
  pldmd/pldmd.cpp                         |  10 +-
- 8 files changed, 918 insertions(+), 7 deletions(-)
+ 8 files changed, 924 insertions(+), 7 deletions(-)
  create mode 100644 oem/meta/platform-mc/event_oem_meta.cpp
  create mode 100644 oem/meta/platform-mc/event_oem_meta.hpp
 
 diff --git a/meson.build b/meson.build
-index 6e5c57a..acb022b 100644
+index e11d34d..82ed013 100644
 --- a/meson.build
 +++ b/meson.build
-@@ -260,6 +260,7 @@ executable(
+@@ -262,6 +262,7 @@ executable(
      oem_files,
      'requester/mctp_endpoint_discovery.cpp',
      'requester/configuration_discovery_handler.cpp',
@@ -80,10 +80,10 @@ index 6e5c57a..acb022b 100644
      install: true,
 diff --git a/oem/meta/platform-mc/event_oem_meta.cpp b/oem/meta/platform-mc/event_oem_meta.cpp
 new file mode 100644
-index 0000000..6d9b250
+index 0000000..9a6effd
 --- /dev/null
 +++ b/oem/meta/platform-mc/event_oem_meta.cpp
-@@ -0,0 +1,814 @@
+@@ -0,0 +1,820 @@
 +#include "event_oem_meta.hpp"
 +
 +#include "common/utils.hpp"
@@ -420,13 +420,13 @@ index 0000000..6d9b250
 +            { // Not supported
 +                errorLog +=
 +                    "Raw: " + to_hex_string(eventData[1]) +
-+                        to_hex_string(eventData[2]) + to_hex_string(eventData[3]) +
-+                        to_hex_string(eventData[4]) + to_hex_string(eventData[5]) +
-+                        to_hex_string(eventData[6]) + to_hex_string(eventData[7]) +
-+                        to_hex_string(eventData[8]) + to_hex_string(eventData[9]) +
-+                        to_hex_string(eventData[10]) +
-+                        to_hex_string(eventData[11]) +
-+                        to_hex_string(eventData[12]) + to_hex_string(eventData[13]);
++                    to_hex_string(eventData[2]) + to_hex_string(eventData[3]) +
++                    to_hex_string(eventData[4]) + to_hex_string(eventData[5]) +
++                    to_hex_string(eventData[6]) + to_hex_string(eventData[7]) +
++                    to_hex_string(eventData[8]) + to_hex_string(eventData[9]) +
++                    to_hex_string(eventData[10]) +
++                    to_hex_string(eventData[11]) +
++                    to_hex_string(eventData[12]) + to_hex_string(eventData[13]);
 +            }
 +            break;
 +        }
@@ -454,7 +454,8 @@ index 0000000..6d9b250
 +                        errorLog +=
 +                            "GeneralInfo: ARM/PCIeErr(0x" +
 +                            to_hex_string(generalInfo) + "), Aux. Info: 0x" +
-+                            to_hex_string((eventData[7] << 8) | eventData[6], 4) +
++                            to_hex_string((eventData[7] << 8) | eventData[6],
++                                          4) +
 +                            ", Bus " + to_hex_string(eventData[9]) + "/Dev " +
 +                            to_hex_string(eventData[8] >> 3) + "/Fun " +
 +                            to_hex_string(eventData[8] & 0x7) + ", ErrID2: 0x" +
@@ -500,7 +501,8 @@ index 0000000..6d9b250
 +                                    to_hex_string(eventData[11]) +
 +                                    ", Minor Code: 0x" +
 +                                    to_hex_string((eventData[13] << 8) |
-+                                                  eventData[12], 4);
++                                                      eventData[12],
++                                                  4);
 +                            }
 +                            break;
 +                        }
@@ -513,10 +515,11 @@ index 0000000..6d9b250
 +                                 memoryError.size())
 +                                    ? static_cast<uint8_t>(eventType)
 +                                    : (memoryError.size() - 1);
-+                            errorLog += "GeneralInfo: MEMORY_ECC_ERR(0x" +
-+                                       to_hex_string(generalInfo) + "), " +
-+                                       dimmLocation + ", DIMM Failure Event: " +
-+                                       memoryError[estrIdx];
++                            errorLog +=
++                                "GeneralInfo: MEMORY_ECC_ERR(0x" +
++                                to_hex_string(generalInfo) + "), " +
++                                dimmLocation +
++                                ", DIMM Failure Event: " + memoryError[estrIdx];
 +                            break;
 +                    }
 +                    break;
@@ -732,11 +735,11 @@ index 0000000..6d9b250
 +                                to_hex_string(generalInfo) +
 +                                "), PCIe Failure Event: " + pcieEvent[estrIdx] +
 +                                ", Status: 0x" +
-+                                to_hex_string((eventData[9] << 8) |
-+                                              eventData[8], 4) +
++                                to_hex_string(
++                                    (eventData[9] << 8) | eventData[8], 4) +
 +                                ", Source ID: 0x" +
-+                                to_hex_string((eventData[11] << 8) |
-+                                              eventData[10], 4);
++                                to_hex_string(
++                                    (eventData[11] << 8) | eventData[10], 4);
 +                            break;
 +                        }
 +                        default:
@@ -800,10 +803,11 @@ index 0000000..6d9b250
 +                                 memoryEvent.size())
 +                                    ? static_cast<uint8_t>(eventType)
 +                                    : (memoryEvent.size() - 1);
-+                            errorLog += "GeneralInfo: MemEvent(0x" +
-+                                       to_hex_string(generalInfo) + "), " +
-+                                       dimmLocation + ", DIMM Failure Event: " +
-+                                       memoryEvent[estrIdx];
++                            errorLog +=
++                                "GeneralInfo: MemEvent(0x" +
++                                to_hex_string(generalInfo) + "), " +
++                                dimmLocation +
++                                ", DIMM Failure Event: " + memoryEvent[estrIdx];
 +                            break;
 +                        }
 +                    }
@@ -816,12 +820,12 @@ index 0000000..6d9b250
 +                                          ? eventType
 +                                          : (upiEvent.size() - 1);
 +                    errorLog += "GeneralInfo: UPIEvent(0x" +
-+                               to_hex_string(generalInfo) +
-+                               "), UPI Port Location: Sled " +
-+                               std::to_string(dimmInfo.sled) + "/Socket " +
-+                               std::to_string(dimmInfo.socket) + ", Port " +
-+                               std::to_string(eventData[7] & 0xF) +
-+                               ", UPI Failure Event: " + upiEvent[estrIdx];
++                                to_hex_string(generalInfo) +
++                                "), UPI Port Location: Sled " +
++                                std::to_string(dimmInfo.sled) + "/Socket " +
++                                std::to_string(dimmInfo.socket) + ", Port " +
++                                std::to_string(eventData[7] & 0xF) +
++                                ", UPI Failure Event: " + upiEvent[estrIdx];
 +                    break;
 +                }
 +                case UnifiedError::UNIFIED_BOOT_GUARD:
@@ -839,16 +843,17 @@ index 0000000..6d9b250
 +                case UnifiedError::UNIFIED_PPR_EVENT:
 +                {
 +                    uint8_t eventType = eventData[6] & 0x0F;
-+                    errorLog += "GeneralInfo: PPR Events(0x" +
-+                               to_hex_string(generalInfo) + "), " +
-+                               pprEvent[eventType] + ". DIMM Info: (" +
-+                               to_hex_string(eventData[7]) +
-+                               to_hex_string(eventData[8]) +
-+                               to_hex_string(eventData[9]) +
-+                               to_hex_string(eventData[10]) +
-+                               to_hex_string(eventData[11]) +
-+                               to_hex_string(eventData[12]) +
-+                               to_hex_string(eventData[13]) + ")";
++                    errorLog +=
++                        "GeneralInfo: PPR Events(0x" +
++                        to_hex_string(generalInfo) + "), " +
++                        pprEvent[eventType] + ". DIMM Info: (" +
++                        to_hex_string(eventData[7]) +
++                        to_hex_string(eventData[8]) +
++                        to_hex_string(eventData[9]) +
++                        to_hex_string(eventData[10]) +
++                        to_hex_string(eventData[11]) +
++                        to_hex_string(eventData[12]) +
++                        to_hex_string(eventData[13]) + ")";
 +                    break;
 +                }
 +                case UnifiedError::UNIFIED_CXL_MEM_ERR:
@@ -889,7 +894,8 @@ index 0000000..6d9b250
 +        }
 +    }
 +    auto slotNumber = getSlotNumberString(tid, configurations);
-+    std::string message = "SEL Entry: Host: " + slotNumber + ", Record: " + errorLog;
++    std::string message =
++        "SEL Entry: Host: " + slotNumber + ", Record: " + errorLog;
 +    lg2::error("{ERROR}", "ERROR", message);   // Create log in journal
 +    pldm::utils::reportError(message.c_str()); // Create log on Dbus
 +    return 0;
@@ -926,7 +932,7 @@ index 0000000..55822a8
 +} // namespace platform_mc
 +} // namespace pldm
 diff --git a/platform-mc/event_manager.cpp b/platform-mc/event_manager.cpp
-index 139438b..f6de8fb 100644
+index 80ee6fc..cb97523 100644
 --- a/platform-mc/event_manager.cpp
 +++ b/platform-mc/event_manager.cpp
 @@ -3,8 +3,10 @@
@@ -996,7 +1002,7 @@ index 139438b..f6de8fb 100644
  
      return PLDM_ERROR;
 diff --git a/platform-mc/event_manager.hpp b/platform-mc/event_manager.hpp
-index 14b6c8e..5ee657b 100644
+index 21199e0..3ccec55 100644
 --- a/platform-mc/event_manager.hpp
 +++ b/platform-mc/event_manager.hpp
 @@ -6,6 +6,7 @@
@@ -1007,7 +1013,7 @@ index 14b6c8e..5ee657b 100644
  #include "requester/handler.hpp"
  #include "terminus.hpp"
  #include "terminus_manager.hpp"
-@@ -39,9 +40,11 @@ class EventManager
+@@ -40,9 +41,11 @@ class EventManager
      EventManager& operator=(EventManager&&) = delete;
      virtual ~EventManager() = default;
  
@@ -1017,14 +1023,14 @@ index 14b6c8e..5ee657b 100644
 +    explicit EventManager(
 +        TerminusManager& terminusManager, TerminiMapper& termini,
 +        pldm::ConfigurationDiscoveryHandler* configurationDiscovery = nullptr) :
-+        terminusManager(terminusManager),
-+        termini(termini), configurationDiscovery(configurationDiscovery)
++        terminusManager(terminusManager), termini(termini),
++        configurationDiscovery(configurationDiscovery)
      {
          // Default response handler for PollForPlatFormEventMessage
          registerPolledEventHandler(
-@@ -201,6 +204,10 @@ class EventManager
-         uint32_t nextDataTransferHandle, uint8_t* transferOperationFlag,
-         uint32_t* dataTransferHandle, uint32_t* eventIdToAcknowledge);
+@@ -221,6 +224,10 @@ class EventManager
+                                  uint16_t eventId,
+                                  std::vector<uint8_t>& eventMessage);
  
 +    bool checkMetaIana(
 +        pldm_tid_t tid,
@@ -1033,7 +1039,7 @@ index 14b6c8e..5ee657b 100644
      /** @brief Reference of terminusManager */
      TerminusManager& terminusManager;
  
-@@ -212,6 +219,8 @@ class EventManager
+@@ -232,6 +239,8 @@ class EventManager
  
      /** @brief map of PLDM event type of polled event to EventHandlers */
      pldm::platform_mc::EventMap eventHandlers;
@@ -1043,7 +1049,7 @@ index 14b6c8e..5ee657b 100644
  } // namespace platform_mc
  } // namespace pldm
 diff --git a/platform-mc/manager.hpp b/platform-mc/manager.hpp
-index 0cb0178..ee7dffb 100644
+index 29d924a..8a81c83 100644
 --- a/platform-mc/manager.hpp
 +++ b/platform-mc/manager.hpp
 @@ -6,11 +6,14 @@
@@ -1101,7 +1107,7 @@ index 0cb0178..ee7dffb 100644
      /** @brief The function to trigger the event polling
       *
       *  @param[in] tid - Terminus ID
-@@ -196,6 +215,7 @@ class Manager : public pldm::MctpDiscoveryHandlerIntf
+@@ -224,6 +243,7 @@ class Manager : public pldm::MctpDiscoveryHandlerIntf
  
      /** @brief Store event manager handler */
      EventManager eventManager;

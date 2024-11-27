@@ -1,7 +1,7 @@
-From f68bfe47c2e0f284a070d8d9ef960b963b027fb7 Mon Sep 17 00:00:00 2001
+From b58276e3bdd7f4f74847b88679d0eb31ce5f545b Mon Sep 17 00:00:00 2001
 From: Delphine CC Chiu <Delphine_CC_Chiu@wiwynn.com>
 Date: Fri, 14 Jun 2024 16:24:31 +0800
-Subject: [PATCH 07/12] Support OEM-META command for power control
+Subject: [PATCH 07/14] Support OEM-META command for power control
 
 Summary:
   - Add handler for write-file command "SLED_CYCLE, 12V-CYCLE
@@ -18,8 +18,8 @@ Signed-off-by: Delphine CC Chiu <Delphine_CC_Chiu@wiwynn.com>
  .../libpldmresponder/oem_meta_file_io.cpp     |   6 +
  .../oem_meta_file_io_by_type.hpp              |   1 +
  .../oem_meta_file_io_type_power_control.cpp   | 167 ++++++++++++++++++
- .../oem_meta_file_io_type_power_control.hpp   |  67 +++++++
- 5 files changed, 242 insertions(+)
+ .../oem_meta_file_io_type_power_control.hpp   |  66 +++++++
+ 5 files changed, 241 insertions(+)
  create mode 100644 oem/meta/libpldmresponder/oem_meta_file_io_type_power_control.cpp
  create mode 100644 oem/meta/libpldmresponder/oem_meta_file_io_type_power_control.hpp
 
@@ -253,10 +253,10 @@ index 0000000..4f86f14
 +} // namespace pldm::responder::oem_meta
 diff --git a/oem/meta/libpldmresponder/oem_meta_file_io_type_power_control.hpp b/oem/meta/libpldmresponder/oem_meta_file_io_type_power_control.hpp
 new file mode 100644
-index 0000000..fd3ffab
+index 0000000..e18e5b6
 --- /dev/null
 +++ b/oem/meta/libpldmresponder/oem_meta_file_io_type_power_control.hpp
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,66 @@
 +#pragma once
 +
 +#include "common/utils.hpp"
@@ -283,8 +283,7 @@ index 0000000..fd3ffab
 +    explicit PowerControlHandler(
 +        uint8_t tid, std::map<std::string, MctpEndpoint>& configurations,
 +        const pldm::utils::DBusHandler* dBusIntf) :
-+        tid(tid),
-+        configurations(configurations), dBusIntf(dBusIntf)
++        tid(tid), configurations(configurations), dBusIntf(dBusIntf)
 +    {}
 +
 +    int write(const message& data) override;

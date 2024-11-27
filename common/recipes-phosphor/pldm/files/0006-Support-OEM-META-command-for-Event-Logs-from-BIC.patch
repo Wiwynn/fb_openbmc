@@ -1,7 +1,7 @@
-From 718342d4def7d4a9b5e660925e3658c9c6bbd08b Mon Sep 17 00:00:00 2001
+From 1b65c4c0bb160fb21f2831700fc16f666f3b1811 Mon Sep 17 00:00:00 2001
 From: Bright Cheng <bright_cheng@wiwynn.com>
 Date: Wed, 26 Jun 2024 14:25:18 +0800
-Subject: [PATCH 06/12] Support OEM-META command for Event Logs from BIC
+Subject: [PATCH 06/14] Support OEM-META command for Event Logs from BIC
 
 Summary:
   - Add handler for write-file command "EVENT_LOG", which is sent
@@ -14,8 +14,8 @@ Change-Id: I55a19b6c22e05cae3a9572a8d6707769ae7ee402
  .../libpldmresponder/oem_meta_file_io.cpp     |   4 +
  .../oem_meta_file_io_by_type.hpp              |   1 +
  .../oem_meta_file_io_type_event_log.cpp       | 138 ++++++++++++++++++
- .../oem_meta_file_io_type_event_log.hpp       |  60 ++++++++
- 5 files changed, 204 insertions(+)
+ .../oem_meta_file_io_type_event_log.hpp       |  59 ++++++++
+ 5 files changed, 203 insertions(+)
  create mode 100644 oem/meta/libpldmresponder/oem_meta_file_io_type_event_log.cpp
  create mode 100644 oem/meta/libpldmresponder/oem_meta_file_io_type_event_log.hpp
 
@@ -211,10 +211,10 @@ index 0000000..37ec22c
 +} // namespace pldm::responder::oem_meta
 diff --git a/oem/meta/libpldmresponder/oem_meta_file_io_type_event_log.hpp b/oem/meta/libpldmresponder/oem_meta_file_io_type_event_log.hpp
 new file mode 100644
-index 0000000..0523ad7
+index 0000000..e58c1a2
 --- /dev/null
 +++ b/oem/meta/libpldmresponder/oem_meta_file_io_type_event_log.hpp
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,59 @@
 +#pragma once
 +
 +#include "common/utils.hpp"
@@ -239,8 +239,7 @@ index 0000000..0523ad7
 +  public:
 +    EventLogHandler(pldm_tid_t tid,
 +                    const std::map<std::string, MctpEndpoint>& configurations) :
-+        tid(tid),
-+        configurations(configurations)
++        tid(tid), configurations(configurations)
 +    {}
 +
 +    ~EventLogHandler() = default;
