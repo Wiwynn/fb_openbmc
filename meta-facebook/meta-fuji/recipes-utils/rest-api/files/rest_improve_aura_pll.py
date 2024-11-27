@@ -59,10 +59,8 @@ def execute_shell_command(command: t.List[str], check=True) -> str:
 # Endpoint to program the Aurora chip
 def program_aurora_chip() -> AuroraChipResponse:
     command = ["/usr/local/bin/improve_aura_pll.sh"]
-    output = execute_shell_command(command)
-    if output.strip().endswith("FIX_APPLIED") or output.strip().endswith(
-        "AURA_FIX_SUCCESS"
-    ):
+    output = execute_shell_command(command).strip()
+    if output.endswith("FIX_APPLIED") or output.endswith("AURA_FIX_SUCCESS"):
         return {
             "Status": "improve_aura_pll.sh succeeded",
             "Output": output,
