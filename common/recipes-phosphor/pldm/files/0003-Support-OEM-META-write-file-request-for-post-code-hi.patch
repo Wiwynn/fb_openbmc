@@ -1,4 +1,4 @@
-From 436446362b1c21645fdc9a3edc4f59346ca8b0cb Mon Sep 17 00:00:00 2001
+From 46ec0da4ddc13f5f16a934a49286cb231ff9bf55 Mon Sep 17 00:00:00 2001
 From: Delphine CC Chiu <Delphine_CC_Chiu@wiwynn.com>
 Date: Mon, 23 Oct 2023 17:06:54 +0800
 Subject: [PATCH 03/14] Support OEM-META write file request for post code
@@ -18,10 +18,10 @@ Signed-off-by: Delphine CC Chiu <Delphine_CC_Chiu@wiwynn.com>
  .../libpldmresponder/oem_meta_file_io.cpp     |  66 +++++++++
  .../libpldmresponder/oem_meta_file_io.hpp     |  49 +++++++
  .../oem_meta_file_io_by_type.hpp              |  32 +++++
- .../oem_meta_file_io_type_post_code.cpp       | 131 ++++++++++++++++++
+ .../oem_meta_file_io_type_post_code.cpp       | 130 ++++++++++++++++++
  .../oem_meta_file_io_type_post_code.hpp       |  53 +++++++
  pldmd/pldmd.cpp                               |   9 ++
- 11 files changed, 396 insertions(+)
+ 11 files changed, 395 insertions(+)
  create mode 100644 oem/meta/libpldmresponder/oem_meta_file_io.cpp
  create mode 100644 oem/meta/libpldmresponder/oem_meta_file_io.hpp
  create mode 100644 oem/meta/libpldmresponder/oem_meta_file_io_by_type.hpp
@@ -327,10 +327,10 @@ index 0000000..3f27583
 +} // namespace pldm::responder::oem_meta
 diff --git a/oem/meta/libpldmresponder/oem_meta_file_io_type_post_code.cpp b/oem/meta/libpldmresponder/oem_meta_file_io_type_post_code.cpp
 new file mode 100644
-index 0000000..d1661cc
+index 0000000..7ac86af
 --- /dev/null
 +++ b/oem/meta/libpldmresponder/oem_meta_file_io_type_post_code.cpp
-@@ -0,0 +1,131 @@
+@@ -0,0 +1,130 @@
 +#include "oem_meta_file_io_type_post_code.hpp"
 +
 +#include <phosphor-logging/lg2.hpp>
@@ -341,7 +341,7 @@ index 0000000..d1661cc
 +namespace pldm::responder::oem_meta
 +{
 +
-+using postcode_t = std::tuple<uint64_t, std::vector<uint8_t>>;
++using postcode_t = std::tuple<std::vector<uint8_t>, std::vector<uint8_t>>;
 +
 +void PostCodeHandler::parseObjectPathToGetSlot(uint64_t& slotNum)
 +{
@@ -405,6 +405,7 @@ index 0000000..d1661cc
 +{
 +    static constexpr auto dbusService = "xyz.openbmc_project.State.Boot.Raw";
 +    static constexpr auto dbusObj = "/xyz/openbmc_project/state/boot/raw";
++    static constexpr auto AMD_POST_CODE_LENGTH = 4;
 +    uint64_t slot;
 +
 +    try
@@ -420,23 +421,21 @@ index 0000000..d1661cc
 +
 +    std::string dbusObjStr = dbusObj + std::to_string(slot);
 +
-+    uint64_t primaryPostCode = 0;
++    std::vector<uint8_t> primaryPostCode;
 +
 +    // Putting list of the bytes together to form a meaningful postcode
 +    // AMD platform send four bytes as a post code unit
 +    if (std::cmp_greater(
 +            std::distance(std::begin(postCodeList), std::end(postCodeList)),
-+            sizeof(primaryPostCode)))
++            sizeof(AMD_POST_CODE_LENGTH)))
 +    {
 +        error("Get invalid post code length");
 +        return PLDM_ERROR;
 +    }
 +
-+    size_t index = 0;
-+    std::for_each(postCodeList.begin(), postCodeList.end(),
-+                  [&primaryPostCode, &index](auto postcode) {
-+                      primaryPostCode |= std::uint64_t(postcode) << (8 * index);
-+                      index++;
++    std::for_each(postCodeList.rbegin(), postCodeList.rend(),
++                  [&primaryPostCode](auto postcode) {
++                    primaryPostCode.push_back(postcode);
 +                  });
 +
 +    try
@@ -549,5 +548,5 @@ index e44e880..7907961 100644
          FRU_JSONS_DIR, FRU_MASTER_JSON, pdrRepo.get(), entityTree.get(),
          bmcEntityTree.get());
 -- 
-2.44.2
+2.25.1
 
