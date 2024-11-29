@@ -90,6 +90,7 @@ SRC_URI:append = " \
     file://0182-drivers-watchdog-ast2600-support-bootstatus.patch \
     file://0183-NCSI-Add-propety-no-channel-monitor-and-start-redo-p.patch \
     file://0184-net-ncsi-specify-maximum-package-to-probe.patch \
+    file://0185-Revert-net-ncsi-change-from-ndo_set_mac_address-to-d.patch \
 "
 
 #
