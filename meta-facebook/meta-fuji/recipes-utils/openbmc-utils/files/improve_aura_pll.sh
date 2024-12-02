@@ -16,7 +16,7 @@ write_aura_reg() {
 config_aura_cl_parameter() {
     /usr/sbin/i2cset -y -f 10 0x68 0xff 0x00
     /usr/sbin/i2cset -y -f 10 0x68 0x2c 0xa2
-    /usr/sbin/i2cset -y -f 10 0x68 0x2d 0x29
+    /usr/sbin/i2cset -y -f 10 0x68 0x2d 0x2a
     /usr/sbin/i2cset -y -f 10 0x68 0x0f 0x02
 }
 
