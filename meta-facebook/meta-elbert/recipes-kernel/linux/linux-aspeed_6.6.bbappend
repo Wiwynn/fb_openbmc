@@ -23,3 +23,5 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/patches_6.6:"
 SRC_URI:append = "file://1001-ARM-dts-aspeed-elbert-Enable-spi1-controller.patch \
                   file://1002-ARM-dts-aspeed-elbert-Enable-jtag1-controller.patch \
 "
+
+SRC_URI:remove = "file://0007-ARM-dts-aspeed-Expand-data0-partition-in-facebook-bm.patch"
