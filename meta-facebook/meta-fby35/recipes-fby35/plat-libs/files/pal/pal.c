@@ -2962,12 +2962,16 @@ pal_parse_mce_error_sel(uint8_t fru, uint8_t *event_data, char *error_log) {
 
   switch (cpu_model) {
     case CPU_INTEL:
-      snprintf(
-          temp_log,
-          sizeof(temp_log),
-          "CPU %d, Core %d",
-          ((event_data[2] & 0xF0) >> 4),
-          (event_data[2] & 0x0F));
+      if (fby35_common_get_slot_type(fru) == SERVER_TYPE_GL) {
+        snprintf(temp_log, sizeof(temp_log), "CPU 0, Core %d", event_data[2]);
+      } else {
+        snprintf(
+            temp_log,
+            sizeof(temp_log),
+            "CPU %d, Core %d",
+            ((event_data[2] & 0xF0) >> 4),
+            (event_data[2] & 0x0F));
+      }
       break;
     case CPU_AMD:
       snprintf(
