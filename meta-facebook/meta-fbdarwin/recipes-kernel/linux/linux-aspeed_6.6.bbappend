@@ -22,3 +22,7 @@ SRC_URI:append = " \
     file://1002-misc-eeprom_93xx46-Add-93C76-93C86-support.patch \
     file://1003-gpiolib-of-Respect-High-CS-in-spi-gpio.patch \
 "
+
+SRC_URI:remove = " \
+    file://0007-ARM-dts-aspeed-Expand-data0-partition-in-facebook-bm.patch \
+"
