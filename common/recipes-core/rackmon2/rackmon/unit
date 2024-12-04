@@ -1,7 +1,7 @@
 #!/bin/bash
 
 check_packages() {
-  required_packages=("python3-jsonschema" "meson" "ninja-build" "gtest" "gtest-devel" "gmock" "gmock-devel" "glog" "glog-devel")
+  required_packages=("python3-jsonschema" "meson" "ninja-build" "gtest" "gtest-devel" "gmock" "gmock-devel" "glog" "glog-devel" "json-devel" "cli11-devel")
   for package in "${required_packages[@]}"; do
     echo "Checking for $package"
     if ! rpm -q "$package" > /dev/null; then
