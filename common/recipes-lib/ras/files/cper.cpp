@@ -361,7 +361,9 @@ static int nvidiaSectionHandler(const ordered_json& sectionDescriptor,
 {
   static const std::vector<std::string> procSignatures = {
     "MCF", "DCC-COH", "DCC-ECC", "CLink", "CCPLEXGIC", "CCPLEXSCF",
-    "C2C", "C2C-IP-FAIL", "SOCHUB", "HSM",
+    "C2C", "C2C-IP-FAIL", "SOCHUB", "HSM", "FWERROR", "HSM U/I ERROR",
+    "HSM_FABRIC", "HSM_SW_ERR", "HSS-BUSY", "HSS-IDLE", "CMET-NULL",
+    "CMET-SHA256", "CMET-FULL", "L0 RESET", "L1 RESET", "L2 RESET", "SMMU",
   };
 
   static const std::vector<std::string> pcieSignatures = {
