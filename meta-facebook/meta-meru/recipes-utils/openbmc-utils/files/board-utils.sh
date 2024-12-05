@@ -143,14 +143,13 @@ userver_power_on() {
 userver_power_off() {
     # Power off using the SLG gpio
     i2cset -f -y 14 0x28 0x2e 0x0
-    sleep 0.5
-    wedge_power_asic 1
     # Some delay is needed for "wedge_power reset" reset to take effect
     sleep 10
     return 0
 }
 
 userver_reset() {
+    wedge_power_asic 1
     userver_power_off
     sleep 1
     userver_power_on
