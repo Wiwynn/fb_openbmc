@@ -3384,7 +3384,7 @@ sensor_thresh_array_init(uint8_t fru) {
     case FRU_PSU4:
       i = fru - FRU_PSU1;
       psu_sensor_threshold[PSU1_VIN + (i * PSU_SENSOR_COUNT)][UCR_THRESH] = 305;
-      psu_sensor_threshold[PSU1_VIN + (i * PSU_SENSOR_COUNT)][LCR_THRESH] = 90;
+      psu_sensor_threshold[PSU1_VIN + (i * PSU_SENSOR_COUNT)][LCR_THRESH] = 35;
       psu_sensor_threshold[PSU1_VIN + (i * PSU_SENSOR_COUNT)][UNC_THRESH] = 0; // unset
       psu_sensor_threshold[PSU1_VIN + (i * PSU_SENSOR_COUNT)][LNC_THRESH] = 0; // unset
       psu_sensor_threshold[PSU1_VOUT + (i * PSU_SENSOR_COUNT)][UCR_THRESH] = 13;
