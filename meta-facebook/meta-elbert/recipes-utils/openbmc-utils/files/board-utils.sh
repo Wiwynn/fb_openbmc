@@ -168,7 +168,6 @@ wedge_power_on_board() {
 }
 
 wedge_power_off_board() {
-    wedge_power_off_asic
     echo 0 > "$SCM_PWR_ON_SYSFS"
 }
 
