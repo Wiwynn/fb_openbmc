@@ -1,0 +1,49 @@
+From 9f182ef0734ef94a44439c6230dfab71e501c3aa Mon Sep 17 00:00:00 2001
+From: Tao Ren <taoren@meta.com>
+Date: Mon, 25 Nov 2024 10:41:55 +0700
+Subject: [PATCH] priolitize power-on run after ipmid,kcsd service
+
+to fix the issue ipmitool cannot use on COMe,
+In case the BMC needs to format flash ubifs (/mnt/data) at boot, It will postpone the ipmid and kcsd start.
+that do the COMe is boot early kcsd service ready, the probing ipmi is failure
+
+```
+[root@localhost ~]# ipmitool raw 0x06 0x01
+Could not open device at /dev/ipmi0 or /dev/ipmi/0 or /dev/ipmidev/0: No such file or directory
+```
+
+validate by
+1. do UBIFS format (/mnt/data)
+umount /mnt/data
+ubidetach -m 4
+ubiformat /dev/mtd4 -y
+2. Powercycle the chassis
+3. Get into COMe and execute "ipmitool raw 0x06 0x01"
+---
+ power-on.service | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/power-on.service b/power-on.service
+index daac3eb6230..27ce4c9598c 100644
+--- a/power-on.service
++++ b/power-on.service
+@@ -17,9 +17,8 @@
+ #
+ [Unit]
+ Description=Power on Wedge microserver
+-After=setup_board.service openbmc_gpio_setup.service setup_i2c.service
++After=setup_board.service openbmc_gpio_setup.service setup_i2c.service ipmid.service kcsd.target
+ Wants=openbmc_gpio_setup.service
+-Before=basic.target
+ DefaultDependencies=no
+ 
+ [Service]
+@@ -28,4 +27,4 @@ RemainAfterExit=yes
+ ExecStart=/usr/local/bin/power-on.sh
+ 
+ [Install]
+-WantedBy=basic.target
++WantedBy=multi-user.target
+-- 
+2.43.0
+
