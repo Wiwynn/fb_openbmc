@@ -20,6 +20,8 @@
 package common
 
 import (
+	"log"
+	"os"
 	"time"
 
 	"github.com/facebook/openbmc/tools/flashy/lib/fileutils"
@@ -35,6 +37,10 @@ const disableHangPanicFilePath = "/proc/sys/kernel/hung_task_panic"
 
 // disableHangPanic disables the "hung_task_panic".
 func disableHangPanic(stepParams step.StepParams) step.StepExitError {
+	if _, err := os.Stat(disableHangPanicFilePath); errors.Is(err, os.ErrNotExist) {
+		log.Printf("%v does not exist. not proceeding with disableHungPanic", disableHangPanicFilePath)
+		return nil
+	}
 	err := fileutils.WriteFileWithTimeout(
 		disableHangPanicFilePath, []byte("0"), 0644, 30*time.Second,
 	)
