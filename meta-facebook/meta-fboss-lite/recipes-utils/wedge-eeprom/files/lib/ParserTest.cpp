@@ -46,7 +46,7 @@ EepromContents expectedContentsV5 = {
     {"System Manufacturer", "UNA_MAS"},
     {"System Manufacturing Date", "20130203"},
     {"PCB Manufacturer", "TERZO"},
-    {"Assembled at", "JUICETORY"},
+    {"Assembled At", "JUICETORY"},
     {"EEPROM location on Fabric", "BUDOKAN"},
     {"X86 CPU MAC Base", "11:22:33:44:55:66"},
     {"X86 CPU MAC Address Size", "258"},
