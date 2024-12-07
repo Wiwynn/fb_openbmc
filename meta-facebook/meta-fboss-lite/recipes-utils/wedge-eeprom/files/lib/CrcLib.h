@@ -31,33 +31,31 @@ class CrcLib {
    *	@buffer: data pointer
    *	@len: number of bytes in the buffer
    */
-  uint16_t crc16_ccitt(uint16_t crc, uint8_t const* buffer, size_t len) const {
+  static uint16_t crc16_ccitt(uint16_t crc, uint8_t const* buffer, size_t len) {
     while (len--)
       crc = crc_ccitt_byte(crc, *buffer++);
     return crc;
   };
 
   /**
-   *	crc_ccitt_false - recompute the CRC (CRC-CCITT-FALSE variant)
-   *	for the data buffer
-   *	@crc: previous CRC value
+   *  crc16_ccitt_aug - crc_ccitt_aug with 0x1D0F init value
    *	@buffer: data pointer
    *	@len: number of bytes in the buffer
    */
-  uint16_t crc16_ccitt_false(uint16_t crc, uint8_t const* buffer, size_t len)
-      const {
-    while (len--)
-      crc = crc_ccitt_false_byte(crc, *buffer++);
+  static uint16_t crc16_ccitt_aug(uint8_t const* buffer, size_t len) {
+    uint16_t crc = 0x1D0F;
+    while (len--) {
+      crc = crc_ccitt_aug_byte(crc, *buffer++);
+    }
     return crc;
-  };
-
+  }
  private:
-  uint16_t crc_ccitt_byte(uint16_t crc, const uint8_t c) const {
+  static uint16_t crc_ccitt_byte(uint16_t crc, const uint8_t c) {
     return (crc >> 8) ^ crc_ccitt_table[(crc ^ c) & 0xff];
   };
 
-  uint16_t crc_ccitt_false_byte(uint16_t crc, const uint8_t c) const {
-    return (crc << 8) ^ crc_ccitt_false_table[(crc >> 8) ^ c];
+  static uint16_t crc_ccitt_aug_byte(uint16_t crc, const uint8_t c) {
+    return (crc << 8) ^ crc_ccitt_aug_table[(crc >> 8) ^ c];
   };
 
   /* It follows the ITU/CCITT and the CRC16-CCITT spec.
@@ -67,7 +65,7 @@ class CrcLib {
    * be seen in entry 128, 0x8408. This corresponds to x^0 + x^5 + x^12.
    * Add the implicit x^16, and you have the standard CRC-CCITT.
    */
-  uint16_t const crc_ccitt_table[256] = {
+  static constexpr uint16_t crc_ccitt_table[256] = {
       0x0000, 0x1189, 0x2312, 0x329b, 0x4624, 0x57ad, 0x6536, 0x74bf, 0x8c48,
       0x9dc1, 0xaf5a, 0xbed3, 0xca6c, 0xdbe5, 0xe97e, 0xf8f7, 0x1081, 0x0108,
       0x3393, 0x221a, 0x56a5, 0x472c, 0x75b7, 0x643e, 0x9cc9, 0x8d40, 0xbfdb,
@@ -99,10 +97,10 @@ class CrcLib {
       0x3de3, 0x2c6a, 0x1ef1, 0x0f78};
 
   /*
-   * Similar table to calculate CRC16 variant known as CRC-CCITT-FALSE
-   * Reflected bits order, does not augment final value.
+   * Similar table to calculate CRC16 AUG variant.
+   * Reflected bits order.
    */
-  uint16_t const crc_ccitt_false_table[256] = {
+  static constexpr uint16_t crc_ccitt_aug_table[256] = {
       0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50A5, 0x60C6, 0x70E7, 0x8108,
       0x9129, 0xA14A, 0xB16B, 0xC18C, 0xD1AD, 0xE1CE, 0xF1EF, 0x1231, 0x0210,
       0x3273, 0x2252, 0x52B5, 0x4294, 0x72F7, 0x62D6, 0x9339, 0x8318, 0xB37B,

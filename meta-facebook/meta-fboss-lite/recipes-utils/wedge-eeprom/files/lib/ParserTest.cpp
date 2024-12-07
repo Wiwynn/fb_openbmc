@@ -56,7 +56,7 @@ EepromContents expectedContentsV5 = {
     {"Switch ASIC MAC Address Size", "512"},
     {"META Reserved MAC Base", "fe:dc:ba:98:76:54"},
     {"META Reserved MAC Address Size", "2"},
-    {"CRC16", "0xd5c6"},
+    {"CRC16", "0xd5c6 (CRC Matched)"},
 };
 
 struct {

@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include "CrcLib.h"
 #include "FbossEepromParser.h"
 
 namespace {
@@ -356,6 +357,15 @@ std::unordered_map<int, std::string> FbossEepromParser::parseEepromBlobTLV(
     cursor += itemLen + 2;
     // the CRC16 is the last content, parsing must stop.
     if (key == "CRC16") {
+      uint16_t crcProgrammed = std::stoi(value, nullptr, 16);
+      uint16_t crcCalculated = weutil::CrcLib::crc16_ccitt_aug(buffer, cursor - 4);
+      if (crcProgrammed == crcCalculated) {
+        parsedValue[itemCode] += " (CRC Matched)";
+      } else {
+        std::stringstream ss;
+        ss << " (CRC Mismatch. Expected 0x" << std::hex << crcCalculated << ")";
+        parsedValue[itemCode] += ss.str();
+      }
       break;
     }
   }
