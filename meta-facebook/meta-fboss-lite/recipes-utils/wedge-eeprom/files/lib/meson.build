@@ -48,3 +48,7 @@ pkg.generate(libraries: [weutil_lib],
     version: meson.project_version(),
     description: 'wedge eeprom utility library')
 
+# test executable.
+test_exe = executable('parser-test', 'ParserTest.cpp',
+    link_with: weutil_lib,
+    install: false)
