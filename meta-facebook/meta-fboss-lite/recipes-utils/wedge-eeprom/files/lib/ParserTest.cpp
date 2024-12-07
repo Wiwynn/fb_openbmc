@@ -32,6 +32,7 @@ EepromData eepromV5 = {
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 
 EepromContents expectedContentsV5 = {
+    {"Version", "5"},
     {"Product Name", "FIRST_SQUEEZE"},
     {"Product Part Number", "20123456"},
     {"System Assembly Part Number", "SYSA1234"},
