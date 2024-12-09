@@ -108,6 +108,8 @@ SpacesInParentheses: false
 SpacesInSquareBrackets: false
 SpaceBeforeSquareBrackets: false
 Standard: Latest
+StatementMacros:
+  - NLOHMANN_JSON_SERIALIZE_ENUM
 TabWidth: 8
 UseCRLF: false
 UseTab: Never
