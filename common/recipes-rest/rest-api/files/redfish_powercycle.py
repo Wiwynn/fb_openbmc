@@ -1,7 +1,6 @@
 import asyncio
 import os
 import time
-from dataclasses import dataclass
 from functools import lru_cache
 from shutil import which
 from typing import List, Optional, TYPE_CHECKING
@@ -158,10 +157,10 @@ def is_wedge_power_available() -> bool:
 ##########################################################################
 
 
-@dataclass
 class Regs:
-    shutdown_time: int
-    clock: int
+    def __init__(self, shutdown_time, clock):
+        self.shutdown_time = shutdown_time
+        self.clock = clock
 
 
 TYPE_TO_REGS = {
