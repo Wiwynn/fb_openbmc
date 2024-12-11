@@ -37,7 +37,7 @@ pmbus_reset_OPERATION_register() {
 # unbind and bind the i2c driver
 i2c_driver_rebind() {
   device=$1
-  driver_sysfs=$2
+  driver_sysfs="/sys/bus/i2c/drivers/$2"
 
   echo  "$device" > "$driver_sysfs"/unbind
   sleep 1
@@ -67,12 +67,13 @@ hwmon_sanitize_input_voltage() {
 
   device="${bus}"-00"${address:2}"
   hwnon_sysfs=( /sys/bus/i2c/devices/"${device}"/hwmon/hwmon* )
-  driver_sysfs=$(readlink -f /sys/bus/i2c/devices/"${device}"/driver)
+  device_name=$(cat /sys/bus/i2c/devices/"${device}"/name)
+  driver_name=$(i2c_driver_map "${device_name}")
 
   for retry in {1..5} ; do
     error=0
     #Reset the OPERATION code for UCD sensor
-    if  [[ ${driver_sysfs} =~ "ucd9000" ]]; then
+    if [ "${driver_name}" == "ucd9000" ]; then
       pmbus_reset_OPERATION_register "$page_count" "${address}" "$bus"
     fi
     #Verify sensor value
@@ -89,7 +90,10 @@ hwmon_sanitize_input_voltage() {
 
     if [ $error -eq 1 ] ;then
       echo "Sensor addr=$address init failed retry=$retry bind/unbind device"
-      i2c_driver_rebind "$device" "$driver_sysfs"
+      i2c_driver_rebind "$device" "$driver_name"
+      # If the driver binding fails and the hwmon node is not generated,
+      # need to recheck the hwmon node.
+      hwnon_sysfs=( /sys/bus/i2c/devices/"${device}"/hwmon/hwmon* )
     else
       break
     fi
@@ -98,7 +102,7 @@ hwmon_sanitize_input_voltage() {
   # on mp2975, occasionally read form CAPABILITY register is incorrect even
   # thought the value on device is proper. Suspect this could be triggered by
   # the known aspeed issue, hence setting pec back to 0.
-  if [[ ${driver_sysfs} =~ "mp2975" ]]; then
+  if [ "${driver_name}" == "mp2975" ]; then
     check_and_disable_pec "$device"
   fi
 }
