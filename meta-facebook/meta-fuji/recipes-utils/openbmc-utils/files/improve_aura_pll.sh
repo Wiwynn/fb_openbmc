@@ -30,7 +30,7 @@ check_volatile_fix() {
     #    Anything Else: Unknown state
     if [ "$reg_read" == "0x3f" ]; then
         echo "0"
-    elif [ "$reg_read" == "0x29" ]; then
+    elif [ "$reg_read" == "0x2a" ]; then
         echo "1"
     else
         echo "2"
