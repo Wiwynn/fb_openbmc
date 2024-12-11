@@ -52,24 +52,27 @@ static const i2c_dev_attr_st pwrcpld_attrs[] = {
 		0,
 		8,
 	},
+	/*
+	 * PWR System Power Status 1 (register 0x15)
+	 */
 	{
-		"smb1_dc_status",
-		"0: DC Fail\n"
-		"1: DC Normal",
+		"cmm_rdy_nw_l",
+		"0: CMM Ready\n"
+		"1: CMM Not Ready",
 		I2C_DEV_ATTR_SHOW_DEFAULT,
 		NULL,
-		0x16,
-		5,
+		0x15,
+		7,
 		1,
 	},
 	{
-		"smb2_dc_status",
-		"0: DC Fail\n"
-		"1: DC Normal",
+		"cmm_crd_pwren_l",
+		"0: Enable\n"
+		"1: Disable",
 		I2C_DEV_ATTR_SHOW_DEFAULT,
 		NULL,
-		0x16,
-		6,
+		0x15,
+		0,
 		1,
 	},
 	/*
@@ -83,6 +86,19 @@ static const i2c_dev_attr_st pwrcpld_attrs[] = {
 		I2C_DEV_ATTR_STORE_DEFAULT,
 		0x23,
 		0,
+		1,
+	},
+	/*
+	 * PWR INT ALARM Misc Status Register (register 0x34)
+	 */
+	{
+		"crd_leakage_alarm_l_status",
+		"0: This blade has leakage\n"
+		"1: This blade has no leakage",
+		I2C_DEV_ATTR_SHOW_DEFAULT,
+		NULL,
+		0x34,
+		1,
 		1,
 	},
 };
