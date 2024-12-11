@@ -237,7 +237,7 @@ class CommonRestEndpointTest(BaseRestEndpointTest):
         "System Manufacturer",
         "System Manufacturing Date",
         "PCB Manufacturer",
-        "Assembled at",
+        "Assembled At",
         "Local MAC",
         "Extended MAC Base",
         "Extended MAC Address Size",
@@ -258,7 +258,7 @@ class CommonRestEndpointTest(BaseRestEndpointTest):
         "System Manufacturer",
         "System Manufacturing Date",
         "PCB Manufacturer",
-        "Assembled at",
+        "Assembled At",
         "EEPROM location on Fabric",
     ]
     FRUID_ATTRIBUTES_V5_X86 = [
