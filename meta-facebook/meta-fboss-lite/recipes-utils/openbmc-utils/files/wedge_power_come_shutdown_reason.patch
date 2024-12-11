@@ -1,27 +1,38 @@
-From 5c78a6d47a2beefa8d7f5d5068bce047284dedfc Mon Sep 17 00:00:00 2001
+From ef5a94db359d171ecebf837f3a5b8e69e46626c4 Mon Sep 17 00:00:00 2001
 From: Tao Ren <taoren@meta.com>
-Date: Tue, 16 Jul 2024 09:02:22 +0000
+Date: Fri, 29 Nov 2024 05:11:56 +0000
 Subject: [PATCH] add come shutdown reason check
 
 ---
- wedge_power.sh     | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ wedge_power.sh        | 20 +++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
 diff --git a/wedge_power.sh b/wedge_power.sh
-index ab9f129d9d5..7d6da257a8d 100755
+index ab9f129d9d..de9ba31e21 100755
 --- a/wedge_power.sh
 +++ b/wedge_power.sh
-@@ -52,6 +52,15 @@ do_status() {
+@@ -52,6 +52,26 @@ do_status() {
          echo "on"
      else
          echo "off"
-+        if leakage_detection_status_check; then
-+            echo "Reason: Coolant Leakage Detected"
++        # Check for coolant leakage
++        leakage_detection_status_check && echo "Reason: Coolant Leakage Detected"
++
++        # Check CMM ready status and related shutdown
++        if ! cmm_ready_status_check; then
++            cmm_initiated_shutdown_check && echo "Reason: CMM-Initiated Shutdown"
++        else
++            echo "Reason: CMM is not ready"
 +        fi
-+        if user_issued_shutdown_status_check; then
-+            echo "Reason: User-initiated COMe shutdown"
-+        fi
-+        if ! leakage_detection_status_check && ! user_issued_shutdown_status_check; then
++
++        # Check for user-initiated shutdown
++        user_issued_shutdown_status_check && echo "Reason: User-initiated COMe shutdown"
++
++        # Default reason if no conditions matched
++        if ! leakage_detection_status_check && \
++           ! cmm_ready_status_check && \
++           ! cmm_initiated_shutdown_check && \
++           ! user_issued_shutdown_status_check; then
 +            echo "Reason: Unknown"
 +        fi
      fi

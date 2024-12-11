@@ -26,8 +26,9 @@ SCMCPLD_SYSFS_DIR=$(i2c_device_sysfs_abspath 1-0035)
 
 BOARD_ID="${PWRCPLD_SYSFS_DIR}/board_id"
 VERSION_ID="${PWRCPLD_SYSFS_DIR}/version_id"
-SMB1_DC_STATUS="${PWRCPLD_SYSFS_DIR}/smb1_dc_status"
-SMB2_DC_STATUS="${PWRCPLD_SYSFS_DIR}/smb2_dc_status"
+CMM_RDY_NW_L="${PWRCPLD_SYSFS_DIR}/cmm_rdy_nw_l"
+CRD_LEAKAGE_ALARM_L_STATUS="${PWRCPLD_SYSFS_DIR}/crd_leakage_alarm_l_status"
+CMM_CRD_PWREN_L="${PWRCPLD_SYSFS_DIR}/cmm_crd_pwren_l"
 
 COME_POWER_EN="${SCMCPLD_SYSFS_DIR}/pwr_come_en"
 COME_POWER_OFF="${SCMCPLD_SYSFS_DIR}/pwr_force_off"
@@ -186,11 +187,27 @@ userver_mac_addr() {
     esac
 }
 
+cmm_initiated_shutdown_check(){
+    cmm_initiated_shutdown_status=$(head -n 1 "$CMM_CRD_PWREN_L" 2> /dev/null)
+    if [ $((cmm_initiated_shutdown_status)) -eq $((0x0)) ]; then
+        return 1
+    fi
+
+    return 0
+}
+
+cmm_ready_status_check(){
+    cmm_status=$(head -n 1 "$CMM_RDY_NW_L" 2> /dev/null)
+    if [ $((cmm_status)) -eq $((0x0)) ]; then
+        return 1
+    fi
+
+    return 0
+}
+
 leakage_detection_status_check() {
-    smb1_dc_sts=$(head -n 1 "$SMB1_DC_STATUS" 2> /dev/null)
-    smb2_dc_sts=$(head -n 1 "$SMB2_DC_STATUS" 2> /dev/null)
-    if [ $((smb1_dc_sts)) -eq $((0x1)) ] &&
-       [ $((smb2_dc_sts)) -eq $((0x1)) ] ; then
+    crd_leakage_status=$(head -n 1 "$CRD_LEAKAGE_ALARM_L_STATUS" 2> /dev/null)
+    if [ $((crd_leakage_status)) -eq $((0x1)) ]; then
         return 1
     fi
 
