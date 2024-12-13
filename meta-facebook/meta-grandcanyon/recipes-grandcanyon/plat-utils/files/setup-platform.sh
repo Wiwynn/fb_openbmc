@@ -34,8 +34,8 @@ if [ "$ret" != "0" ]; then
 fi
 
 # Record the platform SKU in syslog
-uic_type=$(($pal_sku & $UIC_TYPE_MASK))
-uic_id=$(($(($pal_sku >> $UIC_TYPE_SIZE)) & $UIC_LOCATION_MASK))
+uic_type=$((pal_sku & UIC_TYPE_MASK))
+uic_id=$(($((pal_sku >> UIC_TYPE_SIZE)) & UIC_LOCATION_MASK))
 
 if [ "$uic_type" = "$UIC_TYPE_5" ]; then
   if [ "$uic_id" = "$UIC_LOCATION_A" ]; then
@@ -46,8 +46,12 @@ if [ "$uic_type" = "$UIC_TYPE_5" ]; then
     UIC_LOCAL="unknown"
   fi
   logger -s -p user.info -t setup-platform "System: type 5, UIC location: $UIC_LOCAL"
+  # Inform UIC CPLD this is type 5 system
+  i2ctransfer -f -y "$I2C_UIC_FPGA_BUS" w2@"$UIC_FPGA_SLAVE_ADDR" "$UIC_FPGA_SYS_TYPE_OFFSET" 0x0
 elif [ "$uic_type" = "$UIC_TYPE_7_HEADNODE" ]; then
   logger -s -p user.info -t setup-platform "System: type 7"
+  # Inform UIC CPLD this is type 7 system
+  i2ctransfer -f -y "$I2C_UIC_FPGA_BUS" w2@"$UIC_FPGA_SLAVE_ADDR" "$UIC_FPGA_SYS_TYPE_OFFSET" 0x1
 else
   logger -s -p user.info -t setup-platform "System: unknown"
 fi
