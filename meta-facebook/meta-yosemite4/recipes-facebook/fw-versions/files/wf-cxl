@@ -22,10 +22,10 @@ for pos in 1 2; do
 
     while [ "$RETRY_COUNT" -lt "$MAX_RETRIES" ]; do
         # Store the output of the command in a variable
-        output=$(timeout $TIMEOUT_DURATION cxl-fw-update version -m $eid 2>&1)
+        output=$(timeout $TIMEOUT_DURATION cxl-fw-update version -m $eid 2>&1 || true)
 
-        # Check if the output is empty
-        if [ $? -eq 124 ]; then
+        # Check for non-empty output
+        if [ -z "$output" ]; then
             echo "No output from cxl-fw-update. Retrying... ($((RETRY_COUNT + 1))/$MAX_RETRIES)"
             RETRY_COUNT=$((RETRY_COUNT + 1))
             sleep 1
@@ -36,6 +36,15 @@ for pos in 1 2; do
             # Extract the firmware version for the active slot
             version=$(echo "$output" | grep "Slot $active_slot FW Revision" | sed 's/.*: //')
 
+            # If timeout occured, the output will be unexpected and the version will be empty.
+            if [ -z "$version" ]; then
+                echo "Unexpected output from cxl-fw-update:"
+                echo "$output"
+                RETRY_COUNT=$((RETRY_COUNT + 1))
+                sleep 1
+                continue
+            fi
+
             busctl set-property \
                 xyz.openbmc_project.Settings \
                 "/xyz/openbmc_project/software/host$slot/Wailua_Falls_cxl_$pos" \
@@ -44,7 +53,6 @@ for pos in 1 2; do
 
             break
         fi
-
     done
 
     if [ "$RETRY_COUNT" -eq "$MAX_RETRIES" ]; then
