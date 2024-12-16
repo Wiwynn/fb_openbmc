@@ -1,4 +1,5 @@
 #include <CLI/CLI.hpp>
+#include <nlohmann/json.hpp>
 #include <openbmc/hgx.h>
 #include <syslog.h>
 #include <iostream>
@@ -135,10 +136,18 @@ static void do_set_power_limit(std::string pwrLimit) {
   std::cout << "All done. It takes a minute to take effect." << std::endl;
 }
 
-static void do_get_power_limit() {
+static void do_get_power_limit(bool json_fmt) {
+  nlohmann::json json_data;
   for (int i = 1; i <= MAX_NUM_GPUs; i++) {
-    std::cout << "GPU" << i << " power limit : " << hgx::getPowerLimit(i) << "W"
-              << std::endl;
+    if (json_fmt) {
+      json_data["GPU" + std::to_string(i)] = hgx::getPowerLimit(i) + "W";
+    } else {
+      std::cout << "GPU" << i << " power limit : " << hgx::getPowerLimit(i)
+                << "W" << std::endl;
+    }
+  }
+  if (json_fmt) {
+    std::cout << json_data.dump() << std::endl;
   }
 }
 
@@ -262,7 +271,7 @@ int main(int argc, char* argv[]) {
 
   auto getPwrLimit =
       app.add_subcommand("get-pwr-limit", "Get power limit from GPU");
-  getPwrLimit->callback([&]() { do_get_power_limit(); });
+  getPwrLimit->callback([&]() { do_get_power_limit(json_fmt); });
 
   app.require_subcommand(/* min */ 1, /* max */ 1);
 
