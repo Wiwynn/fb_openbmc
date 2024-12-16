@@ -43,11 +43,32 @@ vendor_params = {
         "hw_workarounds": ["WRITE_BLOCK_CRC_EXPECTED"],
         "version-reg": "PSU_FW_Revision",
     },
-    "hpr_pmm": {
+    "hpr_panasonic": {
+        "block_size": 96,
+        "boot_mode": 0xAA55,
+        "block_wait": False,
+        "version-reg": "FW_Revision",
+        "hw_workarounds": ["FORCE_EXIT_BOOT_MODE", "FORCE_CLEAR_VERIFY"],
+    },
+    "hpr_pmm_panasonic": {
         "block_size": 68,
         "boot_mode": 0xAA55,
         "block_wait": True,
         "version-reg": "PMM_FW_Revision",
+    },
+    "hpr_pmm_delta": {
+        "block_size": 68,
+        "boot_mode": 0xAA55,
+        "block_wait": True,
+        "version-reg": "PMM_FW_Revision",
+        "hw_workarounds": ["FORCE_EXIT_BOOT_MODE"],
+    },
+    "hpr_pmm_aei": {
+        "block_size": 68,
+        "boot_mode": 0xAA55,
+        "block_wait": True,
+        "version-reg": "PMM_FW_Revision",
+        "hw_workarounds": ["FORCE_EXIT_BOOT_MODE"],
     },
 }
 
@@ -188,7 +209,7 @@ def verify_firmware(addr):
     rmd.write(addr, 0x303, 0x55AA, 10000)
 
 
-def workaround_bad_mode(addr):
+def workaround_force_exit_boot_mode(addr, workarounds):
     curr_mode = get_firmware_status(addr)
     if curr_mode == NORMAL_OPERATION_MODE:
         return
@@ -197,11 +218,17 @@ def workaround_bad_mode(addr):
         % (curr_mode, NORMAL_OPERATION_MODE)
     )
     print("Initiating remediation")
-    # Assume previous aborted upgrade.
+    # Assume previous aborted upgrade. Force a verify to
+    # walk it through a full abort.
     verify_firmware(addr)
     time.sleep(10.0)
+    # Some devices need us to force clear the verify
+    # register to walk it through completion
+    if "FORCE_CLEAR_VERIFY" in workarounds:
+        rmd.write(addr, 0x303, 0)
+
     exit_boot_mode(addr)
-    time.sleep(1.0)
+    time.sleep(10.0)
     curr_mode = get_firmware_status(addr)
     if curr_mode != NORMAL_OPERATION_MODE:
         print("ERROR: Workaround to recover firmware from mode failed.")
@@ -211,11 +238,15 @@ def workaround_bad_mode(addr):
 
 
 def update_device(addr, filename, vendor_param):
+    workarounds = vendor_param.get("hw_workarounds", [])
     print("Parsing Firmware...")
     binimg = load_file(filename)
     print("Unlock Engineering Mode")
     unlock_firmware(addr)
-    workaround_bad_mode(addr)
+
+    if "FORCE_EXIT_BOOT_MODE" in workarounds:
+        workaround_force_exit_boot_mode(addr, workarounds)
+
     with boot_mode(addr, vendor_param["boot_mode"]):
         print("Transferring image")
         time.sleep(5.0)
@@ -224,7 +255,7 @@ def update_device(addr, filename, vendor_param):
             binimg,
             vendor_param["block_size"] // 2,
             vendor_param["block_wait"],
-            vendor_param.get("hw_workarounds", []),
+            workarounds,
         )
         print("Request Verify Firmware")
         verify_firmware(addr)
