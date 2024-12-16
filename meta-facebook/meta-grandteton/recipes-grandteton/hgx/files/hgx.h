@@ -20,6 +20,7 @@ typedef enum GPUConfig {
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <optional>
 
 namespace hgx {
 
@@ -126,7 +127,7 @@ std::string getMeasurement(const std::string& comp);
 std::string setPowerLimit(int gpuID, std::string pwrLimit);
 
 // Get power limit
-std::string getPowerLimit(int gpuID);
+std::optional<long> getPowerLimit(int gpuID);
 
 // Request for the value of the sensor, but return all the JSON output
 std::string sensorRaw(const std::string& component, const std::string& name);

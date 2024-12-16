@@ -719,7 +719,7 @@ std::string setPowerLimit(int gpuID, std::string pwrLimit) {
   return hgx.patch(url, patchJson.dump());
 }
 
-std::string getPowerLimit(int gpuID) {
+std::optional<long> getPowerLimit(int gpuID) {
   long pwrLimitDec = 0;
   int low = 0, mid = 0, high = 0;
   std::string pwrLimitLow, pwrLimitMid, pwrLimitHigh;
@@ -751,9 +751,10 @@ std::string getPowerLimit(int gpuID) {
       mid = std::stoi(pwrLimitMid, nullptr, 16);
       high = std::stoi(pwrLimitHigh, nullptr, 16);
       pwrLimitDec = ((high << 16) | (mid << 8) | low)/1000;
+      return pwrLimitDec;
     }
   }
-  return std::to_string(pwrLimitDec);
+  return std::nullopt; // We did not get a valid response
 }
 
 std::tuple<std::string, std::string> getGpuCompName(int gpu_config) {

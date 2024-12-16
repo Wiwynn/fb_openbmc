@@ -4,6 +4,10 @@
 #include <syslog.h>
 #include <iostream>
 
+static constexpr const char* POwER_UNITS_WATTS = "W";
+static constexpr const char* VALUE_JSON_KEY = "value";
+static constexpr const char* UNITS_JSON_KEY = "units";
+
 static void do_version(const std::string& component, bool json_fmt) {
   std::cout << hgx::version(component, json_fmt) << std::endl;
 }
@@ -130,7 +134,7 @@ static void do_set_power_limit(std::string pwrLimit) {
   for (int i = 1; i <= MAX_NUM_GPUs; i++) {
     hgx::setPowerLimit(i, pwrLimit);
     std::cout << "Power limit for GPU" << i << " was set to : " << pwrLimit
-              << "W" << std::endl;
+              << POwER_UNITS_WATTS << std::endl;
   }
 
   std::cout << "All done. It takes a minute to take effect." << std::endl;
@@ -139,11 +143,28 @@ static void do_set_power_limit(std::string pwrLimit) {
 static void do_get_power_limit(bool json_fmt) {
   nlohmann::json json_data;
   for (int i = 1; i <= MAX_NUM_GPUs; i++) {
-    if (json_fmt) {
-      json_data["GPU" + std::to_string(i)] = hgx::getPowerLimit(i) + "W";
+    std::optional<long> current_gpu_power_limit = hgx::getPowerLimit(i);
+    if (current_gpu_power_limit.has_value()) {
+      if (json_fmt) {
+        json_data["GPU" + std::to_string(i)][VALUE_JSON_KEY] =
+            current_gpu_power_limit.value();
+        json_data["GPU" + std::to_string(i)][UNITS_JSON_KEY] =
+            POwER_UNITS_WATTS;
+      } else {
+        std::cout << "GPU" << i
+                  << " power limit : " << current_gpu_power_limit.value()
+                  << POwER_UNITS_WATTS << std::endl;
+      }
     } else {
-      std::cout << "GPU" << i << " power limit : " << hgx::getPowerLimit(i)
-                << "W" << std::endl;
+      if (json_fmt) {
+        json_data["GPU" + std::to_string(i)][VALUE_JSON_KEY] = nullptr;
+        json_data["GPU" + std::to_string(i)][UNITS_JSON_KEY] =
+            POwER_UNITS_WATTS;
+      } else {
+        std::cout << "GPU" << i
+                  << "'s power limit could not be determined. Please try again"
+                  << std::endl;
+      }
     }
   }
   if (json_fmt) {
