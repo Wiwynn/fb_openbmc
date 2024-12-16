@@ -7,7 +7,11 @@ static void do_version(const std::string& component, bool json_fmt) {
   std::cout << hgx::version(component, json_fmt) << std::endl;
 }
 
-static void do_update(const std::string& comp, const std::string& path, bool async, bool json_fmt) {
+static void do_update(
+    const std::string& comp,
+    const std::string& path,
+    bool async,
+    bool json_fmt) {
   if (async) {
     std::string id = hgx::updateNonBlocking(comp, path, json_fmt);
     if (!json_fmt) {
@@ -107,10 +111,10 @@ static void do_event_log(bool clear, bool json) {
 }
 
 static void do_list_attest_components(void) {
- auto comps = hgx::integrityComponents();
- for (const auto& comp : comps) {
-   std::cout << comp << std::endl;
- }
+  auto comps = hgx::integrityComponents();
+  for (const auto& comp : comps) {
+    std::cout << comp << std::endl;
+  }
 }
 
 static void do_attestation(const std::string& comp) {
@@ -124,18 +128,17 @@ static void do_attestation(const std::string& comp) {
 static void do_set_power_limit(std::string pwrLimit) {
   for (int i = 1; i <= MAX_NUM_GPUs; i++) {
     hgx::setPowerLimit(i, pwrLimit);
-    std::cout << "Power limit for GPU" << i << " was set to : "
-              << pwrLimit << "W" << std::endl;
+    std::cout << "Power limit for GPU" << i << " was set to : " << pwrLimit
+              << "W" << std::endl;
   }
 
-  std::cout << "All done. It takes a minute to take effect."
-            << std::endl;
+  std::cout << "All done. It takes a minute to take effect." << std::endl;
 }
 
 static void do_get_power_limit() {
   for (int i = 1; i <= MAX_NUM_GPUs; i++) {
-    std::cout << "GPU" << i << " power limit : " <<
-                 hgx::getPowerLimit(i) << "W" << std::endl;
+    std::cout << "GPU" << i << " power limit : " << hgx::getPowerLimit(i) << "W"
+              << std::endl;
   }
 }
 
@@ -161,10 +164,13 @@ int main(int argc, char* argv[]) {
   update->add_option("comp", comp, "Component")->required();
   update->add_option("image", image, "Path to the image")->required();
   update->add_flag(
-      "--async", async, "Do not block, return immediately printing the task ID");
+      "--async",
+      async,
+      "Do not block, return immediately printing the task ID");
   update->callback([&]() { do_update(comp, image, async, json_fmt); });
 
-  std::set<std::string> allowedComps{"hmc", "erot", "self-test", "fpga", "retimer"};
+  std::set<std::string> allowedComps{
+      "hmc", "erot", "self-test", "fpga", "retimer"};
   auto dump = app.add_subcommand("dump", "perform a dump");
   dump->add_option("comp", comp, "What to dump")
       ->required()
@@ -200,7 +206,8 @@ int main(int argc, char* argv[]) {
   taskid->add_option("id", taskID, "Task ID")->required();
   taskid->callback([&]() { do_task_status(taskID, json_fmt); });
 
-  auto snr_metrics = app.add_subcommand("get-snr-metrics", "Get sensor metrics from Telemetry service");
+  auto snr_metrics = app.add_subcommand(
+      "get-snr-metrics", "Get sensor metrics from Telemetry service");
   snr_metrics->callback([&]() { do_get_snr_metric(); });
 
   std::string args{};
@@ -210,39 +217,51 @@ int main(int argc, char* argv[]) {
   post->add_option("args", args, "JSON arguments for post")->required();
   post->callback([&]() { do_post(subpath, args); });
 
-  auto patch = app.add_subcommand("patch", "Perform a Patch on the redfish subpath");
-  patch->add_option("SUBPATH", subpath, "Subpath after /redfish/v1")->required();
+  auto patch =
+      app.add_subcommand("patch", "Perform a Patch on the redfish subpath");
+  patch->add_option("SUBPATH", subpath, "Subpath after /redfish/v1")
+      ->required();
   patch->add_option("args", args, "JSON arguments for patch")->required();
   patch->callback([&]() { do_patch(subpath, args); });
 
-  auto freset = app.add_subcommand("factory-reset", "Perform factory reset to default");
+  auto freset =
+      app.add_subcommand("factory-reset", "Perform factory reset to default");
   freset->callback([&]() { do_factory_reset(); });
 
   auto reset = app.add_subcommand("reset", "Graceful reboot the HMC");
   reset->callback([&]() { do_reset(); });
 
   bool eventClear = false;
-  auto eventlog = app.add_subcommand("event-log", "Retrieve event logs from HGX");
+  auto eventlog =
+      app.add_subcommand("event-log", "Retrieve event logs from HGX");
   eventlog->add_flag("--clear", eventClear, "Clears the event Log");
   eventlog->callback([&]() { do_event_log(eventClear, json_fmt); });
 
-  auto timeSync = app.add_subcommand("time-sync", "Sync current BMC time with HGX");
+  auto timeSync =
+      app.add_subcommand("time-sync", "Sync current BMC time with HGX");
   timeSync->callback([&]() { hgx::syncTime(); });
 
   auto measurement = app.add_subcommand("attest", "Get SPDM measurements");
-  auto listM = measurement->add_subcommand("list", "List components supporting measurements");
+  auto listM = measurement->add_subcommand(
+      "list", "List components supporting measurements");
   listM->callback([&]() { do_list_attest_components(); });
   auto measure = measurement->add_subcommand("get", "Get measurements");
-  measure->add_option("component", args, "Component for which we want the measurements")->required();
+  measure
+      ->add_option(
+          "component", args, "Component for which we want the measurements")
+      ->required();
   measure->callback([&]() { do_attestation(args); });
   measurement->require_subcommand(1, 1);
 
   std::string pwrLimit{};
-  auto setPwrLimit = app.add_subcommand("set-pwr-limit", "Set power limit from GPU");
-  setPwrLimit->add_option("PwrLimit", pwrLimit, "the value of the power limit.")->required();
+  auto setPwrLimit =
+      app.add_subcommand("set-pwr-limit", "Set power limit from GPU");
+  setPwrLimit->add_option("PwrLimit", pwrLimit, "the value of the power limit.")
+      ->required();
   setPwrLimit->callback([&]() { do_set_power_limit(pwrLimit); });
 
-  auto getPwrLimit = app.add_subcommand("get-pwr-limit", "Get power limit from GPU");
+  auto getPwrLimit =
+      app.add_subcommand("get-pwr-limit", "Get power limit from GPU");
   getPwrLimit->callback([&]() { do_get_power_limit(); });
 
   app.require_subcommand(/* min */ 1, /* max */ 1);
