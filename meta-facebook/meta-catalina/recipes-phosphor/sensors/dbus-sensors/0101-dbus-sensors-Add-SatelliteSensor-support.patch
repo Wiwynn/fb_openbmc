@@ -1,4 +1,4 @@
-From 842aca9961d48cc6bbea3b47bba285573d2ea46b Mon Sep 17 00:00:00 2001
+From 73af0561892cc3a37daf7cf43658461c2ff05d54 Mon Sep 17 00:00:00 2001
 From: Potin Lai <potin.lai@quantatw.com>
 Date: Tue, 18 Jun 2024 23:44:55 +0800
 Subject: [PATCH 1/1] dbus-sensors: Add SatelliteSensor support
@@ -17,11 +17,11 @@ Change-Id: I3b20e8538743d9a17602c0aa55ff862df30fcd70
  service_files/meson.build                     |   1 +
  ...yz.openbmc_project.satellitesensor.service |  14 +
  src/meson.build                               |   4 +
- src/satellite/HmcSensor.hpp                   |  77 +++
+ src/satellite/HmcSensor.hpp                   |  91 ++++
  src/satellite/SatelliteSensor.cpp             | 474 ++++++++++++++++++
  src/satellite/SatelliteSensor.hpp             | 119 +++++
  src/satellite/meson.build                     |  14 +
- 9 files changed, 708 insertions(+)
+ 9 files changed, 722 insertions(+)
  create mode 100644 service_files/xyz.openbmc_project.satellitesensor.service
  create mode 100644 src/satellite/HmcSensor.hpp
  create mode 100644 src/satellite/SatelliteSensor.cpp
@@ -84,10 +84,10 @@ index 0000000..97ab9fe
 +WantedBy=multi-user.target
 +
 diff --git a/src/meson.build b/src/meson.build
-index f619572..f4d82d8 100644
+index 64d156d..7214602 100644
 --- a/src/meson.build
 +++ b/src/meson.build
-@@ -116,3 +116,7 @@ endif
+@@ -120,3 +120,7 @@ endif
  if get_option('tests').allowed()
      subdir('tests')
  endif
@@ -97,54 +97,68 @@ index f619572..f4d82d8 100644
 +endif
 diff --git a/src/satellite/HmcSensor.hpp b/src/satellite/HmcSensor.hpp
 new file mode 100644
-index 0000000..d60040d
+index 0000000..cc786e2
 --- /dev/null
 +++ b/src/satellite/HmcSensor.hpp
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,91 @@
 +//automatically generated table
 +std::map<uint16_t, uint8_t> sensorMap = {
-+    {0x19 ,4},//HGX_GPU_1_DRAM_0_Temp_0
-+    {0x1D ,4},//HGX_GPU_2_DRAM_0_Temp_0
-+    {0x21 ,4},//HGX_GPU_3_DRAM_0_Temp_0
-+    {0x25 ,4},//HGX_GPU_4_DRAM_0_Temp_0
-+    {0x29 ,4},//HGX_GPU_5_DRAM_0_Temp_0
-+    {0x2D ,4},//HGX_GPU_6_DRAM_0_Temp_0
-+    {0x31 ,4},//HGX_GPU_7_DRAM_0_Temp_0
-+    {0x35 ,4},//HGX_GPU_8_DRAM_0_Temp_0
-+    {0x4B ,4},//HGX_GPU_1_Power_0
-+    {0x4F ,4},//HGX_GPU_2_Power_0
-+    {0x53 ,4},//HGX_GPU_3_Power_0
-+    {0x57 ,4},//HGX_GPU_4_Power_0
-+    {0x5B ,4},//HGX_GPU_5_Power_0
-+    {0x5f ,4},//HGX_GPU_6_Power_0
-+    {0x63 ,4},//HGX_GPU_7_Power_0
-+    {0x67 ,4},//HGX_GPU_8_Power_0
-+    {0x6C ,4},//HGX_GPU_1_TEMP_1
-+    {0x70 ,4},//HGX_GPU_2_TEMP_1
-+    {0x74 ,4},//HGX_GPU_3_TEMP_1
-+    {0x78 ,4},//HGX_GPU_4_TEMP_1
-+    {0x7c ,4},//HGX_GPU_5_TEMP_1
-+    {0x80 ,4},//HGX_GPU_6_TEMP_1
-+    {0x84 ,4},//HGX_GPU_7_TEMP_1
-+    {0x88 ,4},//HGX_GPU_8_TEMP_1
-+    {0x8D ,8},//HGX_GPU_1_Energy_0
-+    {0x95 ,8},//HGX_GPU_2_Energy_0
-+    {0x9D ,8},//HGX_GPU_3_Energy_0
-+    {0xA5 ,8},//HGX_GPU_4_Energy_0
-+    {0xAD ,8},//HGX_GPU_5_Energy_0
-+    {0xB5 ,8},//HGX_GPU_6_Energy_0
-+    {0xBD ,8},//HGX_GPU_7_Energy_0
-+    {0xC5 ,8},//HGX_GPU_8_Energy_0
-+    {0xCE ,4},//HGX_GPU_1_DRAM_0_Power_0
-+    {0xD2 ,4},//HGX_GPU_2_DRAM_0_Power_0
-+    {0xD6 ,4},//HGX_GPU_3_DRAM_0_Power_0
-+    {0xDA ,4},//HGX_GPU_4_DRAM_0_Power_0
-+    {0xDE ,4},//HGX_GPU_5_DRAM_0_Power_0
-+    {0xE2 ,4},//HGX_GPU_6_DRAM_0_Power_0
-+    {0xE6 ,4},//HGX_GPU_7_DRAM_0_Power_0
-+    {0xEA ,4},//HGX_GPU_8_DRAM_0_Power_0
++    {0x19 ,4},//HGX_GPU_0_DRAM_0_Temp_0
++    {0x1D ,4},//HGX_GPU_1_DRAM_0_Temp_0
++    {0x21 ,4},//HGX_GPU_2_DRAM_0_Temp_0
++    {0x25 ,4},//HGX_GPU_3_DRAM_0_Temp_0
++    {0x29 ,4},//HGX_GPU_4_DRAM_0_Temp_0
++    {0x2D ,4},//HGX_GPU_5_DRAM_0_Temp_0
++    {0x31 ,4},//HGX_GPU_6_DRAM_0_Temp_0
++    {0x35 ,4},//HGX_GPU_7_DRAM_0_Temp_0
++    {0x4B ,4},//HGX_GPU_0_Power_0
++    {0x4F ,4},//HGX_GPU_1_Power_0
++    {0x53 ,4},//HGX_GPU_2_Power_0
++    {0x57 ,4},//HGX_GPU_3_Power_0
++    {0x5B ,4},//HGX_GPU_4_Power_0
++    {0x5f ,4},//HGX_GPU_5_Power_0
++    {0x63 ,4},//HGX_GPU_6_Power_0
++    {0x67 ,4},//HGX_GPU_7_Power_0
++    {0x6C ,4},//HGX_GPU_0_TEMP_1
++    {0x70 ,4},//HGX_GPU_1_TEMP_1
++    {0x74 ,4},//HGX_GPU_2_TEMP_1
++    {0x78 ,4},//HGX_GPU_3_TEMP_1
++    {0x7c ,4},//HGX_GPU_4_TEMP_1
++    {0x80 ,4},//HGX_GPU_5_TEMP_1
++    {0x84 ,4},//HGX_GPU_6_TEMP_1
++    {0x88 ,4},//HGX_GPU_7_TEMP_1
++    {0x8D ,8},//HGX_GPU_0_Energy_0
++    {0x95 ,8},//HGX_GPU_1_Energy_0
++    {0x9D ,8},//HGX_GPU_2_Energy_0
++    {0xA5 ,8},//HGX_GPU_3_Energy_0
++    {0xAD ,8},//HGX_GPU_4_Energy_0
++    {0xB5 ,8},//HGX_GPU_5_Energy_0
++    {0xBD ,8},//HGX_GPU_6_Energy_0
++    {0xC5 ,8},//HGX_GPU_7_Energy_0
++    {0xCE ,4},//HGX_GPU_0_DRAM_0_Power_0
++    {0xD2 ,4},//HGX_GPU_1_DRAM_0_Power_0
++    {0xD6 ,4},//HGX_GPU_2_DRAM_0_Power_0
++    {0xDA ,4},//HGX_GPU_3_DRAM_0_Power_0
++    {0xDE ,4},//HGX_GPU_4_DRAM_0_Power_0
++    {0xE2 ,4},//HGX_GPU_5_DRAM_0_Power_0
++    {0xE6 ,4},//HGX_GPU_6_DRAM_0_Power_0
++    {0xEA ,4},//HGX_GPU_7_DRAM_0_Power_0
 +    {0xF0 ,4},//HGX_BMC_0_Temp_0
 +    {0xF8 ,4},//HGX_Chassis_0_TotalHSC_Power_0
++    {0x120 ,4},//HGX_GPU_0_TEMP_0
++    {0x124 ,4},//HGX_GPU_1_TEMP_0
++    {0x128 ,4},//HGX_GPU_2_TEMP_0
++    {0x12C ,4},//HGX_GPU_3_TEMP_0
++    {0x130 ,4},//HGX_GPU_4_TEMP_0
++    {0x134 ,4},//HGX_GPU_5_TEMP_0
++    {0x138 ,4},//HGX_GPU_6_TEMP_0
++    {0x13C ,4},//HGX_GPU_7_TEMP_0
++    {0x140 ,4},//ProcessorModule_0_Inlet_Temp_0
++    {0x144 ,4},//ProcessorModule_0_Inlet_Temp_1
++    {0x148 ,4},//ProcessorModule_0_Exhaust_Temp_0
++    {0x150 ,4},//ProcessorModule_1_Inlet_Temp_0
++    {0x154 ,4},//ProcessorModule_1_Inlet_Temp_1
++    {0x158 ,4},//ProcessorModule_1_Exhaust_Temp_0
 +    {0x280 ,8},//ProcessorModule_0_CPU_0_Energy_0
 +    {0x288 ,8},//ProcessorModule_0_CPU_0_Power_0
 +    {0x290 ,8},//ProcessorModule_0_Vreg_0_CpuPower_0
