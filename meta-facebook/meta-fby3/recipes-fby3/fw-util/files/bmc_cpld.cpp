@@ -355,7 +355,7 @@ int BmcCpldComponent::update(const string& image)
   return ret;
 }
 
-int BmcCpldComponent::fupdate(string image)
+int BmcCpldComponent::fupdate(const string& image)
 {
   int ret = 0;
   image_info image_sts;
@@ -363,11 +363,11 @@ int BmcCpldComponent::fupdate(string image)
   check_module();
   image_sts = check_image(image, true);
 
-  image = image_sts.new_path;
+  string new_image = image_sts.new_path;
 
-  ret = update_cpld(image);
+  ret = update_cpld(new_image);
 
   //remove the tmp file
-  remove(image.c_str());
+  remove(new_image.c_str());
   return ret;
 }

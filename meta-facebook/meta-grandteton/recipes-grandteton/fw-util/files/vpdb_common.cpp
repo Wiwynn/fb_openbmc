@@ -17,14 +17,14 @@ class VpdbVrComponent : public VrComponent, public SignComponent {
     VpdbVrComponent(const string& fru, const string& comp, const string& name,
       signed_header_t sign_info): VrComponent(fru, comp, name), SignComponent(sign_info, fru) {}
     int update(const string& image) override;
-    int fupdate(string image) override;
-    int component_update(string image, bool force) override { return VrComponent::_update(image, force); }
+    int fupdate(const string& image) override;
+    int component_update(const string& image, bool force) override { return VrComponent::_update(image, force); }
 };
 
 int VpdbVrComponent::update(const string& image) {
   return signed_image_update(image, false);
 }
-int VpdbVrComponent::fupdate(string image) {
+int VpdbVrComponent::fupdate(const string& image) {
   return signed_image_update(image, true);
 }
 

@@ -46,7 +46,7 @@ int VpdbVrComponent::update(const string& image) {
   return update_internal(image, false);
 }
 
-int VpdbVrComponent::fupdate(const string image) {
+int VpdbVrComponent::fupdate(const string& image) {
   return update_internal(image, true);
 }
 

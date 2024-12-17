@@ -42,7 +42,7 @@ class BmcCpldComponent : public Component {
         attr{bus, addr, CFM_IMAGE_1_M04, CFM1_START_ADDR, CFM1_END_ADDR, ON_CHIP_FLASH_IP_CSR_BASE, ON_CHIP_FLASH_IP_DATA_REG, DUAL_BOOT_IP_BASE, I2C_LITTLE_ENDIAN} {}
     int print_version();
     int update(const string& image);
-    int fupdate(string image);
+    int fupdate(const string& image);
     int get_version(json& j) override;
 };
 

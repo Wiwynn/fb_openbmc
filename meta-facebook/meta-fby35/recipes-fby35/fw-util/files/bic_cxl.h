@@ -21,7 +21,7 @@ class CxlComponent : public Component {
        expansion(slot_id, fru, brd, fw_comp) {}
     int update(const std::string& image) override;
     int update(int fd, bool force) override;
-    int fupdate(std::string image) override;
+    int fupdate(const std::string& image) override;
     int print_version() override;
     int get_version(json& j) override;
 };

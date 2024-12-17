@@ -35,7 +35,7 @@ class BicFwComponent : public Component {
       : Component(fru, comp), slot_id(fru.at(4) - '0'), fw_comp(comp_id), board(brd),
         server(slot_id, fru), expansion(slot_id, fru, brd, fw_comp) {}
     int update(const string& image);
-    int fupdate(string image);
+    int fupdate(const string& image);
     int print_version();
     int get_version(json& j) override;
     bool is_recovery();
@@ -53,7 +53,7 @@ class PldmBicFwComponent : public PldmComponent, public BicFwComponent {
 
     int try_pldm_update(const std::string& /*image*/, bool /*force*/, uint8_t specified_comp = 0xFF);
     int update(const string& /*image*/) override;
-    int fupdate(string /*image*/) override;
+    int fupdate(const string& /*image*/) override;
 };
 
 #endif

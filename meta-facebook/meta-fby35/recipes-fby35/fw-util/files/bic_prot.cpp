@@ -119,7 +119,7 @@ int ProtComponent::update(int fd, bool force) {
   return update_internal("", fd, force);
 }
 
-int ProtComponent::fupdate(const string image) {
+int ProtComponent::fupdate(const string& image) {
   return update_internal(image, -1, true /* force */);
 }
 

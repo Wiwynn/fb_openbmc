@@ -46,7 +46,7 @@ int BiosComponent::update(const string& image) {
   return ret;
 }
 
-int BiosComponent::fupdate(string) {
+int BiosComponent::fupdate(const string&) {
   return FW_STATUS_NOT_SUPPORTED;
 }
 

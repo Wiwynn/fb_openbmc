@@ -49,7 +49,7 @@ class BmcCpldComponent : public Component {
     int print_version();
     int get_version(json& ver_json) override;
     int update(const string& image);
-    int fupdate(string image);
+    int fupdate(const string& image);
     int update_process(string image, image_info image_sts, bool force);
 };
 

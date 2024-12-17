@@ -32,7 +32,7 @@ class CxlVrComponent : public VrComponent {
   public:
     CxlVrComponent(const string &fru, const string &comp, const string &dev_name, uint8_t dev_bus, uint8_t dev_eid, uint8_t dev_target)
         :VrComponent(fru, comp, dev_name), name(dev_name),  bus(dev_bus), eid(dev_eid), target(dev_target) {}
-    int fupdate(string image);
+    int fupdate(const string& image);
     int update(const string& image);
     int get_version(json& j) override;
 };
@@ -161,7 +161,7 @@ int CxlVrComponent::update(const string& image) {
   return ret;
 }
 
-int CxlVrComponent::fupdate(string image) {
+int CxlVrComponent::fupdate(const string& image) {
   int ret = 0;
   ret = update_proc(image, true);
   return ret;

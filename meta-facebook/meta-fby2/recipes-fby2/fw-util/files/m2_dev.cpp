@@ -75,7 +75,7 @@ class M2_DevComponent : public Component {
     return 0;
   }
   int update(const string& image);
-  int fupdate(string image);
+  int fupdate(const string& image);
 };
 
 M2_DevComponent::PowerInfo M2_DevComponent::statusTable[];
@@ -246,7 +246,7 @@ int M2_DevComponent::update(const string& image) {
   return _update(image, 0);
 }
 
-int M2_DevComponent::fupdate(string image) {
+int M2_DevComponent::fupdate(const string& image) {
   return _update(image, 1);
 }
 

@@ -245,7 +245,7 @@ int BmcCpldComponent::update(const string& image)
   return update_process(image, image_sts, false);
 }
 
-int BmcCpldComponent::fupdate(string image)
+int BmcCpldComponent::fupdate(const string& image)
 {
   image_info image_sts = check_image(image, true);
   return update_process(image, image_sts, true);

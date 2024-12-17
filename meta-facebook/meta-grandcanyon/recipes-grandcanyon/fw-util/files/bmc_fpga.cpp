@@ -265,7 +265,7 @@ int BmcFpgaComponent::update(const string& image)
   return update_wrapper(image, false);
 }
 
-int BmcFpgaComponent::fupdate(string image)
+int BmcFpgaComponent::fupdate(const string& image)
 {
   return update_wrapper(image, true);
 }

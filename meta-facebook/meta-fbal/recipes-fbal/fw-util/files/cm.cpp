@@ -21,7 +21,7 @@ class CmComponent : public McuFwComponent {
     int update(const string& image) {
       return update(image, false);
     }
-    int fupdate(string image) {
+    int fupdate(const string& image) {
       return update(image, true);
     }
 };

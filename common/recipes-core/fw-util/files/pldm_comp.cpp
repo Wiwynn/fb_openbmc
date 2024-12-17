@@ -275,7 +275,7 @@ int PldmComponent::update(const string& image) {
   return update_internal(image, false);
 }
 
-int PldmComponent::fupdate(string image) {
+int PldmComponent::fupdate(const string& image) {
   return update_internal(image, true);
 }
 

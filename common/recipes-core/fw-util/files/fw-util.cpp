@@ -102,7 +102,7 @@ int AliasComponent::update(const std::string& image)
   return _target_comp->update(image);
 }
 
-int AliasComponent::fupdate(string image)
+int AliasComponent::fupdate(const string& image)
 {
   if (!setup())
     return FW_STATUS_NOT_SUPPORTED;

@@ -20,7 +20,7 @@ class SwbBicFwComponent : public Component {
     SwbBicFwComponent(const string& fru, const string& comp, uint8_t bus, uint8_t eid, uint8_t target)
         : Component(fru, comp), bus(bus), eid(eid), target(target) {}
     int update(const string& image) override;
-    int fupdate(string image) override;
+    int fupdate(const string& image) override;
     int get_version(json& j) override;
 };
 
@@ -33,7 +33,7 @@ class SwbBicFwRecoveryComponent : public Component {
         :Component(fru, comp), bus(bus), eid(eid), target(target) {}
 
   int update(const string& image) override;
-  int fupdate(string image) override;
+  int fupdate(const string& image) override;
 };
 
 
@@ -44,7 +44,7 @@ class SwbPexFwComponent : public SwbBicFwComponent {
         :SwbBicFwComponent(fru, comp, bus, eid, target) {}
     int get_version(json& j) override;
     int update(const string& image);
-    int fupdate(string image);
+    int fupdate(const string& image);
 };
 
 //SWB VR Component
@@ -54,7 +54,7 @@ class SwbVrComponent : public VrComponent {
   public:
     SwbVrComponent(const string &fru, const string &comp, const string &dev_name)
         :VrComponent(fru, comp, dev_name), name(dev_name) {}
-    int fupdate(string image);
+    int fupdate(const string& image);
     int update(const string& image);
 };
 
@@ -92,7 +92,7 @@ class GTSwbBicFwComponent : public SwbBicFwComponent, public GTPldmComponent {
                         SwbBicFwComponent(fru, comp, bus, eid, target),
                         GTPldmComponent(info, fru, comp, bus, eid){}
     int update(const string& /*image*/) override;
-    int fupdate(string /*image*/) override;
+    int fupdate(const string& /*image*/) override;
     int get_version(json& j) override;
     int comp_update(const string& image) override { return SwbBicFwComponent::update(image); }
     int comp_fupdate(const string& image) override { return SwbBicFwComponent::fupdate(image); }
@@ -106,7 +106,7 @@ class GTSwbPexFwComponent : public SwbPexFwComponent, public GTPldmComponent {
                         SwbPexFwComponent(fru, comp, bus, eid, target),
                         GTPldmComponent(info, fru, comp, bus, eid){}
     int update(const string& /*image*/) override;
-    int fupdate(string /*image*/) override;
+    int fupdate(const string& /*image*/) override;
     int get_version(json& /*json*/) override;
     int comp_update(const string& image) override { return SwbPexFwComponent::update(image); }
     int comp_fupdate(const string& image) override { return SwbPexFwComponent::fupdate(image); }
@@ -138,7 +138,7 @@ class GTSwbVrComponent : public SwbVrComponent, public GTPldmComponent {
                       }
                     }
     int update(const string& /*image*/) override;
-    int fupdate(string /*image*/) override;
+    int fupdate(const string& /*image*/) override;
     int get_version(json& /*json*/) override;
     int comp_update(const string& image) override { return SwbVrComponent::update(image); }
     int comp_fupdate(const string& image) override { return SwbVrComponent::fupdate(image); }
@@ -157,7 +157,7 @@ class GTSwbCpldComponent : public CpldComponent, public GTPldmComponent {
                       CpldComponent(fru, comp, type, bus, addr, cpld_xfer),
                       GTPldmComponent(info, fru, comp, bus, eid), target(target){}
     int update(const string& /*image*/) override;
-    int fupdate(string /*image*/) override;
+    int fupdate(const string& /*image*/) override;
     int get_version(json& /*json*/) override;
     int comp_update(const string& image) override { return CpldComponent::update(image); }
     int comp_fupdate(const string& image) override { return CpldComponent::fupdate(image); }
@@ -212,7 +212,7 @@ class GtaBicFwRecoveryComponent : public Component {
         :Component(fru, comp), bus(bus), eid(eid), target(target) {}
 
   int update(const string& image) override;
-  int fupdate(string image) override;
+  int fupdate(const string& image) override;
 };
 
 class GTAASICComponent : public PldmComponent {
@@ -223,5 +223,5 @@ class GTAASICComponent : public PldmComponent {
     int print_version() { return FW_STATUS_NOT_SUPPORTED; }
     int get_version(json& /*json*/);
     int update(const std::string& image); // firmware update
-    int fupdate(std::string image); // force firmware update
+    int fupdate(const std::string& image); // force firmware update
 };

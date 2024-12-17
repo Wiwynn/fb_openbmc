@@ -32,7 +32,7 @@ class RetimerFwComponent : public Component {
     int print_version();
     int get_version(json& j) override;
     int update(const std::string& image) override;
-    int fupdate(std::string image) override;
+    int fupdate(const std::string& image) override;
 };
 
 #endif

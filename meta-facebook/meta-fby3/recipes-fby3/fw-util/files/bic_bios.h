@@ -16,7 +16,7 @@ class BiosComponent : public Component {
       : Component(fru, comp), slot_id(_slot_id), fw_comp(_fw_comp), server(_slot_id, fru) {}
     int update(const std::string& image) override;
     int update(int fd, bool force) override;
-    int fupdate(std::string image) override;
+    int fupdate(const std::string& image) override;
     int get_version(json& j) override;
 };
 

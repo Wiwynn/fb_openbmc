@@ -73,7 +73,7 @@ int RetimerFwComponent::update(const string& image) {
   return update_internal(image, false /* force */);
 }
 
-int RetimerFwComponent::fupdate(const string image) {
+int RetimerFwComponent::fupdate(const string& image) {
   return update_internal(image, true /* force */);
 }
 

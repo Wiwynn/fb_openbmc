@@ -38,7 +38,7 @@ class BmcCpldComponent : public Component {
       : Component(fru, comp), pld_type(type), bus(_bus), addr(_addr), flash_size(MAX10M25_CFM1_END_ADDR - MAX10M25_CFM1_START_ADDR + 1),
         attr{bus, addr, CFM_IMAGE_1, MAX10M25_CFM1_START_ADDR, MAX10M25_CFM1_END_ADDR, ON_CHIP_FLASH_IP_CSR_BASE, ON_CHIP_FLASH_IP_DATA_REG, DUAL_BOOT_IP_BASE, I2C_LITTLE_ENDIAN} {}
     int update(const string& image);
-    int fupdate(string image);
+    int fupdate(const string& image);
     int get_version(json& j) override;
 };
 

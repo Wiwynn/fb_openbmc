@@ -255,7 +255,7 @@ int M2DevComponent::update_internal(const string& image, bool /*force*/) {
   return ret;
 }
 
-int M2DevComponent::fupdate(string image) {
+int M2DevComponent::fupdate(const string& image) {
   return update_internal(image, true);
 }
 

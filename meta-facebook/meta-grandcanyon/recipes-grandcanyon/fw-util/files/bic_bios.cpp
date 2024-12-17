@@ -92,7 +92,7 @@ int BiosComponent::update(const string& image) {
   return _update(image, NORMAL_UPDATE);
 }
 
-int BiosComponent::fupdate(string image) {
+int BiosComponent::fupdate(const string& image) {
   return _update(image, FORCE_UPDATE);
 }
 

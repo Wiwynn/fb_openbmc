@@ -105,6 +105,6 @@ int VrComponent::update(const string& image) {
   return _update(image, 0);
 }
 
-int VrComponent::fupdate(string image) {
+int VrComponent::fupdate(const string& image) {
   return _update(image, 1);
 }

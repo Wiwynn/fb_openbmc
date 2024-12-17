@@ -20,7 +20,7 @@ int BicFwComponent::update(const std::string& image) {
   return ret;
 }
 
-int BicFwComponent::fupdate(string image) {
+int BicFwComponent::fupdate(const string& image) {
   int ret;
   try {
     server.ready();

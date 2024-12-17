@@ -21,7 +21,7 @@ class VrComponent : public Component {
     VrComponent(const string& fru, const string& comp, uint8_t comp_id)
       : Component(fru, comp), slot_id(fru.at(4) - '0'), fw_comp(comp_id), server(slot_id, fru) {}
     int update(const string& image);
-    int fupdate(string image);
+    int fupdate(const string& image);
     int print_version();
     int get_version(json& j) override;
 };

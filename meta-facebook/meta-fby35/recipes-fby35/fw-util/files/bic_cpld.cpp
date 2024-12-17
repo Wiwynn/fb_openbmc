@@ -222,7 +222,7 @@ int CpldComponent::update(const string& image) {
   return update_cpld(image, false);
 }
 
-int CpldComponent::fupdate(const string image) {
+int CpldComponent::fupdate(const string& image) {
   return update_cpld(image, true);
 }
 

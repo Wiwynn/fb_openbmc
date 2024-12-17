@@ -83,7 +83,7 @@ int CpldComponent::update(const string& image) {
   return _update(image.c_str(), 1, attr);
 }
 
-int CpldComponent::fupdate(string image) {
+int CpldComponent::fupdate(const string& image) {
   return _update(image.c_str(), 0, attr);
 }
 
@@ -120,7 +120,7 @@ int GTCpldComponent::update(const string& image) {
   return signed_image_update(image, false);
 }
 
-int GTCpldComponent::fupdate(string image) {
+int GTCpldComponent::fupdate(const string& image) {
   return signed_image_update(image, true);
 }
 

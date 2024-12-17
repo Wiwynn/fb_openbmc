@@ -99,7 +99,7 @@ int PCIESWComponent::update(const string& image) {
   return update_internal(image, FORCE_UPDATE_UNSET);
 }
 
-int PCIESWComponent::fupdate(string image) {
+int PCIESWComponent::fupdate(const string& image) {
   return update_internal(image, FORCE_UPDATE_SET);
 }
 

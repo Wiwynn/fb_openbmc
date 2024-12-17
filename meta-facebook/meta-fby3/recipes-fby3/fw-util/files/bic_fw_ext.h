@@ -25,7 +25,7 @@ class BicFwExtComponent : public BicFwComponent {
     BicFwExtComponent(string fru, string comp, uint8_t _slot_id, string _name, uint8_t _fw_comp)
       : BicFwComponent(fru, comp, _slot_id), slot_id(_slot_id), fw_comp(_fw_comp), name(_name), server(_slot_id, fru), expansion(_slot_id, fru, _name, _fw_comp) {}
     int update(const string& image);
-    int fupdate(string image);
+    int fupdate(const string& image);
     int get_version(json& j) override;
 };
 
@@ -42,7 +42,7 @@ class BicFwExtBlComponent : public BicFwBlComponent {
     BicFwExtBlComponent(string fru, string comp, uint8_t _slot_id, string _name, uint8_t _fw_comp)
       : BicFwBlComponent(fru, comp, _slot_id), slot_id(_slot_id), fw_comp(_fw_comp), name(_name), server(_slot_id, fru), expansion(_slot_id, fru, _name, _fw_comp) {}
     int update(const string& image);
-    int fupdate(string image);
+    int fupdate(const string& image);
     int get_version(json& j) override;
 };
 

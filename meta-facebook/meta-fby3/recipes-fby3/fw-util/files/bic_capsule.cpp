@@ -378,7 +378,7 @@ int CapsuleComponent::update(const string& image) {
   return ret;
 }
 
-int CapsuleComponent::fupdate(string image) {
+int CapsuleComponent::fupdate(const string& image) {
   int ret;
 
   ret = bic_update_capsule(image);

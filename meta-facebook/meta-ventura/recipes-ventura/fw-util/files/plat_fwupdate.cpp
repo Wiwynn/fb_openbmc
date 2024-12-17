@@ -43,7 +43,7 @@ class CpldComponent : public Component {
       const std::string& fru, const std::string& comp, uint8_t type, void* i2c_attr)
       : Component(fru, comp), pld_type(type), attr(i2c_attr) {}
   int update(const std::string& image) override;
-  int fupdate(std::string image) override;
+  int fupdate(const std::string& image) override;
   int get_version(json& j) override;
 };
 
@@ -70,7 +70,7 @@ int CpldComponent::update(const string& image) {
   return _update(image.c_str());
 }
 
-int CpldComponent::fupdate(string image) {
+int CpldComponent::fupdate(const string& image) {
   return _update(image.c_str());
 }
 

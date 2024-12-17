@@ -447,7 +447,7 @@ int BmcCpldCapsuleComponent::update(const string& image) {
   return ret;
 }
 
-int BmcCpldCapsuleComponent::fupdate(string image) {
+int BmcCpldCapsuleComponent::fupdate(const string& image) {
   int ret;
 
   ret = bmc_update_capsule(image);

@@ -185,7 +185,7 @@ int BiosComponent::update(const string& image) {
   return update(image, 0);
 }
 
-int BiosComponent::fupdate(string image) {
+int BiosComponent::fupdate(const string& image) {
   return update(image, 1);
 }
 

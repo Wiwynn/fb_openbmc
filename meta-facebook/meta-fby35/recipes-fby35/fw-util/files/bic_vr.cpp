@@ -117,7 +117,7 @@ int VrComponent::update(const string& image) {
   return update_internal(image, false);
 }
 
-int VrComponent::fupdate(const string image) {
+int VrComponent::fupdate(const string& image) {
   return update_internal(image, true);
 }
 

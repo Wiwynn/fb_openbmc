@@ -24,7 +24,7 @@ class ProtComponent : public Component {
        isBypass(bic_is_prot_bypass(slot_id)) {}
     int update(const std::string& image) override;
     int update(int fd, bool force) override;
-    int fupdate(std::string image) override;
+    int fupdate(const std::string& image) override;
     int print_version() override;
     int get_version(json& j) override;
 };

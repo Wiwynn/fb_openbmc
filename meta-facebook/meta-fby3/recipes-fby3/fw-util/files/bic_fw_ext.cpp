@@ -43,7 +43,7 @@ int BicFwExtComponent::update(const string& image) {
   return update_internal(image, false);
 }
 
-int BicFwExtComponent::fupdate(string image) {
+int BicFwExtComponent::fupdate(const string& image) {
   return update_internal(image, true);
 }
 
@@ -135,7 +135,7 @@ int BicFwExtBlComponent::update(const string& image) {
   return update_internal(image, false);
 }
 
-int BicFwExtBlComponent::fupdate(string image) {
+int BicFwExtBlComponent::fupdate(const string& image) {
   return update_internal(image, true);
 }
 

@@ -27,7 +27,7 @@ class BiosExtComponent : public BiosComponent {
     }
     int update(const string& image) override;
     int update(int fd, bool force) override;
-    int fupdate(string image) override;
+    int fupdate(const string& image) override;
     int dump(string image) override;
     int get_version(json& j) override;
 };
@@ -90,7 +90,7 @@ int BiosExtComponent::update(int fd, bool force) {
   return update_internal("", fd, force);
 }
 
-int BiosExtComponent::fupdate(string image) {
+int BiosExtComponent::fupdate(const string& image) {
   return update_internal(image, -1, true /* force */);
 }
 

@@ -54,7 +54,7 @@ int CpldExtComponent::update(const string& image) {
   return update_internal(image, false);
 }
 
-int CpldExtComponent::fupdate(string image) {
+int CpldExtComponent::fupdate(const string& image) {
   return update_internal(image, true);
 }
 

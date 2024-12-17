@@ -79,7 +79,7 @@ class CpldComponent : public Component {
         attr{bus, addr, s_attrs[ctype].img_type, s_attrs[ctype].start_addr, s_attrs[ctype].end_addr,
              ON_CHIP_FLASH_IP_CSR_BASE, ON_CHIP_FLASH_IP_DATA_REG, DUAL_BOOT_IP_BASE, I2C_LITTLE_ENDIAN} {}
     int update(const string& image);
-    int fupdate(string image);
+    int fupdate(const string& image);
     int print_version();
 };
 
@@ -163,7 +163,7 @@ int CpldComponent::update(const string& image) {
   return _update(image.c_str(), 1);
 }
 
-int CpldComponent::fupdate(string image) {
+int CpldComponent::fupdate(const string& image) {
   return _update(image.c_str(), 0);
 }
 

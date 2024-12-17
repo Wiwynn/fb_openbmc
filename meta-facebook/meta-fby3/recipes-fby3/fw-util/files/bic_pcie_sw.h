@@ -21,7 +21,7 @@ class PCIESWComponent : public Component {
     PCIESWComponent(string fru, string comp, uint8_t _slot_id, string _name, uint8_t _fw_comp)
       : Component(fru, comp), slot_id(_slot_id), fw_comp(_fw_comp), name(_name), server(_slot_id, fru), expansion(_slot_id, fru, _name, _fw_comp) {}
     int update(const string& image);
-    int fupdate(string image);
+    int fupdate(const string& image);
     int print_version();
 };
 

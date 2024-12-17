@@ -160,7 +160,7 @@ int AstBicFwRecoveryComponent::update(const string& image)
   return ast_bic_recovery(image, FORCE_UPDATE_UNSET);
 }
 
-int AstBicFwRecoveryComponent::fupdate(string image)
+int AstBicFwRecoveryComponent::fupdate(const string& image)
 {
   return ast_bic_recovery(image, FORCE_UPDATE_SET);
 }

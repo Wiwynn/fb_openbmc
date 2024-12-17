@@ -51,7 +51,7 @@ class PldmComponent : public Component, public InfoChecker
                   wait_apply_time(wait_apply_time) {}
     virtual ~PldmComponent() = default;
     int update(const std::string& image) override;
-    int fupdate(std::string image) override;
+    int fupdate(const std::string& image) override;
     int get_version(json& j) override;
     int print_version() override;
     int pldm_update(const std::string& /*image*/, bool is_standard_descriptor, uint8_t specified_comp = 0xFF);

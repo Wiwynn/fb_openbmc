@@ -17,7 +17,7 @@ class BiosComponent : public Component {
     BiosComponent(std::string fru, std::string comp, uint8_t _fw_comp)
       : Component(fru, comp), fw_comp(_fw_comp), server(FRU_SERVER, fru) {}
     int update(const std::string& image);
-    int fupdate(std::string image);
+    int fupdate(const std::string& image);
     int print_version();
     int get_version(json& j) override;
     int dump(std::string image);

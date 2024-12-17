@@ -72,7 +72,7 @@ struct signed_header_t {
             component_id(component_id), vendor_id(vendor_id){}
 };
 
-// NOTE: pldm_image_signed_info_map is used to convert vendor-defined descriptor 
+// NOTE: pldm_image_signed_info_map is used to convert vendor-defined descriptor
 // strings in the PLDM FW image to numbers.
 using str_uint8_t_map_t = std::unordered_map<std::string, uint8_t>;
 struct pldm_image_signed_info_map {
@@ -117,6 +117,6 @@ class SignComponent : public InfoChecker
     SignComponent(const signed_header_t& info, const std::string &fru) :
                 InfoChecker(info), temp_image_path("/tmp/" + fru + "_signed_update.bin") {}
     virtual ~SignComponent() = default;
-    virtual int component_update(std::string /*image*/, bool /*force*/) {return FW_STATUS_NOT_SUPPORTED;};
+    virtual int component_update(const std::string& /*image*/, bool /*force*/) {return FW_STATUS_NOT_SUPPORTED;};
     int signed_image_update(std::string /*image*/, bool /*force*/);
 };

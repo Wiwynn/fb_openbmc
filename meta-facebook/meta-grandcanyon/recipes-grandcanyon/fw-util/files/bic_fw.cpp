@@ -24,7 +24,7 @@ class BicFwComponent : public Component {
     BicFwComponent(string fru, string comp, uint8_t _fw_comp)
       : Component(fru, comp), fw_comp(_fw_comp), server(FRU_SERVER, fru) {}
     int update(const string& image);
-    int fupdate(string image);
+    int fupdate(const string& image);
     int print_version();
     int get_version(json& j) override;
 };
@@ -40,7 +40,7 @@ class BicFwBlComponent : public Component {
     BicFwBlComponent(string fru, string comp, uint8_t _fw_comp)
       : Component(fru, comp), fw_comp(_fw_comp), server(FRU_SERVER, fru) {}
     int update(const string& image);
-    int fupdate(string image);
+    int fupdate(const string& image);
     int print_version();
     int get_version(json& j) override;
 };
@@ -80,7 +80,7 @@ int BicFwComponent::update(const string& image) {
   return update_internal(image, false);
 }
 
-int BicFwComponent::fupdate(string image) {
+int BicFwComponent::fupdate(const string& image) {
   return update_internal(image, true);
 }
 
@@ -169,7 +169,7 @@ int BicFwBlComponent::update(const string& image) {
   return update_internal(image, false);
 }
 
-int BicFwBlComponent::fupdate(string image) {
+int BicFwBlComponent::fupdate(const string& image) {
   return update_internal(image, true);
 }
 

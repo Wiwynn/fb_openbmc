@@ -52,7 +52,7 @@ class CpldComponent : public Component {
     static bool is_cpld_evt();
 
     int update(const std::string& image) override;
-    int fupdate(std::string image) override;
+    int fupdate(const std::string& image) override;
     int get_version(json& j) override;
 };
 
@@ -98,7 +98,7 @@ int CpldComponent::update(const string& image) {
   return _update(image.c_str(), attr);
 }
 
-int CpldComponent::fupdate(string image) {
+int CpldComponent::fupdate(const string& image) {
   return _update(image.c_str(), attr);
 }
 

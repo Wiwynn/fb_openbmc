@@ -338,13 +338,13 @@ int SwbBicFwComponent::update(const string& image)
   return fw_update_proc(image, false, bus, eid, target, this->alias_component(), this->alias_fru());
 }
 
-int SwbBicFwComponent::fupdate(string image)
+int SwbBicFwComponent::fupdate(const string& image)
 {
   return fw_update_proc(image, true, bus, eid, target, this->alias_component(), this->alias_fru());
 }
 
 int
-bic_recovery_init(string image, bool /*force*/) {
+bic_recovery_init(const string& image, bool /*force*/) {
 
   if (gpio_set_value_by_shadow("BIC_FWSPICK", GPIO_VALUE_HIGH)) {
      syslog(LOG_WARNING, "[%s] Set BIC_FWSPICK High failed\n", __func__ );
@@ -439,7 +439,7 @@ int SwbBicFwRecoveryComponent::update(const string& image)
   return ret;
 }
 
-int SwbBicFwRecoveryComponent::fupdate(string image)
+int SwbBicFwRecoveryComponent::fupdate(const string& image)
 {
   int ret;
 
@@ -594,7 +594,7 @@ uint32_t_read (int fd, uint32_t& target)
   return ret;
 }
 
-int SwbPexFwComponent::fupdate(string image) {
+int SwbPexFwComponent::fupdate(const string& image) {
   return update(image);
 }
 
@@ -736,7 +736,7 @@ int SwbVrComponent::update(const string& image) {
   return ret;
 }
 
-int SwbVrComponent::fupdate(string image) {
+int SwbVrComponent::fupdate(const string& image) {
   int ret;
 
   ret = set_swb_snr_polling(0x00);
@@ -886,7 +886,7 @@ int GTSwbBicFwComponent::update(const string& image)
   return ret;
 }
 
-int GTSwbBicFwComponent::fupdate(string image)
+int GTSwbBicFwComponent::fupdate(const string& image)
 {
   int ret = 0;
 
@@ -904,7 +904,7 @@ int GTSwbPexFwComponent::update(const string& image)
   return try_pldm_update(image, false, target);
 }
 
-int GTSwbPexFwComponent::fupdate(string image)
+int GTSwbPexFwComponent::fupdate(const string& image)
 {
   return try_pldm_update(image, true, target);
 }
@@ -918,7 +918,7 @@ int GTSwbVrComponent::update(const string& image)
   return try_pldm_update(image, false);
 }
 
-int GTSwbVrComponent::fupdate(string image)
+int GTSwbVrComponent::fupdate(const string& image)
 {
   return try_pldm_update(image, true);
 }
@@ -995,7 +995,7 @@ int GTSwbCpldComponent::update(const string& image)
   return try_pldm_update(image, false);
 }
 
-int GTSwbCpldComponent::fupdate(string image)
+int GTSwbCpldComponent::fupdate(const string& image)
 {
   return try_pldm_update(image, true);
 }
@@ -1126,7 +1126,7 @@ mc_bic_recovery_pre() {
 }
 
 int
-gta_bic_recovery_pre(string image, uint8_t fruid, bool /*force*/) {
+gta_bic_recovery_pre(const string& image, uint8_t fruid, bool /*force*/) {
   kv_set("bic_recovery_update", "1", 0, 0);
   if (fruid == FRU_ACB) {
     if (cb_bic_recovery_pre() < 0) {
@@ -1281,7 +1281,7 @@ exit:
   return ret;
 }
 
-int GtaBicFwRecoveryComponent::fupdate(string image) {
+int GtaBicFwRecoveryComponent::fupdate(const string& image) {
   int ret = 0;
   uint8_t fruid = 0;
 
@@ -1327,7 +1327,7 @@ int GTAASICComponent::update(const std::string& image) {
   return pldm_update(image, true, component_identifier);
 }
 
-int GTAASICComponent::fupdate(std::string image) {
+int GTAASICComponent::fupdate(const std::string& image) {
   return pldm_update(image, true, component_identifier);
 }
 
