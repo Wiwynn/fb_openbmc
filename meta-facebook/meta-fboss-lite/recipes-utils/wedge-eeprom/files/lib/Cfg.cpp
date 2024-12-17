@@ -57,6 +57,8 @@ std::string WeCfg::eFormat(const std::string& ePath) {
     return META_EEPROM_V4;
   } else if (header[0] == 0xfb && header[1] == 0xfb && header[2] == 0x05) {
     return META_EEPROM_V5;
+  } else if (header[0] == 0xfb && header[1] == 0xfb && header[2] == 0x06) {
+    return META_EEPROM_V6;
   } else if (header[0] == 0xfb && header[1] == 0xfb && header[2] == 0x03) {
     return META_EEPROM_V3;
   } else if (
