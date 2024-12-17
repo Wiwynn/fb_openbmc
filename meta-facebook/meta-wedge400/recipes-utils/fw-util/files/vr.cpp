@@ -52,7 +52,7 @@ class VrComponent : public Component {
     return 0;
   }
 
-  int update(string image) {
+  int update(const string& image) {
     int ret;
 
     try {

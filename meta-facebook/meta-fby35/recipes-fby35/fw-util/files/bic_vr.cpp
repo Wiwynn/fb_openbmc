@@ -113,7 +113,7 @@ int VrComponent::update_internal(const string& image, bool force) {
   return FW_STATUS_SUCCESS;
 }
 
-int VrComponent::update(const string image) {
+int VrComponent::update(const string& image) {
   return update_internal(image, false);
 }
 

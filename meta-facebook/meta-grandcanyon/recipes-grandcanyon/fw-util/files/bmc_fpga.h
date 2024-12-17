@@ -45,16 +45,16 @@ class BmcFpgaComponent : public Component {
     uint8_t location;
     altera_max10_attr_t attr;
     bool is_valid_image(string image, bool force);
-    int create_update_image(string image, string update_image);
+    int create_update_image(const string& image, string update_image);
     int update_fpga(string image, string update_image);
-    int update_wrapper(string image, bool force);
+    int update_wrapper(const string& image, bool force);
     int get_ver_str(string& s);
   public:
     BmcFpgaComponent(string fru, string comp, uint8_t type, uint8_t _bus, uint8_t _addr, uint8_t _location)
       : Component(fru, comp), pld_type(type), bus(_bus), addr(_addr), location(_location),
         attr{bus, addr, CFM_IMAGE_1, CFM1_START_ADDR, CFM1_END_ADDR, ON_CHIP_FLASH_IP_CSR_BASE, ON_CHIP_FLASH_IP_DATA_REG, DUAL_BOOT_IP_BASE, I2C_LITTLE_ENDIAN} {}
     int print_version();
-    int update(string image);
+    int update(const string& image);
     int fupdate(string image);
     int get_version(json& j) override;
 };

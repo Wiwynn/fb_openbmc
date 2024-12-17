@@ -14,7 +14,7 @@
 #include <facebook/bic.h>
 #include <openbmc/pal.h>
 using namespace std;
- 
+
 map<uint8_t, string> list = {{0xC0, "VCCIN_VSA"},
                              {0xC4, "VCCIO"},
                              {0xC8, "VDDQ_ABC"},
@@ -97,7 +97,7 @@ int VrComponent::print_version()
   return FW_STATUS_SUCCESS;
 }
 
-int VrComponent::update(string image)
+int VrComponent::update(const string& image)
 {
   int ret = 0;
   try {

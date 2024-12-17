@@ -183,7 +183,7 @@ int M2DevComponent::get_single(json& j, uint8_t idx) {
   return FW_STATUS_SUCCESS;
 }
 
-int M2DevComponent::update_internal(string image, bool /*force*/) {
+int M2DevComponent::update_internal(const string& image, bool /*force*/) {
   int ret = FW_STATUS_SUCCESS;
   uint8_t nvme_ready = 0, status = 0, type = DEV_TYPE_UNKNOWN;
   uint8_t idx = (fw_comp - FW_2OU_M2_DEV0) + 1;
@@ -259,7 +259,7 @@ int M2DevComponent::fupdate(string image) {
   return update_internal(image, true);
 }
 
-int M2DevComponent::update(string image) {
+int M2DevComponent::update(const string& image) {
   return update_internal(image, false);
 }
 #endif

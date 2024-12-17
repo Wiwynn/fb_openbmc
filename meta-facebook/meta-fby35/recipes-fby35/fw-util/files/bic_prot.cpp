@@ -111,7 +111,7 @@ int ProtComponent::update_internal(const std::string& image, int fd, bool force)
   return ret;
 }
 
-int ProtComponent::update(const string image) {
+int ProtComponent::update(const string& image) {
   return update_internal(image, -1, false /* force */);
 }
 

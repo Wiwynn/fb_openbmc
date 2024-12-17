@@ -45,7 +45,7 @@ class M2_DevComponent : public Component {
   static Dev_Main_Slot dev_main_slot;
 
   Server server;
-  int _update(string image, uint8_t force);
+  int _update(const string& image, uint8_t force);
   void scan_all_devices();
   void save_info(uint8_t id, int ret, uint8_t status, uint8_t nvme_ready, uint8_t ffi, uint8_t major_ver, uint8_t minor_ver);
   void print_single();
@@ -74,7 +74,7 @@ class M2_DevComponent : public Component {
     }
     return 0;
   }
-  int update(string image);
+  int update(const string& image);
   int fupdate(string image);
 };
 
@@ -176,7 +176,7 @@ void M2_DevComponent::print_dual() {
   }
 }
 
-int M2_DevComponent::_update(string image, uint8_t force) {
+int M2_DevComponent::_update(const string& image, uint8_t force) {
   int ret;
   uint8_t status = DEVICE_POWER_OFF;
   uint8_t type = DEV_TYPE_UNKNOWN;
@@ -242,7 +242,7 @@ int M2_DevComponent::_update(string image, uint8_t force) {
   return ret;
 }
 
-int M2_DevComponent::update(string image) {
+int M2_DevComponent::update(const string& image) {
   return _update(image, 0);
 }
 

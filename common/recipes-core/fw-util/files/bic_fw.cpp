@@ -9,7 +9,7 @@
 
 using namespace std;
 
-int BicFwComponent::update(string image) {
+int BicFwComponent::update(const std::string& image) {
   int ret;
   try {
     server.ready();
@@ -51,7 +51,7 @@ int BicFwComponent::get_version(json& j) {
   return 0;
 }
 
-int BicFwBlComponent::update(string image) {
+int BicFwBlComponent::update(const std::string& image) {
   int ret;
   try {
     server.ready();

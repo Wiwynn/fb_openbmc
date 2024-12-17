@@ -22,7 +22,7 @@ class UsbDbgBlComponent : public McuFwBlComponent {
     UsbDbgBlComponent(std::string fru, std::string comp, uint8_t bus, uint8_t addr, uint8_t target)
       : McuFwBlComponent(fru, comp, bus, addr, target), bus_id(bus), slv_addr(addr), target_id(target) {}
     int get_version(json& j) override;
-    int update(std::string image);
+    int update(const std::string& image) override;
 };
 
 #endif

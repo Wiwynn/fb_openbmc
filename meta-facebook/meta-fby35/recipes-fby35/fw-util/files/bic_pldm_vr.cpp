@@ -24,8 +24,8 @@ int PldmVrComponent::update_version_cache() {
   pendingVersion = kv::get(pendingVersionKey, kv::region::temp);
 
   // When the BIC fails to access this component, it returns "ERROR:%d."
-  if (activeVersion.find("ERROR:") != string::npos || 
-      pendingVersion.find("ERROR:") != string::npos) {   
+  if (activeVersion.find("ERROR:") != string::npos ||
+      pendingVersion.find("ERROR:") != string::npos) {
     // Set as INVALID_VERSION so that the update version cache is triggered next time
     kv::set(activeVersionKey, INVALID_VERSION, kv::region::temp);
     kv::set(pendingVersionKey, INVALID_VERSION, kv::region::temp);
@@ -33,7 +33,7 @@ int PldmVrComponent::update_version_cache() {
   return FW_STATUS_SUCCESS;
 }
 
-int PldmVrComponent::update_internal(string image, bool force) {
+int PldmVrComponent::update_internal(const string& image, bool force) {
   uint8_t status;
   int rc;
 
@@ -47,7 +47,7 @@ int PldmVrComponent::update_internal(string image, bool force) {
     cerr << e << endl;
     return FW_STATUS_FAILURE;
   }
-  
+
   try {
    if (pal_get_server_power(slot_id, &status)) {
       throw runtime_error("Failed to get server power");
@@ -121,8 +121,8 @@ int PldmVrComponent::get_version(json& j) {
   if (component_identifier == javaisland::ALL_VR) {
     json j_temp;
     for (auto& [vr_comp_id, vr_name]: get_vr_list()) {
-      // replace component name, component ID and version key 
-      // to let get_version() get the version of a specific VR 
+      // replace component name, component ID and version key
+      // to let get_version() get the version of a specific VR
       component = vr_name;
       component_identifier = vr_comp_id;
       activeVersionKey = fmt::format("{}_{}_active_ver", fru, vr_name);
@@ -146,10 +146,10 @@ int PldmVrComponent::get_version(json& j) {
   }
   auto activeVersion = kv::get(activeVersionKey, kv::region::temp);
   auto pendingVersion = kv::get(pendingVersionKey, kv::region::temp);
-  
-  // If the active version is valid but the pending version is invalid, let 
+
+  // If the active version is valid but the pending version is invalid, let
   // the pending version equal the active version
-  if (activeVersion.find(INVALID_VERSION) == string::npos && 
+  if (activeVersion.find(INVALID_VERSION) == string::npos &&
       pendingVersion.find(INVALID_VERSION) != string::npos) {
     pendingVersion = activeVersion;
     kv::set(pendingVersionKey, pendingVersion, kv::region::temp);
@@ -174,7 +174,7 @@ int PldmVrComponent::get_version(json& j) {
     pendingVersion = vendor + " " + matches[2].str();
     kv::set(pendingVersionKey, pendingVersion, kv::region::temp);
   }
-  
+
   j[VERSION] = activeVersion;
   j[VENDOR] = vendor;
 
@@ -209,8 +209,8 @@ int PldmVrComponent::print_version() {
 
   if (component_identifier == javaisland::ALL_VR) {
     for (const auto& [vr_comp_id, vr_name]: get_vr_list()) {
-      // replace component name, component ID and version key 
-      // to let get_version() get the version of a specific VR 
+      // replace component name, component ID and version key
+      // to let get_version() get the version of a specific VR
       component = vr_name;
       component_identifier = vr_comp_id;
       activeVersionKey = fmt::format("{}_{}_active_ver", fru, vr_name);

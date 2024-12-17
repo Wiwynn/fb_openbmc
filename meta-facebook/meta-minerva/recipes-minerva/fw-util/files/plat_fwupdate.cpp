@@ -17,7 +17,7 @@ class CpldComponent : public Component {
     CpldComponent(const std::string &fru, const std::string &comp, uint8_t type, uint8_t bus, uint8_t addr,
       int (*cpld_xfer)(uint8_t, uint8_t, uint8_t *, uint8_t, uint8_t *, uint8_t))
       : Component(fru, comp), pld_type(type), attr{bus, addr, cpld_xfer} {}
-    int update(std::string image) override;
+    int update(const std::string& image) override;
     int fupdate(std::string image) override;
     int get_version(json& j) override;
 };
@@ -43,7 +43,7 @@ error_exit:
   return ret;
 }
 
-int CpldComponent::update(const string image) {
+int CpldComponent::update(const string& image) {
   return _update(image.c_str(), attr);
 }
 

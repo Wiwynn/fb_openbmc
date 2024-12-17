@@ -24,7 +24,7 @@ static bool is_server_post_complete(const uint8_t& slot_id) {
 int get_server_retimer_type(const uint8_t& slot_id) {
   int retimer_type = RETIMER_UNKNOWN;
   string retimer_type_key(fmt::format("slot{}_retimer_type", slot_id));
-  
+
   try {
     retimer_type = stoi(kv::get(retimer_type_key, kv::region::temp));
     // if the retimer type is unknown in the cache, rescan the retimer bus
@@ -42,7 +42,7 @@ int get_server_retimer_type(const uint8_t& slot_id) {
       if (!is_server_post_complete(slot_id)) {
         throw runtime_error("the server has not POST complete");
       }
-      
+
       ret = system("sv stop sensord > /dev/null 2>&1 &");
       if (ret < 0) {
         throw runtime_error("failed to stop sensord to get the retimer type");
@@ -55,17 +55,17 @@ int get_server_retimer_type(const uint8_t& slot_id) {
       }
       if ((ret & 0x0F) >= JI_REV_EVT2) {
         tbuf[0] = 0x02; // channel 2
-        ret = bic_master_write_read(slot_id, (RETIMER_SWITCH_BUS << 1) | 1, 
+        ret = bic_master_write_read(slot_id, (RETIMER_SWITCH_BUS << 1) | 1,
                                     RETIMER_SWITCH_ADDR, tbuf, 1, rbuf, 0);
         if (ret) {
           throw runtime_error("failed to switch channel for retimer");
         }
       }
-      
+
       // scan the i2c bus to determine the retimer type
       memcpy(tbuf, (uint8_t *)&IANA_ID, IANA_ID_SIZE);
-      tbuf[tlen++] = RETIMER_SWITCH_BUS; 
-      ret = bic_data_send(slot_id, NETFN_OEM_1S_REQ, 0x60, 
+      tbuf[tlen++] = RETIMER_SWITCH_BUS;
+      ret = bic_data_send(slot_id, NETFN_OEM_1S_REQ, 0x60,
                           tbuf, tlen, rbuf, &rlen, NONE_INTF);
       if (ret) {
         throw runtime_error("failed to scan retimer bus");
@@ -82,7 +82,7 @@ int get_server_retimer_type(const uint8_t& slot_id) {
         }
       }
     } catch(const std::exception& e) {
-      syslog(LOG_ERR, "%s() Slot%d, cannot get the retimer type, %s", 
+      syslog(LOG_ERR, "%s() Slot%d, cannot get the retimer type, %s",
              __func__, slot_id, e.what());
     }
 
@@ -106,8 +106,8 @@ int PldmRetimerComponent::update_version_cache() {
   pendingVersion = kv::get(pendingVersionKey, kv::region::temp);
 
   // When the BIC fails to access this component, it returns "ERROR:%d."
-  if (activeVersion.find("ERROR:") != string::npos || 
-      pendingVersion.find("ERROR:") != string::npos) {   
+  if (activeVersion.find("ERROR:") != string::npos ||
+      pendingVersion.find("ERROR:") != string::npos) {
     // Set as INVALID_VERSION so that the update version cache is triggered next time
     kv::set(activeVersionKey, INVALID_VERSION, kv::region::temp);
     kv::set(pendingVersionKey, INVALID_VERSION, kv::region::temp);
@@ -115,7 +115,7 @@ int PldmRetimerComponent::update_version_cache() {
   return FW_STATUS_SUCCESS;
 }
 
-int PldmRetimerComponent::update_internal(string image, bool force) {
+int PldmRetimerComponent::update_internal(const string& image, bool force) {
   try {
     server.ready();
     uint8_t status;
@@ -142,16 +142,16 @@ int PldmRetimerComponent::get_version(json& j) {
   } catch(const string& e) {
     throw runtime_error(e);
   }
-  
+
   if (PldmComponent::get_version(j)) {
     return FW_STATUS_FAILURE;
   }
   auto activeVersion = kv::get(activeVersionKey, kv::region::temp);
   auto pendingVersion = kv::get(pendingVersionKey, kv::region::temp);
-  
-  // If the active version is valid but the pending version is invalid, let 
+
+  // If the active version is valid but the pending version is invalid, let
   // the pending version equal the active version
-  if (activeVersion.find(INVALID_VERSION) == string::npos && 
+  if (activeVersion.find(INVALID_VERSION) == string::npos &&
       pendingVersion.find(INVALID_VERSION) != string::npos) {
     pendingVersion = activeVersion;
     kv::set(pendingVersionKey, pendingVersion, kv::region::temp);
@@ -165,7 +165,7 @@ int PldmRetimerComponent::get_version(json& j) {
     pendingVersion = matches[2].str();
     kv::set(pendingVersionKey, pendingVersion, kv::region::temp);
   }
-  
+
   j[VERSION] = activeVersion;
 
   return FW_STATUS_SUCCESS;

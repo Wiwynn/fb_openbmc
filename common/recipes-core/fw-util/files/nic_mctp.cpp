@@ -60,7 +60,7 @@ bail:
   return ret;
 }
 
-int MCTPOverSMBusNicComponent::update(string image)
+int MCTPOverSMBusNicComponent::update(const string& image)
 {
   int ret = -1;
   uint8_t tag = 0;

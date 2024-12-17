@@ -32,7 +32,7 @@ int CpldComponent::get_version(json& j) {
   }
   return 0;
 }
-int CpldComponent::update(string image) {
+int CpldComponent::update(const string& image) {
   int ret = 0;
   try {
     server.ready();

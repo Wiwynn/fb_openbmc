@@ -14,7 +14,7 @@
 
 using namespace std;
 
-int BmcComponent::update(string image_path [[maybe_unused]])
+int BmcComponent::update(const string& image_path [[maybe_unused]])
 {
   return 0;
 }

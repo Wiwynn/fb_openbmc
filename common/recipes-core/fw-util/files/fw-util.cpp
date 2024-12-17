@@ -95,7 +95,7 @@ bool AliasComponent::setup()
   return true;
 }
 
-int AliasComponent::update(string image)
+int AliasComponent::update(const std::string& image)
 {
   if (!setup())
     return FW_STATUS_NOT_SUPPORTED;

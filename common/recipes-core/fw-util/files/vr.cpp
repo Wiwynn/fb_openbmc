@@ -42,7 +42,7 @@ class VrComponent : public Component {
     return 0;
   }
 
-  int update(string image) override {
+  int update(const string& image) override {
     int ret;
 
     try {

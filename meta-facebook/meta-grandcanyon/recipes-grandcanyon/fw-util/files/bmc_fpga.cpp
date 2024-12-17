@@ -141,7 +141,7 @@ end:
 int BmcFpgaComponent::get_ver_str(string& s) {
   int ret = 0;
   char ver[MAX_VALUE_LEN] = {0};
-  
+
   ret = pal_get_fpga_ver_cache(bus, addr, ver);
   s = string(ver);
 
@@ -176,7 +176,7 @@ int BmcFpgaComponent::get_version(json& j) {
   return FW_STATUS_SUCCESS;
 }
 
-int BmcFpgaComponent::create_update_image(string image, string update_image)
+int BmcFpgaComponent::create_update_image(const string& image, string update_image)
 {
   int ret = 0;
   char buffer[MAX10_RPD_SIZE] = {0};
@@ -245,7 +245,7 @@ int BmcFpgaComponent::update_fpga(string image, string update_image)
   return ret;
 }
 
-int BmcFpgaComponent::update_wrapper(string image, bool force)
+int BmcFpgaComponent::update_wrapper(const string& image, bool force)
 {
   string update_image(image + "-tmp");
 
@@ -260,7 +260,7 @@ int BmcFpgaComponent::update_wrapper(string image, bool force)
   return update_fpga(image, update_image);
 }
 
-int BmcFpgaComponent::update(string image)
+int BmcFpgaComponent::update(const string& image)
 {
   return update_wrapper(image, false);
 }

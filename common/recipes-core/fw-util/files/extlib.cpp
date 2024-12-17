@@ -43,7 +43,7 @@ ExtlibComponent::ExtlibComponent(string fru, string component,
   }
 }
 
-int ExtlibComponent::update(string image)
+int ExtlibComponent::update(const string& image)
 {
   return update_fn(image.c_str(), info.c_str());
 }

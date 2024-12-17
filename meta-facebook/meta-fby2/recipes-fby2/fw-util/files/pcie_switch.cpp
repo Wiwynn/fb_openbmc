@@ -60,7 +60,7 @@ class PcieSwitchComponent : public Component {
     return 0;
   }
 
-  int update(string image) {
+  int update(const string& image) {
     if (fby2_get_slot_type(slot_id) != SLOT_TYPE_GPV2)
       return FW_STATUS_NOT_SUPPORTED;
 

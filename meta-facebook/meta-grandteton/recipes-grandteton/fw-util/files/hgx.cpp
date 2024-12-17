@@ -16,7 +16,7 @@ class HGXComponent : public Component {
       const std::string& comp,
       const std::string& hgxcomp = "")
       : Component(fru, comp), _hgxcomp(hgxcomp) {}
-  int update(std::string image) {
+  int update(const std::string& image) {
     int ret = FW_STATUS_FAILURE;
     try {
       if (component() == "patch") {

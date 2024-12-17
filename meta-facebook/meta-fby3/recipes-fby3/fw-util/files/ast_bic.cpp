@@ -155,7 +155,7 @@ int AstBicFwRecoveryComponent::ast_bic_recovery(string image, bool /*force*/) {
 }
 
 //Recovery BIC Image
-int AstBicFwRecoveryComponent::update(string image)
+int AstBicFwRecoveryComponent::update(const string& image)
 {
   return ast_bic_recovery(image, FORCE_UPDATE_UNSET);
 }

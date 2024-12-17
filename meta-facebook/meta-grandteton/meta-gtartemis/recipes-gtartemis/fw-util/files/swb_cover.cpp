@@ -33,7 +33,7 @@ class CxlVrComponent : public VrComponent {
     CxlVrComponent(const string &fru, const string &comp, const string &dev_name, uint8_t dev_bus, uint8_t dev_eid, uint8_t dev_target)
         :VrComponent(fru, comp, dev_name), name(dev_name),  bus(dev_bus), eid(dev_eid), target(dev_target) {}
     int fupdate(string image);
-    int update(string image);
+    int update(const string& image);
     int get_version(json& j) override;
 };
 
@@ -155,7 +155,7 @@ int CxlVrComponent::update_proc(string image, bool force) {
   return ret;
 }
 
-int CxlVrComponent::update(string image) {
+int CxlVrComponent::update(const string& image) {
   int ret = 0;
   ret = update_proc(image, false);
   return ret;
@@ -365,7 +365,7 @@ class fw_cxl_config {
         static MebCxlFwComponent meb_cxl6("mc", "cxl6", MEB_BIC_BUS, MEB_BIC_EID, CXL6_COMP);
         static MebCxlFwComponent meb_cxl7("mc", "cxl7", MEB_BIC_BUS, MEB_BIC_EID, CXL7_COMP);
         static MebCxlFwComponent meb_cxl8("mc", "cxl8", MEB_BIC_BUS, MEB_BIC_EID, CXL8_COMP);
- 
+
         static CxlVrComponent vr_jcn11_a0v8_9 ("mc_cxl1", "vr_p0v89a",         "MC CXL1 VR_P0V89A", MEB_BIC_BUS, MEB_BIC_EID, CXL1_VR_P089A_COMP);
         static CxlVrComponent vr_jcn11_vddq_ab("mc_cxl1", "vr_p0v8d_pvddq_ab", "MC CXL1 VR_P0V8D_PVDDQ_AB", MEB_BIC_BUS, MEB_BIC_EID, CXL1_VR_P0V8D_PVDDQ_AB_COMP);
         static CxlVrComponent vr_jcn11_vddq_cd("mc_cxl1", "vr_pvddq_cd",       "MC CXL1 VR_PVDDQ_CD", MEB_BIC_BUS, MEB_BIC_EID, CXL1_VR_PVDDQ_CD_COMP);

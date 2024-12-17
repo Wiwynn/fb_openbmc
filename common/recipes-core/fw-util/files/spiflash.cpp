@@ -140,7 +140,7 @@ int MTDComponent::update_by_flashcp(const std::string& image)
   return FW_STATUS_FAILURE;
 }
 
-int MTDComponent::update(std::string image)
+int MTDComponent::update(const std::string& image)
 {
   // flash_method default is "flashcp"
   if (flash_method == "flashrom") {
@@ -215,7 +215,7 @@ int MTDComponent::dump(std::string image)
 }
 
 
-int SPIMTDComponent::update(std::string image)
+int SPIMTDComponent::update(const std::string& image)
 {
   string cmd;
   std::ofstream ofs;
@@ -271,7 +271,7 @@ int SPIMTDComponent::dump(std::string image)
   return rc;
 }
 
-int GPIOSwitchedSPIMTDComponent::update(std::string  image)
+int GPIOSwitchedSPIMTDComponent::update(const std::string&  image)
 {
   int rc;
   gpio_desc_t *desc = gpio_open_by_shadow(gpio_shadow.c_str());

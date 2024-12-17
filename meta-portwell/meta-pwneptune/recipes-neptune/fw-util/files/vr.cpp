@@ -89,7 +89,7 @@ class VrComponent : public Component {
     }
     return 0;
   }
-  int update(string image) {
+  int update(const string& image) {
     uint8_t board_info;
     int ret = 0;
     if (pal_get_platform_id(&board_info) < 0) {

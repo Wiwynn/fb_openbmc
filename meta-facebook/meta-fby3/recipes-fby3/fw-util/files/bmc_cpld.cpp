@@ -29,7 +29,7 @@ const string board_type[] = {"Unknown", "EVT", "DVT", "PVT", "MP"};
   int ret = -1;
   uint8_t board_rev = 0;
   uint8_t hsc_det = 0;
-  
+
   int board_type_index = 0;
   bool board_rev_is_invalid = false;
   size_t image_size = 0;
@@ -94,7 +94,7 @@ const string board_type[] = {"Unknown", "EVT", "DVT", "PVT", "MP"};
     cerr << "Read: " << r_b << " Write: " << w_b << endl;
     image_sts.result = false;
   }
-  
+
   if ( force == false ) {
     // Read Board Revision from CPLD
     if ( ((bmc_location == BB_BMC) || (bmc_location == DVT_BB_BMC)) && (bmc_found != string::npos)) {
@@ -117,7 +117,7 @@ const string board_type[] = {"Unknown", "EVT", "DVT", "PVT", "MP"};
       }
     } else if (slot_found != string::npos) {
       bic_gpio_t gpio = {0};
-      
+
       slot_id = fru_name.at(4) - '0';
       if ( fby3_common_get_sb_board_rev(slot_id, &board_rev) ) {
         cout << "Failed to get sb board rev" << endl;
@@ -261,14 +261,14 @@ int BmcCpldComponent::get_version(json& j) {
   return FW_STATUS_SUCCESS;
 }
 
-int BmcCpldComponent::update_cpld(string image) 
+int BmcCpldComponent::update_cpld(string image)
 {
   int ret = 0;
   char key[32] = {0};
   uint8_t bmc_location = 0;
   string bmc_location_str;
   string image_tmp;
-  size_t pos = image.find("-tmp"); 
+  size_t pos = image.find("-tmp");
   image_tmp = image.substr(0, pos);
   string fru_name = fru();
   string slot_str = "slot";
@@ -311,7 +311,7 @@ int BmcCpldComponent::update_cpld(string image)
     }
   }
 
-  syslog(LOG_CRIT, "Updated CPLD on %s. File: %s. Result: %s", bmc_location_str.c_str(), image_tmp.c_str(), (ret < 0)?"Fail":"Success"); 
+  syslog(LOG_CRIT, "Updated CPLD on %s. File: %s. Result: %s", bmc_location_str.c_str(), image_tmp.c_str(), (ret < 0)?"Fail":"Success");
   return ret;
 }
 
@@ -332,7 +332,7 @@ void BmcCpldComponent::check_module() {
   return;
 }
 
-int BmcCpldComponent::update(string image)
+int BmcCpldComponent::update(const string& image)
 {
   int ret = 0;
   image_info image_sts;
@@ -343,19 +343,19 @@ int BmcCpldComponent::update(string image)
   if ( image_sts.result == false ) {
     remove(image_sts.new_path.c_str());
     return FW_STATUS_FAILURE;
-  } 
+  }
 
   //use the new path
-  image = image_sts.new_path;
+  string new_image = image_sts.new_path;
 
-  ret = update_cpld(image);
+  ret = update_cpld(new_image);
 
   //remove the tmp file
-  remove(image.c_str());
+  remove(new_image.c_str());
   return ret;
 }
 
-int BmcCpldComponent::fupdate(string image) 
+int BmcCpldComponent::fupdate(string image)
 {
   int ret = 0;
   image_info image_sts;

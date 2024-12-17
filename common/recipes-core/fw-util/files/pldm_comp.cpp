@@ -106,7 +106,7 @@ int PldmComponent::pldm_update(const string& image, bool is_standard_descriptor,
   return ret;
 }
 
-int PldmComponent::check_image(string image) {
+int PldmComponent::check_image(const string& image) {
   if (oem_parse_pldm_package(image.c_str())) {
     cerr << "PLDM header is invalid." << endl;
     return FW_STATUS_FAILURE;
@@ -130,7 +130,7 @@ int PldmComponent::check_image(string image) {
       data.ptr = reinterpret_cast<const uint8_t*>(descriptor.data.data());
       data.length = descriptor.data.length();
 
-      int rc = decode_vendor_defined_descriptor_value(data.ptr, data.length, 
+      int rc = decode_vendor_defined_descriptor_value(data.ptr, data.length,
                 &descriptorTitleStrType, &descriptorTitleStr, &descriptorData);
       if (rc) {
         cerr << "Decoding vendor descriptor type, length and value failed. "
@@ -139,11 +139,11 @@ int PldmComponent::check_image(string image) {
       }
 
       auto vendorDescriptorTitle = string(
-        reinterpret_cast<const char*>(descriptorTitleStr.ptr), 
+        reinterpret_cast<const char*>(descriptorTitleStr.ptr),
         descriptorTitleStr.length);
-      
+
       auto vendorDescriptorData = string(
-        reinterpret_cast<const char*>(descriptorData.ptr), 
+        reinterpret_cast<const char*>(descriptorData.ptr),
         descriptorData.length);
 
       if (vendorDescriptorTitle == "Platform") {
@@ -162,7 +162,7 @@ int PldmComponent::check_image(string image) {
     }
   }
 
-  // multiple component images should have the same vendor, so use the first 
+  // multiple component images should have the same vendor, so use the first
   // one as default to get the vendor ID if COMPONENT_VERIFY_SKIPPED
   auto& comp_image_info = comp_infos.front();
   if (comp_info.component_id != COMPONENT_VERIFY_SKIPPED) {
@@ -187,7 +187,7 @@ int PldmComponent::check_image(string image) {
   return check_header_info(img_info);
 }
 
-int PldmComponent::update_internal(string image, bool force) {
+int PldmComponent::update_internal(const string& image, bool force) {
   int ret;
 
   if (!force && !has_standard_descriptor) {
@@ -216,13 +216,13 @@ int PldmComponent::update_internal(string image, bool force) {
     }
   }
 
-  syslog(LOG_CRIT, "FRU %s Component %s upgrade initiated", 
+  syslog(LOG_CRIT, "FRU %s Component %s upgrade initiated",
     fru.c_str(), component.c_str());
 
-  ret = oem_pldm_fw_update(bus, eid, image.c_str(), has_standard_descriptor, 
+  ret = oem_pldm_fw_update(bus, eid, image.c_str(), has_standard_descriptor,
                            component, wait_apply_time, component_identifier);
   if (ret) {
-    syslog(LOG_CRIT, "FRU %s Component %s upgrade fail", 
+    syslog(LOG_CRIT, "FRU %s Component %s upgrade fail",
       fru.c_str(), component.c_str());
     return ret;
   }
@@ -232,7 +232,7 @@ int PldmComponent::update_internal(string image, bool force) {
     cerr << "Failed to update version cache." << endl;
   }
 
-  syslog(LOG_CRIT, "FRU %s Component %s upgrade completed", 
+  syslog(LOG_CRIT, "FRU %s Component %s upgrade completed",
     fru.c_str(), component.c_str());
   return ret;
 }
@@ -257,21 +257,21 @@ int PldmComponent::update_version_cache() {
       activeVersion = firmwareParameters.activeCompImageSetVersion;
       pendingVersion = firmwareParameters.pendingCompImageSetVersion;
     }
-    
+
     activeVersion = activeVersion.empty() ? INVALID_VERSION : activeVersion;
     pendingVersion = pendingVersion.empty() ? INVALID_VERSION : pendingVersion;
     kv::set(activeVersionKey, activeVersion, kv::region::temp);
     kv::set(pendingVersionKey, pendingVersion, kv::region::temp);
   } catch(const exception& e) {
-    syslog(LOG_CRIT, "FRU %s failed to update %s version cache. %s", 
+    syslog(LOG_CRIT, "FRU %s failed to update %s version cache. %s",
       fru.c_str(), component.c_str(), e.what());
     return FW_STATUS_FAILURE;
   }
-  
+
   return FW_STATUS_SUCCESS;
 }
 
-int PldmComponent::update(string image) {
+int PldmComponent::update(const string& image) {
   return update_internal(image, false);
 }
 
@@ -284,7 +284,7 @@ int PldmComponent::get_version(json& j) {
   try {
     activeVersion = kv::get(activeVersionKey, kv::region::temp);
     pendingVersion = kv::get(pendingVersionKey, kv::region::temp);
-    if (activeVersion.find(INVALID_VERSION) != string::npos || 
+    if (activeVersion.find(INVALID_VERSION) != string::npos ||
         pendingVersion.find(INVALID_VERSION) != string::npos) {
       throw runtime_error("Version is invalid");
     }
@@ -301,7 +301,7 @@ int PldmComponent::get_version(json& j) {
 
 int PldmComponent::print_version() {
   auto component_name = component;
-  transform(component_name.begin(), component_name.end(), 
+  transform(component_name.begin(), component_name.end(),
             component_name.begin(), ::toupper);
   try {
     json j;
@@ -310,12 +310,12 @@ int PldmComponent::print_version() {
     }
     auto activeVersion = kv::get(activeVersionKey, kv::region::temp);
     auto pendingVersion = kv::get(pendingVersionKey, kv::region::temp);
-    transform(activeVersion.begin(), activeVersion.end(), 
+    transform(activeVersion.begin(), activeVersion.end(),
               activeVersion.begin(), ::toupper);
-    transform(pendingVersion.begin(), pendingVersion.end(), 
+    transform(pendingVersion.begin(), pendingVersion.end(),
               pendingVersion.begin(), ::toupper);
     cout << component_name << " Version: " << activeVersion << endl;
-    cout << component_name << " Version after activation: " 
+    cout << component_name << " Version after activation: "
                            << pendingVersion << endl;
   } catch(const exception& e) {
     cout << component_name << " Version: NA (" << e.what() << ")" << endl;

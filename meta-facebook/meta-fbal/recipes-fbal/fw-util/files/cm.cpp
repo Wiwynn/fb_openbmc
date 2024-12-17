@@ -18,7 +18,7 @@ class CmComponent : public McuFwComponent {
     int print_version();
     int update(const string& image, bool force);
     void set_update_ongoing(int timeout);
-    int update(string image) {
+    int update(const string& image) {
       return update(image, false);
     }
     int fupdate(string image) {
@@ -32,10 +32,10 @@ class CmBlComponent : public McuFwBlComponent {
   uint8_t target_id;
   public:
     CmBlComponent(const string &fru, const string &comp, uint8_t bus, uint8_t addr, uint8_t target)
-      : McuFwBlComponent(fru, comp, bus, addr, target), bus_id(bus), 
+      : McuFwBlComponent(fru, comp, bus, addr, target), bus_id(bus),
                          slv_addr(addr), target_id(target) {}
     int print_version();
-    int update(string image);
+    int update(const string& image);
     void set_update_ongoing(int timeout);
 };
 
@@ -71,7 +71,7 @@ int CmBlComponent::print_version() {
   return 0;
 }
 
-static uint32_t 
+static uint32_t
 pal_get_reg_base(uint8_t i2c_bus_num)
 {
   if (i2c_bus_num < 7) {
@@ -112,7 +112,7 @@ static int set_fscd (bool setting)
   uint8_t tar_bmc_addr;
   uint8_t setting_uint8;
   char cmd[100] = {0};
-  
+
   // Turn on/off itself's fsc demon.
   const char* setting_str = (setting) ? "start":"force-stop";
   sprintf(cmd, "sv %s fscd", setting_str);
@@ -136,26 +136,26 @@ static int set_fscd (bool setting)
 
 int CmComponent::update(const string& image, bool force)
 {
-  
+
   int ret;
 
   set_fscd (false);
   set_i2c_clock (bus_id, 100);
-  ret = mcu_update_firmware(bus_id, slv_addr, (const char *)image.c_str(), 
+  ret = mcu_update_firmware(bus_id, slv_addr, image.c_str(),
                            (const char *)pld_name.c_str(), type, force);
 
   set_i2c_clock (bus_id, 400);
-  set_fscd (true); 
+  set_fscd (true);
   if (ret != 0) {
      return FW_STATUS_FAILURE;
   }
 
   return FW_STATUS_SUCCESS;
 }
- 
-int CmBlComponent::update(string image)
+
+int CmBlComponent::update(const string& image)
 {
-  
+
   int ret;
 
   set_i2c_clock (bus_id, 100);
@@ -169,7 +169,7 @@ int CmBlComponent::update(string image)
   return FW_STATUS_SUCCESS;
 }
 
-static int set_pdb_update_ongoing (int timeout) 
+static int set_pdb_update_ongoing (int timeout)
 {
   int ret;
   uint16_t timeout_16 = timeout;
@@ -179,14 +179,14 @@ static int set_pdb_update_ongoing (int timeout)
     printf("library: set_fru_update_ongoing failed\n");
     return -1;
   }
-  
+
   ret = cmd_mb_set_fw_update_ongoing (tar_bmc_addr, FRU_PDB, timeout_16);
   if ( ret ) {
-    printf("Set 0x%02X 's fru(%d) fw update timeout (0x%04X) failed (Error Code : %d)\n", 
+    printf("Set 0x%02X 's fru(%d) fw update timeout (0x%04X) failed (Error Code : %d)\n",
           tar_bmc_addr, FRU_PDB, timeout_16, ret);
     return -1;
   }
-  
+
   return 0;
 }
 

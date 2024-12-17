@@ -13,7 +13,7 @@ class NicExtComponent : public NicComponent {
     NicExtComponent(std::string fru, std::string comp, std::string key, uint8_t fruid, uint8_t idx, uint8_t chid = 0x00)
       : NicComponent(fru, comp, key), _vid_key(key), _fru_id(fruid), _if_idx(idx), _ch_id(chid) {}
     int get_version(json& j);
-    int update(std::string img);
+    int update(const std::string& img) override;
 };
 
 #endif

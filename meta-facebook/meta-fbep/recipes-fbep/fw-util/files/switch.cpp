@@ -37,7 +37,7 @@ int PAXComponent::print_version()
   return ret;
 }
 
-int PAXComponent::update(string image)
+int PAXComponent::update(const string& image)
 {
   int ret, rc;
   int i, max_retry = 3;

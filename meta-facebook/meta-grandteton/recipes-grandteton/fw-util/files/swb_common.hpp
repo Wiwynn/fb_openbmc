@@ -19,7 +19,7 @@ class SwbBicFwComponent : public Component {
   public:
     SwbBicFwComponent(const string& fru, const string& comp, uint8_t bus, uint8_t eid, uint8_t target)
         : Component(fru, comp), bus(bus), eid(eid), target(target) {}
-    int update(string image) override;
+    int update(const string& image) override;
     int fupdate(string image) override;
     int get_version(json& j) override;
 };
@@ -32,7 +32,7 @@ class SwbBicFwRecoveryComponent : public Component {
     SwbBicFwRecoveryComponent(const string& fru, const string& comp, uint8_t bus, uint8_t eid, uint8_t target)
         :Component(fru, comp), bus(bus), eid(eid), target(target) {}
 
-  int update(string image) override;
+  int update(const string& image) override;
   int fupdate(string image) override;
 };
 
@@ -43,7 +43,7 @@ class SwbPexFwComponent : public SwbBicFwComponent {
     SwbPexFwComponent(const string& fru, const string& comp, uint8_t bus, uint8_t eid, uint8_t target)
         :SwbBicFwComponent(fru, comp, bus, eid, target) {}
     int get_version(json& j) override;
-    int update(string image);
+    int update(const string& image);
     int fupdate(string image);
 };
 
@@ -55,7 +55,7 @@ class SwbVrComponent : public VrComponent {
     SwbVrComponent(const string &fru, const string &comp, const string &dev_name)
         :VrComponent(fru, comp, dev_name), name(dev_name) {}
     int fupdate(string image);
-    int update(string image);
+    int update(const string& image);
 };
 
 // Artemis ACB PCIE SWITCH Component
@@ -91,7 +91,7 @@ class GTSwbBicFwComponent : public SwbBicFwComponent, public GTPldmComponent {
                         uint8_t target, const signed_header_t& info) :
                         SwbBicFwComponent(fru, comp, bus, eid, target),
                         GTPldmComponent(info, fru, comp, bus, eid){}
-    int update(string /*image*/) override;
+    int update(const string& /*image*/) override;
     int fupdate(string /*image*/) override;
     int get_version(json& j) override;
     int comp_update(const string& image) override { return SwbBicFwComponent::update(image); }
@@ -105,7 +105,7 @@ class GTSwbPexFwComponent : public SwbPexFwComponent, public GTPldmComponent {
                         uint8_t eid, uint8_t target, const signed_header_t& info):
                         SwbPexFwComponent(fru, comp, bus, eid, target),
                         GTPldmComponent(info, fru, comp, bus, eid){}
-    int update(string /*image*/) override;
+    int update(const string& /*image*/) override;
     int fupdate(string /*image*/) override;
     int get_version(json& /*json*/) override;
     int comp_update(const string& image) override { return SwbPexFwComponent::update(image); }
@@ -137,7 +137,7 @@ class GTSwbVrComponent : public SwbVrComponent, public GTPldmComponent {
                         }
                       }
                     }
-    int update(string /*image*/) override;
+    int update(const string& /*image*/) override;
     int fupdate(string /*image*/) override;
     int get_version(json& /*json*/) override;
     int comp_update(const string& image) override { return SwbVrComponent::update(image); }
@@ -156,7 +156,7 @@ class GTSwbCpldComponent : public CpldComponent, public GTPldmComponent {
                       uint8_t eid, uint8_t target, const signed_header_t& info):
                       CpldComponent(fru, comp, type, bus, addr, cpld_xfer),
                       GTPldmComponent(info, fru, comp, bus, eid), target(target){}
-    int update(string /*image*/) override;
+    int update(const string& /*image*/) override;
     int fupdate(string /*image*/) override;
     int get_version(json& /*json*/) override;
     int comp_update(const string& image) override { return CpldComponent::update(image); }
@@ -169,7 +169,7 @@ class SwbPLDMNicComponent : public PLDMNicComponent {
     SwbPLDMNicComponent(const std::string& fru, const std::string& comp,
                         const std::string& key, uint8_t eid, uint8_t bus):
       PLDMNicComponent(fru, comp, key, eid, bus) {}
-    int update(string /*image*/) override;
+    int update(const string& /*image*/) override;
 };
 
 //Artemis VR Component
@@ -211,17 +211,17 @@ class GtaBicFwRecoveryComponent : public Component {
     GtaBicFwRecoveryComponent(const string& fru, const string& comp, uint8_t bus, uint8_t eid, uint8_t target)
         :Component(fru, comp), bus(bus), eid(eid), target(target) {}
 
-  int update(string image) override;
+  int update(const string& image) override;
   int fupdate(string image) override;
 };
 
 class GTAASICComponent : public PldmComponent {
   public:
-    GTAASICComponent (const string& fru, const string& comp, uint8_t bus, uint8_t eid, uint8_t component_identifier, 
+    GTAASICComponent (const string& fru, const string& comp, uint8_t bus, uint8_t eid, uint8_t component_identifier,
         int wait_apply_time)
 	: PldmComponent(fru, comp, bus, eid, component_identifier, wait_apply_time) {}
     int print_version() { return FW_STATUS_NOT_SUPPORTED; }
     int get_version(json& /*json*/);
-    int update(std::string image); // firmware update
+    int update(const std::string& image); // firmware update
     int fupdate(std::string image); // force firmware update
 };

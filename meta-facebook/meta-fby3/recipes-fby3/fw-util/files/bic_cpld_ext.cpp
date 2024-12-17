@@ -10,7 +10,7 @@
 
 using namespace std;
 
-int CpldExtComponent::update_internal(string& image, bool force) {
+int CpldExtComponent::update_internal(const string& image, bool force) {
   int m2_prsnt;
   int ret = 0;
   int intf = FEXP_BIC_INTF;
@@ -50,7 +50,7 @@ int CpldExtComponent::update_internal(string& image, bool force) {
   return ret;
 }
 
-int CpldExtComponent::update(string image) {
+int CpldExtComponent::update(const string& image) {
   return update_internal(image, false);
 }
 

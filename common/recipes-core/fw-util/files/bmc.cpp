@@ -18,11 +18,11 @@ using namespace std;
 #define ROMX_SIZE                   (84 * 1024)
 #define META_SIZE                   (64 * 1024)
 
-int BmcComponent::update(string image_path)
+int BmcComponent::update(const string& image)
 {
   string dev;
   int ret;
-  string flash_image = image_path;
+  string flash_image = image;
   stringstream cmd_str;
   string comp = this->component();
   char key[MAX_KEY_LEN] = {0}, value[MAX_VALUE_LEN] = {0};
@@ -32,9 +32,9 @@ int BmcComponent::update(string image_path)
     return FW_STATUS_NOT_SUPPORTED;
   }
 
-  if (is_valid(image_path, false) == false) {
-    sys().error << image_path << " is not a valid BMC image for " << sys().name() << endl;
-    syslog(LOG_CRIT, "Updating %s Fail. File: %s is not a valid image", comp.c_str(), image_path.c_str());
+  if (is_valid(image, false) == false) {
+    sys().error << image<< " is not a valid BMC image for " << sys().name() << endl;
+    syslog(LOG_CRIT, "Updating %s Fail. File: %s is not a valid image", comp.c_str(), image.c_str());
     return FW_STATUS_FAILURE;
   }
 
@@ -47,20 +47,20 @@ int BmcComponent::update(string image_path)
 
   sys().output << "Flashing to device: " << dev << endl;
   if (_skip_offset > 0 || _writable_offset > 0) {
-    flash_image = image_path + "-tmp";
+    flash_image = image + "-tmp";
     // Ensure that we are not overwriting an existing file.
     while (access( flash_image.c_str(), F_OK  ) != -1) {
       flash_image.append("_");
     }
     // Open input image and seek skipping to the writable offset.
-    int fd_r = open(image_path.c_str(), O_RDONLY);
+    int fd_r = open(image.c_str(), O_RDONLY);
     if (fd_r < 0) {
-      sys().error << "Cannot open " << image_path << " for reading" << endl;
+      sys().error << "Cannot open " << image<< " for reading" << endl;
       return FW_STATUS_FAILURE;
     }
     if (lseek(fd_r, _skip_offset, SEEK_SET) != (off_t)_skip_offset) {
       close(fd_r);
-      sys().error << "Cannot seek " << image_path << endl;
+      sys().error << "Cannot seek " << image << endl;
       return FW_STATUS_FAILURE;
     }
     // create tmp file for writing.

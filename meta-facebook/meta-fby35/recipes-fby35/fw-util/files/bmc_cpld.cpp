@@ -162,7 +162,7 @@ int BmcCpldComponent::update_cpld(const string& image, bool force) {
   return ret;
 }
 
-int BmcCpldComponent::update(const string image)
+int BmcCpldComponent::update(const string& image)
 {
   return update_cpld(image, false);
 }

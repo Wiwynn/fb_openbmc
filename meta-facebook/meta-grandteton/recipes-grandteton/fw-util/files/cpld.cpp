@@ -79,7 +79,7 @@ error_exit:
   return ret;
 }
 
-int CpldComponent::update(string image) {
+int CpldComponent::update(const string& image) {
   return _update(image.c_str(), 1, attr);
 }
 
@@ -116,7 +116,7 @@ int CpldComponent::get_version(json& j) {
   return FW_STATUS_SUCCESS;
 }
 
-int GTCpldComponent::update(string image) {
+int GTCpldComponent::update(const string& image) {
   return signed_image_update(image, false);
 }
 

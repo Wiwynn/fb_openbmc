@@ -21,7 +21,7 @@ class BmcBiosComponent : public BiosComponent {
                      const std::string &devpath, const std::string &dev, const std::string &shadow,
                      bool level, const std::string &verp , const std::string &method) :
       BiosComponent(fru, comp, mtd, devpath, dev, shadow, level, verp , method) {}
-    int update(std::string image) override;
+    int update(const std::string& image) override;
     int fupdate(std::string image) override;
     int unbindDevice();
     int check_image(const char *path) override;
@@ -66,7 +66,7 @@ void BmcBiosComponent::set_ME_Mode(uint8_t mode) {
   }
 }
 
-int BmcBiosComponent::update(string image) {
+int BmcBiosComponent::update(const string& image) {
   int res = 0;
   res = unbindDevice();
   if (res < 0) {

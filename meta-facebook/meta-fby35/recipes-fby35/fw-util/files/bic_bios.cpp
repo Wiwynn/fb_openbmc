@@ -253,7 +253,7 @@ int BiosComponent::update_internal(const std::string& image, int fd, bool force)
   return ret;
 }
 
-int BiosComponent::update(const string image) {
+int BiosComponent::update(const string& image) {
   return update_internal(image, -1, false /* force */);
 }
 

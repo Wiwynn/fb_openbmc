@@ -22,7 +22,7 @@ int PLDMNicComponent::get_version(json& j) {
   return FW_STATUS_SUCCESS;
 }
 
-int PLDMNicComponent::update(string image) {
+int PLDMNicComponent::update(const string& image) {
   int ret;
 
   syslog(LOG_CRIT, "Component %s upgrade initiated", _component.c_str());

@@ -6,7 +6,7 @@
 
 using namespace std;
 
-int McuFwComponent::update(string image)
+int McuFwComponent::update(const string& image)
 {
   int ret;
   string comp = this->component();
@@ -21,7 +21,7 @@ int McuFwComponent::update(string image)
   return FW_STATUS_SUCCESS;
 }
 
-int McuFwBlComponent::update(string image)
+int McuFwBlComponent::update(const string& image)
 {
   int ret;
   string comp = this->component();

@@ -233,7 +233,7 @@ int BmcCpldComponent::update_cpld(string image, bool force, bool sign)
   return ret;
 }
 
-int BmcCpldComponent::update(string image)
+int BmcCpldComponent::update(const string& image)
 {
   image_info image_sts = check_image(image, false);
 

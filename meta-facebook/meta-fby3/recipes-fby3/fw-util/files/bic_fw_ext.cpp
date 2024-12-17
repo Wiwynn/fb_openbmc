@@ -10,7 +10,7 @@
 
 using namespace std;
 
-int BicFwExtComponent::update_internal(string image, bool force) {
+int BicFwExtComponent::update_internal(const string& image, bool force) {
   int ret = 0;
   try {
      pal_set_delay_after_fw_update_ongoing();
@@ -39,7 +39,7 @@ int BicFwExtComponent::update_internal(string image, bool force) {
   return ret;
 }
 
-int BicFwExtComponent::update(string image) {
+int BicFwExtComponent::update(const string& image) {
   return update_internal(image, false);
 }
 
@@ -131,7 +131,7 @@ int BicFwExtBlComponent::update_internal(string image, bool force) {
   return ret;
 }
 
-int BicFwExtBlComponent::update(string image) {
+int BicFwExtBlComponent::update(const string& image) {
   return update_internal(image, false);
 }
 

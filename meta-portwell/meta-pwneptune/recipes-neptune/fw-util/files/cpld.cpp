@@ -33,7 +33,7 @@ class CpldComponent : public Component {
       system("devmem 0x1e6e4008 32 0");
       return 0;
     }
-    int update(string image) {
+    int update(const string& image) {
       int ret;
       if ( !cpld_intf_open() ) {
         ret = cpld_program((char *)image.c_str());

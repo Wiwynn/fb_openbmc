@@ -109,7 +109,7 @@ int BiosComponent::check_image(const char *path)
   return 0;
 }
 
-int BiosComponent::update(std::string image, bool force) {
+int BiosComponent::update(const std::string& image, bool force) {
   int retry = 0, poff_retry = 3;
   int ret = 0;
   uint8_t fruid = 1;
@@ -181,7 +181,7 @@ int BiosComponent::update(std::string image, bool force) {
   return ret;
 }
 
-int BiosComponent::update(string image) {
+int BiosComponent::update(const string& image) {
   return update(image, 0);
 }
 

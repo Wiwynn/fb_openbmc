@@ -65,7 +65,7 @@ int NicExtComponent::get_version(json& j) {
   return NicComponent::get_version(j);
 }
 
-int NicExtComponent::update(std::string img)
+int NicExtComponent::update(const std::string& img)
 {
   return upgrade_ncsi_util(img, _ch_id);
 }

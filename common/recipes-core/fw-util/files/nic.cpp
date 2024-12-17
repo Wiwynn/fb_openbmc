@@ -127,7 +127,7 @@ int NicComponent::upgrade_ncsi_util(const std::string& img, int channel)
   return ret;
 }
 
-int NicComponent::update(std::string image)
+int NicComponent::update(const std::string& image)
 {
   return upgrade_ncsi_util(image);
 }

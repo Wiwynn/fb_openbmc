@@ -124,7 +124,7 @@ int VrExtComponent::get_version(json& j)
   return FW_STATUS_SUCCESS;
 }
 
-int VrExtComponent::update(string image)
+int VrExtComponent::update(const string& image)
 {
   int ret = 0;
   try {

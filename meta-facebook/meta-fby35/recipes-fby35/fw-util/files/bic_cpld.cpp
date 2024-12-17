@@ -69,13 +69,13 @@ int CpldComponent::cpld_refresh(uint8_t bus_id, uint8_t addr) {
   int retry = 3;
   int i2cfd = -1;
   int ret = 0;
-  uint8_t tbuf[3] = {0}, rbuf[1] = {0}; 
-  
+  uint8_t tbuf[3] = {0}, rbuf[1] = {0};
+
   i2cfd = i2c_cdev_slave_open(bus_id, addr, I2C_SLAVE_FORCE_CLAIM);
   if (i2cfd < 0) {
     syslog(LOG_WARNING, "%s() Failed to open %d", __func__, bus_id);
     return -1;
-  }    
+  }
   while (retry-- > 0) {
     tbuf[0] = 0x79; // CPLD register
     ret = i2c_rdwr_msg_transfer(i2cfd, addr << 1, tbuf, 3, rbuf, 0);
@@ -218,7 +218,7 @@ int CpldComponent::update_cpld(const string& image, bool force) {
   return ret;
 }
 
-int CpldComponent::update(const string image) {
+int CpldComponent::update(const string& image) {
   return update_cpld(image, false);
 }
 

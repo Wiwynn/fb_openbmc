@@ -78,7 +78,7 @@ int CxlComponent::update_internal(const std::string& image, int fd, bool force) 
   return ret;
 }
 
-int CxlComponent::update(const string image) {
+int CxlComponent::update(const string& image) {
   return update_internal(image, -1, false /* force */);
 }
 

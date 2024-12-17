@@ -31,7 +31,7 @@ class RetimerFwComponent : public Component {
         server(slot_id, fru), expansion(slot_id, fru, brd, fw_comp) {}
     int print_version();
     int get_version(json& j) override;
-    int update(std::string image) override;
+    int update(const std::string& image) override;
     int fupdate(std::string image) override;
 };
 

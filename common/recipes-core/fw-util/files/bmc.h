@@ -15,7 +15,7 @@ class BmcComponent : public Component {
     BmcComponent(std::string fru, std::string comp, std::string mtd, std::string vers = "", size_t w_offset = 0, size_t skip_offset = 0)
       : Component(fru, comp), _mtd_name(mtd), _vers_mtd(vers), _writable_offset(w_offset), _skip_offset(skip_offset) {}
 
-    int update(std::string image);
+    int update(const std::string& image) override;
     int print_version();
     int get_version(json& j) override;
     virtual bool is_valid(const std::string &image, bool pfr_active);

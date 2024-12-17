@@ -5,13 +5,13 @@ class HmcComponent : public Component {
     HmcComponent(const std::string& fru, const std::string& comp)
       : Component(fru, comp) {}
 
-    int update(std::string image);
+    int update(const std::string& image);
     int fupdate(std::string image);
     int print_version();
 };
 
 
-int HmcComponent::update(const std::string image)
+int HmcComponent::update(const std::string& image)
 {
   std::stringstream cmd_str;
   int ret;

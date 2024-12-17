@@ -17,7 +17,7 @@ class CapsuleComponent : public Component {
   public:
     CapsuleComponent(string fru, string comp, uint8_t _slot_id, uint8_t _fw_comp)
       : Component(fru, comp), slot_id(_slot_id), fw_comp(_fw_comp), server(_slot_id, fru) {}
-    int update(string image);
+    int update(const string& image);
     int fupdate(string image);
     int print_version();
 };

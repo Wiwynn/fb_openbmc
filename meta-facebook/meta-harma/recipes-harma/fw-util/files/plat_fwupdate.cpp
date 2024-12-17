@@ -51,7 +51,7 @@ class CpldComponent : public Component {
     static int check_cpld_address(uint8_t bus, uint8_t addr);
     static bool is_cpld_evt();
 
-    int update(std::string image) override;
+    int update(const std::string& image) override;
     int fupdate(std::string image) override;
     int get_version(json& j) override;
 };
@@ -94,7 +94,7 @@ error_exit:
   return ret;
 }
 
-int CpldComponent::update(string image) {
+int CpldComponent::update(const string& image) {
   return _update(image.c_str(), attr);
 }
 
@@ -183,7 +183,7 @@ class RetimerComponent : public Component {
       const int bus)
       : Component(fru, comp), _bus(bus) {}
 
-    int update(std::string image) {
+    int update(const std::string& image) {
       int ret = -1;
 
       ret = AriestFwUpdate(_bus, addr, image.c_str());

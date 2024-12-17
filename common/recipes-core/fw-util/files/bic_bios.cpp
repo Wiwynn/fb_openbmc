@@ -8,7 +8,7 @@
 
 using namespace std;
 
-int BiosComponent::update(string image) {
+int BiosComponent::update(const string& image) {
   int ret;
   uint8_t status;
   int retry_count = 0;

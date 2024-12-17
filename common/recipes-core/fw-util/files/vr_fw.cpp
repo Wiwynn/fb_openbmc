@@ -80,7 +80,7 @@ int VrComponent::get_version(json& j) {
   return FW_STATUS_SUCCESS;
 }
 
-int VrComponent::_update(string image, bool force) {
+int VrComponent::_update(const string& image, bool force) {
   int ret;
   string comp = this->component();
 
@@ -101,7 +101,7 @@ int VrComponent::_update(string image, bool force) {
   return ret;
 }
 
-int VrComponent::update(string image) {
+int VrComponent::update(const string& image) {
   return _update(image, 0);
 }
 

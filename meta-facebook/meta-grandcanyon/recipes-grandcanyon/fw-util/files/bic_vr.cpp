@@ -80,7 +80,7 @@ int VrComponent::get_version(json& j) {
         j["VERSION"] = "not_present";
       } else {
         j["VERSION"] = "error_returned";
-      } 
+      }
     }
   }
   return FW_STATUS_SUCCESS;
@@ -107,7 +107,7 @@ int VrComponent::print_version() {
   return FW_STATUS_SUCCESS;
 }
 
-int VrComponent::update(string image) { 
+int VrComponent::update(const string& image) {
   int ret = 0;
 
   try {

@@ -333,7 +333,7 @@ int get_dev_ver(uint8_t bus, uint8_t eid, uint8_t target, vector<uint8_t> &data)
   return rc;
 }
 
-int SwbBicFwComponent::update(string image)
+int SwbBicFwComponent::update(const string& image)
 {
   return fw_update_proc(image, false, bus, eid, target, this->alias_component(), this->alias_fru());
 }
@@ -410,7 +410,7 @@ bic_recovery_init(string image, bool /*force*/) {
 }
 
 //Recovery BIC Image
-int SwbBicFwRecoveryComponent::update(string image)
+int SwbBicFwRecoveryComponent::update(const string& image)
 {
   int ret;
 
@@ -598,7 +598,7 @@ int SwbPexFwComponent::fupdate(string image) {
   return update(image);
 }
 
-int SwbPexFwComponent::update(string image) {
+int SwbPexFwComponent::update(const string& image) {
 
   uint8_t fruid = 0;
   uint8_t image_count = 0;
@@ -721,7 +721,7 @@ int SwbVrComponent::update_proc(string image, bool force) {
   return ret;
 }
 
-int SwbVrComponent::update(string image) {
+int SwbVrComponent::update(const string& image) {
   int ret;
 
   ret = set_swb_snr_polling(0x00);
@@ -877,7 +877,7 @@ void bic_update_post_actions(const string& fru) {
   return;
 }
 
-int GTSwbBicFwComponent::update(string image)
+int GTSwbBicFwComponent::update(const string& image)
 {
   int ret = 0;
 
@@ -899,7 +899,7 @@ int GTSwbBicFwComponent::get_version(json& j) {
   return gt_get_version(j, SwbBicFwComponent::alias_fru(), SwbBicFwComponent::alias_component(), target);
 }
 
-int GTSwbPexFwComponent::update(string image)
+int GTSwbPexFwComponent::update(const string& image)
 {
   return try_pldm_update(image, false, target);
 }
@@ -913,7 +913,7 @@ int GTSwbPexFwComponent::get_version(json& j) {
   return gt_get_version(j, SwbPexFwComponent::alias_fru(), SwbPexFwComponent::alias_component(), target);
 }
 
-int GTSwbVrComponent::update(string image)
+int GTSwbVrComponent::update(const string& image)
 {
   return try_pldm_update(image, false);
 }
@@ -990,7 +990,7 @@ int GTSwbVrComponent::comp_verify()
     return 0;
 }
 
-int GTSwbCpldComponent::update(string image)
+int GTSwbCpldComponent::update(const string& image)
 {
   return try_pldm_update(image, false);
 }
@@ -1057,7 +1057,7 @@ bic_sensor_polling_enabled(const vector<uint8_t>& sensor_nums, bool enable)
   return rc;
 }
 
-int SwbPLDMNicComponent::update(string image)
+int SwbPLDMNicComponent::update(const string& image)
 {
   int ret = 0;
   auto& map = pldm_signed_info::swb_nic_t;
@@ -1254,7 +1254,7 @@ error_exit:
   return ret;
 }
 
-int GtaBicFwRecoveryComponent::update(string image) {
+int GtaBicFwRecoveryComponent::update(const string& image) {
   int ret = 0;
   uint8_t fruid = 0;
 
@@ -1306,7 +1306,7 @@ exit:
   return ret;
 }
 
-int GTAASICComponent::update(std::string image) {
+int GTAASICComponent::update(const std::string& image) {
   uint8_t asic_index = component_identifier - CB_ACCL1_DEV1_COMP;
   bool is_nvme_ready = pal_is_asic_nvme_ready(asic_index);
 
@@ -1323,7 +1323,7 @@ int GTAASICComponent::update(std::string image) {
       cout << "Note: Host can't be used to load boot1 during the update process." << endl;
     }
   }
-  
+
   return pldm_update(image, true, component_identifier);
 }
 

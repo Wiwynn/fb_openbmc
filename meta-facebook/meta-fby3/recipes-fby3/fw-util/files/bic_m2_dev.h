@@ -14,7 +14,7 @@ using namespace std;
 class M2DevComponent : public Component {
   uint8_t slot_id = 0;
   uint8_t fw_comp = 0;
-  string name;  
+  string name;
   Server server;
   ExpansionBoard expansion;
 
@@ -53,9 +53,9 @@ class M2DevComponent : public Component {
   public:
     M2DevComponent(string fru, string comp, uint8_t _slot_id, string _name, uint8_t _fw_comp)
       : Component(fru, comp), slot_id(_slot_id), fw_comp(_fw_comp), name(_name), server(_slot_id, fru), expansion(_slot_id, fru, _name, _fw_comp) {}
-    int update_internal(string image, bool force);
+    int update_internal(const string& image, bool force);
     int fupdate(string image) override;
-    int update(string image) override;
+    int update(const string& image) override;
     int get_version(json& j) override;
 };
 

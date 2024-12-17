@@ -50,7 +50,7 @@ class CpldComponent : public Component {
 
       return 0;
     }
-    int update(string image) {
+    int update(const string& image) {
       int ret = -1;
       uint8_t i, cfm_cnt = 2;
       string comp = this->component();

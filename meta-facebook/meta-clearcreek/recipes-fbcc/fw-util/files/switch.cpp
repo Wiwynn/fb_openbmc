@@ -46,7 +46,7 @@ int PAXComponent::print_version()
   return ret;
 }
 
-int PAXComponent::update(string image)
+int PAXComponent::update(const string& image)
 {
   int ret;
   string comp = this->component();

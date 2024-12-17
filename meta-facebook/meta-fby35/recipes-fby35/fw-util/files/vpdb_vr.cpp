@@ -42,7 +42,7 @@ int VpdbVrComponent::update_internal(const string& image, bool force) {
   return FW_STATUS_SUCCESS;
 }
 
-int VpdbVrComponent::update(const string image) {
+int VpdbVrComponent::update(const string& image) {
   return update_internal(image, false);
 }
 

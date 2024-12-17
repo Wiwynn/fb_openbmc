@@ -21,7 +21,7 @@ class RetimerComponent : public Component {
       const int bus)
       : Component(fru, comp), _bus(bus) {}
 
-    int update(std::string image) {
+    int update(const std::string& image) {
       int ret = -1, lock = -1;
       std::string comp = this->component();
       std::string fru  = this->fru();

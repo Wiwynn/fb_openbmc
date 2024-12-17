@@ -75,12 +75,12 @@ class GTVrComponent : public VrComponent, public SignComponent {
   public:
     GTVrComponent(const string& fru, const string& comp, const string& name,
       signed_header_t sign_info): VrComponent(fru, comp, name), SignComponent(sign_info, fru) {}
-    int update(string image) override;
+    int update(const string& image) override;
     int fupdate(string image) override;
     int component_update(string image, bool force) { return VrComponent::_update(image, force); }
 };
 
-int GTVrComponent::update(string image) {
+int GTVrComponent::update(const string& image) {
   return signed_image_update(image, false);
 }
 int GTVrComponent::fupdate(string image) {

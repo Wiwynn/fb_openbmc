@@ -357,7 +357,7 @@ int CapsuleComponent::bic_update_capsule(string image) {
   return ret;
 }
 
-int CapsuleComponent::update(string image) {
+int CapsuleComponent::update(const string& image) {
   int ret;
   image_info image_sts = check_image(image, false);
 
@@ -367,13 +367,13 @@ int CapsuleComponent::update(string image) {
   }
 
   //use the new path
-  image = image_sts.new_path;
+  string new_image = image_sts.new_path;
 
-  ret = bic_update_capsule(image);
+  ret = bic_update_capsule(new_image);
 
   //remove the tmp file
   if (fw_comp == FW_CPLD_CAPSULE || fw_comp == FW_CPLD_RCVY_CAPSULE) {
-    remove(image.c_str());
+    remove(new_image.c_str());
   }
   return ret;
 }

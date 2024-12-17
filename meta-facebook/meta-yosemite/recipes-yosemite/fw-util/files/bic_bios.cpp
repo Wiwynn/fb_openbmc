@@ -7,7 +7,7 @@
 
 using namespace std;
 
-int BiosComponent::update(string image) {
+int BiosComponent::update(const string& image) {
   int ret;
 
   try {

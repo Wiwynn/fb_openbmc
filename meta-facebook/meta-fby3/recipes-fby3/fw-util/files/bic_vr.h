@@ -15,7 +15,7 @@ class VrComponent : public Component {
     VrComponent(std::string fru, std::string comp, uint8_t _slot_id, uint8_t _fw_comp)
       : Component(fru, comp), slot_id(_slot_id), fw_comp(_fw_comp), server(_slot_id, fru){}
     int print_version() override;
-    int update(std::string image) override;
+    int update(const std::string& image) override;
     int get_version(json& j) override;
 };
 
@@ -31,7 +31,7 @@ class VrExtComponent : public Component {
     VrExtComponent(std::string fru, std::string comp, uint8_t _slot_id, std::string _name, int8_t _fw_comp)
       : Component(fru, comp), slot_id(_slot_id), fw_comp(_fw_comp), name(_name), server(_slot_id, fru), expansion(_slot_id, fru, _name, _fw_comp) {}
     int get_version(json& j) override;
-    int update(std::string image) override;
+    int update(const std::string& image) override;
 };
 
 #endif

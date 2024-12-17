@@ -37,7 +37,7 @@ class CpldComponent : public Component {
       }
       return 0;
     }
-    int update(string image) {
+    int update(const string& image) {
       int ret;
       char key[32]= {0};
 

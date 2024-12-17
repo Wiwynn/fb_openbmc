@@ -14,7 +14,7 @@ class PAXComponent : public GPIOSwitchedSPIMTDComponent {
           spipath = "/sys/bus/spi/drivers/spi-nor";
         }
     int print_version() override;
-    int update(std::string image) override;
+    int update(const std::string& image) override;
 };
 
 #endif

@@ -39,7 +39,7 @@ class CpldComponent : public Component {
       : Component(fru, comp), pld_name(name), pld_type(type),
         attr{bus,addr,CFM_IMAGE_1,CFM0_START_ADDR,CFM0_END_ADDR,ON_CHIP_FLASH_IP_CSR_BASE,ON_CHIP_FLASH_IP_DATA_REG,DUAL_BOOT_IP_BASE,I2C_LITTLE_ENDIAN} {}
     int print_version();
-    int update(string image);
+    int update(const string& image);
 };
 
 int CpldComponent::print_version() {
@@ -88,7 +88,7 @@ int CpldComponent::print_version() {
   return 0;
 }
 
-int CpldComponent::update(string image) {
+int CpldComponent::update(const string& image) {
   int ret = -1, pfr_active;
   uint8_t i, cfm_cnt = 1, rev_id = 0xF;
 

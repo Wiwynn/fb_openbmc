@@ -8,7 +8,7 @@ class BiosComponent : public Component {
   public:
     BiosComponent(string fru, string comp)
       : Component(fru, comp) {}
-    int update(string image) {
+    int update(const string& image) {
       return bios_program(FRU_MB, image.c_str());
     }
     int print_version() {

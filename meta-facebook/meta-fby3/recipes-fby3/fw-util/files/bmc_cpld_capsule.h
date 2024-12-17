@@ -32,6 +32,6 @@ class BmcCpldCapsuleComponent : public Component {
     BmcCpldCapsuleComponent(string fru, string comp, uint8_t type, uint8_t _bus, uint8_t _addr)
       : Component(fru, comp), pld_type(type), bus(_bus), addr(_addr) {}
     int print_version();
-    int update(string image);
+    int update(const string& image);
     int fupdate(string image);
 };

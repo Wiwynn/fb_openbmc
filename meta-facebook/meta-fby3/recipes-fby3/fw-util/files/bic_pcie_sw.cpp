@@ -14,7 +14,7 @@ inline bool is_dev_exist(const char *dev) {
   return ( access( dev, F_OK ) != -1 );
 }
 
-int PCIESWComponent::uart_update(string image) {
+int PCIESWComponent::uart_update(const string& image) {
 #define BRCM_CMD "echo -ne \"\x66\x64\x6c\x20\x30\x20\x30\x20\x79\x0D\" > %s && sleep 2 && lsz -f -X %s < %s > %s"
   constexpr auto MAX_RETRY = 10;
   constexpr auto c2_slot1 = "/dev/serial/by-path/platform-1e6b0000.usb-usb-0:1.3.2.4:1.1-port0";
@@ -67,7 +67,7 @@ int PCIESWComponent::uart_update(string image) {
   return ret;
 }
 
-int PCIESWComponent::update_internal(string& image, bool force) {
+int PCIESWComponent::update_internal(const string& image, bool force) {
   int ret = 0;
   uint8_t board_type = 0xff;
 
@@ -95,7 +95,7 @@ int PCIESWComponent::update_internal(string& image, bool force) {
   return ret;
 }
 
-int PCIESWComponent::update(string image) {
+int PCIESWComponent::update(const string& image) {
   return update_internal(image, FORCE_UPDATE_UNSET);
 }
 
@@ -193,7 +193,7 @@ int PCIESWComponent::print_version() {
   } catch(string& err) {
     // if we failed to get its version, we print FW_2OU_PESW_FW_VER
     printf("%s %s Version: NA (%s)\n", board_name.c_str(), list[FW_2OU_PESW_FW_VER].c_str(), err.c_str());
-    return FW_STATUS_SUCCESS;   
+    return FW_STATUS_SUCCESS;
   }
 
   string pesw_vendor((board_type == GPV3_BRCM_BOARD)?"BRCM":"MCHP");

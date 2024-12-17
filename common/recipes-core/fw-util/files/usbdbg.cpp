@@ -52,7 +52,7 @@ int UsbDbgBlComponent::get_version(json& j) {
   return 0;
 }
 
-int UsbDbgBlComponent::update(string image) {
+int UsbDbgBlComponent::update(const string& image) {
   int ret;
   string comp = this->component();
 

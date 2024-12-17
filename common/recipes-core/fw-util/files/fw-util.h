@@ -74,7 +74,7 @@ class Component {
     virtual bool is_alias(void) { return false; }
     virtual std::string &alias_component(void) { return _component; }
     virtual std::string &alias_fru(void) { return _fru; }
-    virtual int update(std::string /*image*/) { return FW_STATUS_NOT_SUPPORTED; }
+    virtual int update(const std::string& /*image*/) { return FW_STATUS_NOT_SUPPORTED; }
     virtual int update(int /*fd*/, bool /*force*/) { return FW_STATUS_NOT_SUPPORTED; }
     virtual int fupdate(std::string /*image*/) { return FW_STATUS_NOT_SUPPORTED; }
     virtual int update_finish(void) { return FW_STATUS_NOT_SUPPORTED; }
@@ -107,7 +107,7 @@ class AliasComponent : public Component {
     bool is_alias(void) override { return true; }
     std::string &alias_component(void) override { return _target_comp_name; }
     std::string &alias_fru(void) override { return _target_fru; }
-    int update(std::string image) override;
+    int update(const std::string& image) override;
     int fupdate(std::string image) override;
     int dump(std::string image) override;
     int print_version() override;

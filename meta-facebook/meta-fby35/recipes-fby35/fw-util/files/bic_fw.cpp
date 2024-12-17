@@ -170,7 +170,7 @@ int BicFwComponent::update_internal(const string& image, bool force) {
   return ret;
 }
 
-int BicFwComponent::update(const string image) {
+int BicFwComponent::update(const string& image) {
   return update_internal(image, false);
 }
 
@@ -347,7 +347,7 @@ int PldmBicFwComponent::try_pldm_update(const string& image, bool force, uint8_t
   return ret;
 }
 
-int PldmBicFwComponent::update(string image)
+int PldmBicFwComponent::update(const string& image)
 {
   return try_pldm_update(image, false);
 }
