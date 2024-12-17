@@ -10,7 +10,7 @@ int PAXComponent::print_version()
 {
   int ret;
   char ver[MAX_VALUE_LEN] = {0};
-  string comp = this->component();
+  const string& comp = this->component();
   uint8_t board_type = 0;
 
   pal_get_platform_id(&board_type);
@@ -49,7 +49,7 @@ int PAXComponent::print_version()
 int PAXComponent::update(const string& image)
 {
   int ret;
-  string comp = this->component();
+  const string& comp = this->component();
 
   if (comp.find("flash") != string::npos) {
     ret = GPIOSwitchedSPIMTDComponent::update(image);

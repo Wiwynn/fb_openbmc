@@ -44,7 +44,7 @@ std::atomic<int> signal_received{0};
 string exec_name = "Unknown";
 map<string, map<string, Component *, partialLexCompare>, partialLexCompare> * Component::fru_list = NULL;
 
-Component::Component(string fru, string component)
+Component::Component(const string& fru, const string& component)
   : _fru(fru), _component(component), _sys(), update_initiated(false)
 {
   fru_list_setup();
@@ -77,7 +77,7 @@ Component *Component::find_component(string fru, string comp)
   return (*fru_list)[fru][comp];
 }
 
-AliasComponent::AliasComponent(string fru, string comp, string t_fru, string t_comp) :
+AliasComponent::AliasComponent(const string& fru, const string& comp, const string& t_fru, const string& t_comp) :
   Component(fru, comp), _target_fru(t_fru), _target_comp_name(t_comp), _target_comp(NULL)
 {
   // This might not be successful this early.

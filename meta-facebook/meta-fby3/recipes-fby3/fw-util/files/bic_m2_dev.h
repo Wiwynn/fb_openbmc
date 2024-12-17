@@ -51,7 +51,7 @@ class M2DevComponent : public Component {
   private:
     int get_ver_str(string& s, const uint8_t alt_fw_comp);
   public:
-    M2DevComponent(string fru, string comp, uint8_t _slot_id, string _name, uint8_t _fw_comp)
+    M2DevComponent(const string& fru, const string& comp, uint8_t _slot_id, const string& _name, uint8_t _fw_comp)
       : Component(fru, comp), slot_id(_slot_id), fw_comp(_fw_comp), name(_name), server(_slot_id, fru), expansion(_slot_id, fru, _name, _fw_comp) {}
     int update_internal(const string& image, bool force);
     int fupdate(const string& image) override;

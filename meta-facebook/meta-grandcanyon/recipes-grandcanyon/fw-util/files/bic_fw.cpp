@@ -21,7 +21,7 @@ class BicFwComponent : public Component {
     int get_ver_str(string& ver);
     int update_internal(string image, bool force);
   public:
-    BicFwComponent(string fru, string comp, uint8_t _fw_comp)
+    BicFwComponent(const string& fru, const string& comp, uint8_t _fw_comp)
       : Component(fru, comp), fw_comp(_fw_comp), server(FRU_SERVER, fru) {}
     int update(const string& image);
     int fupdate(const string& image);
@@ -37,7 +37,7 @@ class BicFwBlComponent : public Component {
     int get_ver_str(string& ver);
     int update_internal(string image, bool force);
   public:
-    BicFwBlComponent(string fru, string comp, uint8_t _fw_comp)
+    BicFwBlComponent(const string& fru, const string& comp, uint8_t _fw_comp)
       : Component(fru, comp), fw_comp(_fw_comp), server(FRU_SERVER, fru) {}
     int update(const string& image);
     int fupdate(const string& image);

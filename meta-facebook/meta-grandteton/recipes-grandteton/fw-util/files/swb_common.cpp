@@ -702,7 +702,7 @@ int set_swb_snr_polling (uint8_t status) {
 
 int SwbVrComponent::update_proc(string image, bool force) {
   int ret;
-  string comp = this->component();
+  const string& comp = this->component();
 
   if (vr_probe() < 0) {
     cout << "VR probe failed!" << endl;

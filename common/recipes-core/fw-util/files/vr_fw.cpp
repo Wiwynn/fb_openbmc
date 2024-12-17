@@ -82,7 +82,7 @@ int VrComponent::get_version(json& j) {
 
 int VrComponent::_update(const string& image, bool force) {
   int ret;
-  string comp = this->component();
+  const string& comp = this->component();
 
   if (vr_probe() < 0) {
     cout << "VR probe failed!" << endl;

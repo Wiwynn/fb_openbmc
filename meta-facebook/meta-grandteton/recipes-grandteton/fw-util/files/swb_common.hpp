@@ -68,8 +68,8 @@ class AcbPeswFwComponent : public SwbPexFwComponent {
 
 class GTPldmComponent : public PldmComponent {
   protected:
-    std::string _fru;
-    std::string _comp;
+    const std::string _fru;
+    const std::string _comp;
     string comp_verify_str{};
     int is_pldm_info_valid();
 

@@ -24,7 +24,7 @@ int BmcComponent::update(const string& image)
   int ret;
   string flash_image = image;
   stringstream cmd_str;
-  string comp = this->component();
+  const string& comp = this->component();
   char key[MAX_KEY_LEN] = {0}, value[MAX_VALUE_LEN] = {0};
 
   if (_mtd_name == "") {

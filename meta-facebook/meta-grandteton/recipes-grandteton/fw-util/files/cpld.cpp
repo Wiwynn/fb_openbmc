@@ -55,8 +55,8 @@ cpld_pldm_wr(uint8_t bus, uint8_t addr,
 
 int CpldComponent::_update(const char *path, uint8_t is_signed, i2c_attr_t attr ) {
   int ret = -1;
-  string comp = this->component();
-  string fru  = this->fru();
+  const string& comp = this->component();
+  const string& fru  = this->fru();
 
   syslog(LOG_CRIT, "%s component %s%s upgrade initiated", fru.c_str(), comp.c_str(), is_signed? "": " force");
   if (cpld_intf_open(pld_type, INTF_I2C, &attr)) {
@@ -91,10 +91,10 @@ int CpldComponent::get_version(json& j) {
   int ret = -1;
   uint8_t ver[4];
   char strbuf[MAX_VALUE_LEN];
-  string comp = this->component();
-  string fru  = this->fru();
-  transform(comp.begin(), comp.end(),comp.begin(), ::toupper);
-  transform(fru.begin(), fru.end(),fru.begin(), ::toupper);
+  string comp(this->component());
+  string fru(this->fru());
+  transform(comp.begin(), comp.end(), comp.begin(), ::toupper);
+  transform(fru.begin(), fru.end(), fru.begin(), ::toupper);
   if (pal_is_artemis()) {
     j["PRETTY_COMPONENT"] = fru + " " + comp;
   } else {

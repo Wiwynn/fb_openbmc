@@ -13,7 +13,7 @@ class VrComponent : public Component {
   Server server;
 
  public:
-  VrComponent(string fru, string comp, uint8_t _slot_id)
+  VrComponent(const string& fru, const string& comp, uint8_t _slot_id)
       : Component(fru, comp), slot_id(_slot_id), server(_slot_id, fru) {
     int slot_type = fby2_get_slot_type(slot_id);
     if (slot_type != SLOT_TYPE_SERVER && slot_type != SLOT_TYPE_GPV2) {

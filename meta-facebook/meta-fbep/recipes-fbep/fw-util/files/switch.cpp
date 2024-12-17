@@ -6,7 +6,7 @@ int PAXComponent::print_version()
 {
   int ret;
   char ver[MAX_VALUE_LEN] = {0};
-  string comp = this->component();
+  const string& comp = this->component();
 
   if (comp.find("flash") != string::npos) {
     if(pal_check_switch_config()) {
@@ -43,7 +43,7 @@ int PAXComponent::update(const string& image)
   int i, max_retry = 3;
   bool use_gpio = false;
 
-  string comp = this->component();
+  const string& comp = this->component();
 
   if (comp.find("flash") != string::npos) {
     for (i = 1; i <= max_retry; i++) {

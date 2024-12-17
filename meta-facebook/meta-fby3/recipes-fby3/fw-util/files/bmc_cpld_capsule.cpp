@@ -18,11 +18,11 @@ using namespace std;
 
 image_info BmcCpldCapsuleComponent::check_image(string image, bool force) {
   uint8_t bmc_location = 0;
-  string fru_name = fru();
+  const string& fru_name = fru();
   string bmc_str = "bmc";
   size_t bmc_found = fru_name.find(bmc_str);
   struct stat f_stat;
-  string comp = component();
+  const string& comp = component();
 
   image_info image_sts = {"", false};
 
@@ -252,7 +252,7 @@ int BmcCpldCapsuleComponent::bmc_update_capsule(string image) {
   char rbuf[256], mtd_name[32], dev[16] = {0}, cmd[256] = {0};
   char path[128];
   string bmc_location_str;
-  string comp = component();
+  const string& comp = component();
   uint8_t intent_val_o = 0;
 
   if ( fby3_common_get_bmc_location(&bmc_location) < 0 ) {
@@ -427,7 +427,7 @@ int BmcCpldCapsuleComponent::bmc_update_capsule(string image) {
 
 int BmcCpldCapsuleComponent::update(const string& image) {
   int ret;
-  string comp = component();
+  const string& comp = component();
   image_info image_sts = check_image(image, false);
 
   if ( image_sts.result == false ) {
@@ -461,7 +461,7 @@ int BmcCpldCapsuleComponent::print_version()
   uint8_t tbuf[2] = {0}, rbuf[1] = {0};
   uint8_t tlen = 1, rlen = 1;
   char path[128];
-  string comp = component();
+  const string& comp = component();
   string ver("");
   string comp_name;
 

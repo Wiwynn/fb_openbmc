@@ -12,7 +12,7 @@ class BmcComponent : public Component {
     std::string get_bmc_version(void);
     std::string get_bmc_version(const std::string &mtd);
   public:
-    BmcComponent(std::string fru, std::string comp, std::string mtd, std::string vers = "", size_t w_offset = 0, size_t skip_offset = 0)
+    BmcComponent(const std::string& fru, const std::string& comp, const std::string& mtd, const std::string& vers = "", size_t w_offset = 0, size_t skip_offset = 0)
       : Component(fru, comp), _mtd_name(mtd), _vers_mtd(vers), _writable_offset(w_offset), _skip_offset(skip_offset) {}
 
     int update(const std::string& image) override;

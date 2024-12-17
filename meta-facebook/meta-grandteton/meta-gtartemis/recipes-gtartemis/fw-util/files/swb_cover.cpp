@@ -130,8 +130,8 @@ vr_master_wr_pre(const string &fru) {
 
 int CxlVrComponent::update_proc(string image, bool force) {
   int ret = 0;
-  string comp = this->component();
-  string fru  = this->fru();
+  const string& comp = this->component();
+  const string& fru  = this->fru();
 
   if(vr_master_wr_pre(fru) < 0) {
     cout << "VR Switch MUX failed" << endl;

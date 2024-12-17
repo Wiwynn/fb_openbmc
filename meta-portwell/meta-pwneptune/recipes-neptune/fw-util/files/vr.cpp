@@ -13,7 +13,7 @@ class VrComponent : public Component {
   uint8_t g_vr_cpu1_vddq_klm;
 
   public:
-  VrComponent(string fru, string comp)
+  VrComponent(const string& fru, const string& comp)
     : Component(fru, comp) {
     pal_get_board_rev_id(&g_board_rev_id);
 

@@ -13,7 +13,7 @@ class VrComponent : public Component {
   string vr_name{};
   Server server;
   public:
-  VrComponent(string fru, string comp, uint8_t _slot_id, uint8_t _vr_id, const std::string& _vr_name)
+  VrComponent(const string& fru, const string& comp, uint8_t _slot_id, uint8_t _vr_id, const std::string& _vr_name)
     : Component(fru, comp), slot_id(_slot_id), vr_id(_vr_id), vr_name(_vr_name), server(_slot_id, fru) {}
 
   int get_version(json& j) override {

@@ -58,8 +58,6 @@ class CpldComponent : public Component {
 
 int CpldComponent::_update(const char *path, i2c_attr_t attr ) {
   int ret = -1;
-  string comp = this->component();
-  string fru  = this->fru();
   uint32_t device_id = 0;
 
   if (cpld_intf_open(pld_type, INTF_I2C, &attr)) {
@@ -106,10 +104,10 @@ int CpldComponent::get_version(json& j) {
   int ret = -1;
   uint8_t ver[4];
   char strbuf[MAX_VALUE_LEN];
-  string comp = this->component();
-  string fru  = this->fru();
-  transform(comp.begin(), comp.end(),comp.begin(), ::toupper);
-  transform(fru.begin(), fru.end(),fru.begin(), ::toupper);
+  string comp(this->component());
+  string fru(this->fru());
+  transform(comp.begin(), comp.end(), comp.begin(), ::toupper);
+  transform(fru.begin(), fru.end(), fru.begin(), ::toupper);
   j["PRETTY_COMPONENT"] = comp;
 
 

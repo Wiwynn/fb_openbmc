@@ -9,7 +9,7 @@
 class PAXComponent : public GPIOSwitchedSPIMTDComponent {
   uint8_t _paxid;
   public:
-    PAXComponent(std::string fru, std::string comp, uint8_t paxid, std::string shadow)
+    PAXComponent(const std::string& fru, const std::string& comp, uint8_t paxid, const std::string& shadow)
       : GPIOSwitchedSPIMTDComponent(fru, comp, "switch0", "spi4.0", shadow, true, false), _paxid(paxid) {}
     int print_version() override;
     int update(const std::string& image) override;

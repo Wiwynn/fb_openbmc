@@ -54,7 +54,7 @@ class partialLexCompare {
 class Component {
   protected:
     std::string _fru;
-    std::string _component;
+    const std::string _component;
     System _sys;
     bool update_initiated;
   public:
@@ -66,14 +66,14 @@ class Component {
       }
     }
     // Constructor for a real component.
-    Component(std::string fru, std::string component);
+    Component(const std::string& fru, const std::string& component);
     virtual ~Component();
 
-    std::string &component(void) { return _component; }
-    std::string &fru(void) { return _fru; }
+    const std::string &component(void) const { return _component; }
+    const std::string &fru(void) const { return _fru; }
     virtual bool is_alias(void) { return false; }
-    virtual std::string &alias_component(void) { return _component; }
-    virtual std::string &alias_fru(void) { return _fru; }
+    virtual const std::string &alias_component(void) { return _component; }
+    virtual const std::string &alias_fru(void) { return _fru; }
     virtual int update(const std::string& /*image*/) { return FW_STATUS_NOT_SUPPORTED; }
     virtual int update(int /*fd*/, bool /*force*/) { return FW_STATUS_NOT_SUPPORTED; }
     virtual int fupdate(const std::string& /*image*/) { return FW_STATUS_NOT_SUPPORTED; }
@@ -98,15 +98,15 @@ class Component {
 };
 
 class AliasComponent : public Component {
-  std::string _target_fru;
-  std::string _target_comp_name;
+  const std::string _target_fru;
+  const std::string _target_comp_name;
   Component *_target_comp;
   bool setup();
   public:
-    AliasComponent(std::string fru, std::string comp, std::string t_fru, std::string t_comp);
+    AliasComponent(const std::string& fru, const std::string& comp, const std::string& t_fru, const std::string& t_comp);
     bool is_alias(void) override { return true; }
-    std::string &alias_component(void) override { return _target_comp_name; }
-    std::string &alias_fru(void) override { return _target_fru; }
+    const std::string &alias_component(void) override { return _target_comp_name; }
+    const std::string &alias_fru(void) override { return _target_fru; }
     int update(const std::string& image) override;
     int fupdate(const std::string& image) override;
     int dump(const std::string& image) override;

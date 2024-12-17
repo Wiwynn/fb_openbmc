@@ -117,7 +117,7 @@ int BiosComponent::update(const std::string& image, bool force) {
   const int max_retry_power_ctl = 3;
   const int max_retry_me_recovery = 15;
   bool setLow = true;
-  string comp = this->component();
+  const string& comp = this->component();
 
   if (pal_get_fru_id((char *)_fru.c_str(), &fruid)) {
     return -1;

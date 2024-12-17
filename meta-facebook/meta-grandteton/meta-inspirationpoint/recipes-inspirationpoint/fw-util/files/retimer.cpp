@@ -23,8 +23,8 @@ class RetimerComponent : public Component {
 
     int update(const std::string& image) {
       int ret = -1, lock = -1;
-      std::string comp = this->component();
-      std::string fru  = this->fru();
+      const std::string& comp = this->component();
+      const std::string& fru  = this->fru();
 
       if(gpio_get_value_by_shadow(RST_PESET) != GPIO_VALUE_HIGH) {
          return FW_STATUS_FAILURE;

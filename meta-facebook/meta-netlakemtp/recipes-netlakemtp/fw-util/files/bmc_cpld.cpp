@@ -102,7 +102,7 @@ int BmcCpldComponent::get_ver_str(string& s) {
 int BmcCpldComponent::print_version()
 {
   string ver("");
-  string fru_name = fru();
+  string fru_name(fru());
   int ret = 0;
 
   try {
@@ -122,7 +122,7 @@ int BmcCpldComponent::print_version()
 
 int BmcCpldComponent::get_version(json& ver_json) {
   string ver("");
-  string fru_name = fru();
+  const string& fru_name = fru();
   try {
     if ( get_ver_str(ver) < 0 ) {
       throw "Error in getting the version of " + fru_name;

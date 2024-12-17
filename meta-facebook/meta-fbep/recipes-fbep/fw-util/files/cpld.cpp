@@ -28,7 +28,7 @@ class CpldComponent : public Component {
       char strbuf[MAX_VALUE_LEN] = {0};
       uint8_t ver[4];
       int ret = -1;
-      string comp = this->component();
+      string comp(this->component());
 
       do {
         if (!kv_get(comp.c_str(), strbuf, NULL, 0))
@@ -55,7 +55,7 @@ class CpldComponent : public Component {
     }
     int update(const string& image) {
       int ret = -1;
-      string comp = this->component();
+      const string& comp = this->component();
 
       if (!cpld_intf_open(LCMXO2_7000HC, INTF_JTAG, NULL)) {
         syslog(LOG_CRIT, "Component %s upgrade initiated", comp.c_str());

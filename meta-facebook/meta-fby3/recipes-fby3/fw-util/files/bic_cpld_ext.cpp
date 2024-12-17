@@ -15,7 +15,7 @@ int CpldExtComponent::update_internal(const string& image, bool force) {
   int ret = 0;
   int intf = FEXP_BIC_INTF;
   uint8_t type_2ou = UNKNOWN_BOARD;
-  string comp = component();
+  const string& comp = component();
   try {
     server.ready();
     expansion.ready();

@@ -14,7 +14,7 @@ class BiosComponent : public Component {
     int get_ver_str(std::string& s);
     int _update(const std::string& image, uint8_t opt);
   public:
-    BiosComponent(std::string fru, std::string comp, uint8_t _fw_comp)
+    BiosComponent(const std::string& fru, const std::string& comp, uint8_t _fw_comp)
       : Component(fru, comp), fw_comp(_fw_comp), server(FRU_SERVER, fru) {}
     int update(const std::string& image);
     int fupdate(const std::string& image);

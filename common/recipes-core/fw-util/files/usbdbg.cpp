@@ -54,7 +54,7 @@ int UsbDbgBlComponent::get_version(json& j) {
 
 int UsbDbgBlComponent::update(const string& image) {
   int ret;
-  string comp = this->component();
+  const string& comp = this->component();
 
   syslog(LOG_CRIT, "Component %s upgrade initiated", comp.c_str());
   ret = dbg_update_bootloader(bus_id, slv_addr, target_id, (const char *)image.c_str());

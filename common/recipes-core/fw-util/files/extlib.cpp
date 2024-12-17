@@ -13,7 +13,7 @@ static int get_version_unsupported(const char * /*info*/, char * /* version */, 
   return FW_STATUS_NOT_SUPPORTED;
 }
 
-ExtlibComponent::ExtlibComponent(string fru, string component,
+ExtlibComponent::ExtlibComponent(const string& fru, const string& component,
                             string libpath, string update_func,
                             string vers_func, string _info) :
   Component(fru, component), info(_info),

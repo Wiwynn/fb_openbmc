@@ -13,7 +13,7 @@ class BiosExtComponent : public BiosComponent {
   uint8_t slot_id = 0;
   Server server;
   public:
-    BiosExtComponent(string fru, string comp, uint8_t _slot_id)
+    BiosExtComponent(const string& fru, const string& comp, uint8_t _slot_id)
       : BiosComponent(fru, comp, _slot_id), slot_id(_slot_id), server(_slot_id, fru) {}
     int update(const string& image);
     int dump(const string& image);

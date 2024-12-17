@@ -13,9 +13,9 @@ class NicComponent : public Component {
     int upgrade_ncsi_util(const std::string& img, int channel=-1);
     virtual int get_key(const std::string& key, std::string& buf);
   public:
-    NicComponent(std::string fru, std::string comp)
+    NicComponent(const std::string& fru, const std::string& comp)
       : Component(fru, comp) {}
-    NicComponent(std::string fru, std::string comp, std::string ver_key_store)
+    NicComponent(const std::string& fru, const std::string& comp, const std::string& ver_key_store)
       : Component(fru, comp), _ver_key(ver_key_store) {}
     int get_version(json& j) override;
     virtual int update(const std::string& image) override;

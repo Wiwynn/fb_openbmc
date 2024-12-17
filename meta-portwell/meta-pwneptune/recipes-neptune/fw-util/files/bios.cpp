@@ -6,7 +6,7 @@ using namespace std;
 
 class BiosComponent : public Component {
   public:
-    BiosComponent(string fru, string comp)
+    BiosComponent(const string& fru, const string& comp)
       : Component(fru, comp) {}
     int update(const string& image) {
       return bios_program(FRU_MB, image.c_str());

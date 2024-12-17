@@ -51,7 +51,7 @@ class M2_DevComponent : public Component {
   void print_single();
   void print_dual();
   public:
-  M2_DevComponent(string fru, string comp, uint8_t _slot_id, uint8_t dev_id)
+  M2_DevComponent(const string& fru, const string& comp, uint8_t _slot_id, uint8_t dev_id)
     : Component(fru, comp), slot_id(_slot_id), dev_id(dev_id), server(_slot_id, fru) {
     if (fby2_get_slot_type(_slot_id) != SLOT_TYPE_GPV2) {
       (*fru_list)[fru].erase(comp);

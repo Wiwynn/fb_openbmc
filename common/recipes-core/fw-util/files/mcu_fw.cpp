@@ -9,7 +9,7 @@ using namespace std;
 int McuFwComponent::update(const string& image)
 {
   int ret;
-  string comp = this->component();
+  const string& comp = this->component();
 
   syslog(LOG_CRIT, "Component %s upgrade initiated", comp.c_str());
   ret = mcu_update_firmware(bus_id, slv_addr, (const char *)image.c_str(), (const char *)pld_name.c_str(), type, false);
@@ -24,7 +24,7 @@ int McuFwComponent::update(const string& image)
 int McuFwBlComponent::update(const string& image)
 {
   int ret;
-  string comp = this->component();
+  const string& comp = this->component();
 
   syslog(LOG_CRIT, "Component %s upgrade initiated", comp.c_str());
   ret = mcu_update_bootloader(bus_id, slv_addr, target_id, (const char *)image.c_str());

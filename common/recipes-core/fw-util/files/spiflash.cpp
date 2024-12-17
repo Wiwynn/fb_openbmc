@@ -50,7 +50,8 @@ int MTDComponent::getFlashSize(const std::string& mtdIndex)
 
 int MTDComponent::update_by_flashrom(const std::string& image)
 {
-  std::string dev, cmd, comp = this->component(); // Retrieve the current component name
+  std::string dev, cmd;
+  const std::string& comp = this->component(); // Retrieve the current component name
   struct stat st;  // Used to obtain information about the file
   int ret, flashSize, paddingSize;
 
@@ -122,7 +123,7 @@ int MTDComponent::update_by_flashcp(const std::string& image)
 {
   string dev;
   string cmd;
-  string comp = this->component();
+  const string& comp = this->component();
   int ret;
 
   if (!sys().get_mtd_name(_mtd_name, dev)) {

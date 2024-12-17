@@ -7,7 +7,7 @@ using namespace std;
 
 class CpldComponent : public Component {
   public:
-    CpldComponent(string fru, string comp)
+    CpldComponent(const string& fru, const string& comp)
       : Component(fru, comp) {}
     int print_version() {
       uint8_t cpld_var[4] = {0};

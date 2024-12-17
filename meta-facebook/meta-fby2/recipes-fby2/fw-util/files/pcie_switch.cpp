@@ -15,7 +15,7 @@ class PcieSwitchComponent : public Component {
   uint8_t slot_id = 0;
   Server server;
   public:
-  PcieSwitchComponent(string fru, string comp, uint8_t _slot_id)
+  PcieSwitchComponent(const string& fru, const string& comp, uint8_t _slot_id)
     : Component(fru, comp), slot_id(_slot_id), server(_slot_id, fru) {
     if (fby2_get_slot_type(_slot_id) != SLOT_TYPE_GPV2) {
       (*fru_list)[fru].erase(comp);

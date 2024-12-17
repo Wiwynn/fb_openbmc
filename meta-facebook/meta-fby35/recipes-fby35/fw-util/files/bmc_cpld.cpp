@@ -188,7 +188,7 @@ int BmcCpldComponent::get_ver_str(string& s) {
 
 int BmcCpldComponent::print_version() {
   string ver("");
-  string board_name = fru();
+  string board_name(fru());
   char ver_key[MAX_KEY_LEN] = {0};
   char value[MAX_VALUE_LEN] = {0};
   int ret = 0;
@@ -215,7 +215,7 @@ int BmcCpldComponent::print_version() {
 
 int BmcCpldComponent::get_version(json& j) {
   string ver("");
-  string board_name = fru();
+  const string& board_name = fru();
 
   try {
     if (get_ver_str(ver) < 0) {

@@ -20,7 +20,7 @@ image_info BmcCpldComponent::check_image(string image, bool force) {
 const string board_type[] = {"Unknown", "EVT", "DVT", "PVT", "MP"};
   string flash_image = image;
   uint8_t bmc_location = 0;
-  string fru_name = fru();
+  const string& fru_name = fru();
   string slot_str = "slot";
   string bmc_str = "bmc";
   size_t slot_found = fru_name.find(slot_str);
@@ -231,7 +231,7 @@ int BmcCpldComponent::get_ver_str(string& s) {
 
 int BmcCpldComponent::get_version(json& j) {
   string ver("");
-  string fru_name = fru();
+  string fru_name(fru());
   bool is_server = false;
   if (fru_name.find("slot") != string::npos) {
     is_server = true;
@@ -270,7 +270,7 @@ int BmcCpldComponent::update_cpld(string image)
   string image_tmp;
   size_t pos = image.find("-tmp");
   image_tmp = image.substr(0, pos);
-  string fru_name = fru();
+  const string& fru_name = fru();
   string slot_str = "slot";
   size_t slot_found = fru_name.find(slot_str);
 

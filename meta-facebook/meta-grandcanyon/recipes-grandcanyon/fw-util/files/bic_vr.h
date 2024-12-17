@@ -12,7 +12,7 @@ class VrComponent : public Component {
   private:
     int get_ver_str(uint8_t& addr, std::string& s);
   public:
-    VrComponent(std::string fru, std::string comp)
+    VrComponent(const std::string& fru, const std::string& comp)
       : Component(fru, comp), server(FRU_SERVER, fru){}
     int print_version();
     int update(const std::string& image);

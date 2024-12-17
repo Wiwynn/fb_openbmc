@@ -31,7 +31,7 @@ class CpldComponent : public Component {
   uint8_t pld_type;
   altera_max10_attr_t attr;
   public:
-    CpldComponent(string fru, string comp, string name, uint8_t type, uint8_t bus, uint8_t addr)
+    CpldComponent(const string& fru, const string& comp, const string& name, uint8_t type, uint8_t bus, uint8_t addr)
       : Component(fru, comp), pld_name(name), pld_type(type),
         attr{bus,addr,CFM_IMAGE_1,CFM0_START_ADDR,CFM0_END_ADDR,ON_CHIP_FLASH_IP_CSR_BASE,ON_CHIP_FLASH_IP_DATA_REG,DUAL_BOOT_IP_BASE,I2C_LITTLE_ENDIAN} {}
     int print_version() {
@@ -53,7 +53,7 @@ class CpldComponent : public Component {
     int update(const string& image) {
       int ret = -1;
       uint8_t i, cfm_cnt = 2;
-      string comp = this->component();
+      const string& comp = this->component();
 
       syslog(LOG_CRIT, "Component %s upgrade initiated", comp.c_str());
       for (i = 0; i < cfm_cnt; i++) {

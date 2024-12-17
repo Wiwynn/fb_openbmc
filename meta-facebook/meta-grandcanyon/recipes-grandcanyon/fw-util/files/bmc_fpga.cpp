@@ -151,7 +151,7 @@ int BmcFpgaComponent::get_ver_str(string& s) {
 int BmcFpgaComponent::print_version()
 {
   string ver("");
-  string fru_name = fru();
+  string fru_name(fru());
 
   transform(fru_name.begin(), fru_name.end(), fru_name.begin(), ::toupper);
 
@@ -223,7 +223,7 @@ int BmcFpgaComponent::update_fpga(string image, string update_image)
 {
   int ret = 0;
   char key[32] = {0};
-  string fru_name = fru();
+  string fru_name(fru());
 
   transform(fru_name.begin(), fru_name.end(), fru_name.begin(), ::toupper);
 
