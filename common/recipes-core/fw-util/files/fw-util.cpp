@@ -63,7 +63,7 @@ Component::~Component()
     set_update_ongoing(0);
 }
 
-Component *Component::find_component(string fru, string comp)
+Component *Component::find_component(const string& fru, const string& comp)
 {
   if (!fru_list) {
     return NULL;

@@ -59,7 +59,7 @@ class Component {
     bool update_initiated;
   public:
     static std::map<std::string, std::map<std::string, Component *, partialLexCompare>, partialLexCompare> *fru_list;
-    static Component *find_component(std::string fru, std::string comp);
+    static Component *find_component(const std::string& fru, const std::string& comp);
     static void fru_list_setup() {
       if (!fru_list) {
         fru_list = new std::map<std::string, std::map<std::string, Component *, partialLexCompare>, partialLexCompare>();

@@ -11,7 +11,7 @@ class CapsuleComponent : public Component {
   Server server;
   private:
     int get_pfr_cap_ver_str(string& s, uint8_t fw_comp);
-    int set_pfr_cap_ver_str(string image, uint8_t fw_comp);
+    int set_pfr_cap_ver_str(const string& image, uint8_t fw_comp);
     image_info check_image(string image, bool force);
     int bic_update_capsule(string image);
   public:

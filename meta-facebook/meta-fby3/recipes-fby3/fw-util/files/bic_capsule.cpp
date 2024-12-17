@@ -102,7 +102,7 @@ image_info CapsuleComponent::check_image(string image, bool force) {
   return image_sts;
 }
 
-int CapsuleComponent::set_pfr_cap_ver_str(string image, uint8_t fw_comp) {
+int CapsuleComponent::set_pfr_cap_ver_str(const string& image, uint8_t fw_comp) {
   int ret = 0;
   uint32_t ver_reg = CPLD_CAP_STAG_MAILBOX;
   uint8_t tbuf[18] = {0x00};

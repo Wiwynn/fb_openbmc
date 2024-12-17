@@ -102,7 +102,7 @@ image_info BmcCpldCapsuleComponent::check_image(string image, bool force) {
   return image_sts;
 }
 
-int BmcCpldCapsuleComponent::set_pfr_cap_ver_str(string image, string comp) {
+int BmcCpldCapsuleComponent::set_pfr_cap_ver_str(const string& image, const string& comp) {
   int ret = 0;
   uint32_t ver_reg = 0x60;
   uint8_t tbuf[18] = {0x00};
