@@ -48,22 +48,19 @@ typedef struct {
   char name[32];
 } gpio_pin_t;
 
-struct gpio_offset_map {
+typedef struct {
   uint8_t bmc_ready;
   uint8_t pwrgd_cpu;
   uint8_t rst_pltrst;
   uint8_t bmc_debug_enable;
   uint8_t e1s_prsnt_l;
-} gpio_offset = { BMC_READY,
-                    PWRGD_CPU_LVC3,
-                    RST_PLTRST_BUF_N,
-                    FM_BMC_DEBUG_ENABLE_N,
-                    GPIO_NOT_SUPPORT }; // default as Crater Lake
+} gpio_offset_t;
 
 static gpio_pin_t gpio_slot1[MAX_GPIO_PINS] = {0};
 static gpio_pin_t gpio_slot2[MAX_GPIO_PINS] = {0};
 static gpio_pin_t gpio_slot3[MAX_GPIO_PINS] = {0};
 static gpio_pin_t gpio_slot4[MAX_GPIO_PINS] = {0};
+static gpio_offset_t gpio_offset_map[MAX_NUM_SLOTS] = {0};
 
 static uint8_t cpld_io_sts[MAX_NUM_SLOTS+1] = {0x10, 0};
 static long int pwr_on_sec[MAX_NUM_SLOTS] = {0};
@@ -78,7 +75,9 @@ pthread_mutex_t pwrgd_cpu_mutex[MAX_NUM_SLOTS] = {PTHREAD_MUTEX_INITIALIZER,
                                                   PTHREAD_MUTEX_INITIALIZER,
                                                   PTHREAD_MUTEX_INITIALIZER};
 #define SET_BIT(list, index, bit) \
-           if ( bit == 0 ) {      \
+           if ( index >= sizeof(bic_gpio_t) ) { \
+              /*Avoid accessing illegal memory*/ \
+           } else if ( bit == 0 ) {      \
              (((uint8_t*)&list)[index/8]) &= ~(0x1 << (index % 8)); \
            } else {                                                     \
              (((uint8_t*)&list)[index/8]) |= 0x1 << (index % 8);    \
@@ -217,38 +216,102 @@ get_struct_gpio_pin(uint8_t fru) {
   return gpios;
 }
 
+static gpio_offset_t *
+get_struct_gpio_offset(uint8_t fru) {
+  return &gpio_offset_map[fru-1];
+}
+
 static void
 populate_gpio_pins(uint8_t fru) {
+  int slot_type = fby35_common_get_slot_type(fru);
+  gpio_offset_t *gpio_offset = get_struct_gpio_offset(fru);
+  gpio_pin_t *gpios = get_struct_gpio_pin(fru);
 
-  int i, ret;
-  int slot_type = SERVER_TYPE_NONE;
-  gpio_pin_t *gpios;
+  switch (slot_type) {
+    case SERVER_TYPE_CL:
+      syslog(LOG_CRIT, "FRU: %d, using Craterlake gpio configuration", fru);
+      gpio_offset->bmc_ready = BMC_READY;
+      gpio_offset->pwrgd_cpu = PWRGD_CPU_LVC3;
+      gpio_offset->rst_pltrst = RST_PLTRST_BUF_N;
+      gpio_offset->bmc_debug_enable = FM_BMC_DEBUG_ENABLE_N;
+      gpio_offset->e1s_prsnt_l = GPIO_NOT_SUPPORT;
 
-  gpios = get_struct_gpio_pin(fru);
-  if (gpios == NULL) {
-    syslog(LOG_WARNING, "populate_gpio_pins: get_struct_gpio_pin failed.");
-    return;
+      cpu_pwr_fault = cl_cpu_pwr_fault;
+      cpu_pwr_fault_size = ARRAY_SIZE(cl_cpu_pwr_fault);
+      bic_pch_pwr_fault = cl_bic_pch_pwr_fault;
+      bic_pch_pwr_fault_size = ARRAY_SIZE(cl_bic_pch_pwr_fault);
+
+      gpios[gpio_offset->rst_pltrst].flag = 1; // Platform reset pin
+      gpios[gpio_offset->bmc_debug_enable].flag = 1; // Debug enable pin
+      break;
+
+    case SERVER_TYPE_HD:
+      syslog(LOG_CRIT, "FRU: %d, using Halfdome gpio configuration", fru);
+      gpio_offset->bmc_ready = HD_BMC_READY;
+      gpio_offset->pwrgd_cpu = HD_PWRGD_CPU_LVC3;
+      gpio_offset->rst_pltrst = HD_RST_PLTRST_BIC_N;
+      gpio_offset->bmc_debug_enable = HD_FM_BMC_DEBUG_ENABLE_N;
+      gpio_offset->e1s_prsnt_l = GPIO_NOT_SUPPORT;
+
+      cpu_pwr_fault = hd_cpu_pwr_fault;
+      cpu_pwr_fault_size = ARRAY_SIZE(hd_cpu_pwr_fault);
+      bic_pch_pwr_fault_str = "BIC";
+      bic_pch_pwr_fault = hd_bic_pwr_fault;
+      bic_pch_pwr_fault_size = ARRAY_SIZE(hd_bic_pwr_fault);
+
+      gpios[gpio_offset->rst_pltrst].flag = 1; // Platform reset pin
+      gpios[gpio_offset->bmc_debug_enable].flag = 1; // Debug enable pin
+      break;
+
+    case SERVER_TYPE_GL:
+      syslog(LOG_CRIT, "FRU: %d, using Greatlakes gpio configuration", fru);
+      gpio_offset->bmc_ready = GL_BMC_READY;
+      gpio_offset->pwrgd_cpu = GL_PWRGD_CPU_LVC3;
+      gpio_offset->rst_pltrst = GL_RST_PLTRST_BUF_N;
+      gpio_offset->bmc_debug_enable = GL_FM_BMC_DEBUG_ENABLE_R_N;
+      gpio_offset->e1s_prsnt_l = GPIO_NOT_SUPPORT;
+
+      cpu_pwr_fault = gl_cpu_pwr_fault;
+      cpu_pwr_fault_size = ARRAY_SIZE(gl_cpu_pwr_fault);
+      bic_pch_pwr_fault = gl_bic_pwr_fault;
+      bic_pch_pwr_fault_size = ARRAY_SIZE(gl_bic_pwr_fault);
+
+      gpios[gpio_offset->rst_pltrst].flag = 1; // Platform reset pin
+      gpios[gpio_offset->bmc_debug_enable].flag = 1; // Debug enable pin
+      break;
+
+    case SERVER_TYPE_JI:
+      syslog(LOG_CRIT, "FRU: %d, using Javaisland gpio configuration", fru);
+      gpio_offset->bmc_ready = JI_BMC_READY;
+      gpio_offset->pwrgd_cpu = JI_RUN_POWER_PG;
+      // there is no corresponding GPIO on the JavaIsland platform Currently
+      gpio_offset->rst_pltrst = GPIO_NOT_SUPPORT;
+      gpio_offset->bmc_debug_enable = GPIO_NOT_SUPPORT;
+      gpio_offset->e1s_prsnt_l = JI_E1S_PRSNT_L;
+
+      // We need to monitor if the E1.S SSD is present
+      gpios[gpio_offset->e1s_prsnt_l].flag = 1;
+      break;
+
+    default:
+      // Crater Lake as default setting
+      syslog(LOG_CRIT, "FRU: %d, failed to get SB type from SB CPLD. (using Craterlake as default gpio configuration)", fru);
+      gpio_offset->bmc_ready = BMC_READY;
+      gpio_offset->pwrgd_cpu = PWRGD_CPU_LVC3;
+      gpio_offset->rst_pltrst = RST_PLTRST_BUF_N;
+      gpio_offset->bmc_debug_enable = FM_BMC_DEBUG_ENABLE_N;
+      gpio_offset->e1s_prsnt_l = GPIO_NOT_SUPPORT;
+
+      cpu_pwr_fault = cl_cpu_pwr_fault;
+      cpu_pwr_fault_size = ARRAY_SIZE(cl_cpu_pwr_fault);
+      bic_pch_pwr_fault = cl_bic_pch_pwr_fault;
+      bic_pch_pwr_fault_size = ARRAY_SIZE(cl_bic_pch_pwr_fault);
   }
 
-  // Only monitor RST_PLTRST_BUF_N & FM_BMC_DEBUG_ENABLE_N
-  slot_type = fby35_common_get_slot_type(fru);
-  if (slot_type == SERVER_TYPE_JI) {
-    // there is no corresponding GPIO on the JavaIsland platform Currently
-    gpios[gpio_offset.rst_pltrst].flag = 0;
-    gpios[gpio_offset.bmc_debug_enable].flag = 0;
-    // We need to monitor if the E1.S SSD is present
-    gpios[gpio_offset.e1s_prsnt_l].flag = 1;
-  } else {
-    gpios[gpio_offset.rst_pltrst].flag = 1; // Platform reset pin
-    gpios[gpio_offset.bmc_debug_enable].flag = 1; // Debug enable pin
-  }
-
-  for (i = 0; i < MAX_GPIO_PINS; i++) {
+  for (int i = 0; i < MAX_GPIO_PINS; i++) {
     if (gpios[i].flag) {
       gpios[i].ass_val = GET_BIT(gpio_ass_val, i);
-      ret = y35_get_gpio_name(fru, i, gpios[i].name, false, NONE_INTF);
-      if (ret < 0)
-        continue;
+      y35_get_gpio_name(fru, i, gpios[i].name, false, NONE_INTF);
     }
   }
 }
@@ -263,64 +326,6 @@ init_gpio_pins() {
     pal_is_fru_prsnt(fru, &fru_prsnt);
     if (fru_prsnt) {
       populate_gpio_pins(fru);
-    }
-  }
-
-}
-/*Wrapper function to to configure gpio offset to Crater Lake or Halfdome*/
-static void
-init_gpio_offset_map() {
-  int fru = 0, slot_type = SERVER_TYPE_NONE;
-  uint8_t fru_prsnt = 0;
-
-  for (fru = FRU_SLOT1; fru < (FRU_SLOT1 + MAX_NUM_SLOTS); fru++) {
-    pal_is_fru_prsnt(fru, &fru_prsnt);
-    if (fru_prsnt) {
-      slot_type = fby35_common_get_slot_type(fru);
-      if (slot_type == SERVER_TYPE_HD) {
-        gpio_offset.bmc_ready = HD_BMC_READY;
-        gpio_offset.pwrgd_cpu = HD_PWRGD_CPU_LVC3;
-        gpio_offset.rst_pltrst = HD_RST_PLTRST_BIC_N;
-        gpio_offset.bmc_debug_enable = HD_FM_BMC_DEBUG_ENABLE_N;
-        gpio_offset.e1s_prsnt_l = GPIO_NOT_SUPPORT;
-
-        cpu_pwr_fault = hd_cpu_pwr_fault;
-        cpu_pwr_fault_size = ARRAY_SIZE(hd_cpu_pwr_fault);
-        bic_pch_pwr_fault_str = "BIC";
-        bic_pch_pwr_fault = hd_bic_pwr_fault;
-        bic_pch_pwr_fault_size = ARRAY_SIZE(hd_bic_pwr_fault);
-      } else if (slot_type == SERVER_TYPE_GL) {
-        gpio_offset.bmc_ready = GL_BMC_READY;
-        gpio_offset.pwrgd_cpu = GL_PWRGD_CPU_LVC3;
-        gpio_offset.rst_pltrst = GL_RST_PLTRST_BUF_N;
-        gpio_offset.bmc_debug_enable = GL_FM_BMC_DEBUG_ENABLE_R_N;
-        gpio_offset.e1s_prsnt_l = GPIO_NOT_SUPPORT;
-
-        cpu_pwr_fault = gl_cpu_pwr_fault;
-        cpu_pwr_fault_size = ARRAY_SIZE(gl_cpu_pwr_fault);
-        bic_pch_pwr_fault = gl_bic_pwr_fault;
-        bic_pch_pwr_fault_size = ARRAY_SIZE(gl_bic_pwr_fault);
-
-      } else if (slot_type == SERVER_TYPE_JI) {
-        gpio_offset.bmc_ready = JI_BMC_READY;
-        gpio_offset.pwrgd_cpu = JI_RUN_POWER_PG;
-        gpio_offset.rst_pltrst = GPIO_NOT_SUPPORT;
-        gpio_offset.bmc_debug_enable = GPIO_NOT_SUPPORT;
-        gpio_offset.e1s_prsnt_l = JI_E1S_PRSNT_L;
-      } else {
-        // Crater Lake as default setting
-        gpio_offset.bmc_ready = BMC_READY;
-        gpio_offset.pwrgd_cpu = PWRGD_CPU_LVC3;
-        gpio_offset.rst_pltrst = RST_PLTRST_BUF_N;
-        gpio_offset.bmc_debug_enable = FM_BMC_DEBUG_ENABLE_N;
-        gpio_offset.e1s_prsnt_l = GPIO_NOT_SUPPORT;
-
-        cpu_pwr_fault = cl_cpu_pwr_fault;
-        cpu_pwr_fault_size = ARRAY_SIZE(cl_cpu_pwr_fault);
-        bic_pch_pwr_fault = cl_bic_pch_pwr_fault;
-        bic_pch_pwr_fault_size = ARRAY_SIZE(cl_bic_pch_pwr_fault);
-      }
-      break;
     }
   }
 }
@@ -374,6 +379,7 @@ gpio_monitor_poll(void *ptr) {
   int slot_type = SERVER_TYPE_NONE;
   int board_rev = UNKNOWN_REV;
   int delay = 0;
+  gpio_offset_t *gpio_offset = get_struct_gpio_offset(fru);
 
   slot_type = fby35_common_get_slot_type(fru);
   board_rev = fby35_common_get_sb_rev(fru) & 0xF;
@@ -417,8 +423,8 @@ gpio_monitor_poll(void *ptr) {
             chk_bic_pch_pwr_flag = false;
           }
           set_12v_off_flag(fru, false);
-          SET_BIT(o_pin_val, gpio_offset.pwrgd_cpu, 0);
-          SET_BIT(o_pin_val, gpio_offset.rst_pltrst, 0);
+          SET_BIT(o_pin_val, gpio_offset->pwrgd_cpu, 0);
+          SET_BIT(o_pin_val, gpio_offset->rst_pltrst, 0);
           pal_update_ierr_status(fru, SEL_DEASSERT);
         }
       }
@@ -436,14 +442,14 @@ gpio_monitor_poll(void *ptr) {
     // may return success because of the IPMB retry
     if (get_12v_off_flag(fru) == true) {
       set_12v_off_flag(fru, false);
-      SET_BIT(o_pin_val, gpio_offset.pwrgd_cpu, 0);
-      SET_BIT(o_pin_val, gpio_offset.rst_pltrst, 0);
+      SET_BIT(o_pin_val, gpio_offset->pwrgd_cpu, 0);
+      SET_BIT(o_pin_val, gpio_offset->rst_pltrst, 0);
     }
 
     // Inform BIOS that BMC is ready
     // handle case : BIC FW update & BIC resets unexpectedly
-    if (GET_BIT(n_pin_val, gpio_offset.bmc_ready) == 0) {
-      bic_set_gpio(fru, gpio_offset.bmc_ready, 1);
+    if (GET_BIT(n_pin_val, gpio_offset->bmc_ready) == 0) {
+      bic_set_gpio(fru, gpio_offset->bmc_ready, 1);
     }
 
     // This is a workaround for Java Island POC/EVT board due to schematic issue.
@@ -452,7 +458,7 @@ gpio_monitor_poll(void *ptr) {
         case JI_REV_POC:
         case JI_REV_EVT:
         case JI_REV_EVT2:
-          if (GET_BIT(n_pin_val, gpio_offset.pwrgd_cpu) == 1) {
+          if (GET_BIT(n_pin_val, gpio_offset->pwrgd_cpu) == 1) {
             delay++;
             if (delay > 5) {
               #define CACHE_CMD "bic-cached -f slot%d &"
@@ -498,18 +504,18 @@ gpio_monitor_poll(void *ptr) {
 
     //check PWRGD_CPU_LVC3 is changed
     if ( (get_pwrgd_cpu_flag(fru) == false) &&
-         (GET_BIT(n_pin_val, gpio_offset.pwrgd_cpu) != GET_BIT(o_pin_val, gpio_offset.pwrgd_cpu))) {
+         (GET_BIT(n_pin_val, gpio_offset->pwrgd_cpu) != GET_BIT(o_pin_val, gpio_offset->pwrgd_cpu))) {
       rst_timer(fru);
       set_pwrgd_cpu_flag(fru, true);
-      if (GET_BIT(n_pin_val, gpio_offset.pwrgd_cpu) == 0) {
+      if (GET_BIT(n_pin_val, gpio_offset->pwrgd_cpu) == 0) {
         pal_update_ierr_status(fru, SEL_DEASSERT);
       }
       //update the value since the bit is not monitored
-      SET_BIT(o_pin_val, gpio_offset.pwrgd_cpu, GET_BIT(n_pin_val, gpio_offset.pwrgd_cpu));
+      SET_BIT(o_pin_val, gpio_offset->pwrgd_cpu, GET_BIT(n_pin_val, gpio_offset->pwrgd_cpu));
     }
 
     //check the power status since the we need to set timer
-    if ( GET_BIT(n_pin_val, gpio_offset.pwrgd_cpu) != gpios[gpio_offset.pwrgd_cpu].ass_val ) {
+    if ( GET_BIT(n_pin_val, gpio_offset->pwrgd_cpu) != gpios[gpio_offset->pwrgd_cpu].ass_val ) {
       incr_timer(fru);
     } else {
       decr_timer(fru);
@@ -531,22 +537,22 @@ gpio_monitor_poll(void *ptr) {
         // Check if the new GPIO val is ASSERT
         if (gpios[i].status == gpios[i].ass_val) {
 
-          if (i == gpio_offset.rst_pltrst) {
+          if (i == gpio_offset->rst_pltrst) {
             rst_timer(fru);
-          } else if (i == gpio_offset.bmc_debug_enable) {
+          } else if (i == gpio_offset->bmc_debug_enable) {
             printf("FM_BMC_DEBUG_ENABLE_N is ASSERT !\n");
             syslog(LOG_CRIT, "FRU: %d, FM_BMC_DEBUG_ENABLE_N is ASSERT: %d", fru, gpios[i].status);
-          } else if (i == gpio_offset.e1s_prsnt_l) {
+          } else if (i == gpio_offset->e1s_prsnt_l) {
             printf("%s is ASSERT !\n", gpios[i].name);
             syslog(LOG_CRIT, "FRU: %d, E1.S SSD is present", fru);
           }
         } else {
-          if (i == gpio_offset.rst_pltrst) {
+          if (i == gpio_offset->rst_pltrst) {
             rst_timer(fru);
-          } else if (i == gpio_offset.bmc_debug_enable) {
+          } else if (i == gpio_offset->bmc_debug_enable) {
             printf("FM_BMC_DEBUG_ENABLE_N is DEASSERT !\n");
             syslog(LOG_CRIT, "FRU: %d, FM_BMC_DEBUG_ENABLE_N is DEASSERT: %d", fru, gpios[i].status);
-          } else if (i == gpio_offset.e1s_prsnt_l) {
+          } else if (i == gpio_offset->e1s_prsnt_l) {
             printf("%s is DEASSERT !\n", gpios[i].name);
             syslog(LOG_CRIT, "FRU: %d, E1.S SSD is absent", fru);
           }
@@ -834,7 +840,6 @@ main(int argc, char **argv) {
     }
   } else {
 
-    init_gpio_offset_map();
     init_gpio_pins();
 
     openlog("gpiod", LOG_CONS, LOG_DAEMON);
