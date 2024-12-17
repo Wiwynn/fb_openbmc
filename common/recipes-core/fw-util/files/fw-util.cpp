@@ -109,7 +109,7 @@ int AliasComponent::fupdate(const string& image)
   return _target_comp->fupdate(image);
 }
 
-int AliasComponent::dump(string image)
+int AliasComponent::dump(const string& image)
 {
   if (!setup())
     return FW_STATUS_NOT_SUPPORTED;

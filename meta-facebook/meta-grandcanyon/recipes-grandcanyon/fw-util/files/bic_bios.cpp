@@ -96,7 +96,7 @@ int BiosComponent::fupdate(const string& image) {
   return _update(image, FORCE_UPDATE);
 }
 
-int BiosComponent::dump(string image) {
+int BiosComponent::dump(const string& image) {
   return _update(image, DUMP_FW);
 }
 

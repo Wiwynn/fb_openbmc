@@ -265,7 +265,7 @@ int BiosComponent::fupdate(const string& image) {
   return update_internal(image, -1, true /* force */);
 }
 
-int BiosComponent::dump(string image) {
+int BiosComponent::dump(const string& image) {
   int ret;
   int server_type = 0;
   int ret_recovery = 0, ret_reset = 0;

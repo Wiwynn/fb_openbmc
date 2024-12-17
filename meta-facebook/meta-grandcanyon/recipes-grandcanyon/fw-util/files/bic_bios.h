@@ -20,7 +20,7 @@ class BiosComponent : public Component {
     int fupdate(const std::string& image);
     int print_version();
     int get_version(json& j) override;
-    int dump(std::string image);
+    int dump(const std::string& image);
 };
 
 #endif

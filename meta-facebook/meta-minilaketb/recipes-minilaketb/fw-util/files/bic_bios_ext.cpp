@@ -16,7 +16,7 @@ class BiosExtComponent : public BiosComponent {
     BiosExtComponent(string fru, string comp, uint8_t _slot_id)
       : BiosComponent(fru, comp, _slot_id), slot_id(_slot_id), server(_slot_id, fru) {}
     int update(const string& image);
-    int dump(string image);
+    int dump(const string& image);
 };
 
 int BiosExtComponent::update(const string& image) {
@@ -55,7 +55,7 @@ int BiosExtComponent::update(const string& image) {
   return ret;
 }
 
-int BiosExtComponent::dump(string image) {
+int BiosExtComponent::dump(const string& image) {
   int ret;
   uint8_t status;
   int retry_count = 60;

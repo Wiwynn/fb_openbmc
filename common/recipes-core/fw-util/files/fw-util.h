@@ -78,7 +78,7 @@ class Component {
     virtual int update(int /*fd*/, bool /*force*/) { return FW_STATUS_NOT_SUPPORTED; }
     virtual int fupdate(const std::string& /*image*/) { return FW_STATUS_NOT_SUPPORTED; }
     virtual int update_finish(void) { return FW_STATUS_NOT_SUPPORTED; }
-    virtual int dump(std::string /*image*/) { return FW_STATUS_NOT_SUPPORTED; }
+    virtual int dump(const std::string& /*image*/) { return FW_STATUS_NOT_SUPPORTED; }
     virtual int print_version() { return FW_STATUS_NOT_SUPPORTED; }
     virtual int get_version(json&) { return FW_STATUS_NOT_SUPPORTED; }
     virtual System& sys() {
@@ -109,7 +109,7 @@ class AliasComponent : public Component {
     std::string &alias_fru(void) override { return _target_fru; }
     int update(const std::string& image) override;
     int fupdate(const std::string& image) override;
-    int dump(std::string image) override;
+    int dump(const std::string& image) override;
     int print_version() override;
 
     void set_update_ongoing(int timeout) override;

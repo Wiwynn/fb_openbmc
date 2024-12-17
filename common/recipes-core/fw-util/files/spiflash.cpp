@@ -152,7 +152,7 @@ int MTDComponent::update(const std::string& image)
   }
 }
 
-int MTDComponent::dump(std::string image)
+int MTDComponent::dump(const std::string& image)
 {
   string dev;
   size_t size, erasesize;
@@ -243,7 +243,7 @@ int SPIMTDComponent::update(const std::string& image)
   return rc;
 }
 
-int SPIMTDComponent::dump(std::string image)
+int SPIMTDComponent::dump(const std::string& image)
 {
   string cmd;
   std::ofstream ofs;
@@ -295,7 +295,7 @@ int GPIOSwitchedSPIMTDComponent::update(const std::string&  image)
   return rc;
 }
 
-int GPIOSwitchedSPIMTDComponent::dump(std::string  image)
+int GPIOSwitchedSPIMTDComponent::dump(const std::string& image)
 {
   int rc;
   gpio_desc_t *desc = gpio_open_by_shadow(gpio_shadow.c_str());

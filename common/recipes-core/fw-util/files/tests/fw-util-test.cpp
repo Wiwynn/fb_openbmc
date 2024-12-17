@@ -40,7 +40,7 @@ class MockComponent : public Component {
     MockComponent(string fru, string comp) : Component(fru, comp) {}
     MOCK_METHOD0(print_version, int());
     MOCK_METHOD1(update, int(const string& image));
-    MOCK_METHOD1(dump, int(string image));
+    MOCK_METHOD1(dump, int(const string& image));
 };
 
 TEST(ComponentTest, AliasTest) {

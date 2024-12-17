@@ -13,7 +13,7 @@ class MTDComponent : public Component {
     MTDComponent(const std::string& fru, const std::string& comp, const std::string& mtd) :
       Component(fru, comp), _mtd_name(mtd) {}
     int update(const std::string& image) override;
-    int dump(std::string image) override;
+    int dump(const std::string& image) override;
   private:
     int getFlashSize(const std::string& mtdIndex);
     int update_by_flashcp(const std::string& image);
@@ -29,7 +29,7 @@ class SPIMTDComponent : public MTDComponent {
     SPIMTDComponent(const std::string& fru, const std::string& comp, const std::string& mtd, const std::string& dev) :
       MTDComponent(fru, comp, mtd), spidev(dev) {}
     int update(const std::string& image) override;
-    int dump(std::string image) override;
+    int dump(const std::string& image) override;
 };
 
 // These SPI devices are connected only a GPIO is asserted.
@@ -42,7 +42,7 @@ class GPIOSwitchedSPIMTDComponent : public SPIMTDComponent {
   GPIOSwitchedSPIMTDComponent(const std::string& fru, const std::string& comp, const std::string& mtd, const std::string& dev, const std::string& shadow, bool level, bool change = true) :
     SPIMTDComponent(fru, comp, mtd, dev), gpio_shadow(shadow), access_level(level), change_direction(change) {}
     int update(const std::string& image) override;
-    int dump(std::string image) override;
+    int dump(const std::string& image) override;
 };
 
 #endif

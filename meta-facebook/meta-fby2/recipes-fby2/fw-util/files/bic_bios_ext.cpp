@@ -28,7 +28,7 @@ class BiosExtComponent : public BiosComponent {
     int update(const string& image) override;
     int update(int fd, bool force) override;
     int fupdate(const string& image) override;
-    int dump(string image) override;
+    int dump(const string& image) override;
     int get_version(json& j) override;
 };
 
@@ -94,7 +94,7 @@ int BiosExtComponent::fupdate(const string& image) {
   return update_internal(image, -1, true /* force */);
 }
 
-int BiosExtComponent::dump(string image) {
+int BiosExtComponent::dump(const string& image) {
   int ret;
   uint8_t status;
   int retry_count = 60;
