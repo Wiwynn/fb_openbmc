@@ -348,6 +348,20 @@ program_xdpe152xx(uint8_t bus, uint8_t addr, struct xdpe152xx_config *config, bo
     return -1;
   }
 
+  // Added reprogramming of the entire configuration file.
+  // Except for the trim section, all other data will be replaced.
+  // If the old sections are not invalidated in OTP, they can affect the CRC calculation
+
+  tbuf[0] = 0xfe;
+  tbuf[1] = 0xfe;
+  tbuf[2] = 0x00;
+  tbuf[3] = 0x00;
+  if ((ret = xdpe152xx_mfr_fw(bus, addr, OTP_FILE_INVD, tbuf, NULL)) < 0) {
+    syslog(LOG_WARNING, "%s: Failed to reprogram entire configuration file", __func__);
+    return -1;
+  }
+  msleep(500);
+
   for (i = 0; i < config->sect_cnt; i++) {
     struct config_sect *sect = &config->section[i];
     if (sect == NULL) {
