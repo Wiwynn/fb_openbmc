@@ -233,7 +233,6 @@
             "length": 1,
             "format": "FLOAT",
             "precision": 0,
-            "scale": 0.1,
             "name": "AALC_Total_Power_W"
         },
         {
@@ -676,7 +675,7 @@
                 ],
                 [
                     5,
-                    "HEX_Water_Inlet_Temp_Status"
+                    "HEX_Air_Inlet_Temp_Status"
                 ],
                 [
                     4,
@@ -1199,7 +1198,7 @@
             "format": "FLOAT",
             "precision": 0,
             "scale": 0.1,
-            "name": "RPU_BPB_Rack_Pressure_3_P_kPa"
+            "name": "RPU_BPB_Rack_Pressure_3_kPa"
         },
         {
             "begin": 40993,
@@ -1207,7 +1206,7 @@
             "format": "FLOAT",
             "precision": 0,
             "scale": 0.1,
-            "name": "RPU_BPB_Rack_Pressure_4_P_kPa"
+            "name": "RPU_BPB_Rack_Pressure_4_kPa"
         },
         {
             "begin": 40994,
@@ -1320,6 +1319,70 @@
                 ]
             ],
             "name": "RPU_Pump_Fan_Status"
+        },
+        {
+            "begin": 41089,
+            "length": 1,
+            "format": "FLAGS",
+            "flags": [
+                [
+                    0,
+                    "HEX_Fan_Board1_Humidity_Status"
+                ],
+                [
+                    1,
+                    "HEX_Fan_Board2_Humidity_Status"
+                ],
+                [
+                    2,
+                    "HEX_Fan_Board3_Humidity_Status"
+                ],
+                [
+                    3,
+                    "HEX_Fan_Board4_Humidity_Status"
+                ],
+                [
+                    4,
+                    "HEX_Fan_Board5_Humidity_Status"
+                ],
+                [
+                    5,
+                    "HEX_Fan_Board6_Humidity_Status"
+                ],
+                [
+                    6,
+                    "HEX_Fan_Board7_Humidity_Status"
+                ],
+                [
+                    7,
+                    "HEX_Fan_Board8_Humidity_Status"
+                ],
+                [
+                    8,
+                    "HEX_Fan_Board9_Humidity_Status"
+                ],
+                [
+                    9,
+                    "HEX_Fan_Board10_Humidity_Status"
+                ],
+                [
+                    10,
+                    "HEX_Fan_Board11_Humidity_Status"
+                ],
+                [
+                    11,
+                    "HEX_Fan_Board12_Humidity_Status"
+                ],
+                [
+                    12,
+                    "HEX_Fan_Board13_Humidity_Status"
+                ],
+                [
+                    13,
+                    "HEX_Fan_Board14_Humidity_Status"
+                ]
+            ],
+            "name": "HEX_Humidity_Status"
         },
         {
             "begin": 41306,
@@ -1895,7 +1958,7 @@
             "format": "FLOAT",
             "precision": 0,
             "scale": 0.1,
-            "name": "HEX_SB_HEX_Pressure_1_P_kPa"
+            "name": "HEX_SB_Inlet_Pressure_KPA"
         },
         {
             "begin": 41291,
@@ -1903,7 +1966,7 @@
             "format": "FLOAT",
             "precision": 0,
             "scale": 0.1,
-            "name": "HEX_SB_HEX_Pressure_2_P_kPa"
+            "name": "HEX_SB_Outlet_Pressure_KPA"
         },
         {
             "begin": 41292,
@@ -2054,6 +2117,250 @@
             "name": "AALC_Sensor_Alarm"
         },
         {
+            "begin": 41475,
+            "length": 1,
+            "format": "FLAGS",
+            "flags": [
+                [
+                    0,
+                    "RPU_BPB_HSC_Power_Status"
+                ],
+                [
+                    1,
+                    "RPU_Pump_Board1_HSC_Power_Status"
+                ],
+                [
+                    2,
+                    "RPU_Pump_Board2_HSC_Power_Status"
+                ],
+                [
+                    3,
+                    "RPU_Pump_Board2_HSC_Power_Status"
+                ]
+            ],
+            "name": "RPU_Power_Status"
+        },
+        {
+            "begin": 41476,
+            "length": 1,
+            "format": "FLAGS",
+            "flags": [
+                [
+                    0,
+                    "HEX_Fan_Board1_HSC_Power_Status"
+                ],
+                [
+                    1,
+                    "HEX_Fan_Board2_HSC_Power_Status"
+                ],
+                [
+                    2,
+                    "HEX_Fan_Board3_HSC_Power_Status"
+                ],
+                [
+                    3,
+                    "HEX_Fan_Board4_HSC_Power_Status"
+                ],
+                [
+                    4,
+                    "HEX_Fan_Board5_HSC_Power_Status"
+                ],
+                [
+                    5,
+                    "HEX_Fan_Board6_HSC_Power_Status"
+                ],
+                [
+                    6,
+                    "HEX_Fan_Board7_HSC_Power_Status"
+                ],
+                [
+                    7,
+                    "HEX_Fan_Board8_HSC_Power_Status"
+                ],
+                [
+                    8,
+                    "HEX_Fan_Board9_HSC_Power_Status"
+                ],
+                [
+                    9,
+                    "HEX_Fan_Board10_HSC_Power_Status"
+                ],
+                [
+                    10,
+                    "HEX_Fan_Board11_HSC_Power_Status"
+                ],
+                [
+                    11,
+                    "HEX_Fan_Board12_HSC_Power_Status"
+                ],
+                [
+                    12,
+                    "HEX_Fan_Board13_HSC_Power_Status"
+                ],
+                [
+                    13,
+                    "HEX_Fan_Board14_HSC_Power_Status"
+                ]
+            ],
+            "name": "HEX_Power_Status"
+        },
+        {
+            "begin": 41477,
+            "length": 1,
+            "format": "FLAGS",
+            "flags": [
+                [
+                    0,
+                    "HEX_Fan1_Comms_Status"
+                ],
+                [
+                    1,
+                    "HEX_Fan2_Comms_Status"
+                ],
+                [
+                    2,
+                    "HEX_Fan3_Comms_Status"
+                ],
+                [
+                    3,
+                    "HEX_Fan4_Comms_Status"
+                ],
+                [
+                    4,
+                    "HEX_Fan5_Comms_Status"
+                ],
+                [
+                    5,
+                    "HEX_Fan6_Comms_Status"
+                ],
+                [
+                    6,
+                    "HEX_Fan7_Comms_Status"
+                ],
+                [
+                    7,
+                    "HEX_Fan8_Comms_Status"
+                ],
+                [
+                    8,
+                    "HEX_Fan9_Comms_Status"
+                ],
+                [
+                    9,
+                    "HEX_Fan10_Comms_Status"
+                ],
+                [
+                    10,
+                    "HEX_Fan11_Comms_Status"
+                ],
+                [
+                    11,
+                    "HEX_Fan12_Comms_Status"
+                ],
+                [
+                    12,
+                    "HEX_Fan13_Comms_Status"
+                ],
+                [
+                    13,
+                    "HEX_Fan14_Comms_Status"
+                ]
+            ],
+            "name": "HEX_Fan_Comms_Status"
+        },
+        {
+            "begin": 41478,
+            "length": 1,
+            "format": "FLAGS",
+            "flags": [
+                [
+                    0,
+                    "RPU_BPB_HSC_Comms_Status"
+                ],
+                [
+                    1,
+                    "RPU_BB_HSC_Comms_Status"
+                ],
+                [
+                    2,
+                    "RPU_Pump_Board1_HSC_Comms_Status"
+                ],
+                [
+                    3,
+                    "RPU_Pump_Board2_HSC_Comms_Status"
+                ],
+                [
+                    4,
+                    "RPU_Pump_Board3_HSC_Comms_Status"
+                ]
+            ],
+            "name": "RPU_Comms_Status"
+        },
+        {
+            "begin": 41479,
+            "length": 1,
+            "format": "FLAGS",
+            "flags": [
+                [
+                    0,
+                    "HEX_Fan_Board1_HSC_Comms_Status"
+                ],
+                [
+                    1,
+                    "HEX_Fan_Board2_HSC_Comms_Status"
+                ],
+                [
+                    2,
+                    "HEX_Fan_Board3_HSC_Comms_Status"
+                ],
+                [
+                    3,
+                    "HEX_Fan_Board4_HSC_Comms_Status"
+                ],
+                [
+                    4,
+                    "HEX_Fan_Board5_HSC_Comms_Status"
+                ],
+                [
+                    5,
+                    "HEX_Fan_Board6_HSC_Comms_Status"
+                ],
+                [
+                    6,
+                    "HEX_Fan_Board7_HSC_Comms_Status"
+                ],
+                [
+                    7,
+                    "HEX_Fan_Board8_HSC_Comms_Status"
+                ],
+                [
+                    8,
+                    "HEX_Fan_Board9_HSC_Comms_Status"
+                ],
+                [
+                    9,
+                    "HEX_Fan_Board10_HSC_Comms_Status"
+                ],
+                [
+                    10,
+                    "HEX_Fan_Board11_HSC_Comms_Status"
+                ],
+                [
+                    11,
+                    "HEX_Fan_Board12_HSC_Comms_Status"
+                ],
+                [
+                    12,
+                    "HEX_Fan_Board13_HSC_Comms_Status"
+                ],
+                [
+                    13,
+                    "HEX_Fan_Board14_HSC_Comms_Status"
+                ]
+            ],
+            "name": "HEX_Fan_BoardHSC_Comms_Status"
+        },
+        {
             "begin": 41473,
             "length": 1,
             "format": "FLAGS",
@@ -2106,6 +2413,30 @@
             "length": 1,
             "format": "INTEGER",
             "name": "Manual_Control_Pump3_Duty_Set"
+        },
+        {
+            "begin": 41990,
+            "length": 1,
+            "format": "INTEGER",
+            "name": "Manual_Control_Pump1_Fan_Duty_Set"
+        },
+        {
+            "begin": 41991,
+            "length": 1,
+            "format": "INTEGER",
+            "name": "Manual_Control_Pump2_Fan_Duty_Set"
+        },
+        {
+            "begin": 41992,
+            "length": 1,
+            "format": "INTEGER",
+            "name": "Manual_Control_Pump3_Fan_Duty_Set"
+        },
+        {
+            "begin": 41993,
+            "length": 1,
+            "format": "INTEGER",
+            "name": "Manual_Control_RPU_PCB_Fan_Duty_Set"
         },
         {
             "begin": 42112,
