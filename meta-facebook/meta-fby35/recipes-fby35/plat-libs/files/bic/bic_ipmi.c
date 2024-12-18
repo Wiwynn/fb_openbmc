@@ -1743,7 +1743,7 @@ error_exit:
 }
 
 int
-bic_disable_sensor_monitor(uint8_t slot_id, uint8_t dis, uint8_t intf) {
+bic_set_sensor_monitor_state(uint8_t slot_id, bool state, uint8_t intf) {
   uint8_t tbuf[8] = {0x00}; // IANA ID
   uint8_t rbuf[8] = {0x00};
   uint8_t rlen = sizeof(rbuf);
@@ -1751,7 +1751,7 @@ bic_disable_sensor_monitor(uint8_t slot_id, uint8_t dis, uint8_t intf) {
   // Fill the IANA ID
   memcpy(tbuf, (uint8_t *)&IANA_ID, IANA_ID_SIZE);
 
-  tbuf[3] = dis;  // 1: disable sensor monitor; 0: enable sensor monitor
+  tbuf[3] = state ? 0x1 : 0x0;  // 0: disable sensor monitor; 1: enable sensor monitor
   return bic_data_send(slot_id, NETFN_OEM_1S_REQ, CMD_OEM_1S_DISABLE_SEN_MON, tbuf, 4, rbuf, &rlen, intf);
 }
 

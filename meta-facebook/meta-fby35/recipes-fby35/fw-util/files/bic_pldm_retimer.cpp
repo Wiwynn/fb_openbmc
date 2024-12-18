@@ -4,6 +4,7 @@
 #include <openbmc/pal.h>
 #include <openbmc/ipmi.h>
 #include <facebook/bic_xfer.h>
+#include <facebook/bic_ipmi.h>
 
 #include <syslog.h>
 #include <iostream>
@@ -42,10 +43,11 @@ int get_server_retimer_type(const uint8_t& slot_id) {
       if (!is_server_post_complete(slot_id)) {
         throw runtime_error("the server has not POST complete");
       }
-
-      ret = system("sv stop sensord > /dev/null 2>&1 &");
-      if (ret < 0) {
-        throw runtime_error("failed to stop sensord to get the retimer type");
+      
+      // disable BIC sensor polling to prevent BIC change the switch during 
+      // retimer bus scanning
+      if (bic_set_sensor_monitor_state(slot_id, false, NONE_INTF)) {
+        throw runtime_error("failed to disable BIC sensor polling");
       }
 
       // the switch needs to switch to channel 2 after EVT2 to access the retimer
@@ -88,8 +90,9 @@ int get_server_retimer_type(const uint8_t& slot_id) {
 
     kv::set(retimer_type_key, to_string(retimer_type), kv::region::temp);
 
-    if (system("sv start sensord > /dev/null 2>&1 &") < 0) {
-      syslog(LOG_ERR, "%s(): Failed to start sensord", __func__);
+    if (bic_set_sensor_monitor_state(slot_id, true, NONE_INTF)) {
+      syslog(LOG_ERR, "%s() Slot%d, failed to enable BIC sensor polling", 
+             __func__, slot_id);
     }
   }
 
