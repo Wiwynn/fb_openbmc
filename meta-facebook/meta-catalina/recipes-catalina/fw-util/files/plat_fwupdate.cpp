@@ -18,6 +18,28 @@
 
 using namespace std;
 
+int pal_get_fru_id(char *str, uint8_t *fru)
+{
+  const char *list[] = {"all", "bmc", "hdd", "hmc", "nic0", "nic1", "pdb", "scm"};
+  uint8_t id;
+
+  if (!str || !fru)
+  {
+    return -1;
+  }
+
+  for (id = 0; id < sizeof(list)/sizeof(list[0]); id++)
+  {
+    if (strncmp(str, list[id], 16) == 0)
+    {
+      *fru = id;
+      return 0;
+    }
+  }
+
+  return -1;
+}
+
 class FwComponentConfig
 {
 public:
