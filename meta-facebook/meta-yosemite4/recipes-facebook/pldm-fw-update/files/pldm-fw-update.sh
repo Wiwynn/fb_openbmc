@@ -4,6 +4,7 @@
 source /usr/libexec/yosemite4-common-functions
 
 RETRY_UPDATE_COUNT=200
+MAX_RETRIES=3
 lockfile="/tmp/pldm-fw-update.lock"
 
 exec 200>"$lockfile"
@@ -56,6 +57,7 @@ FAIL_TO_UPDATE_PLDM_SD_VR_SLOT_ID_IS_WRONG=30
 FAIL_TO_UPDATE_PLDM_UNABLE_TO_DETERMINE_RETIMER_TYPE=33
 NO_RETIMER_ON_THE_FRU=34
 FAIL_TO_UPDATE_PLDM_PLDM_SOFTWARE_ACTIVATION_STATUS_FAIL=35
+FAIL_TO_UPDATE_PLDM_MCTP_EID_NOT_EXIST=36
 
 
 MANAGEMENT_BOARD_IO_EXP_BUS_NUM="34"
@@ -70,7 +72,7 @@ show_usage() {
 	echo "Usage: pldm-fw-update.sh [sd|ff|wf|sd_vr|wf_vr|sd_retimer] (--rcvy <slot_id> <uart image>) (<slot_id>) <pldm image>"
 	echo "       update all PLDM component  : pldm-fw-update.sh [sd|ff|wf] <pldm image>"
 	echo "       update one PLDM component  : pldm-fw-update.sh [sd|ff|wf|sd_vr|wf_vr|sd_retimer] <slot_id> <pldm image>"
-	echo "       recovery one BIC and then update all BICs : pldm-fw-update.sh [sd|ff|wf] --rcvy <slot_id> <uart image> <pldm image>"
+	echo "       recover and then update one BIC. : pldm-fw-update.sh [sd|ff|wf] --rcvy <slot_id> <uart image> <pldm image>"
 	echo "       recovery SD re-timer : pldm-fw-update.sh [sd_retimer] <slot_id> <pldm recovery image>"
 	echo ""
 }
@@ -167,7 +169,7 @@ recovery_bic_by_uart() {
 }
 
 wait_for_update_complete() {
-	local counter=0
+	local counter=5
 	while true
 	do
 		sleep 5
@@ -175,11 +177,17 @@ wait_for_update_complete() {
 
 		# Capture the output of busctl command
 		local output
-		output=$(busctl get-property xyz.openbmc_project.PLDM /xyz/openbmc_project/software/"$software_id" xyz.openbmc_project.Software.ActivationProgress Progress)
+		output=$(busctl get-property xyz.openbmc_project.PLDM /xyz/openbmc_project/software/"$software_id" xyz.openbmc_project.Software.ActivationProgress Progress --timeout=120 2>&1)
 		ret=$?
 		if [ "$ret" -ne "0" ]; then
 			local status
-			status=$(busctl get-property xyz.openbmc_project.PLDM /xyz/openbmc_project/software/"$software_id" xyz.openbmc_project.Software.Activation Activation)
+
+			if echo "$output" | grep -q "Unknown object"; then
+				echo "The software ID $software_id does not exist."
+				return $FAIL_TO_UPDATE_PLDM_MISS_SOFTWARE_ID
+			fi
+
+			status=$(busctl get-property xyz.openbmc_project.PLDM /xyz/openbmc_project/software/"$software_id" xyz.openbmc_project.Software.Activation Activation --timeout=120 2>&1 )
 			status=$(echo "$status" | cut -d " " -f 2)
 			if [ "${status}" == "xyz.openbmc_project.Software.Activation.Activations.Failed" ] || [ "${status}" == "xyz.openbmc_project.Software.Activation.Activations.Invalid" ]; then
 				echo -ne \\n"PLDM software activation is ${status}."\\n
@@ -211,15 +219,15 @@ delete_software_id() {
 		while true
 		do
 			sleep 2
-			activation=$(busctl  get-property xyz.openbmc_project.PLDM /xyz/openbmc_project/software/"$software_id" xyz.openbmc_project.Software.Activation Activation | cut -d " " -f 2)
+			activation=$(busctl  get-property xyz.openbmc_project.PLDM /xyz/openbmc_project/software/"$software_id" xyz.openbmc_project.Software.Activation Activation --timeout=120 2>&1 | cut -d " " -f 2)
 			#Check the status of pldm updater, if the status is in activating, we cannot call the delete method
 			if [ "${activation}" != "\"xyz.openbmc_project.Software.Activation.Activations.Activating\"" ]; then
 				echo "Delete software id. software id = $software_id"
-				busctl call xyz.openbmc_project.PLDM /xyz/openbmc_project/software/"$software_id" xyz.openbmc_project.Object.Delete Delete
+				output=$(busctl call xyz.openbmc_project.PLDM /xyz/openbmc_project/software/"$software_id" xyz.openbmc_project.Object.Delete Delete --timeout=120 2>&1)
 				local ret=$?
 				if [ "$ret" -ne 0 ]; then
-					echo "Failed to delete software id: Exit code $ret"
-					exit $FAIL_TO_UPDATE_PLDM_FAIL_TO_DELETE_SOFTWARE_ID
+					echo "Failed to delete software id. Return with error code: $FAIL_TO_UPDATE_PLDM_FAIL_TO_DELETE_SOFTWARE_ID. Error message: $output"
+					return $FAIL_TO_UPDATE_PLDM_FAIL_TO_DELETE_SOFTWARE_ID
 				fi
 				break
 			fi
@@ -230,15 +238,14 @@ delete_software_id() {
 				systemctl stop pldmd
 				sleep 10
 				systemctl start pldmd
-				sleep 40
-				exit $FAIL_TO_UPDATE_PLDM_FAIL_TO_DELETE_SOFTWARE_ID
+				sleep 60
+				return $FAIL_TO_UPDATE_PLDM_FAIL_TO_DELETE_SOFTWARE_ID
 			fi
 		done
 	fi
 }
 
 update_bic() {
-
 	cp "$1" /tmp/pldm_images
 	sleep 6
 
@@ -247,10 +254,9 @@ update_bic() {
 	echo "software_id = $software_id"
 
 	if [ "$software_id" != "" ]; then
-		if ! busctl get-property xyz.openbmc_project.PLDM /xyz/openbmc_project/software/"$software_id" xyz.openbmc_project.Software.ActivationProgress Progress >/dev/null; then
-			echo "The image does not match with any devices. Please check it."
-			delete_software_id
-			exit $FAIL_TO_UPDATE_PLDM_IMAGE_DOES_NOT_MATCH
+		if ! busctl get-property xyz.openbmc_project.PLDM /xyz/openbmc_project/software/"$software_id" xyz.openbmc_project.Software.ActivationProgress Progress --timeout=120 >/dev/null 2>&1; then
+			echo "The image does not match with any devices. Return with error code: $FAIL_TO_UPDATE_PLDM_IMAGE_DOES_NOT_MATCH"
+			return $FAIL_TO_UPDATE_PLDM_IMAGE_DOES_NOT_MATCH
 		fi
 		sleep 10
 		busctl set-property xyz.openbmc_project.PLDM /xyz/openbmc_project/software/"$software_id" xyz.openbmc_project.Software.Activation RequestedActivation s "xyz.openbmc_project.Software.Activation.RequestedActivations.Active"
@@ -355,7 +361,7 @@ is_other_bic_updating() {
 	  if echo "$pldm_output" | grep -qE "/xyz/openbmc_project/software/[0-9]+"; then
 		echo "$pldm_output" | grep -E "/xyz/openbmc_project/software/[0-9]+"
 		previous_software_id=$(busctl tree xyz.openbmc_project.PLDM |grep /xyz/openbmc_project/software/ | cut -d "/" -f 5)
-		busctl get-property xyz.openbmc_project.PLDM /xyz/openbmc_project/software/"$previous_software_id" xyz.openbmc_project.Software.ActivationProgress Progress > /dev/null
+		busctl get-property xyz.openbmc_project.PLDM /xyz/openbmc_project/software/"$previous_software_id" xyz.openbmc_project.Software.ActivationProgress Progress > /dev/null 2>&1
 		ret=$?
 		if [ "$ret" -eq 0 ]; then
 			echo -ne "Please wait until the other software update is completed, retry in 10 seconds, $retry_remain_count time(s) remaining... "\\r
@@ -515,141 +521,7 @@ check_if_no_retimer_sku() {
     return 0
 }
 
-# Check for minimum required arguments
-[ $# -lt 2 ] && error_and_exit "PLDM"
-
-is_rcvy=false
-slot_id=
-bic_name=$1
-pldm_image=$2
-
-# Determine recovery mode and check for required image files based on argument count
-if [ $# -eq 5 ] && [ "$2" == "--rcvy" ]; then
-
-	if [ "$bic_name" == "sd_vr" ]; then
-		echo "VR device can't be updated in recovery mode"
-		exit 255
-	fi
-
-	is_rcvy=true
-	slot_id=$3
-	uart_image=$4
-	[ ! -f "$uart_image" ] && error_and_exit "UART"
-	pldm_image=$5
-elif [ $# -eq 3 ] && [[ "$2" =~ ^[1-8]+$ ]]; then
-	slot_id=$2
-	pldm_image=$3
-	if [ "$bic_name" == "sd_vr" ]; then
-		VR_TYPE=$(hexdump -n 1 -s 0x6D -e '1/1 "%02x"' "$pldm_image")
-		mapfile -t VR_OFFSET < <(get_offset_for_vr_type "$VR_TYPE")
-		VR_HIGHBYTE_OFFSET="${VR_OFFSET[0]}"
-		VR_LOWBYTE_OFFSET="${VR_OFFSET[1]}"
-	fi
-	pldm-package-re-wrapper bic -s "$slot_id" -f "$pldm_image"
-	pldm_image="${pldm_image}_re_wrapped"
-elif [ $# -eq 3 ] && [ "$bic_name" == "sd_retimer" ]; then
-	slot_id=$2
-	check_if_no_retimer_sku "$slot_id"
-	exit_code=$?
-	if [ $exit_code -eq $NO_RETIMER_ON_THE_FRU ]; then
-		echo "Retimer update failed, no retimer on the slot${FRU#slot}."
-		exit $exit_code
-	elif [ $exit_code -ne 0 ]; then
-		exit $exit_code
-	fi
-	pldm-package-re-wrapper bic -s "$slot_id" -f "$3"
-	pldm_image="${pldm_image}_re_wrapped"
-else
-	prompt_confirmation
-fi
-
-[ ! -f "$pldm_image" ] && error_and_exit "PLDM"
-
-# Execute recovery operations if in recovery mode, based on the value of bic_name
-if [ "$is_rcvy" == true ]; then
-
-	is_other_bic_updating
-
-	# Workaround: Avoid pldm daemon blocked
-	systemctl stop pldmd
-	echo "Start to Recovery slot $slot_id $bic_name BIC"
-	case $bic_name in
-	sd)
-		recovery_bic_by_uart "$slot_id" "0x04" "0x01" "$uart_image"
-		ret=$?
-		;;
-	ff|wf)
-		check_power_on "$slot_id"
-		cpld_uart_routing=$( [ "$bic_name" == "ff" ] && echo "0x05" || echo "0x01" )
-		boot_strap_reg=$( [ "$bic_name" == "ff" ] && echo "0x04" || echo "0x02" )
-		recovery_bic_by_uart "$slot_id" "$cpld_uart_routing" "$boot_strap_reg" "$uart_image"
-		ret=$?
-		pldmtool raw -m "${slot_id}0" -d 0x80 0x02 0x39 0x1 0x1 0x1 0x1 0x1
-		;;
-	esac
-
-	if [ "$ret" -ne 0 ]; then
-		echo "Failed to Recovery BIC: Exit code $ret"
-		exit "$ret"
-	fi
-
-	echo "Restart MCTP service and PLDM service"
-	sleep 3
-	systemctl restart mctpd
-	sleep 20
-	systemctl start pldmd
-	sleep 40
-fi
-
-# TODO: WF/FF need to implement the remaining write times check
-if [ "$bic_name" == "sd_vr" ]; then
-	if ! [[ "$slot_id" =~ ^[1-8]$ ]]; then
-		echo "Failed to update SD VR because <slot${slot_id}> is wrong"
-		exit $FAIL_TO_UPDATE_PLDM_SD_VR_SLOT_ID_IS_WRONG
-	fi
-	check_vr_remaining_write "$slot_id" "$SD_EEPROM_ADDR" "$pldm_image"
-	echo "remaining write before updating: $remaining_write_times"
-fi
-
-if ! systemctl is-active --quiet pldmd; then
-	echo "STOP. PLDM service is not running. Please check pldmd status."
-	exit 255
-fi
-
-if [ "$is_rcvy" == true ]; then
-	pldm-package-re-wrapper bic -s "$slot_id" -f "$pldm_image"
-	pldm_image="${pldm_image}_re_wrapped"
-	echo "PLDM image name: ${pldm_image}"
-fi
-
-busctl tree xyz.openbmc_project.MCTP
-echo "Start to Update PLDM component"
-
-is_other_bic_updating
-
-update_bic "$pldm_image" "$slot_id" "$bic_name"
-ret=$?
-if [ "$ret" -ne 0 ]; then
-	echo "Failed to Update PLDM component: Exit code $ret"
-	delete_software_id
-	echo "Restart PLDM service for recover"
-	systemctl stop pldmd
-	sleep 10
-	systemctl start pldmd
-	sleep 40
-	exit $ret
-fi
-
-sleep 3
-
-if [ "$is_rcvy" == true ]; then
-	echo "slot$slot_id: Do 12V cycle"
-	busctl set-property xyz.openbmc_project.State.Chassis"$slot_id" /xyz/openbmc_project/state/chassis"$slot_id" xyz.openbmc_project.State.Chassis RequestedPowerTransition s "xyz.openbmc_project.State.Chassis.Transition.PowerCycle"
-	sleep 8
-fi
-
-
-if [ "$bic_name" == "wf" ] || [ "$bic_name" == "ff" ]; then
+restart_sd_bic_for_i3c_re-init () {
 	# Workaround: Restart all Sentinel dome BIC for i3c hub re-init
 	mapfile -t eid_arr < <(busctl tree xyz.openbmc_project.MCTP | grep /xyz/openbmc_project/mctp/1/ | cut -d "/" -f 6)
 	for EID in "${eid_arr[@]}"
@@ -665,100 +537,307 @@ if [ "$bic_name" == "wf" ] || [ "$bic_name" == "ff" ]; then
 			fi
 		fi
 	done
+	sleep 5
+}
+
+handle_firmware_operations () {
+	# Execute recovery operations if in recovery mode, based on the value of bic_name
+	echo "Start processing firmware operations for slot $slot_id using PLDM."
+	if [ "$is_rcvy" == true ]; then
+
+		is_other_bic_updating
+
+		# Workaround: Avoid pldm daemon blocked
+		systemctl stop pldmd
+		echo "Start to Recovery slot $slot_id $bic_name BIC"
+		case $bic_name in
+		sd)
+			recovery_bic_by_uart "$slot_id" "0x04" "0x01" "$uart_image"
+			ret=$?
+			;;
+		ff|wf)
+			check_power_on "$slot_id"
+			cpld_uart_routing=$( [ "$bic_name" == "ff" ] && echo "0x05" || echo "0x01" )
+			boot_strap_reg=$( [ "$bic_name" == "ff" ] && echo "0x04" || echo "0x02" )
+			recovery_bic_by_uart "$slot_id" "$cpld_uart_routing" "$boot_strap_reg" "$uart_image"
+			ret=$?
+			pldmtool raw -m "${slot_id}0" -d 0x80 0x02 0x39 0x1 0x1 0x1 0x1 0x1
+			;;
+		esac
+
+		if [ "$ret" -ne 0 ]; then
+			echo "Failed to Recovery BIC. Exiting with error code: $ret"
+			exit "$ret"
+		fi
+
+		echo "Restart MCTP service and PLDM service"
+		sleep 3
+		systemctl restart mctpd
+		sleep 20
+		systemctl start pldmd
+		sleep 60
+	fi
+
+	# TODO: WF/FF need to implement the remaining write times check
+	if [ "$bic_name" == "sd_vr" ]; then
+		if ! [[ "$slot_id" =~ ^[1-8]$ ]]; then
+			echo "Failed to update SD VR because <slot${slot_id}> is wrong"
+			exit $FAIL_TO_UPDATE_PLDM_SD_VR_SLOT_ID_IS_WRONG
+		fi
+		check_vr_remaining_write "$slot_id" "$SD_EEPROM_ADDR" "$pldm_image"
+		echo "remaining write before updating: $remaining_write_times"
+	fi
+
+	if ! systemctl is-active --quiet pldmd; then
+		echo "STOP. PLDM service is not running. Please check pldmd status."
+		exit 255
+	fi
+
+	if [ "$is_rcvy" == true ]; then
+		pldm-package-re-wrapper bic -s "$slot_id" -f "$pldm_image"
+		pldm_image="${pldm_image}_re_wrapped"
+		echo "PLDM image name: ${pldm_image}"
+	fi
+
+	mctp_tree=$(busctl tree xyz.openbmc_project.MCTP | tee /dev/tty)
+	case "$bic_name" in
+	sd|sd_vr|sd_retimer)
+		if [ "$is_rcvy" == false ] && ! echo "$mctp_tree" | grep -q "/xyz/openbmc_project/mctp/1/${slot_id}0"; then
+			echo "EID ${slot_id}0 does not exist, unable to update PLDM device. Return with error code: $FAIL_TO_UPDATE_PLDM_MCTP_EID_NOT_EXIST"
+			return $FAIL_TO_UPDATE_PLDM_MCTP_EID_NOT_EXIST
+		fi
+		;;
+	wf|wf_vr)
+		if [ "$is_rcvy" == false ] && ! echo "$mctp_tree" | grep -q "/xyz/openbmc_project/mctp/1/${slot_id}2"; then
+			echo "EID ${slot_id}2 does not exist, unable to update PLDM device. Return with error code: $FAIL_TO_UPDATE_PLDM_MCTP_EID_NOT_EXIST"
+			return $FAIL_TO_UPDATE_PLDM_MCTP_EID_NOT_EXIST
+		fi
+		;;
+	esac
+	echo "Start to Update PLDM component"
+
+	is_other_bic_updating
+
+	update_bic "$pldm_image" "$slot_id" "$bic_name"
+	ret=$?
+	if [ "$ret" -ne 0 ]; then
+		echo "Failed to Update PLDM component. Return with error code: $ret"
+		delete_software_id
+		echo "Restart PLDM service for recover"
+		systemctl stop pldmd
+		sleep 10
+		systemctl start pldmd
+		sleep 60
+		return $ret
+	fi
 
 	sleep 3
-fi
 
-if [ "$bic_name" == "sd_vr" ]; then
-	i2c_bus=$((slot_id+15))
-	i2ctransfer -f -y $i2c_bus w2@"$SD_EEPROM_ADDR" "$VR_HIGHBYTE_OFFSET" "$VR_LOWBYTE_OFFSET"
-	result=$(i2ctransfer -f -y  $i2c_bus r2@"$SD_EEPROM_ADDR")
-	if [ "$result" == "0xff 0xff" ]; then
-		Initialize_vr_remaining_write "$slot_id" "$SD_EEPROM_ADDR" "$pldm_image"
-	fi
-	remaining_write_times=$((remaining_write_times-1))
-	set_vr_remaining_write_to_eeprom "$slot_id" "$SD_EEPROM_ADDR" "$remaining_write_times"
-	echo "remaining write after updating: $remaining_write_times"
-fi
-
-delete_software_id
-
-# Update BIC version to Settings D-Bus
-if [ "$bic_name" == "sd" ]; then
-	echo "Updating SD BIC version to Settings D-Bus"
-	sleep 15 # wait for BIC reset
-	# Check if slot_id is empty
-	if [ -z "$slot_id" ]; then
-		# Loop through slot_id values from 1 to 8 if slot_id is empty
-		for slot_id in {1..8}; do
-			# Check EID presence first
-			busctl get-property xyz.openbmc_project.MCTP \
-				/xyz/openbmc_project/mctp/1/"$slot_id"0 \
-				xyz.openbmc_project.MCTP.Endpoint EID  > /dev/null 2>&1
-			ret=$?
-			if [ "$ret" -eq 0 ]; then
-				/usr/libexec/fw-versions/sd-bic "$slot_id"
-				ret=$?
-				# Check if the command was successful
-				if [ "$ret" -eq 0 ]; then
-					version=$(busctl get-property xyz.openbmc_project.Settings \
-						"/xyz/openbmc_project/software/host$slot_id/Sentinel_Dome_bic" \
-						xyz.openbmc_project.Software.Version Version | awk -F'"' '{print $2}')
-					echo "Version retrieved successfully: $version"
-				fi
-			fi
-		done
+	if [ "$is_rcvy" == true ]; then
+		echo "Slot$slot_id: Do 12V cycle"
+		busctl set-property xyz.openbmc_project.State.Chassis"$slot_id" /xyz/openbmc_project/state/chassis"$slot_id" xyz.openbmc_project.State.Chassis RequestedPowerTransition s "xyz.openbmc_project.State.Chassis.Transition.PowerCycle"
+		sleep 40
 	else
-		# Execute the command with the provided slot_id
-		/usr/libexec/fw-versions/sd-bic "$slot_id"
-		ret=$?
-		# Check if the command was successful
-		if [ "$ret" -eq 0 ]; then
-			version=$(busctl get-property xyz.openbmc_project.Settings \
-				"/xyz/openbmc_project/software/host$slot_id/Sentinel_Dome_bic" \
-				xyz.openbmc_project.Software.Version Version | awk -F'"' '{print $2}')
-			echo "Version retrieved successfully: $version"
+		if [ "$bic_name" == "wf" ] || [ "$bic_name" == "ff" ]; then
+			restart_sd_bic_for_i3c_re-init
+		elif [ "$bic_name" == "sd" ]; then
+			sleep 15
+			restart_sd_bic_for_i3c_re-init
 		fi
 	fi
-elif [ "$bic_name" == "wf" ]; then
-	echo "Updating WF BIC version to Settings D-Bus"
-	sleep 15 # wait for BIC reset
-	# Check if slot_id is empty
-	if [ -z "$slot_id" ]; then
-		# Loop through slot_id values from 1 to 8 if slot_id is empty
-		for slot_id in {1..8}; do
-			# Check EID presence first
-			busctl get-property xyz.openbmc_project.MCTP \
-				/xyz/openbmc_project/mctp/1/"$slot_id"2 \
-				xyz.openbmc_project.MCTP.Endpoint EID  > /dev/null 2>&1
-			ret=$?
-			if [ "$ret" -eq 0 ]; then
-				/usr/libexec/fw-versions/wf-bic "$slot_id"
+
+	if [ "$bic_name" == "sd_vr" ]; then
+		i2c_bus=$((slot_id+15))
+		i2ctransfer -f -y $i2c_bus w2@"$SD_EEPROM_ADDR" "$VR_HIGHBYTE_OFFSET" "$VR_LOWBYTE_OFFSET"
+		result=$(i2ctransfer -f -y  $i2c_bus r2@"$SD_EEPROM_ADDR")
+		if [ "$result" == "0xff 0xff" ]; then
+			Initialize_vr_remaining_write "$slot_id" "$SD_EEPROM_ADDR" "$pldm_image"
+		fi
+		remaining_write_times=$((remaining_write_times-1))
+		set_vr_remaining_write_to_eeprom "$slot_id" "$SD_EEPROM_ADDR" "$remaining_write_times"
+		echo "remaining write after updating: $remaining_write_times"
+	fi
+
+	delete_software_id
+
+	# Update BIC version to Settings D-Bus
+	if [ "$bic_name" == "sd" ]; then
+		echo "Updating SD BIC version to Settings D-Bus"
+		sleep 15 # wait for BIC reset
+		# Check if slot_id is empty
+		if [ -z "$slot_id" ]; then
+			# Loop through slot_id values from 1 to 8 if slot_id is empty
+			for slot_id in {1..8}; do
+				# Check EID presence first
+				busctl get-property xyz.openbmc_project.MCTP \
+					/xyz/openbmc_project/mctp/1/"$slot_id"0 \
+					xyz.openbmc_project.MCTP.Endpoint EID  > /dev/null 2>&1
 				ret=$?
-				# Check if the command was successful
 				if [ "$ret" -eq 0 ]; then
-					version=$(busctl get-property xyz.openbmc_project.Settings \
-						"/xyz/openbmc_project/software/host$slot_id/Wailua_Falls_bic" \
-						xyz.openbmc_project.Software.Version Version | awk -F'"' '{print $2}')
-					echo "Version retrieved successfully: $version"
+					/usr/libexec/fw-versions/sd-bic "$slot_id"
+					ret=$?
+					# Check if the command was successful
+					if [ "$ret" -eq 0 ]; then
+						version=$(busctl get-property xyz.openbmc_project.Settings \
+							"/xyz/openbmc_project/software/host$slot_id/Sentinel_Dome_bic" \
+							xyz.openbmc_project.Software.Version Version | awk -F'"' '{print $2}')
+						echo "Version retrieved successfully: $version"
+					fi
 				fi
+			done
+		else
+			# Execute the command with the provided slot_id
+			/usr/libexec/fw-versions/sd-bic "$slot_id"
+			ret=$?
+			# Check if the command was successful
+			if [ "$ret" -eq 0 ]; then
+				version=$(busctl get-property xyz.openbmc_project.Settings \
+					"/xyz/openbmc_project/software/host$slot_id/Sentinel_Dome_bic" \
+					xyz.openbmc_project.Software.Version Version | awk -F'"' '{print $2}')
+				echo "Version retrieved successfully: $version"
 			fi
-		done
-	else
-		# Execute the command with the provided slot_id
-		/usr/libexec/fw-versions/wf-bic "$slot_id"
-		ret=$?
-		# Check if the command was successful
-		if [ "$ret" -eq 0 ]; then
-			version=$(busctl get-property xyz.openbmc_project.Settings \
-				"/xyz/openbmc_project/software/host$slot_id/Wailua_Falls_bic" \
-				xyz.openbmc_project.Software.Version Version | awk -F'"' '{print $2}')
-			echo "Version retrieved successfully: $version"
+		fi
+	elif [ "$bic_name" == "wf" ]; then
+		echo "Updating WF BIC version to Settings D-Bus"
+		sleep 15 # wait for BIC reset
+		# Check if slot_id is empty
+		if [ -z "$slot_id" ]; then
+			# Loop through slot_id values from 1 to 8 if slot_id is empty
+			for slot_id in {1..8}; do
+				# Check EID presence first
+				busctl get-property xyz.openbmc_project.MCTP \
+					/xyz/openbmc_project/mctp/1/"$slot_id"2 \
+					xyz.openbmc_project.MCTP.Endpoint EID  > /dev/null 2>&1
+				ret=$?
+				if [ "$ret" -eq 0 ]; then
+					/usr/libexec/fw-versions/wf-bic "$slot_id"
+					ret=$?
+					# Check if the command was successful
+					if [ "$ret" -eq 0 ]; then
+						version=$(busctl get-property xyz.openbmc_project.Settings \
+							"/xyz/openbmc_project/software/host$slot_id/Wailua_Falls_bic" \
+							xyz.openbmc_project.Software.Version Version | awk -F'"' '{print $2}')
+						echo "Version retrieved successfully: $version"
+					fi
+				fi
+			done
+		else
+			# Execute the command with the provided slot_id
+			/usr/libexec/fw-versions/wf-bic "$slot_id"
+			ret=$?
+			# Check if the command was successful
+			if [ "$ret" -eq 0 ]; then
+				version=$(busctl get-property xyz.openbmc_project.Settings \
+					"/xyz/openbmc_project/software/host$slot_id/Wailua_Falls_bic" \
+					xyz.openbmc_project.Software.Version Version | awk -F'"' '{print $2}')
+				echo "Version retrieved successfully: $version"
+			fi
 		fi
 	fi
+	echo "Completed firmware operations for slot $slot_id."
+	echo "Done"
+	return 0
+}
+
+retry_firmware_operation() {
+    local retries=0
+    local ret=0
+
+    handle_firmware_operations
+    ret=$?
+    if [ $ret -eq 0 ]; then
+        return 0
+	elif [ $ret -eq $FAIL_TO_UPDATE_PLDM_MCTP_EID_NOT_EXIST ]; then
+		return $ret
+    fi
+
+    while [ $retries -lt $MAX_RETRIES ]; do
+        retries=$((retries + 1))
+        echo "Firmware operation for slot $slot_id failed. Retrying... ($retries/$MAX_RETRIES)"
+        handle_firmware_operations
+        ret=$?
+        if [ $ret -eq 0 ]; then
+            return 0
+        fi
+    done
+
+    echo "Maximum retries ($MAX_RETRIES) reached. Exiting with error code: $ret."
+    return $ret
+}
+
+# Check for minimum required arguments
+[ $# -lt 2 ] && error_and_exit "PLDM"
+
+is_rcvy=false
+slot_id=
+bic_name=$1
+pldm_image=$2
+
+# Determine recovery mode and check for required image files based on argument count
+if [ $# -eq 5 ] && [ "$2" == "--rcvy" ]; then
+
+	if [ "$bic_name" == "sd_vr" ] || [ "$bic_name" == "wf_vr" ]; then
+		echo "VR device can't be updated in recovery mode"
+		exit 255
+	elif [ "$bic_name" == "sd" ]; then
+		echo "Initiate SD BIC recovery"
+	elif [ "$bic_name" == "wf" ]; then
+		echo "Initiate WF BIC recovery"
+	fi
+
+	is_rcvy=true
+	slot_id=$3
+	uart_image=$4
+	[ ! -f "$uart_image" ] && error_and_exit "UART"
+	pldm_image=$5
+	retry_firmware_operation
+elif [ $# -eq 3 ] && [[ "$2" =~ ^[1-8]+$ ]]; then
+	slot_id=$2
+	pldm_image=$3
+	if [ "$bic_name" == "sd_vr" ]; then
+		VR_TYPE=$(hexdump -n 1 -s 0x6D -e '1/1 "%02x"' "$pldm_image")
+		mapfile -t VR_OFFSET < <(get_offset_for_vr_type "$VR_TYPE")
+		VR_HIGHBYTE_OFFSET="${VR_OFFSET[0]}"
+		VR_LOWBYTE_OFFSET="${VR_OFFSET[1]}"
+	elif [ "$bic_name" == "sd" ]; then
+		echo "Initiate SD BIC update"
+	elif [ "$bic_name" == "wf" ]; then
+		echo "Initiate WF BIC update"
+	fi
+	pldm-package-re-wrapper bic -s "$slot_id" -f "$pldm_image"
+	pldm_image="${pldm_image}_re_wrapped"
+	retry_firmware_operation
+elif [ $# -eq 3 ] && [ "$bic_name" == "sd_retimer" ]; then
+	slot_id=$2
+	check_if_no_retimer_sku "$slot_id"
+	exit_code=$?
+	if [ $exit_code -eq $NO_RETIMER_ON_THE_FRU ]; then
+		echo "Retimer update failed, no retimer on the slot${FRU#slot}."
+		exit $exit_code
+	elif [ $exit_code -ne 0 ]; then
+		exit $exit_code
+	fi
+	echo "Initiate SD Retimer update"
+	pldm-package-re-wrapper bic -s "$slot_id" -f "$3"
+	pldm_image="${pldm_image}_re_wrapped"
+	retry_firmware_operation
+else
+	prompt_confirmation
+	if [ "$bic_name" == "sd" ]; then
+		echo "Initiate SD BIC update"
+	elif [ "$bic_name" == "wf" ]; then
+		echo "Initiate WF BIC update"
+	fi
+	for i in {1..8}; do
+		slot_id=$i
+		pldm_image=$2
+		pldm-package-re-wrapper bic -s "$slot_id" -f "$pldm_image"
+		pldm_image="${pldm_image}_re_wrapped"
+		retry_firmware_operation
+	done
 fi
 
-echo "Done"
+[ ! -f "$pldm_image" ] && error_and_exit "PLDM"
 
 #unlock
 flock -u 200
