@@ -11,6 +11,7 @@ SRC_URI:append = " \
     file://0005-ARM-dts-aspeed-elbert-Enable-mdio0-devices.patch \
     file://0006-ARM-dts-aspeed-Add-Facebook-fblite-r1-BMC.patch \
     file://0007-ARM-dts-aspeed-Expand-data0-partition-in-facebook-bm.patch \
+    file://0008-mtd-spi-Add-support-for-W25Q01JVSFIN.patch \
 "
 
 #
