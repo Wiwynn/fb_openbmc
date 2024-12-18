@@ -131,7 +131,7 @@ int VrComponent::get_ver_str(const uint8_t vr_comp, const string& name, string& 
     return -1;
   }
 
-  if (severBoardType == SERVER_TYPE_CL) {
+  if (severBoardType == SERVER_TYPE_CL || severBoardType == SERVER_TYPE_CL_EMR) {
     try {
       auto key = fmt::format( "slot{}_vr_device_id", slot_id);
 

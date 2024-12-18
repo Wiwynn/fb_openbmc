@@ -205,6 +205,7 @@ bic_get_server_power_status(uint8_t slot_id, uint8_t *power_status)
   slot_type = fby35_common_get_slot_type(slot_id);
   switch (slot_type) {
     case SERVER_TYPE_CL:
+    case SERVER_TYPE_CL_EMR:
       gpio_num = PWRGD_SYS_PWROK;
       break;
     case SERVER_TYPE_HD:

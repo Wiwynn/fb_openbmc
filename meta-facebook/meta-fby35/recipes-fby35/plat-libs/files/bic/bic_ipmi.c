@@ -2092,6 +2092,7 @@ bic_get_vr_remaining_wr(uint8_t fru_id, uint8_t addr, uint16_t *remain) {
       }
       break;
     case SERVER_TYPE_CL:
+    case SERVER_TYPE_CL_EMR:
       tbuf[4] = CL_VR_REMAINING_WRITE_OFFSET(addr);
       break;
     default:
@@ -2153,6 +2154,7 @@ bic_set_vr_remaining_wr(uint8_t fru_id, uint8_t addr, uint16_t remain) {
       }
       break;
     case SERVER_TYPE_CL:
+    case SERVER_TYPE_CL_EMR:
       tbuf[4] = CL_VR_REMAINING_WRITE_OFFSET(addr);
       break;
     default:

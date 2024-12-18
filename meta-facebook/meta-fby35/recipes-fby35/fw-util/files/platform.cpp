@@ -83,7 +83,9 @@ class ClassConfig {
         if (prsnt) {
           //slot1 cpld/me/vr
           switch (fby35_common_get_slot_type(FRU_SLOT1)) {
-            case SERVER_TYPE_CL: {
+            case SERVER_TYPE_CL:
+            case SERVER_TYPE_CL_EMR:
+            {
               static BicFwComponent bic_fw1("slot1", "bic", "sb", FW_SB_BIC);
               static CpldComponent cpld_fw1(
                   "slot1", "cpld", "sb", FW_CPLD, LCMXO3_4300C, 0x40);
@@ -317,7 +319,9 @@ class ClassConfig {
         if (prsnt) {
           // slot3 cpld/me/vr
           switch (fby35_common_get_slot_type(FRU_SLOT3)) {
-            case SERVER_TYPE_CL: {
+            case SERVER_TYPE_CL:
+            case SERVER_TYPE_CL_EMR:
+            {
               static BicFwComponent  bic_fw3("slot3", "bic", "sb", FW_SB_BIC);
               static CpldComponent cpld_fw3(
                   "slot3", "cpld", "sb", FW_CPLD, LCMXO3_4300C, 0x40);
@@ -545,7 +549,8 @@ class ClassConfig {
         hsc_type = (BIT_VALUE(gpio, HD_HSC_TYPE_1)) << 1 | BIT_VALUE(gpio, HD_HSC_TYPE_0);
         return hsc_type == HSC_MP5990;
       }
-    } else if (fby35_common_get_slot_type(slot_id) == SERVER_TYPE_CL) {
+    } else if (fby35_common_get_slot_type(slot_id) == SERVER_TYPE_CL ||
+               fby35_common_get_slot_type(slot_id) == SERVER_TYPE_CL_EMR) {
       if (get_board_rev(slot_id, BOARD_ID_SB, &board_rev) == 0) {
         return IS_BOARD_REV_MPS(board_rev);
       }

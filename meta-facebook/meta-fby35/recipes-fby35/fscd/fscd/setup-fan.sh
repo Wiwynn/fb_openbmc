@@ -110,6 +110,23 @@ check_fan_type() {
   done
 }
 
+update_emr_fan_table() {
+  sensor_name="flex"
+  power_module_cnt=$(/usr/local/bin/sensor-util bmc | grep -c VPDB)
+  delta_name=$(/usr/local/bin/sensor-util bmc | grep VPDB_DELTA)
+  if [ -n "$delta_name" ]; then
+    sensor_name="delta"
+  fi
+
+  if [ "$power_module_cnt" = "1" ]; then
+    str="all:bmc_pdb_vpdb_${sensor_name}1_temp_c"
+  else
+    str="max([all:bmc_pdb_vpdb_${sensor_name}1_temp_c, all:bmc_pdb_vpdb_${sensor_name}2_temp_c])"
+  fi
+
+  sed -i "s/power_sensor_list/${str}/g" /etc/fsc/FSC_CLASS1_CL_EMR_zone1.fsc
+}
+
 init_class1_fsc() {
   target_fsc_config=""
   config_type=""
@@ -121,6 +138,10 @@ init_class1_fsc() {
     elif [[ $server_type -eq 5 ]]; then
       config_type="JI"
       target_fsc_config="/etc/FSC_CLASS1_JI_config.json"
+    elif [[ $server_type -eq 6 ]]; then
+      config_type="VF"
+      target_fsc_config="/etc/FSC_CLASS1_CL_EMR_config.json"
+      update_emr_fan_table
     else
       config_type="1"
       target_fsc_config="/etc/FSC_CLASS1_type1_config.json"
@@ -155,7 +176,12 @@ init_class1_fsc() {
       case $board_type_1ou in
         4)
           config_type="VF"
-          target_fsc_config="/etc/FSC_CLASS1_type3_10_config.json"
+          if [[ $server_type -eq 6 ]]; then
+            target_fsc_config="/etc/FSC_CLASS1_CL_EMR_config.json"
+            update_emr_fan_table
+          else
+            target_fsc_config="/etc/FSC_CLASS1_type3_10_config.json"
+          fi
           ;;
         *)
           logger -t "fan_check" -p daemon.crit "Fail to get server type, run with the default fan config"

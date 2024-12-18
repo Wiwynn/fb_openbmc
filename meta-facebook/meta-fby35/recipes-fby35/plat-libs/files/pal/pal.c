@@ -2349,6 +2349,7 @@ pal_is_slot_server(uint8_t fru)
       ret = fby35_common_get_slot_type(fru);
       switch (ret) {
         case SERVER_TYPE_CL:
+        case SERVER_TYPE_CL_EMR:
         case SERVER_TYPE_HD:
         case SERVER_TYPE_GL:
         case SERVER_TYPE_JI:
@@ -5182,6 +5183,7 @@ pal_check_slot_cpu_present(uint8_t slot_id) {
 
   switch (fby35_common_get_slot_type(slot_id)) {
     case SERVER_TYPE_CL:
+    case SERVER_TYPE_CL_EMR:
       cpu_prsnt_pin = FM_CPU_SKTOCC_LVT3_PLD_N;
       break;
     case SERVER_TYPE_HD:
@@ -5412,6 +5414,10 @@ pal_is_aggregate_snr_valid(uint8_t snr_num) {
 int
 pal_check_slot_fru(uint8_t slot_id) {
   int slot_type = fby35_common_get_slot_type(slot_id);
+
+  if (slot_type == SERVER_TYPE_CL_EMR && SERVER_TYPE_EXPECTED == SERVER_TYPE_CL) {
+    return 0;
+  }
 
   if (slot_type != SERVER_TYPE_EXPECTED) {
     syslog(LOG_CRIT, "Slot%d plugged in a wrong FRU", slot_id);
@@ -5909,6 +5915,7 @@ pal_read_bic_sensor(uint8_t fru, uint8_t sensor_num, ipmi_extend_sensor_reading_
         }
         break;
       case SERVER_TYPE_CL:
+      case SERVER_TYPE_CL_EMR:
         sensor_base = &sensor_base_cl;
         break;
       case SERVER_TYPE_GL:
@@ -6074,12 +6081,13 @@ pal_get_post_complete(uint8_t slot_id, uint8_t *bios_post_complete) {
 
   switch (slot_type) {
     case SERVER_TYPE_CL:
+    case SERVER_TYPE_CL_EMR:
     case SERVER_TYPE_HD:
       // Get BIOS complete pin
-      if (slot_type == SERVER_TYPE_CL) {
-        post_cmplt_pin = FM_BIOS_POST_CMPLT_BMC_N;
-      } else {
+      if (slot_type == SERVER_TYPE_HD) {
         post_cmplt_pin = HD_FM_BIOS_POST_CMPLT_BIC_N;
+      } else {
+        post_cmplt_pin = FM_BIOS_POST_CMPLT_BMC_N;
       }
 
       // Get BIOS complete from BIC GPIO
@@ -6163,6 +6171,7 @@ pal_set_dam_pin_status(uint8_t slot, uint8_t dam_pin_status) {
       dam_pin_gpio = GL_DAM_BIC_R_EN;
       break;
     case SERVER_TYPE_CL:
+    case SERVER_TYPE_CL_EMR:
     case SERVER_TYPE_HD:
     default:
       syslog(LOG_WARNING, "%s() Not support to set DAM pin at current server type.\n", __func__);
@@ -6213,6 +6222,7 @@ pal_get_dam_pin_status(uint8_t slot, uint8_t* dam_pin_status) {
       dam_pin_gpio = GL_DAM_BIC_R_EN;
       break;
     case SERVER_TYPE_CL:
+    case SERVER_TYPE_CL_EMR:
     case SERVER_TYPE_HD:
     default:
       syslog(LOG_WARNING, "%s() Not support to set DAM pin at current server type.\n", __func__);

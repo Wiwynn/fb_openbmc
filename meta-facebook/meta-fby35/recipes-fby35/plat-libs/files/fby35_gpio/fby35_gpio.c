@@ -597,6 +597,7 @@ y35_get_gpio_list_size(uint8_t fru, bool is_virtual_gpio, uint8_t intf) {
       slot_type = fby35_common_get_slot_type(fru);
       switch (slot_type) {
         case SERVER_TYPE_CL:
+        case SERVER_TYPE_CL_EMR:
           gpio_list_size = cl_gpio_pin_size;
           break;
         case SERVER_TYPE_HD:
@@ -654,6 +655,7 @@ y35_get_gpio_name(uint8_t fru, uint8_t gpio, char *name, bool is_virtual_gpio, u
       slot_type = fby35_common_get_slot_type(fru);
       switch (slot_type) {
         case SERVER_TYPE_CL:
+        case SERVER_TYPE_CL_EMR:
           gpio_pin_size = cl_gpio_pin_size;
           gpio_pin_name = cl_gpio_pin_name;
           break;

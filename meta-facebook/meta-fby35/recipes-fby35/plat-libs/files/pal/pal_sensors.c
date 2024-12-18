@@ -3409,6 +3409,7 @@ pal_bic_sensor_read_raw(uint8_t fru, uint8_t sensor_num, float *value, uint8_t b
         break;
 
       case SERVER_TYPE_CL:
+      case SERVER_TYPE_CL_EMR:
         //Apply value correction for Crater Lake
         switch (sensor_num) {
           case BIC_SENSOR_FIO_TEMP:
@@ -3510,7 +3511,7 @@ pal_bic_sensor_read_raw(uint8_t fru, uint8_t sensor_num, float *value, uint8_t b
     *value /= 256;
   }
   //  Apply value correction for Crater Lake
-  if (slot_type == SERVER_TYPE_CL) {
+  if (slot_type == SERVER_TYPE_CL || slot_type == SERVER_TYPE_CL_EMR) {
     switch (sensor_num) {
       case BIC_SENSOR_FIO_TEMP:
         apply_frontIO_correction(fru, sensor_num, value, bmc_location);
@@ -4074,7 +4075,7 @@ _sdr_init(char *path, sensor_info_t *sinfo, uint8_t bmc_location, \
     snr_num = sdr->sensor_num;
     sinfo[snr_num].valid = true;
 
-    if (slot_type == SERVER_TYPE_CL) {
+    if (slot_type == SERVER_TYPE_CL || slot_type == SERVER_TYPE_CL_EMR) {
       switch (snr_num) {
         case BIC_SENSOR_INLET_TEMP:
         case BIC_SENSOR_OUTLET_TEMP:

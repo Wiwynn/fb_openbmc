@@ -37,6 +37,7 @@ ISL28022_ADDR_PSU="47"
 ISL28022_ADDR_GND="43"
 MAXIM_SOLUTION="0"
 MPS_SOLUTION="1"
+PM_CONF_REG="0xd4"
 
 function read_dev() {
   local bus=$1
@@ -107,6 +108,8 @@ function init_class1_dev() {
     driver="adm1272"
     medusa_addr=$NEW_ADM1272_ADDR
     load_driver=true
+    # enable VOUT and TEMP monitoring
+    /usr/sbin/i2cset -y -f $MEDUSA_HSC_BUS $NEW_ADM1272_ADDR $PM_CONF_REG 0x3f3f w
   elif read_dev $MEDUSA_HSC_BUS $LTC4287_ADDR 0x1 >/dev/null; then
     if curr_val=$(read_dev $MEDUSA_HSC_BUS $LTC4287_ADDR $LTC4287_CONTROL_REG); then
       set_oc_auto_retry=$((curr_val | (0x7 << 3)))
@@ -121,6 +124,8 @@ function init_class1_dev() {
     driver="adm1272"
     medusa_addr=$ADM1272_ADDR
     load_driver=true
+    # enable VOUT and TEMP monitoring
+    /usr/sbin/i2cset -y -f $MEDUSA_HSC_BUS $ADM1272_ADDR $PM_CONF_REG 0x3f3f w
   elif read_dev $MEDUSA_HSC_BUS $LTC4282_ADDR 0 >/dev/null; then
     if curr_val=$(read_dev $MEDUSA_HSC_BUS $LTC4282_ADDR $LTC4282_CONTROL_REG); then
       set_oc_auto_retry=$((curr_val | (0x1 << 2)))

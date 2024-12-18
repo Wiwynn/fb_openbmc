@@ -485,7 +485,8 @@ int plat_get_me_status(uint8_t fru, char *status)
   int ret;
 
   // ME only on Crater Lake system
-  if (fby35_common_get_slot_type(fru) != SERVER_TYPE_CL) {
+  if (fby35_common_get_slot_type(fru) != SERVER_TYPE_CL &&
+      fby35_common_get_slot_type(fru) != SERVER_TYPE_CL_EMR) {
     return -1;
   }
 
@@ -662,7 +663,7 @@ int plat_get_syscfg_text(uint8_t fru, char *syscfg)
   slen = snprintf(entry, sizeof(entry), "CPU:");
 
   server_type = fby35_common_get_slot_type(fru);
-  if (server_type == SERVER_TYPE_CL) {
+  if (server_type == SERVER_TYPE_CL || server_type == SERVER_TYPE_CL_EMR) {
     cpu_name_pos = 3;  //Intel(R) Xeon(R) Gold "6450C"
     dimm_cache_id = cl_dimm_cache_id;
     dimm_label = cl_dimm_label;

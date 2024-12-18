@@ -72,6 +72,7 @@ image_info BiosComponent::check_image(const string& image, bool force) {
       board_id = BOARD_ID_GL;
       break;
     case SERVER_TYPE_CL:
+    case SERVER_TYPE_CL_EMR:
       board_id = BOARD_ID_SB;
       break;
     case SERVER_TYPE_JI:
@@ -173,7 +174,7 @@ int BiosComponent::update_internal(const std::string& image, int fd, bool force)
     }
   }
 
-  if (server_type == SERVER_TYPE_CL) {
+  if (server_type == SERVER_TYPE_CL || server_type == SERVER_TYPE_CL_EMR) {
     if (ret_pwroff == FORCED_OFF) {
       sleep(DELAY_ME_RESET);  // to wait for ME reset
     }
@@ -206,7 +207,8 @@ int BiosComponent::update_internal(const std::string& image, int fd, bool force)
   }
   sleep(1);
 
-  if (server_type == SERVER_TYPE_CL && ret_recovery == 0) {
+  if ((server_type == SERVER_TYPE_CL || server_type == SERVER_TYPE_CL_EMR)
+       && ret_recovery == 0) {
     // Have to do ME reset, because we have put ME into recovery mode
     cerr << "Doing ME Reset..." << endl;
     ret_reset = me_reset(slot_id);
@@ -284,7 +286,7 @@ int BiosComponent::dump(const string& image) {
   }
 
   server_type = fby35_common_get_slot_type(slot_id);
-  if (server_type == SERVER_TYPE_CL) {
+  if (server_type == SERVER_TYPE_CL || server_type == SERVER_TYPE_CL_EMR) {
     sleep(DELAY_ME_RESET);
     cerr << "Putting ME into recovery mode..." << endl;
     if(retry_cond((me_recovery(slot_id, RECOVERY_MODE) == 0) , 10, 1000)) {
@@ -300,7 +302,7 @@ int BiosComponent::dump(const string& image) {
   }
   sleep(1);
 
-  if (server_type == SERVER_TYPE_CL) {
+  if (server_type == SERVER_TYPE_CL || server_type == SERVER_TYPE_CL_EMR) {
     // Have to do ME reset, because we have put ME into recovery mode
     cerr << "Doing ME Reset..." << endl;
     ret_reset = me_reset(slot_id);

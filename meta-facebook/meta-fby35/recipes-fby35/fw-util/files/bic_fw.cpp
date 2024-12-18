@@ -45,6 +45,7 @@ image_info BicFwComponent::check_image(const string& image, bool force) {
           board_id = BOARD_ID_GL;
           break;
         case SERVER_TYPE_CL:
+        case SERVER_TYPE_CL_EMR:
           board_id = BOARD_ID_SB;
           break;
         case SERVER_TYPE_JI:
