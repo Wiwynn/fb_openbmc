@@ -50,18 +50,18 @@ index 37ec22c..7f62f51 100644
 +    });
 +
 +    static constexpr auto dimm_id = std::to_array({
-+        " DIMM A",
-+        " DIMM B",
-+        " DIMM C",
-+        " DIMM D",
-+        " DIMM E",
-+        " DIMM F",
-+        " DIMM G",
-+        " DIMM H",
-+        " DIMM I",
-+        " DIMM J",
-+        " DIMM K",
-+        " DIMM L",
++        " DIMM A0",
++        " DIMM A1",
++        " DIMM A2",
++        " DIMM A3",
++        " DIMM A4",
++        " DIMM A5",
++        " DIMM A6",
++        " DIMM A7",
++        " DIMM A8",
++        " DIMM A9",
++        " DIMM A10",
++        " DIMM A11",
 +    });
 +
 +    static constexpr auto vr_source = std::to_array({

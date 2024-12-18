@@ -4,15 +4,15 @@ print_usage_help() {
         echo "----------------------------------------PMIC error injection script supported commands----------------------------------------"
         echo "Show error injection type: $0 --error_inj"
         echo "Error injection: $0 <slot1|slot2|slot3|slot4|slot5|slot6|slot7|slot8>"
-        echo "                 --dimm <dimm_A|dimm_B|dimm_C|dimm_D|dimm_E|dimm_F|dimm_G|dimm_H|dimm_I|dimm_J|dimm_K|dimm_L>"
+        echo "                 --dimm <dimm_A0|dimm_A1|dimm_A2|dimm_A3|dimm_A4|dimm_A5|dimm_A6|dimm_A7|dimm_A8|dimm_A9|dimm_A10|dimm_A11>"
         echo "                 --error_inj <SWAout_OV|SWBout_OV|SWCout_OV|SWDout_OV|VinB_OV|VinM_OV|"
         echo "                 SWAout_UV|SWBout_UV|SWCout_UV|SWDout_UV|VinB_UV|Vin_switchover|high_temp|"
         echo "                 Vout_1v8_PG|high_current|current_limit|critical_temp_shutdown>"
         echo "Clear PMIC error: $0 <slot1|slot2|slot3|slot4|slot5|slot6|slot7|slot8>"
-        echo "                 --dimm <dimm_A|dimm_B|dimm_C|dimm_D|dimm_E|dimm_F|dimm_G|dimm_H|dimm_I|dimm_J|dimm_K|dimm_L> --clear_error"
+        echo "                 --dimm <dimm_A0|dimm_A1|dimm_A2|dimm_A3|dimm_A4|dimm_A5|dimm_A6|dimm_A7|dimm_A8|dimm_A9|dimm_A10|dimm_A11> --clear_error"
         echo "Example: "
-        echo "         $0 slot1 --dimm dimm_A --error_inj SWBout_OV"
-        echo "         $0 slot1 --dimm dimm_D --clear_error"
+        echo "         $0 slot1 --dimm dimm_A0 --error_inj SWBout_OV"
+        echo "         $0 slot1 --dimm dimm_A3 --clear_error"
 }
 
 get_hex_bit_value() {
@@ -81,29 +81,29 @@ else
         exit 1
 fi
 
-if [ "$dimm" == "dimm_A" ]; then
+if [ "$dimm" == "dimm_A0" ]; then
         dimm_id=0
-elif [ "$dimm" == "dimm_B" ]; then
+elif [ "$dimm" == "dimm_A1" ]; then
         dimm_id=1
-elif [ "$dimm" == "dimm_C" ]; then
+elif [ "$dimm" == "dimm_A2" ]; then
         dimm_id=2
-elif [ "$dimm" == "dimm_D" ]; then
+elif [ "$dimm" == "dimm_A3" ]; then
         dimm_id=3
-elif [ "$dimm" == "dimm_E" ]; then
+elif [ "$dimm" == "dimm_A4" ]; then
         dimm_id=4
-elif [ "$dimm" == "dimm_F" ]; then
+elif [ "$dimm" == "dimm_A5" ]; then
         dimm_id=5
-elif [ "$dimm" == "dimm_G" ]; then
+elif [ "$dimm" == "dimm_A6" ]; then
         dimm_id=6
-elif [ "$dimm" == "dimm_H" ]; then
+elif [ "$dimm" == "dimm_A7" ]; then
         dimm_id=7
-elif [ "$dimm" == "dimm_I" ]; then
+elif [ "$dimm" == "dimm_A8" ]; then
         dimm_id=8
-elif [ "$dimm" == "dimm_J" ]; then
+elif [ "$dimm" == "dimm_A9" ]; then
         dimm_id=9
-elif [ "$dimm" == "dimm_K" ]; then
+elif [ "$dimm" == "dimm_A10" ]; then
         dimm_id=10
-elif [ "$dimm" == "dimm_L" ]; then
+elif [ "$dimm" == "dimm_A11" ]; then
         dimm_id=11
 else
         echo "Invalid dimm: $dimm"
