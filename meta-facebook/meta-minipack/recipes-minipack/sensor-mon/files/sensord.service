@@ -23,7 +23,8 @@ After=setup_i2c.service
 [Service]
 ExecStart=/usr/local/bin/sensord scm smb pim1 pim2 pim3 pim4 pim5 pim6 pim7 pim8 psu1 psu2 psu3 psu4
 ExecReload=/bin/kill -HUP $MAINPID
-Restart=on-success
+Restart=always
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target

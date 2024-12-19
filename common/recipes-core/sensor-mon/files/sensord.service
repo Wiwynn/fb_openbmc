@@ -23,7 +23,8 @@ After=setup_i2c.service
 [Service]
 ExecStart=/usr/local/bin/sensord SENSORD_LAUNCH_ARGS
 ExecReload=/bin/kill -HUP $MAINPID
-Restart=on-success
+Restart=always
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
