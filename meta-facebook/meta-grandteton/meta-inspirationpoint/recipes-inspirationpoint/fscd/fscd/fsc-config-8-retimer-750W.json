@@ -1,5 +1,5 @@
 {
-    "version": "inspirationpint_v2.0",
+    "version": "inspirationpint_v2.1",
     "pwm_transition_value": 100,
     "pwm_boost_value": 100,
     "sample_interval_ms": 3000,
@@ -254,8 +254,23 @@
         "negative_hysteresis": 1,
         "data": [
           [58, 25],
-          [90, 90]
+          [75, 45],
+          [78, 55],
+          [81, 68],
+          [90, 100]
         ]
+      },
+      "gpu_tray_nvs_pid": {
+        "read_source" : {
+          "util" : "/usr/local/bin/sensor-util"
+        },
+        "type": "pid",
+        "positive_hysteresis": 0,
+        "negative_hysteresis": 2,
+        "setpoint": 84,
+        "kp": -5,
+        "ki": -0.035,
+        "kd": 0
       },
       "gpu_tray_gpu_linear": {
         "read_source" : {
@@ -313,34 +328,6 @@
         "positive_hysteresis": 1,
         "negative_hysteresis": 2,
         "setpoint": 102,
-        "kp": -3.5,
-        "ki": -0.035,
-        "kd": 0
-      },
-      "gpu_tray_hbm_linear": {
-        "read_source" : {
-          "util" : "/usr/local/bin/sensor-util"
-        },
-        "type": "linear",
-        "positive_hysteresis": 1,
-        "negative_hysteresis": 1,
-        "data": [
-          [62, 25],
-          [63, 35],
-          [78, 40],
-          [82, 48],
-          [85, 55],
-          [92, 100]
-        ]
-      },
-      "gpu_tray_hbm_pid": {
-        "read_source" : {
-          "util" : "/usr/local/bin/sensor-util"
-        },
-        "type": "pid",
-        "positive_hysteresis": 2,
-        "negative_hysteresis": 2,
-        "setpoint": 88,
         "kp": -3.5,
         "ki": -0.035,
         "kd": 0
