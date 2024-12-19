@@ -1,0 +1,26 @@
+From 3e690c6afe2ebaa1c6ee13ebcfae16b27bc96a60 Mon Sep 17 00:00:00 2001
+From: Adam Calabrigo <adamc@arista.com>
+Date: Wed, 28 Feb 2024 18:42:47 -0800
+Subject: [PATCH 1002/1003] mtd: spi-nor: issi: add support for IS25LP512MG
+
+---
+ drivers/mtd/spi-nor/issi.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/mtd/spi-nor/issi.c b/drivers/mtd/spi-nor/issi.c
+index accdf7aa2bfd..002e258266ab 100644
+--- a/drivers/mtd/spi-nor/issi.c
++++ b/drivers/mtd/spi-nor/issi.c
+@@ -66,6 +66,9 @@ static const struct flash_info issi_nor_parts[] = {
+ 		PARSE_SFDP
+ 		FIXUP_FLAGS(SPI_NOR_4B_OPCODES)
+ 		.fixups = &is25lp256_fixups },
++        { "is25lp512mg",  INFO(0x9d6020, 0, 64 * 1024, 1024)
++		NO_SFDP_FLAGS(SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ)
++		FLAGS(SPI_NOR_QUAD_PP) },
+ 	{ "is25wp032",  INFO(0x9d7016, 0, 64 * 1024,  64)
+ 		NO_SFDP_FLAGS(SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+ 	{ "is25wp064",  INFO(0x9d7017, 0, 64 * 1024, 128)
+-- 
+2.43.5
+
