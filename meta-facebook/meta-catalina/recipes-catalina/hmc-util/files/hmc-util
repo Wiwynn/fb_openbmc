@@ -48,14 +48,15 @@ get_comp_version()
     CURL_CMD="curl --connect-timeout ${CURL_CONNECT_TIMEOUT} -s '${FW_INVENTORY_URL}/$1'"
     if ! CURL_DATA=$(eval "${CURL_CMD}"); then
         # HMC not response
-        echo "$1 : NA"
+        echo "$1: NA"
         return 1
-    elif ! echo "${CURL_DATA}" | jq -e '.Version' > /dev/null; then
-        # component's firminventory not available yet
-        echo "$1 : NA"
+    fi
+
+    COMP_VER="$(echo "${CURL_DATA}" | jq -r '"\(.Version // .Oem.Nvidia.ActiveFirmwareSlot.Version // "NA")"')"
+    echo "$1: $COMP_VER"
+
+    if [ "$COMP_VER" = "NA" ]; then
         return 1
-    else
-        echo "${CURL_DATA}" | jq -r '. | "\(.Id): \(.Version)"'
     fi
     return 0
 }
@@ -67,7 +68,7 @@ get_all_comp_version()
         echo "failed: HMC not response."
         return 1
     else
-        echo "${CURL_DATA}" | jq -r '.Members[] | select(.Id) | "\(.Id): \(.Version)"'
+        echo "${CURL_DATA}" | jq -r '.Members[] | select(.Id) | "\(.Id): \(.Version // .Oem.Nvidia.ActiveFirmwareSlot.Version // "NA")"'
     fi
     return 0
 }
@@ -85,17 +86,9 @@ get_all_firmware_path_without_sbios()
 prepare_update_target_str()
 {
     case "$1" in
-        "all")
+        "all"|"bundle")
             # Update all components available in the firmware package
             echo ""
-            ;;
-
-        "bundle")
-            # Update all components find in HMC excluding the SBIOS
-            if ! get_all_firmware_path_without_sbios; then
-                echo "Error: Failed to retrieve firmware paths."
-                return 1
-            fi
             ;;
 
         "sbios")
