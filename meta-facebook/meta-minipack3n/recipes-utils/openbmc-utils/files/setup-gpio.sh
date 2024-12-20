@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) Meta Platforms, Inc. and affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates. (http://www.meta.com)
 #
 # This program file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -16,10 +16,19 @@
 # Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
+#
+
+### BEGIN INIT INFO
+# Provides:          gpio-setup
+# Required-Start:
+# Required-Stop:
+# Default-Start:     S
+# Default-Stop:
+# Short-Description:  Set up GPIO pins as appropriate
+### END INIT INFO
 
 # shellcheck disable=SC1091
 . /usr/local/bin/openbmc-utils.sh
 
-# FRU IDPROMs
-i2c_device_add 3 0x56 24c64  # SCM IDPROM
-i2c_device_add 6 0x53 24c64  # Chassis EEPROM
+# BMC ready event to COME
+setup_gpio FM_BMC_READY_R_L                 GPIOP0 out 0

@@ -52,11 +52,23 @@ chassis_power_cycle() {
 }
 
 bmc_mac_addr() {
-    echo "FIXME: feature not implemented!!"
-    return 1
+    mac_addr=$(weutil -e chassis_eeprom | sed -nE 's/((Local MAC)|(BMC MAC Base)): (.*)/\4/p')
+
+    if [ -z "$mac_addr" ]; then
+        echo "Error: unable to fetch BMC MAC from Chassis EEPROM!"
+        exit 1
+    fi
+
+    echo "$mac_addr"
 }
 
 userver_mac_addr() {
-    echo "FIXME: feature not implemented!!"
-    return 1
+    mac_addr=$(weutil -e scm_eeprom | sed -nE 's/((Local MAC)|(X86 CPU MAC Base)): (.*)/\4/p')
+
+    if [ -z "$mac_addr" ]; then
+        echo "Error: unable to fetch X86 MAC from SCM EEPROM!"
+        exit 1
+    fi
+
+    echo "$mac_addr"
 }
