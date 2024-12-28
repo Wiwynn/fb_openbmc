@@ -47,9 +47,9 @@
         },
         "vr": {
             "version header": [
-                "VDDCR_CPU0/VDDCR_SOC Version",
-                "VDDCR_CPU1/VDDIO Version",
-                "VDD11_S3 Version"
+                "VR_CPUDVDD Version",
+                "VR_CPUVDD Version",
+                "VR_SOCVDD Version"
             ]
         }
     },
