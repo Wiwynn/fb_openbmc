@@ -18,9 +18,12 @@
  * @brief Implementation of platform specific functions for Linux
  */
 
+#include "astera_log.h"
 #include "platform.h"
+#include "plat.h"
 
-int asteraI2COpenConnection(int i2cBus, int slaveAddress)
+int __attribute__((weak))
+asteraI2COpenConnection(int i2cBus, int slaveAddress)
 {
     int handle;
     int quiet = 0;
@@ -60,16 +63,19 @@ int asteraI2COpenConnection(int i2cBus, int slaveAddress)
     return handle;
 }
 
-int asteraI2CWriteBlockData(int handle, uint8_t cmdCode, uint8_t numBytes,
+int __attribute__((weak))
+asteraI2CWriteBlockData(int handle, uint8_t cmdCode, uint8_t numBytes,
                             uint8_t* buf)
 {
     return i2c_smbus_write_block_data(handle, cmdCode, numBytes, buf);
 }
 
-int asteraI2CReadBlockData(int handle, uint8_t cmdCode, uint8_t numBytes,
+int __attribute__((weak))
+asteraI2CReadBlockData(int handle, uint8_t cmdCode, uint8_t numBytes,
                            uint8_t* buf)
 {
 #ifdef SMBUS_BLOCK_READ_UNSUPPORTED
+    ASTERA_TRACE("SMBUS_BLOCK_READ_UNSUPPORTED condition");
     int rc = i2c_smbus_read_i2c_block_data(handle, cmdCode, numBytes, buf);
 #else
     (void)numBytes; // Unused when performing SMBus block read transaction
@@ -78,13 +84,15 @@ int asteraI2CReadBlockData(int handle, uint8_t cmdCode, uint8_t numBytes,
     return rc;
 }
 
-int asteraI2CWriteReadBlockData(int handle, uint8_t cmdCode, uint8_t numBytes,
+int __attribute__((weak))
+asteraI2CWriteReadBlockData(int handle, uint8_t cmdCode, uint8_t numBytes,
                                 uint8_t* buf)
 {
     return i2c_smbus_block_process_call(handle, cmdCode, numBytes, buf);
 }
 
-int asteraI2CBlock(int handle)
+int __attribute__((weak))
+asteraI2CBlock(int handle)
 {
     if (flock(handle, LOCK_EX) < 0)
     {
@@ -95,7 +103,8 @@ int asteraI2CBlock(int handle)
     return 0; // Equivalent to ARIES_SUCCESS
 }
 
-int asteraI2CUnblock(int handle)
+int __attribute__((weak))
+asteraI2CUnblock(int handle)
 {
     if (flock(handle, LOCK_UN) < 0)
     {
@@ -115,7 +124,8 @@ int asteraI2CUnblock(int handle)
  *                      I2C_SLAVE address
  * @return     int      Zero if success, else a negative value
  */
-int asteraI2CSetSlaveAddress(int handle, int address, int force)
+int __attribute__((weak))
+asteraI2CSetSlaveAddress(int handle, int address, int force)
 {
     /* With force, let the user read from/write to the registers
        even when a driver is also running */
@@ -135,7 +145,8 @@ int asteraI2CSetSlaveAddress(int handle, int address, int force)
  * @param[in]  pec      SMBus PEC (packet error checking) flag
  * @return     int      Zero if success, else a negative value
  */
-int asteraI2CSetPEC(int handle, int pec)
+int __attribute__((weak))
+asteraI2CSetPEC(int handle, int pec)
 {
     if (ioctl(handle, I2C_PEC, pec) < 0)
     {
@@ -151,7 +162,8 @@ int asteraI2CSetPEC(int handle, int pec)
  *
  * @param[in]  handle   I2C handle
  */
-void asteraI2CCloseConnection(int handle)
+void __attribute__((weak))
+asteraI2CCloseConnection(int handle)
 {
     close(handle);
 }

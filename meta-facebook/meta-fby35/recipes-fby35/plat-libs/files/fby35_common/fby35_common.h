@@ -156,6 +156,12 @@ extern const char *slot_usage;
 #define FRUID_0 0
 
 #define ASPEED_PID "7ec80010000"
+
+#define RETIMER_SWITCH_BUS 1
+#define RETIMER_SWITCH_ADDR 0xE2
+#define AL_RETIMER_ADDR 0x40
+#define TI_RETIMER_ADDR 0x20
+
 enum {
   FRU_ALL       = 0,
   FRU_SLOT1     = 1,
@@ -523,6 +529,12 @@ enum {
 enum {
   CARD_TYPE_1OU = 0x0,
   CARD_TYPE_2OU,
+};
+
+enum retimer_type {
+  RETIMER_AL_PT4080L = 0,
+  RETIMER_TI_DS160PT801,
+  RETIMER_UNKNOWN = 0xFF
 };
 
 enum POWER_LOCK {

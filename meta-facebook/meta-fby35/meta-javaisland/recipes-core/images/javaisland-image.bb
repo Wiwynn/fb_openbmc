@@ -63,4 +63,5 @@ IMAGE_INSTALL += " \
   pldmd \
   tpm-factory-upd \
   libcper \
+  retimer-util \
   "

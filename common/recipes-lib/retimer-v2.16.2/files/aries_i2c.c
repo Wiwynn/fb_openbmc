@@ -19,6 +19,7 @@
  */
 
 #include "aries_i2c.h"
+#include "plat.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -543,6 +544,7 @@ AriesErrorType ariesReadBlockData(AriesI2CDriverType* i2cDriver,
                                                    currBytes + 1 + pecEn,
                                                    readBuf);
 #ifdef SMBUS_BLOCK_READ_UNSUPPORTED
+                ASTERA_TRACE("SMBUS_BLOCK_READ_UNSUPPORTED condition");
                 readBytes -= 1 + pecEn;
 #endif
                 if (readBytes != currBytes)

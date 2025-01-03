@@ -17,6 +17,8 @@ headers = [
     'aries_mpw_reg_defines.h',
     'astera_log.h',
     'platform.h',
+    'aries_common.h',
+    'plat.h',
 ]
 
 sources = [
@@ -27,6 +29,12 @@ sources = [
     'aries_misc.c',
     'astera_log.c',
     'platform.c',
+    'aries_common.c',
+    'plat.c',
+]
+
+rt_deps = [
+    dependency('libobmc-i2c'),
 ]
 
 # Import the plat-specific subdirectory for platform
@@ -41,10 +49,6 @@ install_headers(
 srcs = files(
   sources,
 )
-
-rt_deps = [
-    dependency('libobmc-i2c'),
-]
 
 # Retimer library.
 rt_lib = shared_library('retimer', srcs,

@@ -287,7 +287,6 @@ AriesErrorType ariesMarginStepMarginToTimingOffset(
 {
     AriesErrorType rc;
     int ln;
-
     for (ln = 0; ln < laneCount; ln++)
     {
         if (direction[ln] != 0 && direction[ln] != 1)
@@ -302,7 +301,6 @@ AriesErrorType ariesMarginStepMarginToTimingOffset(
             return ARIES_INVALID_ARGUMENT;
         }
     }
-
     rc = ariesMarginPmaRxMarginTiming(marginDevice, port, lane, direction,
                                       steps, laneCount);
     CHECK_SUCCESS(rc);

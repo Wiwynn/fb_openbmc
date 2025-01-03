@@ -12,16 +12,6 @@
 
 using namespace std;
 
-static bool is_server_post_complete(const uint8_t& slot_id) {
-  char host_ready_value[8] = {0};
-  auto host_ready_key = fmt::format("fru{}_host_ready", slot_id);
-
-  if (kv_get(host_ready_key.c_str(), host_ready_value, NULL, 0)) {
-    return false;
-  }
-  return strcmp(host_ready_value, "1") == 0;
-}
-
 int get_server_retimer_type(const uint8_t& slot_id) {
   int retimer_type = RETIMER_UNKNOWN;
   string retimer_type_key(fmt::format("slot{}_retimer_type", slot_id));

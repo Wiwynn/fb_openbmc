@@ -6327,3 +6327,97 @@ pal_set_post_end(uint8_t slot, uint8_t *req_data, uint8_t *res_data, uint8_t *re
 
   *res_len = 0;
 }
+
+bool is_server_post_complete(uint8_t slot_id) {
+  char key[MAX_KEY_LEN] = {0};
+  char value[MAX_VALUE_LEN] = {0};
+
+  snprintf(key, MAX_KEY_LEN, "fru%u_host_ready", slot_id);
+
+  if (kv_get(key, value, NULL, 0)) {
+    return false;
+  }
+  return strcmp(value, "1") == 0;
+}
+
+int pal_get_retimer_type(uint8_t slot_id) {
+  int ret = 0;
+  int retimer_type = RETIMER_UNKNOWN;
+  char key[MAX_KEY_LEN] = {0};
+  char value[MAX_VALUE_LEN] = {0};
+
+  snprintf(key, MAX_KEY_LEN, "slot%u_retimer_type", slot_id);
+  ret = kv_get(key, value, NULL, 0);
+
+  if (ret == 0) {
+    retimer_type = strtol(value, NULL, 10);
+    if (retimer_type != RETIMER_UNKNOWN) {
+      return retimer_type;
+    }
+  }
+
+  {
+    // if the retimer type is unknown in the cache, rescan the retimer bus
+    uint8_t tbuf[16] = {0x00};
+    uint8_t rbuf[16] = {0x00};
+    uint8_t tlen = IANA_ID_SIZE;
+    uint8_t rlen = 0;
+
+    if (!is_server_post_complete(slot_id)) {
+      printf("the server has not POST complete \n");
+      goto exit;
+    }
+
+    // disable BIC sensor polling to prevent BIC change the switch during
+    // retimer bus scanning
+    if (bic_set_sensor_monitor_state(slot_id, false, NONE_INTF)) {
+      printf("failed to disable BIC sensor polling \n");
+      goto exit;
+    }
+
+    // the switch needs to switch to channel 2 after EVT2 to access the retimer
+    ret = fby35_common_get_sb_rev(slot_id);
+    if (ret < 0) {
+      printf("failed to get server board revision \n");
+      goto exit;
+    }
+    if ((ret & 0x0F) >= JI_REV_EVT2) {
+      tbuf[0] = 0x02; // channel 2
+      ret = bic_master_write_read(slot_id, (RETIMER_SWITCH_BUS << 1) | 1,
+                                  RETIMER_SWITCH_ADDR, tbuf, 1, rbuf, 0);
+      if (ret) {
+        printf("failed to switch channel for retimer \n");
+        goto exit;
+      }
+    }
+
+    // scan the i2c bus to determine the retimer type
+    memcpy(tbuf, (uint8_t *)&IANA_ID, IANA_ID_SIZE);
+    tbuf[tlen++] = RETIMER_SWITCH_BUS;
+    ret = bic_data_send(slot_id, NETFN_OEM_1S_REQ, 0x60,
+                        tbuf, tlen, rbuf, &rlen, NONE_INTF);
+    if (ret) {
+      printf("failed to scan retimer bus \n");
+      goto exit;
+    }
+    for (size_t i = 0; i < rlen; ++i) {
+      if (rbuf[i] == AL_RETIMER_ADDR) {
+        retimer_type = RETIMER_AL_PT4080L;
+        break;
+      }
+      if (rbuf[i] == TI_RETIMER_ADDR) {
+        retimer_type = RETIMER_TI_DS160PT801;
+        break;
+      }
+    }
+    snprintf(value, MAX_KEY_LEN, "%d", retimer_type);
+    kv_set(key, value, 0, 0);
+  }
+
+exit:
+  if (bic_set_sensor_monitor_state(slot_id, true, NONE_INTF)) {
+    syslog(LOG_ERR, "%s() Slot%d, failed to enable BIC sensor polling",
+            __func__, slot_id);
+  }
+  return retimer_type;
+}

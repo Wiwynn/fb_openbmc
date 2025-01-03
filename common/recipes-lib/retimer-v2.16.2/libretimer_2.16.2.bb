@@ -7,6 +7,8 @@ DEFAULT_PREFERENCE = "-1"
 LICENSE = "GPL-2.0-or-later"
 LIC_FILES_CHKSUM = "file://LICENSE;beginline=5;endline=17;md5=b96cf6516c0263b26b55c5bbf3806237"
 
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
+
 LOCAL_URI = "\
     file://aries_api.c \
     file://aries_i2c.c \
@@ -27,9 +29,13 @@ LOCAL_URI = "\
     file://astera_log.h \
     file://LICENSE \
     file://meson.build \
-    file://plat/meson.build \
     file://platform.c \
     file://platform.h \
+    file://aries_common.c \
+    file://aries_common.h \
+    file://plat/meson.build \
+    file://plat.c \
+    file://plat.h \
     "
 
 inherit meson pkgconfig
