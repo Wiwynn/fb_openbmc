@@ -49,6 +49,7 @@ PLAT_DISTRO_OVERRIDES=(
   meta-meru:lf-master
   meta-minerva:lf-master
   meta-minipack:lf-master
+  meta-minipack3n:lf-master
   meta-morgan800cc:lf-master
   meta-montblanc:lf-master
   meta-qemux86:lf-master
