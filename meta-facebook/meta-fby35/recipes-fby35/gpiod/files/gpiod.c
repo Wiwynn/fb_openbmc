@@ -75,7 +75,7 @@ pthread_mutex_t pwrgd_cpu_mutex[MAX_NUM_SLOTS] = {PTHREAD_MUTEX_INITIALIZER,
                                                   PTHREAD_MUTEX_INITIALIZER,
                                                   PTHREAD_MUTEX_INITIALIZER};
 #define SET_BIT(list, index, bit) \
-           if ( index >= sizeof(bic_gpio_t) ) { \
+           if ( index >= sizeof(list)*8 ) { \
               /*Avoid accessing illegal memory*/ \
            } else if ( bit == 0 ) {      \
              (((uint8_t*)&list)[index/8]) &= ~(0x1 << (index % 8)); \
