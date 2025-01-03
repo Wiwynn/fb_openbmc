@@ -1,0 +1,235 @@
+From 9a1201e87556716ac9a8e140a2f8d3d884cd15c8 Mon Sep 17 00:00:00 2001
+From: Peter Yin <peteryin.openbmc@gmail.com>
+Date: Mon, 30 Dec 2024 17:43:06 +0800
+Subject: [PATCH 8/8] mtd: spi-nor: winbond: Add support for w25q01jv
+
+Lore:https://lore.kernel.org/lkml/20241224-winbond-6-12-rc1-nor-volatile-bit-v1-1-f7c4dff66182@bootlin.com/
+
+Add support for Winbond w25q01jv spi-nor chip.
+
+This chip is internally made of two dies with linear addressing
+capabilities to make it transparent to the user that two dies were
+used. There is one drawback however, the read status operation is racy
+as the status bit only gives the active die status and not the status of
+the other die. For commands affecting the two dies, it means if another
+command is sent too fast after the first die has returned a valid status
+(deviation can be up to 200us), the chip will get corrupted/in an
+unstable state.
+
+This chip hence requires a better status register read. There are three
+solutions here:
+- Either we wait about 200us after getting a first status ready
+feedback, to cover possible internal deviations.
+- Or we always check all internal dies (which takes about 30us per die).
+
+This second option being always faster and also being totally safe, we
+implement a specific hook for the status register read. flash_speed
+benchmarks show no difference with this implementation, compared to the
+regular status read core function, the difference being part of the
+natural deviation with this benchmark:
+
+        > Without the fixup
+        $ flash_speed /dev/mtd0 -c100 -d
+        eraseblock write speed is 442 KiB/s
+        eraseblock read speed is 1606 KiB/s
+        page write speed is 439 KiB/s
+        page read speed is 1520 KiB/s
+        2 page write speed is 441 KiB/s
+        2 page read speed is 1562 KiB/s
+        erase speed is 68 KiB/s
+
+        > With the fixup
+        $ flash_speed /dev/mtd0 -c100 -d
+        eraseblock write speed is 428 KiB/s
+        eraseblock read speed is 1626 KiB/s
+        page write speed is 426 KiB/s
+        page read speed is 1538 KiB/s
+        2 page write speed is 426 KiB/s
+        2 page read speed is 1574 KiB/s
+        erase speed is 66 KiB/s
+
+As there are very few situations where this can actually happen, a
+status register write being the most likely one, another possibility
+might have been to use volatile writes instead of non-volatile writes,
+as most of the deviation comes from the action of writing the bit. But
+this would overlook other possible actions where both dies can be used
+at the same time like a chip erase (or any erase over the die boundary
+in general). This last approach would have the least impact but because
+it does not feel like it is totally safe to use and because the impact
+of the second solution presented above is also negligible, we keep this
+second approach for now (which can be further tuned later if it appears
+to be too impacting in the end).
+
+However, the fixup, whatever which one we pick, must be applied on
+multi-die chips, which hence must be properly flagged. The SFDP tables
+implemented give a lot of information but the die details are part of an
+optional table that is not implemented, hence we use a post parsing
+fixup hook to set the params->n_dice value manually.
+
+Link: https://www.winbond.com/resource-files/W25Q01JV%20SPI%20RevE%2003042024%20Plus.pdf
+Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
+---
+ drivers/mtd/spi-nor/winbond.c | 105 +++++++++++++++++++++++++++++++++-
+ 1 file changed, 104 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mtd/spi-nor/winbond.c b/drivers/mtd/spi-nor/winbond.c
+index f9986add5d65..fe96cdee221f 100644
+--- a/drivers/mtd/spi-nor/winbond.c
++++ b/drivers/mtd/spi-nor/winbond.c
+@@ -10,6 +10,7 @@
+ 
+ #define WINBOND_NOR_OP_RDEAR	0xc8	/* Read Extended Address Register */
+ #define WINBOND_NOR_OP_WREAR	0xc5	/* Write Extended Address Register */
++#define WINBOND_NOR_OP_SELDIE	0xc2	/* Select active die */
+ 
+ #define WINBOND_NOR_WREAR_OP(buf)					\
+ 	SPI_MEM_OP(SPI_MEM_OP_CMD(WINBOND_NOR_OP_WREAR, 0),		\
+@@ -17,6 +18,37 @@
+ 		   SPI_MEM_OP_NO_DUMMY,					\
+ 		   SPI_MEM_OP_DATA_OUT(1, buf, 0))
+ 
++#define WINBOND_NOR_SELDIE_OP(buf)					\
++	SPI_MEM_OP(SPI_MEM_OP_CMD(WINBOND_NOR_OP_SELDIE, 0),		\
++		   SPI_MEM_OP_NO_ADDR,					\
++		   SPI_MEM_OP_NO_DUMMY,					\
++		   SPI_MEM_OP_DATA_OUT(1, buf, 0))
++
++static int
++w25q128_post_bfpt_fixups(struct spi_nor *nor,
++			 const struct sfdp_parameter_header *bfpt_header,
++			 const struct sfdp_bfpt *bfpt)
++{
++	/*
++	 * Zetta ZD25Q128C is a clone of the Winbond device. But the encoded
++	 * size is really wrong. It seems that they confused Mbit with MiB.
++	 * Thus the flash is discovered as a 2MiB device.
++	 */
++	if (bfpt_header->major == SFDP_JESD216_MAJOR &&
++	    bfpt_header->minor == SFDP_JESD216_MINOR &&
++	    nor->params->size == SZ_2M &&
++	    nor->params->erase_map.regions[0].size == SZ_2M) {
++		nor->params->size = SZ_16M;
++		nor->params->erase_map.regions[0].size = SZ_16M;
++	}
++
++	return 0;
++}
++
++static const struct spi_nor_fixups w25q128_fixups = {
++	.post_bfpt = w25q128_post_bfpt_fixups,
++};
++
+ static int
+ w25q256_post_bfpt_fixups(struct spi_nor *nor,
+ 			 const struct sfdp_parameter_header *bfpt_header,
+@@ -41,6 +73,26 @@ static const struct spi_nor_fixups w25q256_fixups = {
+ 	.post_bfpt = w25q256_post_bfpt_fixups,
+ };
+ 
++static int
++w25q0xjv_post_bfpt_fixups(struct spi_nor *nor,
++			  const struct sfdp_parameter_header *bfpt_header,
++			  const struct sfdp_bfpt *bfpt)
++{
++	/*
++	 * SFDP supports dice numbers, but this information is only available in
++	 * optional additional tables which are not provided by these chips.
++	 * Dice number has an impact though, because these devices need extra
++	 * care when reading the busy bit.
++	 */
++	nor->params->n_dice = nor->params->size / SZ_64M;
++
++	return 0;
++}
++
++static const struct spi_nor_fixups w25q0xjv_fixups = {
++	.post_bfpt = w25q0xjv_post_bfpt_fixups,
++};
++
+ static const struct flash_info winbond_nor_parts[] = {
+ 	/* Winbond -- w25x "blocks" are 64K, "sectors" are 4KiB */
+ 	{ "w25x05", INFO(0xef3010, 0, 64 * 1024,  1)
+@@ -145,7 +197,8 @@ static const struct flash_info winbond_nor_parts[] = {
+ 		NO_SFDP_FLAGS(SECT_4K | SPI_NOR_DUAL_READ |
+ 			      SPI_NOR_QUAD_READ) },
+ 	{ "w25q01jvq", INFO(0xef4021, 0, 64 * 1024, 2048)
+-		PARSE_SFDP },
++		PARSE_SFDP
++		.fixups = &w25q0xjv_fixups },
+ };
+ 
+ /**
+@@ -179,6 +232,37 @@ static int winbond_nor_write_ear(struct spi_nor *nor, u8 ear)
+ 	return ret;
+ }
+ 
++/**
++ * winbond_nor_select_die() - Set active die.
++ * @nor:	pointer to 'struct spi_nor'.
++ * @die:	die to set active.
++ *
++ * Return: 0 on success, -errno otherwise.
++ */
++static int winbond_nor_select_die(struct spi_nor *nor, u8 die)
++{
++	int ret;
++
++	nor->bouncebuf[0] = die;
++
++	if (nor->spimem) {
++		struct spi_mem_op op = WINBOND_NOR_SELDIE_OP(nor->bouncebuf);
++
++		spi_nor_spimem_setup_op(nor, &op, nor->reg_proto);
++
++		ret = spi_mem_exec_op(nor->spimem, &op);
++	} else {
++		ret = spi_nor_controller_ops_write_reg(nor,
++						       WINBOND_NOR_OP_SELDIE,
++						       nor->bouncebuf, 1);
++	}
++
++	if (ret)
++		dev_dbg(nor->dev, "error %d selecting die %d\n", ret, die);
++
++	return ret;
++}
++
+ /**
+  * winbond_nor_set_4byte_addr_mode() - Set 4-byte address mode for Winbond
+  * flashes.
+@@ -212,6 +296,22 @@ static int winbond_nor_set_4byte_addr_mode(struct spi_nor *nor, bool enable)
+ 	return spi_nor_write_disable(nor);
+ }
+ 
++static int winbond_multi_die_ready(struct spi_nor *nor)
++{
++	int ret, i;
++
++	for (i = 0; i < nor->params->n_dice; i++) {
++		ret = winbond_nor_select_die(nor, i);
++		if (ret)
++			return ret;
++
++		if (!spi_nor_sr_ready(nor))
++			return 0;
++	}
++
++	return 1;
++}
++
+ static const struct spi_nor_otp_ops winbond_nor_otp_ops = {
+ 	.read = spi_nor_otp_read_secr,
+ 	.write = spi_nor_otp_write_secr,
+@@ -224,6 +324,9 @@ static int winbond_nor_late_init(struct spi_nor *nor)
+ {
+ 	struct spi_nor_flash_parameter *params = nor->params;
+ 
++	if (params->n_dice > 1)
++		params->ready = winbond_multi_die_ready;
++
+ 	if (params->otp.org->n_regions)
+ 		params->otp.ops = &winbond_nor_otp_ops;
+ 
+-- 
+2.25.1
+
