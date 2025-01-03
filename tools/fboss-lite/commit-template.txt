@@ -15,4 +15,3 @@ Test Plan:
    - Linux kernel boots up successfully.
    - BMC "eth0" is functional (with random MAC address) after boot up.
    - Flash "data0" partition is mounted under /mnt/data as UBIFS.
-   - eMMC is mounted under /mnt/data1 as EXT4.

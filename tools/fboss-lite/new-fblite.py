@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3
+#!/bin/env python
 #
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 #
