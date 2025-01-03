@@ -1,5 +1,5 @@
 {
-  "version": "fby3-e1s-1ou-v2023.11.22",
+  "version": "fby3-e1s-1ou-v2024.12.24",
   "pwm_transition_value": 70,
   "pwm_boost_value": 100,
   "non_fanfail_limited_boost_value": 100,
@@ -57,13 +57,13 @@
       "positive_hysteresis": 0,
       "negative_hysteresis": 3,
       "data": [
-        [ -19, 10 ],
-        [ -18, 13 ],
-        [ -17, 14 ],
-        [ -16, 15 ],
-        [ -15, 16 ],
-        [ -14, 17 ],
-        [ -6, 50 ]
+        [ -19, 13 ],
+        [ -18, 15 ],
+        [ -17, 17 ],
+        [ -16, 20 ],
+        [ -15, 22 ],
+        [ -14, 25 ],
+        [ -8, 60 ]
       ]
     },
     "pid_cpu_margin": {
