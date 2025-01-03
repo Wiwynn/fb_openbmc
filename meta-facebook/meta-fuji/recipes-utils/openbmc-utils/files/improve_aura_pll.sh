@@ -131,7 +131,14 @@ improve_aura_pll() {
 }
 
 # Main Entry. Run the script to improve Aura Pll
-if [ "$1" == "check" ]; then
+if [ "$#" -gt 1 ]; then
+    echo "Error: too many command line arguments!"
+    exit 1
+fi
+
+if [ -z "$1" ]; then
+    improve_aura_pll
+elif [ "$1" == "check" ]; then
     if [ "$(check_if_aura)" != "1" ]; then
         echo "AURA_NOT_FOUND"
         exit 0
@@ -151,5 +158,6 @@ if [ "$1" == "check" ]; then
          exit 1
     fi
 else
-    improve_aura_pll
+    echo "Error: invalid command line argument <$1>!"
+    exit 1
 fi
