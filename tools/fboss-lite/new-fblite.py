@@ -66,7 +66,7 @@ OBMC_BUILD_ENV_FILE = "openbmc-init-build-env"
 FBLITE_REF_LAYER = "tools/fboss-lite/fblite-ref-layer"
 OBMC_META_FB = "meta-facebook"
 CIT_REF_CASES = "tools/fboss-lite/cit-ref-cases"
-CIT_RUNNER = "tests2/cit_runner.py"
+CIT_PLATFORMS = "tests2/utils/platforms.py"
 CIT_TEST_DIR = "tests2/tests"
 KMOD_DIR = "recipes-kernel/kmods/"
 UTIL_DIR = "recipes-utils/openbmc-utils/"
@@ -199,16 +199,32 @@ def update_cit_code(platname):
             run_shell_cmd(cmd)
 
 
-def update_cit_runner(platname):
-    """Add new model name to cit_runner.py"""
-    CIT_PLATFORM_ANCHOR = "Add new platform name here"
-    cmd = "sed -i '/%s/i \\            \"%s\",' %s" % (
-        CIT_PLATFORM_ANCHOR,
-        platname,
-        CIT_RUNNER,
-    )
-    run_shell_cmd(cmd)
-    print("Updated cit_runner")
+def update_cit_platform(platname):
+    """Add new model name to platforms.py"""
+    platforms_file = CIT_PLATFORMS
+
+    with open(platforms_file, "r") as f:
+        lines = f.readlines()
+
+    # Extract the platforms list from the file
+    start_index = lines.index("PLATFORMS = [\n") + 1
+    end_index = lines.index("]\n", start_index)
+    platforms = [
+        line.strip().strip('"').strip('",') for line in lines[start_index:end_index]
+    ]
+
+    # Add the new platform and sort the list
+    platforms.append(platname)
+    platforms.sort()
+
+    # Write the updated list back to the file
+    with open(platforms_file, "w") as f:
+        f.writelines(lines[:start_index])
+        for platform in platforms:
+            f.write(f'    "{platform}",\n')
+        f.writelines(lines[end_index:])
+
+    print(f"Updated platforms with {platname}")
 
 
 def commit_cit_changes(name):
@@ -228,7 +244,7 @@ def commit_cit_changes(name):
 
         print("Commit the CIT patch to local repo..")
         run_shell_cmd("git add -f %s" % cit_folder)
-        run_shell_cmd("git add -f %s" % CIT_RUNNER)
+        run_shell_cmd("git add -f %s" % CIT_PLATFORMS)
         run_shell_cmd("git commit -F %s" % cit_commit_file)
     finally:
         os.remove(cit_commit_file)
@@ -334,7 +350,7 @@ if __name__ == "__main__":
         # Let's take care of openbmc-init-build-env changes separately,
         # because it needs some additional Meta-internal tools.
         #
-        # add_new_yocto_version_entry(args.name)
+        add_new_yocto_version_entry(args.name)
 
         #
         # Generate eeprom.json
@@ -363,9 +379,9 @@ if __name__ == "__main__":
 
     if args.purpose == "cit" or args.purpose == "all":
         #
-        # Update cit_runner.py
+        # Update test2/utils/platforms.py
         #
-        update_cit_runner(args.name)
+        update_cit_platform(args.name)
         #
         # Copy base CIT cases to test2/test/<model_name>
         #
