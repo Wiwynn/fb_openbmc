@@ -112,7 +112,9 @@ SENSORS_AGGREGATE = ["BB_SYSTEM_AIRFLOW_CFM"]
 
 SENSORS = {
     "slot1": SENSORS_SLOT,
+    "slot2": SENSORS_SLOT,
     "slot3": SENSORS_SLOT,
+    "slot4": SENSORS_SLOT,
     "bmc": SENSORS_BMC,
     "nic": SENSOR_NIC,
     "aggregate": SENSORS_AGGREGATE,
