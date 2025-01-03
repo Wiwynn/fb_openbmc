@@ -58,7 +58,6 @@ PLAT_DISTRO_OVERRIDES=(
   meta-yosemite4:lf-master
 # dunfell platforms (pending upgrade)
   meta-cmm:lf-dunfell
-  meta-fbsp:lf-dunfell
   meta-galaxy100:lf-dunfell
   meta-wedge:lf-dunfell
   meta-wedge100:lf-dunfell
