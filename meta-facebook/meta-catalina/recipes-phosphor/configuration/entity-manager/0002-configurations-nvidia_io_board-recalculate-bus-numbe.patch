@@ -34,7 +34,7 @@ index 1293c78..3ba605a 100644
              ],
 -            "Name": "IOB$bus_NIC0_LOCAL_TEMP_C",
 -            "Name1": "IOB$bus_NIC0_TEMP_C",
-+            "Name": "IOB$bus - 29 % 11 NIC0_LOCAL_TEMP_C",
++            "Name": "IOB$bus - 29 % 11 NIC0_TEMP_C",
 +            "Name1": "IOB$bus - 29 % 11 NIC0_TEMP_C",
              "PowerState": "On",
              "Thresholds": [
@@ -50,7 +50,7 @@ index 1293c78..3ba605a 100644
              ],
 -            "Name": "IOB$bus_NIC1_LOCAL_TEMP_C",
 -            "Name1": "IOB$bus_NIC1_TEMP_C",
-+            "Name": "IOB$bus - 29 % 11 NIC1_LOCAL_TEMP_C",
++            "Name": "IOB$bus - 29 % 11 NIC1_TEMP_C",
 +            "Name1": "IOB$bus - 29 % 11 NIC1_TEMP_C",
              "PowerState": "On",
              "Thresholds": [

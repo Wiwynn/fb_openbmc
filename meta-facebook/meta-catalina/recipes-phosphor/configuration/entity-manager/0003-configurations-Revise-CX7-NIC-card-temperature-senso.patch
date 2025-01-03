@@ -32,7 +32,7 @@ index 3f11519..ffd5ca4 100644
              ],
 -            "Name": "NIC Temp $bus",
 -            "Name1": "NIC Temp $bus",
-+            "Name": "NIC$bus % 2 REMOTE_TEMP_C",
++            "Name": "NIC$bus % 2 TEMP_C",
 +            "Name1": "NIC$bus % 2 TEMP_C",
              "Thresholds": [
                  {
