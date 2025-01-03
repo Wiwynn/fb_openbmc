@@ -6,27 +6,28 @@
 #include <linux/kernel.h>	/* for ARRAY_SIZE */
 #include <linux/module.h>
 #include <linux/i2c.h>
+#include <linux/version.h>
 #include "i2c_dev_sysfs.h"
 
 /*
  * NOTE: ONLY export register fields that are required from user space.
  */
 static const i2c_dev_attr_st {{ name }}_attrs[] = {
-  {%- for attr in attributes %}
-  {
-    "{{ attr.name }}",
-    {% if attr.help is not none -%}
-    "{{ attr.help }}",
-    {% else -%}
-    NULL,
-    {% endif -%}
-    {{ "I2C_DEV_ATTR_SHOW_DEFAULT" if attr.read else "NULL" }},
-    {{ "I2C_DEV_ATTR_STORE_DEFAUT" if attr.write else "NULL" }},
-    0x{{ '%0x' % attr.register }},
-    {{ attr.offset }},
-    {{ attr.n_bits }},
-  }{{ "," if not loop.last else "" }}
-  {%- endfor %}
+	{%- for attr in attributes %}
+	{
+		"{{ attr.name }}",
+		{% if attr.help is not none -%}
+		"{{ attr.help }}",
+		{% else -%}
+		NULL,
+		{% endif -%}
+		{{ "I2C_DEV_ATTR_SHOW_DEFAULT" if attr.read else "NULL" }},
+		{{ "I2C_DEV_ATTR_STORE_DEFAULT" if attr.write else "NULL" }},
+		0x{{ '%0x' % attr.register }},
+		{{ attr.offset }},
+		{{ attr.n_bits }},
+	}{{ "," if not loop.last else "" }}
+	{%- endfor %}
 };
 
 static const struct i2c_device_id {{ name }}_id[] = {
@@ -35,8 +36,12 @@ static const struct i2c_device_id {{ name }}_id[] = {
 };
 MODULE_DEVICE_TABLE(i2c, {{ name }}_id);
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(6, 5, 0)
+static int {{ name }}_probe(struct i2c_client *client)
+#else
 static int {{ name }}_probe(struct i2c_client *client,
 			 const struct i2c_device_id *id)
+#endif
 {
 	i2c_dev_data_st *pdata;
 
