@@ -229,6 +229,7 @@ populate_gpio_pins(uint8_t fru) {
 
   switch (slot_type) {
     case SERVER_TYPE_CL:
+    case SERVER_TYPE_CL_EMR:
       syslog(LOG_CRIT, "FRU: %d, using Craterlake gpio configuration", fru);
       gpio_offset->bmc_ready = BMC_READY;
       gpio_offset->pwrgd_cpu = PWRGD_CPU_LVC3;
