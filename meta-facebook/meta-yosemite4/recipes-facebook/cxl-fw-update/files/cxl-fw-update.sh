@@ -29,7 +29,7 @@ wait_for_update_complete() {
     do
         sleep 5
         echo -ne "Waiting for updating... ${counter} sec"\\r
-        progress=$(busctl get-property xyz.openbmc_project.PLDM /xyz/openbmc_project/software/"$software_id" xyz.openbmc_project.Software.ActivationProgress Progress | cut -d " " -f 2)
+        progress=$(busctl get-property xyz.openbmc_project.PLDM /xyz/openbmc_project/software/"$software_id" xyz.openbmc_project.Software.ActivationProgress Progress --timeout=120 2>&1 | cut -d " " -f 2)
         if [ "${progress}" == 100 ]; then
             echo -ne \\n"Update done."\\n
             update_success=true
@@ -130,7 +130,7 @@ pldm_output=$(busctl tree xyz.openbmc_project.PLDM)
 if echo "$pldm_output" | grep -qE "/xyz/openbmc_project/software/[0-9]+"; then
 echo "$pldm_output" | grep -E "/xyz/openbmc_project/software/[0-9]+"
 previous_software_id=$(busctl tree xyz.openbmc_project.PLDM |grep /xyz/openbmc_project/software/ | cut -d "/" -f 5)
-busctl get-property xyz.openbmc_project.PLDM /xyz/openbmc_project/software/"$previous_software_id" xyz.openbmc_project.Software.ActivationProgress Progress > /dev/null
+busctl get-property xyz.openbmc_project.PLDM /xyz/openbmc_project/software/"$previous_software_id" xyz.openbmc_project.Software.ActivationProgress Progress --timeout=120 > /dev/null
 ret=$?
     if [ "$ret" -eq 0 ]; then
         echo "It can only be updated one BIC at a time. Please wait until the software update is completed."
