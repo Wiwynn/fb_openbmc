@@ -1,0 +1,56 @@
+{
+    "platform_name": "myfboss",
+    "eeprom devices": [
+        {
+            "name": "chassis_eeprom",
+            "sysfs_path": "/sys/bus/i2c/devices/6-0053/eeprom"
+        },
+        {
+            "name": "scm_eeprom",
+            "sysfs_path": "/sys/bus/i2c/devices/3-0056/eeprom"
+        }
+    ],
+    "cplds": [
+        {
+            "name": "scmcpld",
+            "attrs": [
+                {
+                    "name": "cpld_ver",
+                    "read": true,
+                    "write": false,
+                    "register": "0x1",
+                    "offset": 0,
+                    "n_bits": 8,
+                    "help": ""
+                },
+                {
+                    "name": "cpld_minor_ver",
+                    "read": true,
+                    "write": false,
+                    "register": "0x2",
+                    "offset": 0,
+                    "n_bits": 8,
+                    "help": ""
+                },
+                {
+                    "name": "cpld_sub_ver",
+                    "read": true,
+                    "write": false,
+                    "register": "0x3",
+                    "offset": 0,
+                    "n_bits": 8,
+                    "help": ""
+                }
+           ]
+        }
+    ],
+    "gpio": [
+        {
+            "comment": "BMC ready event to COME",
+            "name": "FM_BMC_READY_R_L",
+            "pin": "GPIOP0",
+            "direction": "out",
+            "default": 0
+        }
+    ]
+}
