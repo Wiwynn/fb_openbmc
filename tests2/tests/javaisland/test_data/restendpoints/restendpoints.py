@@ -196,7 +196,6 @@ REST_END_POINTS = {
     ],
     "/api/server1/fruid": [
         "Chassis Type",
-        "Chassis Custom Data 1",
         "Board Mfg Date",
         "Board Mfg",
         "Board Product",
@@ -205,6 +204,7 @@ REST_END_POINTS = {
         "Board FRU ID",
         "Board Custom Data 1",
         "Board Custom Data 2",
+        "Board Custom Data 3",
         "Product Manufacturer",
         "Product Name",
         "Product Part Number",
