@@ -12,7 +12,6 @@ fi
 # List of subdirectories that might contain machine-specific code.
 MACHINE_METAS="\
     meta-facebook \
-    meta-portwell \
     "
 
 FORCE="[FORCE]"
