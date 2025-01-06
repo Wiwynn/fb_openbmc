@@ -34,7 +34,6 @@ const healthdConfigFilePath = "/etc/healthd-config.json"
 Known Platforms with healthd-config.json:
 fbal
 fbep
-fbsp
 fbtp
 fbttn
 fby2
