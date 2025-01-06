@@ -1,4 +1,4 @@
-From c21900268026c459ecfc9eeca6fe6c358c04003d Mon Sep 17 00:00:00 2001
+From 7a6864aa213a98e083a639a79005e48982d38123 Mon Sep 17 00:00:00 2001
 From: Peter Delevoryas <pdel@fb.com>
 Date: Tue, 16 Aug 2022 00:32:54 -0700
 Subject: [PATCH 509/532] fbttn: Add I2C SCL timeout property
@@ -24,10 +24,10 @@ Signed-off-by: Peter Delevoryas <pdel@fb.com>
  4 files changed, 52 insertions(+)
 
 diff --git a/hw/arm/aspeed.c b/hw/arm/aspeed.c
-index 0d6b1bb929..826bc834d8 100644
+index f50a8c993d..25e06ba667 100644
 --- a/hw/arm/aspeed.c
 +++ b/hw/arm/aspeed.c
-@@ -1033,6 +1033,12 @@ static void fby35_i2c_init(AspeedMachineState *bmc)
+@@ -1060,6 +1060,12 @@ static void fby35_i2c_init(AspeedMachineState *bmc)
       */
  }
  
@@ -40,7 +40,7 @@ index 0d6b1bb929..826bc834d8 100644
  static void qcom_dc_scm_bmc_i2c_init(AspeedMachineState *bmc)
  {
      AspeedSoCState *soc = bmc->soc;
-@@ -1910,6 +1916,7 @@ static const struct FBMachineData fb_machines[] = {
+@@ -1989,6 +1995,7 @@ static const struct FBMachineData fb_machines[] = {
          .macs_mask   = ASPEED_MAC0_ON,
          .stdout_path = ASPEED_DEV_UART5,
          .ram_size    = 1 * GiB,
@@ -49,7 +49,7 @@ index 0d6b1bb929..826bc834d8 100644
      {
          .name        = "fbtp-bmc",
 diff --git a/hw/i2c/aspeed_i2c.c b/hw/i2c/aspeed_i2c.c
-index 1037c22b2f..112c5ae86e 100644
+index b52a99896c..d4c815d9d2 100644
 --- a/hw/i2c/aspeed_i2c.c
 +++ b/hw/i2c/aspeed_i2c.c
 @@ -26,6 +26,7 @@
@@ -98,7 +98,7 @@ index 1037c22b2f..112c5ae86e 100644
          aspeed_i2c_set_state(bus, state);
  
          addr = aspeed_i2c_get_addr(bus);
-@@ -1241,6 +1261,24 @@ static Property aspeed_i2c_bus_properties[] = {
+@@ -1243,6 +1263,24 @@ static Property aspeed_i2c_bus_properties[] = {
      DEFINE_PROP_END_OF_LIST(),
  };
  
@@ -123,7 +123,7 @@ index 1037c22b2f..112c5ae86e 100644
  static void aspeed_i2c_bus_class_init(ObjectClass *klass, void *data)
  {
      DeviceClass *dc = DEVICE_CLASS(klass);
-@@ -1249,6 +1287,11 @@ static void aspeed_i2c_bus_class_init(ObjectClass *klass, void *data)
+@@ -1251,6 +1289,11 @@ static void aspeed_i2c_bus_class_init(ObjectClass *klass, void *data)
      dc->realize = aspeed_i2c_bus_realize;
      dc->reset = aspeed_i2c_bus_reset;
      device_class_set_props(dc, aspeed_i2c_bus_properties);
@@ -148,7 +148,7 @@ index 6900e06eda..ec0a6aa736 100644
  # npcm7xx_smbus.c
  
 diff --git a/include/hw/i2c/aspeed_i2c.h b/include/hw/i2c/aspeed_i2c.h
-index a064479e59..d468b84971 100644
+index fad5e9259a..eacf1dd0eb 100644
 --- a/include/hw/i2c/aspeed_i2c.h
 +++ b/include/hw/i2c/aspeed_i2c.h
 @@ -243,6 +243,7 @@ struct AspeedI2CBus {
@@ -160,5 +160,5 @@ index a064479e59..d468b84971 100644
      uint32_t regs[ASPEED_I2C_NEW_NUM_REG];
  };
 -- 
-2.43.0
+2.44.2
 

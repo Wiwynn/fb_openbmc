@@ -58,10 +58,10 @@ install_board_sysv() {
     # rc.S
 
     # the script to mount /mnt/data
-    install -m 0755 ${S}/mount_data0.sh ${D}${sysconfdir}/init.d/mount_data0.sh
+    install -m 0755 ${UNPACKDIR}/mount_data0.sh ${D}${sysconfdir}/init.d/mount_data0.sh
     update-rc.d -r ${D} mount_data0.sh start 03 S .
 
-    install -m 0755 ${S}/rc.early ${D}${sysconfdir}/init.d/rc.early
+    install -m 0755 ${UNPACKDIR}/rc.early ${D}${sysconfdir}/init.d/rc.early
     update-rc.d -r ${D} rc.early start 04 S .
 
     install -m 755 setup_i2c.sh ${D}${sysconfdir}/init.d/setup_i2c.sh
@@ -83,7 +83,7 @@ install_board_sysv() {
 
     # rc.[2345]
 
-    install -m 0755 ${S}/rc.local ${D}${sysconfdir}/init.d/rc.local
+    install -m 0755 ${UNPACKDIR}/rc.local ${D}${sysconfdir}/init.d/rc.local
     update-rc.d -r ${D} rc.local start 99 2 3 4 5 .
 
     install -m 755 sensors_config_fix.sh ${D}${sysconfdir}/init.d/sensors_config_fix.sh

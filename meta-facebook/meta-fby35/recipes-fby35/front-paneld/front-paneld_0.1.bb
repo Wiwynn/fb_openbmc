@@ -9,6 +9,9 @@ LIC_FILES_CHKSUM = "file://front-paneld.c;beginline=5;endline=17;md5=da35978751a
 
 DEPENDS += "libfby35-common libpal libkv update-rc.d-native"
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://meson.build \
     file://setup-front-paneld.sh \
@@ -27,8 +30,8 @@ do_install:append() {
   install -d ${D}${sysconfdir}/sv
   install -d ${D}${sysconfdir}/sv/front-paneld
   install -d ${D}${sysconfdir}/front-paneld
-  install -m 755 ${S}/setup-front-paneld.sh ${D}${sysconfdir}/init.d/setup-front-paneld.sh
-  install -m 755 ${S}/run-front-paneld.sh ${D}${sysconfdir}/sv/front-paneld/run
+  install -m 755 ${UNPACKDIR}/setup-front-paneld.sh ${D}${sysconfdir}/init.d/setup-front-paneld.sh
+  install -m 755 ${UNPACKDIR}/run-front-paneld.sh ${D}${sysconfdir}/sv/front-paneld/run
   update-rc.d -r ${D} setup-front-paneld.sh start 67 5 .
 }
 

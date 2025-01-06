@@ -17,10 +17,10 @@ do_install:append() {
   install -d ${D}${sysconfdir}/sv/ipmbd_2
   install -d ${D}${sysconfdir}/sv/ipmbd_7
   install -d ${D}${sysconfdir}/sv/ipmbd_10
-  install -m 755 ${S}/setup-ipmbd.sh ${D}${sysconfdir}/init.d/setup-ipmbd.sh
-  install -m 755 ${S}/run-ipmbd_2.sh ${D}${sysconfdir}/sv/ipmbd_2/run
-  install -m 755 ${S}/run-ipmbd_7.sh ${D}${sysconfdir}/sv/ipmbd_7/run
-  install -m 755 ${S}/run-ipmbd_10.sh ${D}${sysconfdir}/sv/ipmbd_10/run
+  install -m 755 ${UNPACKDIR}/setup-ipmbd.sh ${D}${sysconfdir}/init.d/setup-ipmbd.sh
+  install -m 755 ${UNPACKDIR}/run-ipmbd_2.sh ${D}${sysconfdir}/sv/ipmbd_2/run
+  install -m 755 ${UNPACKDIR}/run-ipmbd_7.sh ${D}${sysconfdir}/sv/ipmbd_7/run
+  install -m 755 ${UNPACKDIR}/run-ipmbd_10.sh ${D}${sysconfdir}/sv/ipmbd_10/run
   update-rc.d -r ${D} setup-ipmbd.sh start 65 5 .
 }
 

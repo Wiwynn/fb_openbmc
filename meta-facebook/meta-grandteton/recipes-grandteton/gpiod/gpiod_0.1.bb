@@ -22,6 +22,9 @@ PR = "r1"
 LICENSE = "GPL-2.0-or-later"
 LIC_FILES_CHKSUM = "file://gpiod.cpp;beginline=4;endline=16;md5=3598c23c3531e1f059568c83d4174cc0"
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://meson.build \
     file://gpiod.cpp \
@@ -58,8 +61,8 @@ do_install:append() {
   install -d ${D}${sysconfdir}/sv
   install -d ${D}${sysconfdir}/sv/gpiod
 
-  install -m 755 ${S}/run-gpiod.sh ${D}${sysconfdir}/sv/gpiod/run
-  install -m 755 ${S}/setup-gpiod.sh ${D}${sysconfdir}/init.d/setup-gpiod.sh
-  install -m 755 ${S}/dump-nv-reg.sh ${D}/usr/local/bin/dump-nv-reg.sh
+  install -m 755 ${UNPACKDIR}/run-gpiod.sh ${D}${sysconfdir}/sv/gpiod/run
+  install -m 755 ${UNPACKDIR}/setup-gpiod.sh ${D}${sysconfdir}/init.d/setup-gpiod.sh
+  install -m 755 ${UNPACKDIR}/dump-nv-reg.sh ${D}/usr/local/bin/dump-nv-reg.sh
   update-rc.d -r ${D} setup-gpiod.sh start 92 5 .
 }

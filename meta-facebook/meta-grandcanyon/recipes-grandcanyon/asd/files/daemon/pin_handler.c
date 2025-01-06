@@ -24,21 +24,22 @@ enum  MONITOR_EVENTS {
 
 static pthread_mutex_t triggered_mutex = PTHREAD_MUTEX_INITIALIZER;
 static bool g_gpios_triggered[JTAG_EVENT_NUM] = {false, false, false};
-         
+
 static const ASD_LogStream stream = ASD_LogStream_Pins;
 static const ASD_LogOption option = ASD_LogOption_None;
 
 void read_pin_value(uint8_t fru, Target_Control_GPIO gpio, int* value,
                                   STATUS* result) {
   if (value == NULL) {
-    ASD_log(ASD_LogLevel_Error, stream, option, 
+    ASD_log(ASD_LogLevel_Error, stream, option,
             "%s(): invalid value parameter\n", __func__);
-    return ST_ERR;
+    *result = ST_ERR;
+    return;
   }
   if (result == NULL) {
-    ASD_log(ASD_LogLevel_Error, stream, option, 
+    ASD_log(ASD_LogLevel_Error, stream, option,
             "%s(): invalid status result parameter\n", __func__);
-    return ST_ERR;
+    exit(1);
   }
 
   *value = 0;
@@ -52,9 +53,9 @@ void read_pin_value(uint8_t fru, Target_Control_GPIO gpio, int* value,
 void write_pin_value(uint8_t fru, Target_Control_GPIO gpio, int value,
                                    STATUS* result) {
   if (result == NULL) {
-    ASD_log(ASD_LogLevel_Error, stream, option, 
+    ASD_log(ASD_LogLevel_Error, stream, option,
             "%s(): invalid status result parameter\n", __func__);
-    return ST_ERR;
+    exit(1);
   }
   if (bic_set_gpio(gpio.number, (uint8_t)value) < 0) {
     *result = ST_ERR;
@@ -65,16 +66,16 @@ void write_pin_value(uint8_t fru, Target_Control_GPIO gpio, int value,
 
 void get_pin_events(Target_Control_GPIO gpio, short* events) {
   if (events == NULL) {
-    ASD_log(ASD_LogLevel_Error, stream, option, 
+    ASD_log(ASD_LogLevel_Error, stream, option,
             "%s(): invalid events parameter\n", __func__);
-    return ST_ERR;
+    exit(1);
   }
   *events = POLL_GPIO; /*Not used*/
 }
 
 static STATUS handle_preq_event(Target_Control_Handle* state, uint8_t fru) {
   if (state == NULL) {
-    ASD_log(ASD_LogLevel_Error, stream, option, 
+    ASD_log(ASD_LogLevel_Error, stream, option,
             "%s(): state shuold not be NULL\n", __func__);
     return ST_ERR;
   }
@@ -110,7 +111,7 @@ STATUS bypass_jtag_message(uint8_t fru, struct asd_message* s_message) {
       DATA_SEG  = 0x4,
       LAST_SEG  = 0x5,
       MAX_SIZE  = 244,
-      IPMB_JTAG_HEADER = 0xa, //netfn, cmd, IANA, ID, msg header 
+      IPMB_JTAG_HEADER = 0xa, //netfn, cmd, IANA, ID, msg header
     };
 
     /* Not ready */
@@ -122,7 +123,7 @@ STATUS bypass_jtag_message(uint8_t fru, struct asd_message* s_message) {
     int size = 0;
 
     if (s_message == NULL) {
-      ASD_log(ASD_LogLevel_Error, stream, option, 
+      ASD_log(ASD_LogLevel_Error, stream, option,
               "%s(): bypass message is missing\n", __func__);
       return ST_ERR;
     }
@@ -187,7 +188,7 @@ STATUS pin_hndlr_deinit_asd_gpio(Target_Control_Handle *state) {
     bool is_deinitialized = true;
 
     if (state == NULL) {
-      ASD_log(ASD_LogLevel_Error, stream, option, 
+      ASD_log(ASD_LogLevel_Error, stream, option,
               "%s(): state shuold not be NULL\n", __func__);
       return ST_ERR;
     }
@@ -222,9 +223,9 @@ static void *gpio_poll_thread(void *fru) {
   char sock_path[SOCK_PATH_LEN] = {0};
 
   if (fru == NULL) {
-    ASD_log(ASD_LogLevel_Error, stream, option, 
+    ASD_log(ASD_LogLevel_Error, stream, option,
             "%s(): invalid FRUID\n", __func__);
-    return ST_ERR;
+    exit(1);
   }
   if ((sock = socket (AF_UNIX, SOCK_STREAM, 0)) == -1)
   {
@@ -233,9 +234,9 @@ static void *gpio_poll_thread(void *fru) {
     exit(1);
   }
 
-  printf("fru%d gpio thread started....\n", (int)fru);
+  printf("fru%d gpio thread started....\n", *(int*)fru);
   server.sun_family = AF_UNIX;
-  sprintf(sock_path, "%s_%d", SOCK_PATH_ASD_BIC, (int)fru);
+  sprintf(sock_path, "%s_%d", SOCK_PATH_ASD_BIC, *(int*)fru);
   strcpy(server.sun_path, sock_path);
   unlink (server.sun_path);
   len = strlen (server.sun_path) + sizeof(server.sun_family);
@@ -309,7 +310,7 @@ STATUS pin_hndlr_init_asd_gpio(Target_Control_Handle *state) {
     STATUS result = ST_ERR;
 
     if (state == NULL) {
-      ASD_log(ASD_LogLevel_Error, stream, option, 
+      ASD_log(ASD_LogLevel_Error, stream, option,
               "%s(): state shuold not be NULL\n", __func__);
       return ST_ERR;
     }
@@ -346,7 +347,7 @@ STATUS pin_hndlr_init_asd_gpio(Target_Control_Handle *state) {
     static bool gpios_polling = false;
     static pthread_t poll_thread;
     if (gpios_polling == false) {
-        pthread_create(&poll_thread, NULL, gpio_poll_thread, (void *)state->fru);
+        pthread_create(&poll_thread, NULL, gpio_poll_thread, (void *)&state->fru);
         gpios_polling = true;
     } else {
         pthread_mutex_lock(&triggered_mutex);
@@ -367,12 +368,12 @@ on_platform_reset_event(Target_Control_Handle* state, ASD_EVENT* event)
     static bool is_asserted = false;
 
     if (state == NULL) {
-      ASD_log(ASD_LogLevel_Error, stream, option, 
+      ASD_log(ASD_LogLevel_Error, stream, option,
               "%s(): state shuold not be NULL\n", __func__);
       return ST_ERR;
     }
     if (event == NULL) {
-      ASD_log(ASD_LogLevel_Error, stream, option, 
+      ASD_log(ASD_LogLevel_Error, stream, option,
               "%s(): event shuold not be NULL\n", __func__);
       return ST_ERR;
     }
@@ -413,12 +414,12 @@ on_prdy_event(Target_Control_Handle* state, ASD_EVENT* event)
     *event = ASD_EVENT_NONE;
 
     if (state == NULL) {
-      ASD_log(ASD_LogLevel_Error, stream, option, 
+      ASD_log(ASD_LogLevel_Error, stream, option,
               "%s(): state shuold not be NULL\n", __func__);
       return ST_ERR;
     }
     if (event == NULL) {
-      ASD_log(ASD_LogLevel_Error, stream, option, 
+      ASD_log(ASD_LogLevel_Error, stream, option,
               "%s(): event shuold not be NULL\n", __func__);
       return ST_ERR;
     }
@@ -444,12 +445,12 @@ on_xdp_present_event(Target_Control_Handle* state, ASD_EVENT* event)
     (void)state; /* unused */
 
     if (state == NULL) {
-      ASD_log(ASD_LogLevel_Error, stream, option, 
+      ASD_log(ASD_LogLevel_Error, stream, option,
               "%s(): state shuold not be NULL\n", __func__);
       return ST_ERR;
     }
     if (event == NULL) {
-      ASD_log(ASD_LogLevel_Error, stream, option, 
+      ASD_log(ASD_LogLevel_Error, stream, option,
               "%s(): event shuold not be NULL\n", __func__);
       return ST_ERR;
     }
@@ -478,12 +479,12 @@ on_power_event(Target_Control_Handle* state, ASD_EVENT* event)
     int value = 0;
 
     if (state == NULL) {
-      ASD_log(ASD_LogLevel_Error, stream, option, 
+      ASD_log(ASD_LogLevel_Error, stream, option,
               "%s(): state shuold not be NULL\n", __func__);
       return ST_ERR;
     }
     if (event == NULL) {
-      ASD_log(ASD_LogLevel_Error, stream, option, 
+      ASD_log(ASD_LogLevel_Error, stream, option,
               "%s(): event shuold not be NULL\n", __func__);
       return ST_ERR;
     }
@@ -509,7 +510,7 @@ on_power_event(Target_Control_Handle* state, ASD_EVENT* event)
 
 STATUS pin_hndlr_init_target_gpios_attr(Target_Control_Handle *state) {
     if (state == NULL) {
-      ASD_log(ASD_LogLevel_Error, stream, option, 
+      ASD_log(ASD_LogLevel_Error, stream, option,
               "%s(): state shuold not be NULL\n", __func__);
       return ST_ERR;
     }
@@ -601,16 +602,16 @@ short pin_hndlr_pin_events(Target_Control_GPIO gpio) {
     return POLL_GPIO;
 }
 
-STATUS pin_hndlr_read_gpio_event(Target_Control_Handle* state, 
+STATUS pin_hndlr_read_gpio_event(Target_Control_Handle* state,
                                  struct pollfd poll_fd,
                                  ASD_EVENT* event) {
     if (state == NULL) {
-      ASD_log(ASD_LogLevel_Error, stream, option, 
+      ASD_log(ASD_LogLevel_Error, stream, option,
               "%s(): state shuold not be NULL\n", __func__);
       return ST_ERR;
     }
     if (event == NULL) {
-      ASD_log(ASD_LogLevel_Error, stream, option, 
+      ASD_log(ASD_LogLevel_Error, stream, option,
               "%s(): event shuold not be NULL\n", __func__);
       return ST_ERR;
     }
@@ -626,17 +627,17 @@ STATUS pin_hndlr_provide_GPIOs_list(Target_Control_Handle* state, target_fdarr_t
     short events = 0;
 
     if (state == NULL) {
-      ASD_log(ASD_LogLevel_Error, stream, option, 
+      ASD_log(ASD_LogLevel_Error, stream, option,
               "%s(): state shuold not be NULL\n", __func__);
       return ST_ERR;
     }
     if (fds == NULL) {
-      ASD_log(ASD_LogLevel_Error, stream, option, 
+      ASD_log(ASD_LogLevel_Error, stream, option,
               "%s(): no target fd\n", __func__);
       return ST_ERR;
     }
     if (num_fds == NULL) {
-      ASD_log(ASD_LogLevel_Error, stream, option, 
+      ASD_log(ASD_LogLevel_Error, stream, option,
               "%s(): fd number shuold not be NULL\n", __func__);
       return ST_ERR;
     }

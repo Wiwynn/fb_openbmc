@@ -46,6 +46,9 @@ def get_orv3_support(d):
   return "true"
 EXTRA_OEMESON += "-Dorv3=${@get_orv3_support(d)}"
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://meson.build \
     file://meson_options.txt \
@@ -78,6 +81,7 @@ LOCAL_URI = " \
     file://ModbusUtil.cpp \
     "
 # Configuration files
+UNPACKDIR = "${S}"
 LOCAL_URI += " \
     file://configs/interface/aspeed_uart.conf \
     file://configs/interface/usb_ft232.conf \
@@ -94,6 +98,7 @@ LOCAL_URI += " \
     "
 
 # Schemas
+UNPACKDIR = "${S}"
 LOCAL_URI += " \
     file://schemas/RegisterMapConfigSchema.json \
     file://schemas/InterfaceConfigSchema.json \
@@ -105,6 +110,7 @@ LOCAL_URI += " \
     file://schemas/registermap/special_handlers.json \
     "
 #scripts
+UNPACKDIR = "${S}"
 LOCAL_URI += " \
     file://scripts/schema_validator.py \
     file://scripts/address_validator.py \
@@ -113,6 +119,7 @@ LOCAL_URI += " \
     "
 
 # Test sources
+UNPACKDIR = "${S}"
 LOCAL_URI += " \
     file://tests/Main.cpp \
     file://tests/MsgTest.cpp \
@@ -142,7 +149,7 @@ install_wrapper() {
 install_systemd() {
     install -d ${D}${systemd_system_unitdir}
 
-    install -m 0644 ${S}/rackmond.service ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/rackmond.service ${D}${systemd_system_unitdir}
 }
 
 install_sysv() {
@@ -150,8 +157,8 @@ install_sysv() {
     install -d ${D}${sysconfdir}/rcS.d
     install -d ${D}${sysconfdir}/sv
     install -d ${D}${sysconfdir}/sv/rackmond
-    install -m 755 ${S}/run-rackmond.sh ${D}${sysconfdir}/sv/rackmond/run
-    install -m 755 ${S}/setup-rackmond.sh ${D}${sysconfdir}/init.d/rackmond
+    install -m 755 ${UNPACKDIR}/run-rackmond.sh ${D}${sysconfdir}/sv/rackmond/run
+    install -m 755 ${UNPACKDIR}/setup-rackmond.sh ${D}${sysconfdir}/init.d/rackmond
     update-rc.d -r ${D} rackmond start 95 2 3 4 5  .
 }
 
@@ -169,7 +176,7 @@ do_install:append() {
     ln -snf ../bin/rackmoncli ${bin}/modbuscmd
 
     install -d ${D}${PYTHON_SITEPACKAGES_DIR}
-    install -m 644 ${S}/scripts/pyrmd.py ${D}${PYTHON_SITEPACKAGES_DIR}/
+    install -m 644 ${UNPACKDIR}/scripts/pyrmd.py ${D}${PYTHON_SITEPACKAGES_DIR}/
 }
 
 

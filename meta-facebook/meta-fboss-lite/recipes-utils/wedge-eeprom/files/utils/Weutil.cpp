@@ -22,7 +22,7 @@
 #include <iostream>
 #include <vector>
 
-#include "../lib/WeutilInterface.h"
+#include <facebook/WeutilInterface.h>
 
 #define USE_NEW_EEPROM_LIB true
 

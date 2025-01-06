@@ -18,6 +18,7 @@
 
 #include <openbmc/ipmb.h>
 #include <openbmc/ipmi.h>
+#include <openbmc/obmc-pal.h>
 
 extern int verbose;
 #define IPMI_OBMC_RETRY 4

@@ -9,7 +9,7 @@ DEPENDS += "\
 RDEPENDS:${PN}-ptest += "meson"
 
 do_compile:append() {
-    cat <<EOF > ${WORKDIR}/run-ptest
+    cat <<EOF > ${UNPACKDIR}/run-ptest
 #!/bin/sh
 meson test --no-rebuild --verbose
 EOF
@@ -41,3 +41,7 @@ do_install_ptest() {
         install -m 0644 ${file} ${D}${PTEST_PATH}/meson-private
     done
 }
+
+# TODO: Some of the installed meson files contain references to TMPDIR
+#       and we should figure out how to clean them out.
+ERROR_QA:remove = "buildpaths"

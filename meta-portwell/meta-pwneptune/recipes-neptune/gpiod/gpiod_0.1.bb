@@ -19,8 +19,11 @@ SUMMARY = "GPIO Monitoring Daemon"
 DESCRIPTION = "Daemon for monitoring the gpio signals"
 SECTION = "base"
 PR = "r1"
-LICENSE = "GPLv2"
+LICENSE = "GPL-2.0-only"
 LIC_FILES_CHKSUM = "file://gpiod.c;beginline=4;endline=16;md5=b395943ba8a0717a83e62ca123a8d238"
+
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
 
 LOCAL_URI = " \
     file://Makefile \

@@ -7,6 +7,9 @@ PR = "r1"
 LICENSE = "GPL-2.0-or-later"
 LIC_FILES_CHKSUM = "file://fw-util.cpp;beginline=4;endline=16;md5=5f8ba3cd0f216026550dbcc0186d5599"
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI =+ " \
     file://meson.build \
     file://meson_options.txt \
@@ -112,11 +115,11 @@ do_configure:append() {
         FIT_PART_SIZE_KB=63872
     fi
     bbnote "configure fit size in image_parts.json as ${FIT_PART_SIZE}"
-    sed -i "s/<FIT_PART_SIZE_PLACE_HOLD>/${FIT_PART_SIZE_KB}/g" ${S}/image_parts.json
+    sed -i "s/<FIT_PART_SIZE_PLACE_HOLD>/${FIT_PART_SIZE_KB}/g" ${UNPACKDIR}/image_parts.json
 
 }
 
 do_install:append() {
   install -d ${D}${sysconfdir}
-  install -m 0644 ${S}/image_parts.json ${D}${sysconfdir}/image_parts.json
+  install -m 0644 ${UNPACKDIR}/image_parts.json ${D}${sysconfdir}/image_parts.json
 }

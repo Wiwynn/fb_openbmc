@@ -119,7 +119,7 @@ STATUS asd_target_ioctl(void* input, void* output, unsigned int cmd)
         case IOCTL_TARGET_SEND_REMOTE_LOG_MSG:
             if (input == NULL)
                 break;
-            asd_target_remote_log * remote_log = (struct pollfd *)input;
+            asd_target_remote_log * remote_log = (asd_target_remote_log*)input;
             send_remote_log_message(remote_log->level, remote_log->stream, remote_log->msg);
             status = ST_OK;
             break;

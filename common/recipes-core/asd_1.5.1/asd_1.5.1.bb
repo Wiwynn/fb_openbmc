@@ -39,7 +39,8 @@ DEPENDS += "safec libasd-jtagintf libpal"
 RDEPENDS:${PN} += "safec libasd-jtagintf libpal"
 EXTRA_OECMAKE += "-DCMAKE_SKIP_RPATH=TRUE"
 
-S = "${WORKDIR}"
+S = "${WORKDIR}/sources"
+UNPACKDIR = "${S}"
 
 inherit cmake pkgconfig
 

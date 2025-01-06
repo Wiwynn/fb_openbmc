@@ -19,7 +19,7 @@ SUMMARY = "NetlakeMTP GPIO Pin Library"
 DESCRIPTION = "library for all gpio pins in NetlakeMtp"
 SECTION = "base"
 PR = "r1"
-LICENSE = "GPLv2"
+LICENSE = "GPL-2.0-only"
 LIC_FILES_CHKSUM = "file://netlakemtp_gpio.c;beginline=6;endline=18;md5=da35978751a9d71b73679307c4d296ec"
 
 inherit meson

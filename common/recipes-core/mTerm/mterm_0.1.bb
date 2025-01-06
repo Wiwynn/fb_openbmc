@@ -24,6 +24,10 @@ LICENSE = "GPL-2.0-or-later"
 LIC_FILES_CHKSUM = "file://mTerm_server.c;beginline=4;endline=16;md5=da35978751a9d71b73679307c4d296ec"
 
 inherit systemd
+
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://mTerm_server.c \
     file://mTerm_client.c \
@@ -57,7 +61,7 @@ DEPENDS += "update-rc.d-native"
 systemd_install() {
     install -d ${D}${systemd_system_unitdir}
     for svc in ${MTERM_SYSTEMD_SERVICES}; do
-        install -m 644 ${S}/$svc ${D}${systemd_system_unitdir}
+        install -m 644 ${UNPACKDIR}/$svc ${D}${systemd_system_unitdir}
     done
 }
 
@@ -67,9 +71,9 @@ sysv_install() {
     install -d ${D}${sysconfdir}/sv
     for svc in ${MTERM_SERVICES}; do
         install -d ${D}${sysconfdir}/sv/${svc}
-        install -m 755 ${S}/${svc}/run ${D}${sysconfdir}/sv/${svc}/run
+        install -m 755 ${UNPACKDIR}/${svc}/run ${D}${sysconfdir}/sv/${svc}/run
     done
-    install -m 755 ${S}/mTerm-service-setup.sh ${D}${sysconfdir}/init.d/mTerm-service-setup.sh
+    install -m 755 ${UNPACKDIR}/mTerm-service-setup.sh ${D}${sysconfdir}/init.d/mTerm-service-setup.sh
     update-rc.d -r ${D} mTerm-service-setup.sh start 84 S .
 }
 

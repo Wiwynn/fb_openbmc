@@ -50,16 +50,16 @@ do_work_systemd() {
   install -d ${D}${systemd_system_unitdir}
 
   # mount secondary storage (emmc) to /mnt/data1
-  install -m 0644 ${S}/mount_data1.service ${D}${systemd_system_unitdir}
+  install -m 0644 ${UNPACKDIR}/mount_data1.service ${D}${systemd_system_unitdir}
 
   # Install mount_data0.sh for /mnt/data (SPI Flash)
-  install -m 755 ${S}/mount_data0.sh ${D}/usr/local/bin/mount_data0.sh
+  install -m 755 ${UNPACKDIR}/mount_data0.sh ${D}/usr/local/bin/mount_data0.sh
 
   # instantiate peripherals like IDPROM, temp sensor and Switch
-  install -m 755 ${S}/setup_i2c.sh ${D}/usr/local/bin/setup_i2c.sh
+  install -m 755 ${UNPACKDIR}/setup_i2c.sh ${D}/usr/local/bin/setup_i2c.sh
 
   # fix mac address in eth0 and u-boot env by reading from IDPROM
-  install -m 755 ${S}/eth0_mac_fixup.sh ${D}/usr/local/bin/eth0_mac_fixup.sh
+  install -m 755 ${UNPACKDIR}/eth0_mac_fixup.sh ${D}/usr/local/bin/eth0_mac_fixup.sh
 
   # power-on script that will be used by power-on service
   install -m 755 power-on.sh ${D}/usr/local/bin/power-on.sh

@@ -4,10 +4,10 @@ DESCRIPTION = "Utility for retimer"
 SECTION = "base"
 PR = "r1"
 LICENSE = "GPL-2.0-or-later"
-LIC_FILES_CHKSUM = "file://retimer-util.cpp;beginline=4;endline=16;md5=b395943ba8a0717a83e62ca123a8d238"
+LIC_FILES_CHKSUM = "file://${UNPACKDIR}/retimer-util.cpp;beginline=4;endline=16;md5=b395943ba8a0717a83e62ca123a8d238"
 
-# SRC_URI = "file://retimer-util"
-# S = "${WORKDIR}/retimer-util"
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
 
 LOCAL_URI = " \
     file://meson.build \

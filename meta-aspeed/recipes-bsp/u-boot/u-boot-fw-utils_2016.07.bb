@@ -34,7 +34,7 @@ do_install () {
   install -m 755 ${B}/tools/env/fw_printenv ${D}${base_sbindir}/fw_printenv
   install -m 755 ${B}/tools/env/fw_printenv ${D}${base_sbindir}/fw_setenv
   bbdebug 1 "install ${FW_ENV_CONFIG_FILE}"
-  install -m 0644 ${WORKDIR}/${FW_ENV_CONFIG_FILE} ${D}${sysconfdir}/fw_env.config
+  install -m 0644 ${UNPACKDIR}/${FW_ENV_CONFIG_FILE} ${D}${sysconfdir}/fw_env.config
 }
 
 do_install:class-cross () {

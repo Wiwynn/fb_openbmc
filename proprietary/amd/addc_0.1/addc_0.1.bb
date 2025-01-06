@@ -9,6 +9,9 @@ DEPENDS = "boost libobmc-i2c apml nlohmann-json"
 
 inherit cmake pkgconfig
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://CMakeLists.txt \
     file://LICENSE \
@@ -23,5 +26,5 @@ LOCAL_URI = " \
 
 do_install:append() {
     install -d ${D}${localstatedir}/lib/amd-ras
-    install -m 0755 ${S}/config/config_file ${D}${localstatedir}/lib/amd-ras/config_file
+    install -m 0755 ${UNPACKDIR}/config/config_file ${D}${localstatedir}/lib/amd-ras/config_file
 }

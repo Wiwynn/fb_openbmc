@@ -9,9 +9,14 @@
 ## LOCAL_URI and we will automatically append a `;subdir=${S}` to them to tell
 ## the fetcher to place them there.
 
-local_files_to_sourcedir[vardeps] += "LOCAL_URI"
+local_files_to_sourcedir[vardeps] += "LOCAL_URI DISTRO_CODENAME"
 def local_files_to_sourcedir(d):
     uris = d.getVar('LOCAL_URI') or ""
+
+    # master uses the 'UNPACKDIR' now, which avoids the pseudo-abort issues.
+    if d.getVar('DISTRO_CODENAME') == "master":
+        return uris
+
     result = []
     for u in uris.split():
         if "file://" in u and ";subdir" not in u:

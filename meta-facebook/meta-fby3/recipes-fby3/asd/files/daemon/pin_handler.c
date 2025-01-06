@@ -1,9 +1,12 @@
+#define _GNU_SOURCE
+
 #include "pin_handler.h"
 
 //for socket and pthread
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <pthread.h>
+#include <unistd.h>
 
 //#include "mem_helper.h"
 #include "openbmc/pal.h"
@@ -102,7 +105,7 @@ STATUS bypass_jtag_message(uint8_t fru, struct asd_message* s_message) {
       DATA_SEG  = 0x4,
       LAST_SEG  = 0x5,
       MAX_SIZE  = 244,
-      IPMB_JTAG_HEADER = 0xa, //netfn, cmd, IANA, ID, msg header 
+      IPMB_JTAG_HEADER = 0xa, //netfn, cmd, IANA, ID, msg header
     };
 
     /* Not ready */
@@ -212,9 +215,9 @@ static void *gpio_poll_thread(void *fru) {
     exit (1);
   }
 
-  printf("fru%d gpio thread started....\n", (int)fru);
+  printf("fru%d gpio thread started....\n", *(int*)fru);
   server.sun_family = AF_UNIX;
-  sprintf(sock_path, "%s_%d", SOCK_PATH_ASD_BIC, (int)fru);
+  sprintf(sock_path, "%s_%d", SOCK_PATH_ASD_BIC, *(int*)fru);
   strcpy(server.sun_path, sock_path);
   unlink (server.sun_path);
   len = strlen (server.sun_path) + sizeof (server.sun_family);
@@ -325,7 +328,7 @@ STATUS pin_hndlr_init_asd_gpio(Target_Control_Handle *state) {
                 return ST_ERR;
             }
         }
-        pthread_create(&poll_thread, NULL, gpio_poll_thread, (void *)state->fru);
+        pthread_create(&poll_thread, NULL, gpio_poll_thread, (void *)&state->fru);
         gpios_polling = true;
     } else {
         pthread_mutex_lock(&triggered_mutex);
@@ -399,7 +402,7 @@ on_prdy_event(Target_Control_Handle* state, ASD_EVENT* event)
         return ST_ERR;
     }
 
-    if ((g_gpios_triggered[JTAG_PRDY_EVENT].triggered == false) || 
+    if ((g_gpios_triggered[JTAG_PRDY_EVENT].triggered == false) ||
         (state && !state->event_cfg.report_PRDY)) {
         *event = ASD_EVENT_NONE;
         return result;

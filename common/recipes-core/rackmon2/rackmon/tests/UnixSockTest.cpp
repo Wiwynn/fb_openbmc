@@ -1,6 +1,7 @@
 // Copyright 2021-present Facebook. All Rights Reserved.
 #include "UnixSock.h"
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <condition_variable>
 #include <mutex>
 #include <thread>

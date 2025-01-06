@@ -17,5 +17,5 @@ S = "${WORKDIR}/stress-ng-${PV}"
 
 do_install:append() {
     install -d ${D}${bindir}
-    install -m 755 ${S}/stress-ng ${D}${bindir}/stress-ng
+    install -m 755 ${UNPACKDIR}/stress-ng ${D}${bindir}/stress-ng
 }

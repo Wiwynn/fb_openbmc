@@ -5,5 +5,5 @@ SRC_URI += " \
            "
 
 do_install:append() {
-    install -p -m 644 ${WORKDIR}/logrotate-3.9.1/examples/logrotate-default ${D}${sysconfdir}/logrotate.conf
+    install -p -m 644 ${UNPACKDIR}/logrotate-3.9.1/examples/logrotate-default ${D}${sysconfdir}/logrotate.conf
 }

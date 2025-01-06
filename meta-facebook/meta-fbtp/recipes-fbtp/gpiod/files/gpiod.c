@@ -18,6 +18,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#define _DEFAULT_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -49,7 +51,6 @@
 }
 
 extern int usleep(useconds_t usec);
-extern void daemon(int, int);
 
 #define POLL_TIMEOUT -1 /* Forever */
 static uint8_t CATERR_irq = 0;
@@ -253,7 +254,7 @@ static void
 *smi_timer()
 {
 
-  int smi_timeout_count = 1;  
+  int smi_timeout_count = 1;
   int smi_timeout_threshold = 90;
   bool is_issue_event = false;
   gpio_desc_t *gpio = gpio_open_by_shadow("FM_BIOS_SMI_ACTIVE_N"); // GPIOG7
@@ -263,7 +264,7 @@ static void
     syslog(LOG_CRIT, "SMI PIN monitoring not functional");
     return NULL;
   }
- 
+
 #ifdef SMI_DEBUG
   syslog(LOG_WARNING, "[%s][%lu] Timer is started.\n", __func__, pthread_self());
   syslog(LOG_WARNING, "[%s] Get GPIO Num: %d", __func__, pin_num);
@@ -276,7 +277,7 @@ static void
       sleep(1);
       continue;
     }
-    if ( GPIO_VALUE_LOW == value) 
+    if ( GPIO_VALUE_LOW == value)
     {
       smi_timeout_count++;
     }
@@ -683,11 +684,15 @@ main(int argc, char **argv) {
   if(rc) {
     if(EWOULDBLOCK == errno) {
       syslog(LOG_ERR, "Another gpiod instance is running...\n");
-      exit(-1);
+      exit(1);
     }
   } else {
 
-    daemon(0,1);
+    if (daemon(0,1)) {
+      syslog(LOG_CRIT, "Cannot daemon-ize");
+      exit(1);
+    }
+
     openlog("gpiod", LOG_CONS, LOG_DAEMON);
     syslog(LOG_INFO, "gpiod: daemon started");
 
@@ -703,7 +708,7 @@ main(int argc, char **argv) {
     }
 
     //Create thread for SMI check
-    if (pthread_create(&tid_smi_timer, NULL, smi_timer, NULL) < 0) 
+    if (pthread_create(&tid_smi_timer, NULL, smi_timer, NULL) < 0)
     {
       syslog(LOG_WARNING, "pthread_create for smi_handler fail\n");
       exit(1);

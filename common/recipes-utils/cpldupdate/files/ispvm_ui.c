@@ -749,7 +749,7 @@ int main( int argc, const char * const argv[] )
 		if(g_usChecksum != 0)
 		{
 			g_usChecksum &= 0xFFFF;
-			printf("Data Checksum: %04x\n\n",g_usChecksum);
+			printf("Data Checksum: %04lx\n\n",g_usChecksum);
 			g_usChecksum = 0;
 		}
 	}

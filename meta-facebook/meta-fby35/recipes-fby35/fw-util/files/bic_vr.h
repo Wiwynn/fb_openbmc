@@ -4,8 +4,7 @@
 #include "server.h"
 #include "expansion.h"
 #include <string>
-
-using std::string;
+#include <map>
 
 class VrComponent : public Component {
   static bool vr_printed;
@@ -14,14 +13,14 @@ class VrComponent : public Component {
   uint8_t fw_comp;
   Server server;
   private:
-    int update_internal(const string& image, bool force);
-    int get_ver_str(const uint8_t vr_comp, const string& name, string& s);
-    std::map<uint8_t, map<uint8_t, string>>& get_vr_list();
+    int update_internal(const std::string& image, bool force);
+    int get_ver_str(const uint8_t vr_comp, const std::string& name, std::string& s);
+    std::map<uint8_t, std::map<uint8_t, std::string>>& get_vr_list();
   public:
-    VrComponent(const string& fru, const string& comp, uint8_t comp_id)
+    VrComponent(const std::string& fru, const std::string& comp, uint8_t comp_id)
       : Component(fru, comp), slot_id(fru.at(4) - '0'), fw_comp(comp_id), server(slot_id, fru) {}
-    int update(const string& image);
-    int fupdate(const string& image);
+    int update(const std::string& image);
+    int fupdate(const std::string& image);
     int print_version();
     int get_version(json& j) override;
 };

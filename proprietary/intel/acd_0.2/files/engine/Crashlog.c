@@ -48,7 +48,7 @@ acdStatus initiateCrashlogTriggerRearm(const CPUInfo* const cpuInfo)
 
     EPECIStatus ret = peci_Telemetry_ConfigWatcherRd(
         cpuInfo->clientAddr, CONFIG_WATCHER_ID, CONFIG_WATCHER_OFFSET,
-        sizeof(watcherData), &watcherData, &cc);
+        sizeof(watcherData), (uint8_t*) &watcherData, &cc);
 
     if (ret != PECI_CC_SUCCESS || (PECI_CC_UA(cc)))
     {
@@ -62,7 +62,7 @@ acdStatus initiateCrashlogTriggerRearm(const CPUInfo* const cpuInfo)
 
     ret = peci_Telemetry_ConfigWatcherWr(
         cpuInfo->clientAddr, CONFIG_WATCHER_ID, CONFIG_WATCHER_OFFSET,
-        sizeof(watcherData), &watcherData, &cc);
+        sizeof(watcherData), (uint8_t*) &watcherData, &cc);
 
     if (ret != PECI_CC_SUCCESS || (PECI_CC_UA(cc)))
     {
@@ -124,7 +124,7 @@ acdStatus storeCrashlog(cJSON* const pJsonChild, const uint16_t agent,
     }
 
     char sectionNameString[CRASHLOG_ERROR_JSON_STRING_LEN] = {0};
-    acdStatus status = getAgentName(agentDetails, &sectionNameString,
+    acdStatus status = getAgentName(agentDetails, sectionNameString,
                                     CRASHLOG_ERROR_JSON_STRING_LEN, agentsInfo);
 
     char recordNameString[CRASHLOG_ERROR_JSON_STRING_LEN] = {0};
@@ -330,7 +330,7 @@ bool isCpuCrashlogEnabled()
     uint8_t cc;
     EPECIStatus ret = peci_Telemetry_ConfigWatcherRd(
         MIN_CLIENT_ADDR, CONFIG_WATCHER_ID, CONFIG_WATCHER_OFFSET, sizeof(data),
-        &data, &cc);
+        (uint8_t*) &data, &cc);
     if (ret != PECI_CC_SUCCESS || (PECI_CC_UA(cc)))
     {
         CRASHDUMP_PRINT(ERR, stderr,

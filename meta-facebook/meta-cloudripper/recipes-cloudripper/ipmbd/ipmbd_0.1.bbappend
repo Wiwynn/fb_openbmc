@@ -38,9 +38,9 @@ do_work_sysv() {
   install -d ${D}${sysconfdir}/ipmbd_0
   install -d ${D}${sysconfdir}/sv/ipmbd_4
   install -d ${D}${sysconfdir}/ipmbd_4
-  install -m 755 ${S}/setup-ipmbd.sh ${D}${sysconfdir}/init.d/setup-ipmbd.sh
-  install -m 755 ${S}/run-ipmbd_0.sh ${D}${sysconfdir}/sv/ipmbd_0/run
-  install -m 755 ${S}/run-ipmbd_4.sh ${D}${sysconfdir}/sv/ipmbd_4/run
+  install -m 755 ${UNPACKDIR}/setup-ipmbd.sh ${D}${sysconfdir}/init.d/setup-ipmbd.sh
+  install -m 755 ${UNPACKDIR}/run-ipmbd_0.sh ${D}${sysconfdir}/sv/ipmbd_0/run
+  install -m 755 ${UNPACKDIR}/run-ipmbd_4.sh ${D}${sysconfdir}/sv/ipmbd_4/run
   update-rc.d -r ${D} setup-ipmbd.sh start 65 5 .
 }
 
@@ -48,11 +48,11 @@ do_work_systemd() {
   install -d ${D}/usr/local/bin
   install -d ${D}${systemd_system_unitdir}
 
-  install -m 755 ${S}/setup-ipmbd.sh ${D}/usr/local/bin/setup-ipmbd.sh
-  install -m 755 ${S}/run-ipmbd_0.sh ${D}/usr/local/bin/ipmbd_0
-  install -m 755 ${S}/run-ipmbd_4.sh ${D}/usr/local/bin/ipmbd_4
+  install -m 755 ${UNPACKDIR}/setup-ipmbd.sh ${D}/usr/local/bin/setup-ipmbd.sh
+  install -m 755 ${UNPACKDIR}/run-ipmbd_0.sh ${D}/usr/local/bin/ipmbd_0
+  install -m 755 ${UNPACKDIR}/run-ipmbd_4.sh ${D}/usr/local/bin/ipmbd_4
 
-  install -m 0644 ${S}/ipmbd.service ${D}${systemd_system_unitdir}
+  install -m 0644 ${UNPACKDIR}/ipmbd.service ${D}${systemd_system_unitdir}
 
   sed -i -e 's/runsv \"\/etc\/sv/\"\/usr\/local\/bin/' ${D}/usr/local/bin/setup-ipmbd.sh
 }

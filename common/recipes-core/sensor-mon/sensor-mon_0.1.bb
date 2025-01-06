@@ -24,6 +24,9 @@ LIC_FILES_CHKSUM = "file://sensord.cpp;beginline=4;endline=16;md5=b395943ba8a071
 
 inherit systemd
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://meson.build \
     file://sensord.cpp \
@@ -48,16 +51,16 @@ install_sysv() {
   install -d ${D}${sysconfdir}/sv
   install -d ${D}${sysconfdir}/sv/sensord
   install -d ${D}${sysconfdir}/sensord
-  sed -i 's/SENSORD_LAUNCH_ARGS/${SENSORD_MONITORED_FRUS}/g' ${S}/run-sensord.sh
-  install -m 755 ${S}/setup-sensord.sh ${D}${sysconfdir}/init.d/setup-sensord.sh
-  install -m 755 ${S}/run-sensord.sh ${D}${sysconfdir}/sv/sensord/run
+  sed -i 's/SENSORD_LAUNCH_ARGS/${SENSORD_MONITORED_FRUS}/g' ${UNPACKDIR}/run-sensord.sh
+  install -m 755 ${UNPACKDIR}/setup-sensord.sh ${D}${sysconfdir}/init.d/setup-sensord.sh
+  install -m 755 ${UNPACKDIR}/run-sensord.sh ${D}${sysconfdir}/sv/sensord/run
   update-rc.d -r ${D} setup-sensord.sh start 91 5 .
 }
 
 install_systemd() {
     install -d ${D}${systemd_system_unitdir}
-    sed -i 's/SENSORD_LAUNCH_ARGS/${SENSORD_MONITORED_FRUS}/g' ${S}/sensord.service
-    install -m 644 ${S}/sensord.service ${D}${systemd_system_unitdir}
+    sed -i 's/SENSORD_LAUNCH_ARGS/${SENSORD_MONITORED_FRUS}/g' ${UNPACKDIR}/sensord.service
+    install -m 644 ${UNPACKDIR}/sensord.service ${D}${systemd_system_unitdir}
 }
 
 do_install:append() {

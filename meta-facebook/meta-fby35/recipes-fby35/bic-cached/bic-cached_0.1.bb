@@ -10,6 +10,9 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/GPL-2.0-or-lat
 inherit meson pkgconfig
 inherit legacy-packages
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://meson.build \
     file://setup-bic-cached.sh \
@@ -24,6 +27,6 @@ pkgdir = "bic-cached"
 do_install:append() {
   install -d ${D}${sysconfdir}/init.d
   install -d ${D}${sysconfdir}/rcS.d
-  install -m 755 ${S}/setup-bic-cached.sh ${D}${sysconfdir}/init.d/setup-bic-cached.sh
+  install -m 755 ${UNPACKDIR}/setup-bic-cached.sh ${D}${sysconfdir}/init.d/setup-bic-cached.sh
   update-rc.d -r ${D} setup-bic-cached.sh start 66 5 .
 }

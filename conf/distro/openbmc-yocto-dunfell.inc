@@ -9,3 +9,6 @@ SPDXLICENSEMAP[LGPL-2.1-only] = "LGPL-2.1"
 SPDXLICENSEMAP[LGPL-2.1-or-later] = "LGPL-2.1"
 
 require conf/distro/openbmc-pin-dunfell.inc
+
+# This variable is removed in master but we need it in Rocko.
+BB_DANGLINGAPPENDS_WARNONLY = "1"

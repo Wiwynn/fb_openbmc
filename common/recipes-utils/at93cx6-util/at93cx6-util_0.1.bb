@@ -19,6 +19,9 @@ SUMMARY = "Utilities for AT93Cx6 EEPROM"
 LICENSE = "GPL-2.0-or-later"
 LIC_FILES_CHKSUM = "file://COPYING;md5=eb723b61539feef013de476e68b5c50a"
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://COPYING \
     file://at93cx6_py3.py \

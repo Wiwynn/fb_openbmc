@@ -27,6 +27,6 @@ DEPENDS:append = " update-rc.d-native"
 do_install:append() {
 
     install -d ${D}${sysconfdir}/sensors.d
-    install -m 644 ${WORKDIR}/cloudripper.conf ${D}${sysconfdir}/sensors.d/cloudripper.conf
+    install -m 644 ${UNPACKDIR}/cloudripper.conf ${D}${sysconfdir}/sensors.d/cloudripper.conf
 
 }

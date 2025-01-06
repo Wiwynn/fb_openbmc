@@ -29,12 +29,13 @@ SRC_URI = "file://sensor-setup.sh \
     file://sensor-setup.service \
     "
 
-S = "${WORKDIR}"
+S = "${WORKDIR}/sources"
+UNPACKDIR = "${S}"
 
 install_sysv() {
   install -d ${D}${sysconfdir}/init.d
   install -d ${D}${sysconfdir}/rcS.d
-  install -m 755 sensor-setup.sh ${D}${sysconfdir}/init.d/sensor-setup.sh
+  install -m 755 ${UNPACKDIR}/sensor-setup.sh ${D}${sysconfdir}/init.d/sensor-setup.sh
   update-rc.d -r ${D} sensor-setup.sh start 90 S .
 }
 
@@ -42,8 +43,8 @@ install_systemd() {
   localbindir="/usr/local/bin"
   install -d ${D}${localbindir}
   install -d ${D}${systemd_system_unitdir}
-  install -m 755 sensor-setup.sh ${D}${localbindir}
-  install -m 644 ${WORKDIR}/sensor-setup.service ${D}${systemd_system_unitdir}
+  install -m 755 ${UNPACKDIR}/sensor-setup.sh ${D}${localbindir}
+  install -m 644 ${UNPACKDIR}/sensor-setup.service ${D}${systemd_system_unitdir}
 }
 
 do_install() {

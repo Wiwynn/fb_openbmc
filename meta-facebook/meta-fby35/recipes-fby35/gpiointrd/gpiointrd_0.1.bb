@@ -22,6 +22,9 @@ PR = "r1"
 LICENSE = "GPL-2.0-or-later"
 LIC_FILES_CHKSUM = "file://gpiointrd.c;beginline=4;endline=16;md5=b395943ba8a0717a83e62ca123a8d238"
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://meson.build \
     file://gpiointrd.c \
@@ -56,9 +59,9 @@ do_install:append() {
   install -d ${D}${sysconfdir}/sv/gpiointrd
   install -d ${D}${sysconfdir}/init.d
   install -d ${D}${sysconfdir}/rcS.d
-  install -m 755 ${S}/server-init.sh ${D}${sysconfdir}/init.d/server-init.sh
-  install -m 755 ${S}/setup-gpiointrd.sh ${D}${sysconfdir}/init.d/setup-gpiointrd.sh
-  install -m 755 ${S}/run-gpiointrd.sh ${D}${sysconfdir}/sv/gpiointrd/run
+  install -m 755 ${UNPACKDIR}/server-init.sh ${D}${sysconfdir}/init.d/server-init.sh
+  install -m 755 ${UNPACKDIR}/setup-gpiointrd.sh ${D}${sysconfdir}/init.d/setup-gpiointrd.sh
+  install -m 755 ${UNPACKDIR}/run-gpiointrd.sh ${D}${sysconfdir}/sv/gpiointrd/run
   update-rc.d -r ${D} setup-gpiointrd.sh start 91 5 .
 }
 

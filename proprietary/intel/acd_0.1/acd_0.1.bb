@@ -12,6 +12,9 @@ inherit cmake pkgconfig
 
 SRC_URI[sha256sum] = "a810ec1b695eea04aa4126937cc9dcbeaca69213419756a34d5648d546eca36f"
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://cmake-format.json \
     file://CMakeLists.txt \

@@ -9,6 +9,9 @@ LIC_FILES_CHKSUM = "file://gpiointrd.c;beginline=4;endline=16;md5=302e73da84735a
 
 inherit meson pkgconfig
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://meson.build \
     file://gpiointrd.c \
@@ -23,7 +26,7 @@ do_install:append() {
   install -d ${D}${sysconfdir}/rcS.d
   install -d ${D}${sysconfdir}/sv
   install -d ${D}${sysconfdir}/sv/gpiointrd
-  install -m 755 ${S}/setup-gpiointrd.sh ${D}${sysconfdir}/init.d/setup-gpiointrd.sh
-  install -m 755 ${S}/run-gpiointrd.sh ${D}${sysconfdir}/sv/gpiointrd/run
+  install -m 755 ${UNPACKDIR}/setup-gpiointrd.sh ${D}${sysconfdir}/init.d/setup-gpiointrd.sh
+  install -m 755 ${UNPACKDIR}/run-gpiointrd.sh ${D}${sysconfdir}/sv/gpiointrd/run
   update-rc.d -r ${D} setup-gpiointrd.sh start 91 5 .
 }

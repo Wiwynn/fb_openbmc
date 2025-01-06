@@ -59,9 +59,9 @@ inherit systemd
 
 do_work_sysv() {
     # the script to mount /mnt/data
-    install -m 0755 ${S}/mount_data0.sh ${D}${sysconfdir}/init.d/mount_data0.sh
+    install -m 0755 ${UNPACKDIR}/mount_data0.sh ${D}${sysconfdir}/init.d/mount_data0.sh
     update-rc.d -r ${D} mount_data0.sh start 03 S .
-    install -m 0755 ${S}/rc.early ${D}${sysconfdir}/init.d/rc.early
+    install -m 0755 ${UNPACKDIR}/rc.early ${D}${sysconfdir}/init.d/rc.early
     update-rc.d -r ${D} rc.early start 04 S .
 
     install -m 755 setup_i2c.sh ${D}${sysconfdir}/init.d/setup_i2c.sh
@@ -82,10 +82,10 @@ do_work_sysv() {
     install -m 755 power-on.sh ${D}${sysconfdir}/init.d/power-on.sh
     update-rc.d -r ${D} power-on.sh start 85 S .
 
-    install -m 0755 ${S}/rc.local ${D}${sysconfdir}/init.d/rc.local
+    install -m 0755 ${UNPACKDIR}/rc.local ${D}${sysconfdir}/init.d/rc.local
     update-rc.d -r ${D} rc.local start 99 2 3 4 5 .
 
-    install -m 0755 ${S}/enable_watchdog_ext_signal.sh ${D}${sysconfdir}/init.d/enable_watchdog_ext_signal.sh
+    install -m 0755 ${UNPACKDIR}/enable_watchdog_ext_signal.sh ${D}${sysconfdir}/init.d/enable_watchdog_ext_signal.sh
     update-rc.d -r ${D} enable_watchdog_ext_signal.sh start 99 2 3 4 5 .
 }
 
@@ -104,7 +104,7 @@ do_work_systemd() {
 
     install -m 755 power-on.sh ${D}/usr/local/bin/power-on.sh
 
-    install -m 0755 ${S}/enable_watchdog_ext_signal.sh ${D}/usr/local/bin/enable_watchdog_ext_signal.sh
+    install -m 0755 ${UNPACKDIR}/enable_watchdog_ext_signal.sh ${D}/usr/local/bin/enable_watchdog_ext_signal.sh
 }
 
 do_install_board() {

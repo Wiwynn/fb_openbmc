@@ -18,6 +18,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#define _DEFAULT_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -202,7 +204,7 @@ gpio_monitor_poll(void) {
     if (gpios[i].status)
       o_pin_val[0] = SETBIT(o_pin_val[0], i);
   }
-  
+
   pal_light_scm_led(SCM_LED_AMBER);
   o_pin_val[0] = 0;
 

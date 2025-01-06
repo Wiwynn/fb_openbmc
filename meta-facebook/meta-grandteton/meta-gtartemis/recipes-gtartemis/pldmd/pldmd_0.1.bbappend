@@ -7,5 +7,5 @@ LOCAL_URI += " \
 
 do_install:append() {
   install -d ${D}${sysconfdir}/sv/pldmd_9
-  install -m 755 ${S}/run-pldmd_9.sh ${D}${sysconfdir}/sv/pldmd_9/run
+  install -m 755 ${UNPACKDIR}/run-pldmd_9.sh ${D}${sysconfdir}/sv/pldmd_9/run
 }

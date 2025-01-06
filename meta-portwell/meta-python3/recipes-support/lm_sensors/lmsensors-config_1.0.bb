@@ -1,10 +1,13 @@
 SUMMARY = "lm_sensors configuration files"
 DESCRIPTION = "Hardware health monitoring configuration files"
 HOMEPAGE = "http://www.lm-sensors.org/"
-LICENSE = "MIT-X"
+LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COREBASE}/meta/COPYING.MIT;md5=3da9cfbcb788c80a0384361b4de20420"
 
 PACKAGE_ARCH = "${MACHINE_ARCH}"
+
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
 
 LOCAL_URI = " \
     file://fancontrol \
@@ -16,10 +19,10 @@ RDEPENDS:${PN}-dev = ""
 do_install() {
     # Install fancontrol configuration file
     install -d ${D}${sysconfdir}/sysconfig
-    install -m 0644 ${WORKDIR}/fancontrol ${D}${sysconfdir}
+    install -m 0644 ${UNPACKDIR}/fancontrol ${D}${sysconfdir}
     # Install libsensors configuration file
     install -d ${D}${sysconfdir}/sensors.d
-    install -m 0644 ${WORKDIR}/sensors.conf ${D}${sysconfdir}/sensors.d
+    install -m 0644 ${UNPACKDIR}/sensors.conf ${D}${sysconfdir}/sensors.d
 }
 
 # libsensors configuration

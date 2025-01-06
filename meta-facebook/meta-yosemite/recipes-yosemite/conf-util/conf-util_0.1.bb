@@ -23,6 +23,9 @@ LIC_FILES_CHKSUM = "file://setup-conf.sh;beginline=3;endline=18;md5=700bc730f27f
 
 DEPENDS:append = " update-rc.d-native"
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://setup-conf.sh \
     "

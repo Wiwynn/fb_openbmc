@@ -270,7 +270,10 @@ KNOWN_USAGE_STRINGS = {
         "nslookup [HOST] [SERVER]",
         "nslookup HOST [DNS_SERVER]",  # BusyBox 1.30.1
     ],
-    "od": ["od [-aBbcDdeFfHhIiLlOovXx] [FILE]"],
+    "od": [
+        "od [-aBbcDdeFfHhIiLlOovXx] [FILE]",
+        "od [-abcdeFfhiloxsv] [FILE]", # BusyBox 1.37.0
+    ],
     "openvt": ["openvt [-c N] [-sw] [PROG ARGS]"],
     "patch": [
         "patch [OPTIONS] [ORIGFILE [PATCHFILE]]",

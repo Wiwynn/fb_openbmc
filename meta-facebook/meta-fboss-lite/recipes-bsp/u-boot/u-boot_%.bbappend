@@ -5,7 +5,7 @@ SRC_URI += "file://facebook-fboss-lite_defconfig.append \
 
 do_merge_uboot_configs() {
     base_config="${S}/configs/${UBOOT_CONFIG_BASE}"
-    def_config="${WORKDIR}/facebook-fboss-lite_defconfig.append"
+    def_config="${UNPACKDIR}/facebook-fboss-lite_defconfig.append"
 
     if [ -e "$base_config" -a -e "$def_config" ]; then
         bbnote "Merging ${UBOOT_CONFIG_BASE} with $def_config"

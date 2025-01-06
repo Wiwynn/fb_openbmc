@@ -30,6 +30,9 @@ PR = "r1"
 LICENSE = "GPL-2.0-or-later"
 LIC_FILES_CHKSUM = "file://serfmon_show.py;beginline=5;endline=18;md5=0b1ee7d6f844d472fa306b2fee2167e0"
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://serfmon_show.py \
     file://serfmon.service \
@@ -39,8 +42,8 @@ do_install() {
     install -d ${D}/usr/local/bin
     install -d ${D}${systemd_system_unitdir}
 
-    install -m 0755 ${S}/serfmon_show.py ${D}/usr/local/bin
-    install -m 0644 ${S}/serfmon.service ${D}${systemd_system_unitdir}
+    install -m 0755 ${UNPACKDIR}/serfmon_show.py ${D}/usr/local/bin
+    install -m 0644 ${UNPACKDIR}/serfmon.service ${D}${systemd_system_unitdir}
 }
 
 RDEPENDS:${PN} += "python3-core "

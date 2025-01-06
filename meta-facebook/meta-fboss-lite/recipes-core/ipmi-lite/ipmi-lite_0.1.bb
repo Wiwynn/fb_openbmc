@@ -28,6 +28,9 @@ LIC_FILES_CHKSUM = "file://ipmid.c;beginline=8;endline=20;md5=7783b537a8ff52cf36
 LDFLAGS += " -lkv -lipc -llog"
 CFLAGS += "-Wall -Werror -pthread"
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://ipmid.c \
     file://meson.build \
@@ -51,14 +54,14 @@ install_sysv() {
     install -d ${D}${sysconfdir}/sv
     install -d ${D}${sysconfdir}/sv/ipmid
     install -d ${D}${sysconfdir}/ipmid
-    install -m 755 ${S}/setup-ipmid.sh ${D}${sysconfdir}/init.d/setup-ipmid.sh
-    install -m 755 ${S}/run-ipmid.sh ${D}${sysconfdir}/sv/ipmid/run
+    install -m 755 ${UNPACKDIR}/setup-ipmid.sh ${D}${sysconfdir}/init.d/setup-ipmid.sh
+    install -m 755 ${UNPACKDIR}/run-ipmid.sh ${D}${sysconfdir}/sv/ipmid/run
     update-rc.d -r ${D} setup-ipmid.sh start 64 5 .
 }
 
 install_systemd() {
     install -d ${D}${systemd_system_unitdir}
-    install -m 644 ${S}/ipmid.service ${D}${systemd_system_unitdir}
+    install -m 644 ${UNPACKDIR}/ipmid.service ${D}${systemd_system_unitdir}
 }
 
 do_install() {

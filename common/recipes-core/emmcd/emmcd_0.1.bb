@@ -29,6 +29,9 @@ inherit meson pkgconfig
 RDEPENDS:${PN} += "liblog libmisc-utils"
 DEPENDS:append = " update-rc.d-native liblog libmisc-utils"
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://emmcd.c \
     file://meson.build \
@@ -45,18 +48,18 @@ install_sysv() {
   install -d ${D}${sysconfdir}/rcS.d
   install -d ${D}${sysconfdir}/sv
   install -d ${D}${sysconfdir}/sv/emmcd
-  install -m 755 ${S}/setup-emmcd.sh ${D}${sysconfdir}/init.d/setup-emmcd.sh
-  install -m 755 ${S}/run-emmcd.sh ${D}${sysconfdir}/sv/emmcd/run
+  install -m 755 ${UNPACKDIR}/setup-emmcd.sh ${D}${sysconfdir}/init.d/setup-emmcd.sh
+  install -m 755 ${UNPACKDIR}/run-emmcd.sh ${D}${sysconfdir}/sv/emmcd/run
   update-rc.d -r ${D} setup-emmcd.sh start 99 5 .
 }
 
 install_systemd() {
     install -d ${D}${systemd_system_unitdir}
-    install -m 755 ${S}/setup-emmcd.sh ${D}/usr/local/bin/setup-emmcd.sh
+    install -m 755 ${UNPACKDIR}/setup-emmcd.sh ${D}/usr/local/bin/setup-emmcd.sh
 
     sed -i -e '/runsv/d' ${D}/usr/local/bin/setup-emmcd.sh
 
-    install -m 644 ${S}/emmcd.service ${D}${systemd_system_unitdir}
+    install -m 644 ${UNPACKDIR}/emmcd.service ${D}${systemd_system_unitdir}
 }
 
 do_install:append() {

@@ -1,4 +1,4 @@
-From 4147b883d1ba5aa9c97ea24cb74b52aa5920dcfa Mon Sep 17 00:00:00 2001
+From 7b9292ff4386c8b00ce5befd0ac671a851477d11 Mon Sep 17 00:00:00 2001
 From: Peter Delevoryas <peter@pjd.dev>
 Date: Tue, 23 Aug 2022 23:24:36 -0700
 Subject: [PATCH 524/532] fby35: Setup I2C devices and GPIO's
@@ -11,10 +11,10 @@ Signed-off-by: Peter Delevoryas <peter@pjd.dev>
  3 files changed, 103 insertions(+), 43 deletions(-)
 
 diff --git a/hw/arm/aspeed.c b/hw/arm/aspeed.c
-index 51ec3cb6e0..aa2d351a77 100644
+index aaf8128e15..975cd02fa7 100644
 --- a/hw/arm/aspeed.c
 +++ b/hw/arm/aspeed.c
-@@ -1005,35 +1005,13 @@ static void bletchley_bmc_i2c_init(AspeedMachineState *bmc)
+@@ -1032,35 +1032,13 @@ static void bletchley_bmc_i2c_init(AspeedMachineState *bmc)
  static void fby35_i2c_init(AspeedMachineState *bmc)
  {
      AspeedSoCState *soc = bmc->soc;
@@ -52,7 +52,7 @@ index 51ec3cb6e0..aa2d351a77 100644
  }
  
  static void fbttn_i2c_init(AspeedMachineState *bmc)
-@@ -1554,27 +1532,9 @@ static void aspeed_machine_bletchley_class_init(ObjectClass *oc, void *data)
+@@ -1608,27 +1586,9 @@ static void aspeed_machine_bletchley_class_init(ObjectClass *oc, void *data)
  static void fby35_reset(MachineState *state, ShutdownCause reason)
  {
      AspeedMachineState *bmc = ASPEED_MACHINE(state);
@@ -251,5 +251,5 @@ index 20bd43fbae..87cb1a10c2 100644
 +
  #endif
 -- 
-2.43.0
+2.44.2
 

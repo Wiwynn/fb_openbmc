@@ -29,8 +29,8 @@ RDEPENDS:${PN} += "bash"
 
 do_install:append() {
   install -d ${D}${systemd_system_unitdir}
-  install -m 0644 ${S}/ipmbd.target ${D}${systemd_system_unitdir}
-  install -m 0644 ${S}/ipmbd@.service ${D}${systemd_system_unitdir}
+  install -m 0644 ${UNPACKDIR}/ipmbd.target ${D}${systemd_system_unitdir}
+  install -m 0644 ${UNPACKDIR}/ipmbd@.service ${D}${systemd_system_unitdir}
 }
 
 SYSTEMD_SERVICE:${PN} += "ipmbd@.service ipmbd.target"

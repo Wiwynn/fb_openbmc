@@ -20,7 +20,7 @@ do_install:append() {
     install -m 0644 setup_i2c.service ${D}${systemd_system_unitdir}
     install -m 0644 setup_board.service ${D}${systemd_system_unitdir}
     install -m 0644 power-on.service ${D}${systemd_system_unitdir}
-    install -m 0644 ${S}/enable_watchdog_ext_signal.service ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/enable_watchdog_ext_signal.service ${D}${systemd_system_unitdir}
 }
 
 

@@ -1,4 +1,4 @@
-From 289609f4e24bf6d8f8ee342e152c58a0b233874a Mon Sep 17 00:00:00 2001
+From fda488018e164ca726b19aa0766d006666183a88 Mon Sep 17 00:00:00 2001
 From: Peter Delevoryas <pdel@fb.com>
 Date: Wed, 15 Jun 2022 13:42:47 -0700
 Subject: [PATCH 516/532] scripts: Add redact-util
@@ -113,5 +113,5 @@ index 0000000000..b58b2d07ac
 +    fclose(f);
 +}
 -- 
-2.43.0
+2.44.2
 

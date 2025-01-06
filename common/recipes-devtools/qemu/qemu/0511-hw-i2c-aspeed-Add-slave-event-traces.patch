@@ -1,4 +1,4 @@
-From d9eba13040279ef71f4e727fa87a042348522b10 Mon Sep 17 00:00:00 2001
+From b63045488e901329142430eaa16f1a0c6d4d764f Mon Sep 17 00:00:00 2001
 From: Peter Delevoryas <peter@pjd.dev>
 Date: Wed, 24 Aug 2022 01:53:43 -0700
 Subject: [PATCH 511/532] hw/i2c/aspeed: Add slave event traces
@@ -10,10 +10,10 @@ Signed-off-by: Peter Delevoryas <peter@pjd.dev>
  2 files changed, 15 insertions(+)
 
 diff --git a/hw/i2c/aspeed_i2c.c b/hw/i2c/aspeed_i2c.c
-index d04e1bf6f4..899aedcc9a 100644
+index 362f5c519e..33c3b27375 100644
 --- a/hw/i2c/aspeed_i2c.c
 +++ b/hw/i2c/aspeed_i2c.c
-@@ -1101,9 +1101,18 @@ static const TypeInfo aspeed_i2c_info = {
+@@ -1103,9 +1103,18 @@ static const TypeInfo aspeed_i2c_info = {
      .abstract   = true,
  };
  
@@ -32,7 +32,7 @@ index d04e1bf6f4..899aedcc9a 100644
      switch (event) {
      case I2C_START_SEND_ASYNC:
          if (!SHARED_ARRAY_FIELD_EX32(bus->regs, R_I2CS_CMD, RX_DMA_EN)) {
-@@ -1148,6 +1157,8 @@ static int aspeed_i2c_bus_slave_event(I2CSlave *slave, enum i2c_event event)
+@@ -1150,6 +1159,8 @@ static int aspeed_i2c_bus_slave_event(I2CSlave *slave, enum i2c_event event)
          return aspeed_i2c_bus_new_slave_event(bus, event);
      }
  
@@ -41,7 +41,7 @@ index d04e1bf6f4..899aedcc9a 100644
      switch (event) {
      case I2C_START_SEND_ASYNC:
          /* Bit[0] == 0 indicates "send". */
-@@ -1168,6 +1179,8 @@ static int aspeed_i2c_bus_slave_event(I2CSlave *slave, enum i2c_event event)
+@@ -1170,6 +1181,8 @@ static int aspeed_i2c_bus_slave_event(I2CSlave *slave, enum i2c_event event)
          break;
  
      default:
@@ -64,5 +64,5 @@ index e9f3d1af07..5a1651352c 100644
  
  # npcm7xx_smbus.c
 -- 
-2.43.0
+2.44.2
 

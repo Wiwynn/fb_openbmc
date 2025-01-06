@@ -8,6 +8,9 @@ LIC_FILES_CHKSUM = "file://syseventgen-util.cpp;beginline=4;endline=16;md5=b3959
 
 inherit meson pkgconfig
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://meson.build \
     file://syseventgen-util.cpp \

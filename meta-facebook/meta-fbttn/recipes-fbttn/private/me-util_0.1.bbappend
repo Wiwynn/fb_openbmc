@@ -30,7 +30,7 @@ do_install() {
   install -d $dst
   install -d $bin
   for f in ${binfiles}; do
-    install -m 755 $f ${dst}/$f
+    install -m 755 ${S}/$f ${dst}/$f
     ln -snf ../fbpackages/${pkgdir}/$f ${bin}/$f
   done
 }

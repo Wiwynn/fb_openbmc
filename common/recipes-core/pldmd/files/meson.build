@@ -30,7 +30,7 @@ pldmd_exe = executable(
     'pldmd',
     srcs,
     dependencies: deps,
-    cpp_args: ['-DNDEBUG'],
+    cpp_args: ['-DNDEBUG', '-DGLOG_USE_GLOG_EXPORT'],
     install: true,
     install_dir : 'local/bin'
 )
@@ -44,6 +44,7 @@ pldm_util = executable(
     'pldmd-util',
     util_srcs,
     dependencies: deps,
+    cpp_args: ['-DGLOG_USE_GLOG_EXPORT'],
     install: true,
     install_dir : 'bin'
 )

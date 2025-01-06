@@ -1,7 +1,7 @@
 
 DESCRIPTION = "Linux Kernel for Aspeed"
 SECTION = "kernel"
-LICENSE = "GPLv2"
+LICENSE = "GPL-2.0-only"
 
 COMPATIBLE_MACHINE = "aspeed"
 
@@ -21,3 +21,5 @@ remove_kernel_image_from_rootfs() {
 
 pkg_postinst:kernel-image() {
 }
+
+ERROR_QA:remove = "buildpaths"

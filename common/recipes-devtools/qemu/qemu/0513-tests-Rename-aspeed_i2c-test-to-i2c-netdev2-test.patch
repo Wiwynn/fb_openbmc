@@ -1,4 +1,4 @@
-From 806b8823c888c2c8e5da98f649cd9d903fce09fb Mon Sep 17 00:00:00 2001
+From 587c8e1b359e0a76307034ae94a4de03cd9e1bd1 Mon Sep 17 00:00:00 2001
 From: Peter Delevoryas <peter@pjd.dev>
 Date: Fri, 26 Aug 2022 02:13:04 -0700
 Subject: [PATCH 513/532] tests: Rename aspeed_i2c-test to i2c-netdev2-test
@@ -9,8 +9,8 @@ i2c-netdev2.
 Signed-off-by: Peter Delevoryas <peter@pjd.dev>
 ---
  tests/qtest/{aspeed_i2c-test.c => i2c-netdev2-test.c} | 2 +-
- tests/qtest/meson.build                               | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ tests/qtest/meson.build                               | 3 ++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
  rename tests/qtest/{aspeed_i2c-test.c => i2c-netdev2-test.c} (99%)
 
 diff --git a/tests/qtest/aspeed_i2c-test.c b/tests/qtest/i2c-netdev2-test.c
@@ -28,18 +28,19 @@ index aaf8c85427..59e874e4d4 100644
   * Copyright (c) Meta Platforms, Inc. and affiliates. (http://www.meta.com)
   *
 diff --git a/tests/qtest/meson.build b/tests/qtest/meson.build
-index 14068d8f39..9bdd01f794 100644
+index e754e8b3ab..4c3a9020b6 100644
 --- a/tests/qtest/meson.build
 +++ b/tests/qtest/meson.build
-@@ -194,7 +194,7 @@ qtests_aspeed = \
+@@ -205,7 +205,8 @@ qtests_aspeed = \
    ['aspeed_hace-test',
     'aspeed_smc-test',
     'aspeed_gpio-test',
 -   'aspeed_i2c-test']
++   'aspeed_i2c-test',
 +   'i2c-netdev2-test']
- qtests_arm = \
-   (config_all_devices.has_key('CONFIG_MPS2') ? ['sse-timer-test'] : []) + \
-   (config_all_devices.has_key('CONFIG_CMSDK_APB_DUALTIMER') ? ['cmsdk-apb-dualtimer-test'] : []) + \
+ 
+ qtests_stm32l4x5 = \
+   ['stm32l4x5_exti-test',
 -- 
-2.43.0
+2.44.2
 

@@ -499,8 +499,8 @@ static void isp_gpio_unmap(void *addr, int fd)
 }
 int isp_gpio_init(void)
 {
-	void *scu80_addr, *scu84_addr;
-	int scu80_fd, scu84_fd, gpiof_data_addr, gpiof_data_fd, gpiof_dir_addr, gpiof_dir_fd;
+	void *scu80_addr, *scu84_addr, *gpiof_data_addr, *gpiof_dir_addr;
+	int scu80_fd, scu84_fd, gpiof_data_fd, gpiof_dir_fd;
 	unsigned int value, temp;
 
 	g_ucPinTDI          = 0x1 << CPLD_TDI_CONFIG;    /* Bit address of TDI */
@@ -572,7 +572,7 @@ void isp_gpio_config(unsigned int gpio, int dir)
 	}
 }
 
-int isp_vme_file_size_set(char *file_name)
+int isp_vme_file_size_set(const char *file_name)
 {
 	struct stat statbuf;
 

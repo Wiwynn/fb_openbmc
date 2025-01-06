@@ -8,6 +8,9 @@ LIC_FILES_CHKSUM = "file://aggregate-sensor.c;beginline=5;endline=17;md5=da35978
 
 inherit meson pkgconfig ptest-meson
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://meson.build \
     file://aggregate-sensor.h \
@@ -31,7 +34,7 @@ export SLIB = "${STAGING_LIBDIR}"
 test_conf = "test_null.json test_lexp.json test_lexp_sexp.json test_clexp.json"
 do_install_ptest:append() {
   for f in ${test_conf}; do
-    install -m 755 ${S}/test/$f ${D}${libdir}/libaggregate-sensor/ptest/$f
+    install -m 755 ${UNPACKDIR}/test/$f ${D}${libdir}/libaggregate-sensor/ptest/$f
   done
 }
 
@@ -41,10 +44,10 @@ AGGREGATE_SENSORS_CONF ?= "aggregate-sensor-conf.json"
 
 do_install:append() {
   for conf in ${AGGREGATE_SENSORS_CONF}; do
-    install -D -m 644 ${S}/${conf} ${D}${sysconfdir}/aggregate-sensors.d/${conf}
+    install -D -m 644 ${UNPACKDIR}/${conf} ${D}${sysconfdir}/aggregate-sensors.d/${conf}
   done
   install -d ${D}${PYTHON_SITEPACKAGES_DIR}
-  install -m 644 ${S}/aggregate_sensor.py ${D}${PYTHON_SITEPACKAGES_DIR}/
+  install -m 644 ${UNPACKDIR}/aggregate_sensor.py ${D}${PYTHON_SITEPACKAGES_DIR}/
 }
 
 LDFLAGS= "-lm -lpal"

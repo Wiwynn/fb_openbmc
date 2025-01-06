@@ -9,7 +9,7 @@ RDEPENDS:${PN}:append = " bash"
 
 do_install_fake_dhclient() {
     install -d ${D}${sbindir}
-    install -m 0755 ${WORKDIR}/dhclient ${D}${sbindir}
+    install -m 0755 ${UNPACKDIR}/dhclient ${D}${sbindir}
 }
 
 do_install:append() {
@@ -43,6 +43,6 @@ do_install:append() {
 
 do_install:append:mf-ncsi() {
     install -d ${D}${libexecdir}/dhclient/pre.d
-    install -m 0755 ${WORKDIR}/wait_mac_addr_ready \
+    install -m 0755 ${UNPACKDIR}/wait_mac_addr_ready \
         ${D}${libexecdir}/dhclient/pre.d/
 }

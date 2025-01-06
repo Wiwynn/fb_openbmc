@@ -89,13 +89,13 @@ inherit systemd
 
 do_work_sysv() {
     # the script to mount /mnt/data
-    install -m 0755 ${S}/mount_data0.sh ${D}${sysconfdir}/init.d/mount_data0.sh
+    install -m 0755 ${UNPACKDIR}/mount_data0.sh ${D}${sysconfdir}/init.d/mount_data0.sh
     update-rc.d -r ${D} mount_data0.sh start 03 S .
-    install -m 0755 ${S}/rc.early ${D}${sysconfdir}/init.d/rc.early
+    install -m 0755 ${UNPACKDIR}/rc.early ${D}${sysconfdir}/init.d/rc.early
     update-rc.d -r ${D} rc.early start 04 S .
 
     # mount secondary storage (emmc) to /mnt/data1
-    install -m 0755 ${S}/mount_data1.sh ${D}${sysconfdir}/init.d/mount_data1.sh
+    install -m 0755 ${UNPACKDIR}/mount_data1.sh ${D}${sysconfdir}/init.d/mount_data1.sh
     update-rc.d -r ${D} mount_data1.sh start 05 S .
 
     install -m 755 power-on.sh ${D}${sysconfdir}/init.d/power-on.sh
@@ -121,7 +121,7 @@ do_work_sysv() {
     install -d ${D}/${sysconfdir}/network/if-up.d
     install -m 755 create_vlan_intf ${D}${sysconfdir}/network/if-up.d/create_vlan_intf
 
-    install -m 0755 ${S}/rc.local ${D}${sysconfdir}/init.d/rc.local
+    install -m 0755 ${UNPACKDIR}/rc.local ${D}${sysconfdir}/init.d/rc.local
     update-rc.d -r ${D} rc.local start 99 2 3 4 5 .
 }
 
@@ -131,7 +131,7 @@ do_work_systemd() {
   install -d ${D}${systemd_system_unitdir}
 
   # mount secondary storage (emmc) to /mnt/data1
-  install -m 755 ${S}/mount_data1.sh ${D}/usr/local/bin/mount_data1.sh
+  install -m 755 ${UNPACKDIR}/mount_data1.sh ${D}/usr/local/bin/mount_data1.sh
 
   install -m 755 setup-gpio.sh ${D}/usr/local/bin/setup-gpio.sh
 

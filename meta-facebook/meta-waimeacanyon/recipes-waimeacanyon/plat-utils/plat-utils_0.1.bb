@@ -21,6 +21,9 @@ PR = "r1"
 LICENSE = "GPL-2.0-or-later"
 LIC_FILES_CHKSUM = "file://COPYING;md5=eb723b61539feef013de476e68b5c50a"
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://COPYING \
     file://setup-gpio.sh \
@@ -48,7 +51,7 @@ do_install() {
   localbindir="${D}/usr/local/bin"
   install -d ${localbindir}
   for f in ${binfiles}; do
-      install -m 755 ${S}/$f ${dst}/${f}
+      install -m 755 ${UNPACKDIR}/$f ${dst}/${f}
       ln -s ../fbpackages/${pkgdir}/${f} ${localbindir}/${f}
   done
 
@@ -57,23 +60,23 @@ do_install() {
   install -d ${D}${sysconfdir}/rcS.d
 
   # setup-dev.sh
-  install -m 755 ${S}/setup-dev.sh ${D}${sysconfdir}/init.d/setup-dev.sh
+  install -m 755 ${UNPACKDIR}/setup-dev.sh ${D}${sysconfdir}/init.d/setup-dev.sh
   update-rc.d -r ${D} setup-dev.sh start 57 5 .
 
   # setup-gpio.sh
-    install -m 755 ${S}/setup-gpio.sh ${D}${sysconfdir}/init.d/setup-gpio.sh
+    install -m 755 ${UNPACKDIR}/setup-gpio.sh ${D}${sysconfdir}/init.d/setup-gpio.sh
     update-rc.d -r ${D} setup-gpio.sh start 59 5 .
 
   # sync_date.sh
-    install -m 755 ${S}/sync_date.sh ${D}${sysconfdir}/init.d/sync_date.sh
+    install -m 755 ${UNPACKDIR}/sync_date.sh ${D}${sysconfdir}/init.d/sync_date.sh
     update-rc.d -r ${D} sync_date.sh start 66 5 .
 
   # setup-por.sh
-  install -m 755 ${S}/setup-por.sh ${D}${sysconfdir}/init.d/setup-por.sh
+  install -m 755 ${UNPACKDIR}/setup-por.sh ${D}${sysconfdir}/init.d/setup-por.sh
   update-rc.d -r ${D} setup-por.sh start 67 5 .
 
   # install plat-functions
-  install -m 644 ${S}/plat-functions ${dst}/plat-functions
+  install -m 644 ${UNPACKDIR}/plat-functions ${dst}/plat-functions
 }
 
 FILES:${PN} += "/usr/local ${sysconfdir}"

@@ -6,6 +6,9 @@ PR = "r1"
 LICENSE = "GPL-2.0-or-later"
 LIC_FILES_CHKSUM = "file://me-util;beginline=5;endline=18;md5=0b1ee7d6f844d472fa306b2fee2167e0"
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = "file://me-util \
           "
 
@@ -21,7 +24,7 @@ do_install() {
   install -d $dst
   install -d $bin
   for f in ${binfiles}; do
-    install -m 755 $f ${dst}/$f
+    install -m 755 ${S}/$f ${dst}/$f
     ln -snf ../fbpackages/${pkgdir}/$f ${bin}/$f
   done
 }

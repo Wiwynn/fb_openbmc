@@ -3,7 +3,7 @@
 #
 SUMMARY = "cisco-open/meta-fboss-export"
 LICENSE = "GPL-2.0-only"
-LIC_FILES_CHKSUM = "file://${S}/LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
+LIC_FILES_CHKSUM = "file://${UNPACKDIR}/LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 PR = "r0"
 PV = "0.16-1"
@@ -55,16 +55,16 @@ FILES:${PN} := " \
 do_install() {
     install -d ${D}${sysconfdir}/udev/rules.d
     install -m 644 -t ${D}${sysconfdir}/udev/rules.d \
-        ${S}/target/sandia/etc/udev/rules.d/99-bmc-85_SCM_O_BMC.rules
+        ${UNPACKDIR}/target/sandia/etc/udev/rules.d/99-bmc-85_SCM_O_BMC.rules
 
     install -d ${D}${bindir}
-    install -m 755 ${WORKDIR}/build/fw_util_cisco ${D}${bindir}/fw_util
-    install -m 755 ${WORKDIR}/build/weutil_cisco  ${D}${bindir}/weutil
+    install -m 755 ${UNPACKDIR}/build/fw_util_cisco ${D}${bindir}/fw_util
+    install -m 755 ${UNPACKDIR}/build/weutil_cisco  ${D}${bindir}/weutil
 
     install -d ${D}/opt/cisco/bin/
-    install -m 755 -t ${D}/opt/cisco/bin ${S}/fpd/bios_bmc_create_mtd.sh
-    install -m 755 -t ${D}/opt/cisco/bin ${S}/fpd/bios_bmc_helper.sh
-    install -m 755 -t ${D}/opt/cisco/bin ${S}/fpd/bios_mtd_upgrade.sh
-    install -m 755 -t ${D}/opt/cisco/bin ${S}/fpd/bios_bmc_select_mux.sh
-    install -m 755 -t ${D}/opt/cisco/bin ${S}/fpd/bios_bmc_unselect_mux.sh
+    install -m 755 -t ${D}/opt/cisco/bin ${UNPACKDIR}/fpd/bios_bmc_create_mtd.sh
+    install -m 755 -t ${D}/opt/cisco/bin ${UNPACKDIR}/fpd/bios_bmc_helper.sh
+    install -m 755 -t ${D}/opt/cisco/bin ${UNPACKDIR}/fpd/bios_mtd_upgrade.sh
+    install -m 755 -t ${D}/opt/cisco/bin ${UNPACKDIR}/fpd/bios_bmc_select_mux.sh
+    install -m 755 -t ${D}/opt/cisco/bin ${UNPACKDIR}/fpd/bios_bmc_unselect_mux.sh
 }

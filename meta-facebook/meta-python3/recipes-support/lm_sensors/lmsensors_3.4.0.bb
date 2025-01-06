@@ -13,6 +13,9 @@ SRC_URI = "https://github.com/lm-sensors/lm-sensors/archive/V3-4-0.tar.gz \
 SRC_URI[md5sum] = "1e9f117cbfa11be1955adc96df71eadb"
 SRC_URI[sha256sum] = "e334c1c2b06f7290e3e66bdae330a5d36054701ffd47a5dde7a06f9a7402cb4e"
 
+# This package is pretty old and doesn't use git.  Ignore the QA warning.
+ERROR_QA:remove="src-uri-bad"
+
 inherit update-rc.d systemd
 
 RDEPENDS:${PN}-dev = ""
@@ -39,7 +42,7 @@ do_install() {
     install -d ${D}${sysconfdir}/init.d
 
     # Install fancontrol init script
-    install -m 0755 ${WORKDIR}/fancontrol.init \
+    install -m 0755 ${UNPACKDIR}/fancontrol.init \
         ${D}${sysconfdir}/init.d/fancontrol
 }
 

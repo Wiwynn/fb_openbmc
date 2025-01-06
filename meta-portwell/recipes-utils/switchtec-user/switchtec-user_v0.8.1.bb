@@ -2,7 +2,7 @@ SUMMARY = "Switchtec Utility"
 DESCRIPTION = "Util for getting information from switch"
 SECTION = "base"
 PR = "r1"
-LICENSE = "GPLv2"
+LICENSE = "GPL-2.0-only"
 SRCBRANCH = "fb_dev"
 
 SRC_URI = "https://github.com/Microsemi/switchtec-user.git;branch=${SRCBRANCH};tag=v0.8+twi-special;downloadfilename=${PN}-${PV}.tar.gz"

@@ -7,7 +7,7 @@ MTERM_LOG_FILES := "mTerm_wedge"
 
 do_install:append() {
   dst="${D}/usr/local/fbpackages/rotate"
-  install -m 755 ${WORKDIR}/rotate_logfile ${dst}/logfile
+  install -m 755 ${UNPACKDIR}/rotate_logfile ${dst}/logfile
 }
 
 FILES:${PN} += "/usr/local/fbpackages/rotate"

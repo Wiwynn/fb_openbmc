@@ -8,6 +8,9 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/GPL-2.0-only;m
 inherit systemd
 inherit obmc-phosphor-systemd
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI += " \
     file://hmc-util \
     "
@@ -22,5 +25,5 @@ SYSTEMD_SERVICE:${PN} = " \
 
 do_install() {
     install -d ${D}${bindir}
-    install -m 0755 ${S}/hmc-util ${D}${bindir}/hmc-util
+    install -m 0755 ${UNPACKDIR}/hmc-util ${D}${bindir}/hmc-util
 }

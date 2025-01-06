@@ -111,12 +111,12 @@ do_compile () {
     unset CFLAGS
     unset CPPFLAGS
 
-    if [ ! -e ${B}/.scmversion -a ! -e ${S}/.scmversion ]
+    if [ ! -e ${B}/.scmversion -a ! -e ${UNPACKDIR}/.scmversion ]
     then
         echo ${UBOOT_LOCALVERSION} > ${B}/.scmversion
         echo ${OPENBMC_VERSION} >> ${B}/.scmversion
-        echo ${UBOOT_LOCALVERSION} > ${S}/.scmversion
-        echo ${OPENBMC_VERSION} >> ${S}/.scmversion
+        echo ${UBOOT_LOCALVERSION} > ${UNPACKDIR}/.scmversion
+        echo ${OPENBMC_VERSION} >> ${UNPACKDIR}/.scmversion
     fi
 
     if [ "x${UBOOT_CONFIG}" != "x" ]
@@ -129,7 +129,7 @@ do_compile () {
                 then
                     oe_runmake O=${config} ${config}
                     oe_runmake O=${config} ${UBOOT_MAKE_TARGET}
-                    cp  ${S}/${config}/${UBOOT_BINARY}  ${S}/${config}/u-boot-${type}.${UBOOT_SUFFIX}
+                    cp  ${UNPACKDIR}/${config}/${UBOOT_BINARY}  ${UNPACKDIR}/${config}/u-boot-${type}.${UBOOT_SUFFIX}
                 fi
             done
             unset  j
@@ -168,9 +168,9 @@ do_compile () {
 }
 
 do_install () {
-    if [ -e ${WORKDIR}/fw_env.config ] ; then
+    if [ -e ${UNPACKDIR}/fw_env.config ] ; then
         install -d ${D}${sysconfdir}
-        install -m 644 ${WORKDIR}/fw_env.config ${D}${sysconfdir}/fw_env.config
+        install -m 644 ${UNPACKDIR}/fw_env.config ${D}${sysconfdir}/fw_env.config
     fi
 }
 
@@ -184,7 +184,7 @@ do_deploy () {
                 if [ $j -eq $i ]
                 then
                     install -d ${DEPLOYDIR}
-                    install ${S}/${config}/u-boot-${type}.${UBOOT_SUFFIX} ${DEPLOYDIR}/u-boot-${type}-${PV}-${PR}.${UBOOT_SUFFIX}
+                    install ${UNPACKDIR}/${config}/u-boot-${type}.${UBOOT_SUFFIX} ${DEPLOYDIR}/u-boot-${type}-${PV}-${PR}.${UBOOT_SUFFIX}
                     cd ${DEPLOYDIR}
                     ln -sf u-boot-${type}-${PV}-${PR}.${UBOOT_SUFFIX} ${UBOOT_SYMLINK}-${type}
                     ln -sf u-boot-${type}-${PV}-${PR}.${UBOOT_SUFFIX} ${UBOOT_SYMLINK}
@@ -197,7 +197,7 @@ do_deploy () {
         unset  i
     else
         install -d ${DEPLOYDIR}
-        install ${S}/default/${UBOOT_BINARY} ${DEPLOYDIR}/${UBOOT_IMAGE}
+        install ${UNPACKDIR}/default/${UBOOT_BINARY} ${DEPLOYDIR}/${UBOOT_IMAGE}
         cd ${DEPLOYDIR}
         rm -f ${UBOOT_BINARY} ${UBOOT_SYMLINK}
         ln -sf ${UBOOT_IMAGE} ${UBOOT_SYMLINK}
@@ -214,7 +214,7 @@ do_deploy () {
                     j=`expr $j + 1`;
                     if [ $j -eq $i ]
                     then
-                        install ${S}/${config}/${UBOOT_ELF} ${DEPLOYDIR}/u-boot-${type}-${PV}-${PR}.${UBOOT_ELF_SUFFIX}
+                        install ${UNPACKDIR}/${config}/${UBOOT_ELF} ${DEPLOYDIR}/u-boot-${type}-${PV}-${PR}.${UBOOT_ELF_SUFFIX}
                         ln -sf u-boot-${type}-${PV}-${PR}.${UBOOT_ELF_SUFFIX} ${DEPLOYDIR}/${UBOOT_ELF_BINARY}-${type}
                         ln -sf u-boot-${type}-${PV}-${PR}.${UBOOT_ELF_SUFFIX} ${DEPLOYDIR}/${UBOOT_ELF_BINARY}
                         ln -sf u-boot-${type}-${PV}-${PR}.${UBOOT_ELF_SUFFIX} ${DEPLOYDIR}/${UBOOT_ELF_SYMLINK}-${type}
@@ -225,7 +225,7 @@ do_deploy () {
             done
             unset i
         else
-            install ${S}/default/${UBOOT_ELF} ${DEPLOYDIR}/${UBOOT_ELF_IMAGE}
+            install ${UNPACKDIR}/default/${UBOOT_ELF} ${DEPLOYDIR}/${UBOOT_ELF_IMAGE}
             ln -sf ${UBOOT_ELF_IMAGE} ${DEPLOYDIR}/${UBOOT_ELF_BINARY}
             ln -sf ${UBOOT_ELF_IMAGE} ${DEPLOYDIR}/${UBOOT_ELF_SYMLINK}
         fi
@@ -242,7 +242,7 @@ do_deploy () {
                      j=`expr $j + 1`;
                      if [ $j -eq $i ]
                      then
-                         install ${S}/${config}/${SPL_BINARY} ${DEPLOYDIR}/${SPL_IMAGE}-${type}-${PV}-${PR}
+                         install ${UNPACKDIR}/${config}/${SPL_BINARY} ${DEPLOYDIR}/${SPL_IMAGE}-${type}-${PV}-${PR}
                          rm -f ${DEPLOYDIR}/${SPL_BINARYNAME} ${DEPLOYDIR}/${SPL_SYMLINK}-${type}
                          ln -sf ${SPL_IMAGE}-${type}-${PV}-${PR} ${DEPLOYDIR}/${SPL_BINARYNAME}-${type}
                          ln -sf ${SPL_IMAGE}-${type}-${PV}-${PR} ${DEPLOYDIR}/${SPL_BINARYNAME}
@@ -254,7 +254,7 @@ do_deploy () {
              done
              unset  i
          elif [ "x${VERIFIED_BOOT}" != "x" ] ; then
-             install ${S}/default/${SPL_BINARY} ${DEPLOYDIR}/${SPL_IMAGE}
+             install ${UNPACKDIR}/default/${SPL_BINARY} ${DEPLOYDIR}/${SPL_IMAGE}
              rm -f ${DEPLOYDIR}/${SPL_BINARYNAME} ${DEPLOYDIR}/${SPL_SYMLINK}
              ln -sf ${SPL_IMAGE} ${DEPLOYDIR}/${SPL_BINARYNAME}
              ln -sf ${SPL_IMAGE} ${DEPLOYDIR}/${SPL_SYMLINK}
@@ -262,7 +262,7 @@ do_deploy () {
      fi
 
     if [ "x${VERIFIED_BOOT}" != "x" ]; then
-        install ${S}/recovery/${UBOOT_BINARY} ${DEPLOYDIR}/${UBOOT_RECOVERY_IMAGE}
+        install ${UNPACKDIR}/recovery/${UBOOT_BINARY} ${DEPLOYDIR}/${UBOOT_RECOVERY_IMAGE}
         rm -f ${DEPLOYDIR}/${UBOOT_RECOVERY_BINARYNAME} ${DEPLOYDIR}/${UBOOT_RECOVERY_SYMLINK}
         ln -sf ${UBOOT_RECOVERY_IMAGE} ${DEPLOYDIR}/${UBOOT_RECOVERY_BINARYNAME}
         ln -sf ${UBOOT_RECOVERY_IMAGE} ${DEPLOYDIR}/${UBOOT_RECOVERY_SYMLINK}
@@ -270,7 +270,7 @@ do_deploy () {
 
     if [ "x${UBOOT_ENV}" != "x" ]
     then
-        install ${WORKDIR}/${UBOOT_ENV_BINARY} ${DEPLOYDIR}/${UBOOT_ENV_IMAGE}
+        install ${UNPACKDIR}/${UBOOT_ENV_BINARY} ${DEPLOYDIR}/${UBOOT_ENV_IMAGE}
         rm -f ${DEPLOYDIR}/${UBOOT_ENV_BINARY} ${DEPLOYDIR}/${UBOOT_ENV_SYMLINK}
         ln -sf ${UBOOT_ENV_IMAGE} ${DEPLOYDIR}/${UBOOT_ENV_BINARY}
         ln -sf ${UBOOT_ENV_IMAGE} ${DEPLOYDIR}/${UBOOT_ENV_SYMLINK}

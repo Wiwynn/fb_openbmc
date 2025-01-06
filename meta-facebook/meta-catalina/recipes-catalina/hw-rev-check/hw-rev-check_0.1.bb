@@ -19,5 +19,5 @@ SYSTEMD_SERVICE:${PN} = "hw-rev-check.service"
 
 do_install() {
     install -d ${D}${libexecdir}/${BPN}
-    install -m 0755 ${WORKDIR}/hw-rev-check ${D}${libexecdir}/${BPN}/hw-rev-check
+    install -m 0755 ${UNPACKDIR}/hw-rev-check ${D}${libexecdir}/${BPN}/hw-rev-check
 }

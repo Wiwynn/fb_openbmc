@@ -21,6 +21,7 @@
 #include "ProtLog.hpp"
 
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 #include <openbmc/AmiSmbusInterfaceSrcLib.h>
 #include <iostream>
 #include <sstream>

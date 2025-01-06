@@ -142,4 +142,6 @@ void* get_packet_data(struct packet_data* packet, int bytes_wanted);
 void process_message();
 STATUS read_openbmc_version(void);
 
+void send_remote_log_message(ASD_LogLevel, ASD_LogStream, const char* message);
+
 #endif // ASD_ASD_MSG_H

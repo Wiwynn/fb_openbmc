@@ -21,6 +21,9 @@ PR = "r1"
 LICENSE = "GPL-2.0-or-later"
 LIC_FILES_CHKSUM = "file://obmc-dump.py;beginline=5;endline=18;md5=0b1ee7d6f844d472fa306b2fee2167e0"
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://obmc-dump.py \
     file://plat_dump.py \

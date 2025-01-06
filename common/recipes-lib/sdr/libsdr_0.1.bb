@@ -9,6 +9,9 @@ LIC_FILES_CHKSUM = "file://sdr.c;beginline=8;endline=20;md5=da35978751a9d71b7367
 
 BBCLASSEXTEND = "native"
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://meson.build\
     file://sdr.c \
@@ -23,7 +26,7 @@ inherit python3-dir
 
 do_install:append() {
     install -d ${D}${PYTHON_SITEPACKAGES_DIR}
-    install -m 644 ${S}/sdr.py ${D}${PYTHON_SITEPACKAGES_DIR}/
+    install -m 644 ${UNPACKDIR}/sdr.py ${D}${PYTHON_SITEPACKAGES_DIR}/
 }
 
 FILES:${PN} += "${PYTHON_SITEPACKAGES_DIR}"

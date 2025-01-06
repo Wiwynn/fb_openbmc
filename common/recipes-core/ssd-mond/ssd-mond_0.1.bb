@@ -21,10 +21,13 @@ SUMMARY = "SSD monitor Daemon"
 DESCRIPTION = "Daemon to monitor SSD and add event log in IPMI"
 SECTION = "base"
 PR = "r1"
-LICENSE = "GPL-2.0"
+LICENSE = "GPL-2.0-only"
 LIC_FILES_CHKSUM = "file://ssd-mond.c;beginline=4;endline=16;md5=c0c4d931761f4e275ee79609dae525b1"
 
 LDFLAGS = "-llog -lipmi -lmisc-utils"
+
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
 
 LOCAL_URI = " \
     file://meson.build \
@@ -37,7 +40,7 @@ RDEPENDS:${PN} += " liblog libipmi bash libmisc-utils"
 
 do_install_systemd() {
     install -d ${D}${systemd_system_unitdir}
-    install -m 0644 ${S}/ssd-mond.service ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/ssd-mond.service ${D}${systemd_system_unitdir}
 }
 
 do_install() {

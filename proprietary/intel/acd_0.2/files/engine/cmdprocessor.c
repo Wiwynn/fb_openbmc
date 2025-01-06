@@ -56,7 +56,7 @@ static acdStatus CrashDump_Discovery(CmdInOut* cmdInOut)
     cJSON* it = NULL;
 
     if (!IsCrashDump_DiscoveryParamsValid(cmdInOut->in.params,
-                                          &cmdInOut->validatorParams))
+                                          cmdInOut->validatorParams))
     {
         return ACD_INVALID_CRASHDUMP_DISCOVERY_PARAMS;
     }
@@ -120,7 +120,7 @@ static acdStatus CrashDump_GetFrame(CmdInOut* cmdInOut)
     cJSON* it = NULL;
 
     if (!IsCrashDump_GetFrameParamsValid(cmdInOut->in.params,
-                                         &cmdInOut->validatorParams))
+                                         cmdInOut->validatorParams))
     {
         return ACD_INVALID_CRASHDUMP_GETFRAME_PARAMS;
     }
@@ -160,7 +160,7 @@ static acdStatus CrashDump_GetFrame(CmdInOut* cmdInOut)
 
 static acdStatus Ping(CmdInOut* cmdInOut)
 {
-    if (!IsPingParamsValid(cmdInOut->in.params, &cmdInOut->validatorParams))
+    if (!IsPingParamsValid(cmdInOut->in.params, cmdInOut->validatorParams))
     {
         return ACD_INVALID_PING_PARAMS;
     }
@@ -171,7 +171,7 @@ static acdStatus Ping(CmdInOut* cmdInOut)
 
 static acdStatus GetCPUID(CmdInOut* cmdInOut)
 {
-    if (!IsGetCPUIDParamsValid(cmdInOut->in.params, &cmdInOut->validatorParams))
+    if (!IsGetCPUIDParamsValid(cmdInOut->in.params, cmdInOut->validatorParams))
     {
         return ACD_INVALID_PING_PARAMS;
     }
@@ -188,7 +188,7 @@ static acdStatus RdIAMSR(CmdInOut* cmdInOut)
     int position = 0;
     cJSON* it = NULL;
 
-    if (!IsRdIAMSRParamsValid(cmdInOut->in.params, &cmdInOut->validatorParams))
+    if (!IsRdIAMSRParamsValid(cmdInOut->in.params, cmdInOut->validatorParams))
     {
         return ACD_INVALID_RDIAMSR_PARAMS;
     }
@@ -226,7 +226,7 @@ static acdStatus RdPkgConfig(CmdInOut* cmdInOut)
     cJSON* it = NULL;
 
     if (!IsRdPkgConfigParamsValid(cmdInOut->in.params,
-                                  &cmdInOut->validatorParams))
+                                  cmdInOut->validatorParams))
     {
         return ACD_INVALID_RDPKGCONFIG_PARAMS;
     }
@@ -269,7 +269,7 @@ static acdStatus RdPkgConfigCore(CmdInOut* cmdInOut)
     cJSON* it = NULL;
 
     if (!IsRdPkgConfigCoreParamsValid(cmdInOut->in.params,
-                                      &cmdInOut->validatorParams))
+                                      cmdInOut->validatorParams))
     {
         return ACD_INVALID_RDPKGCONFIGCORE_PARAMS;
     }
@@ -317,7 +317,7 @@ static acdStatus RdPCIConfigLocal(CmdInOut* cmdInOut)
     const int wordFrameSize = (sizeof(uint64_t) / sizeof(uint16_t));
 
     if (!IsRdPciConfigLocalParamsValid(cmdInOut->in.params,
-                                       &cmdInOut->validatorParams))
+                                       cmdInOut->validatorParams))
     {
         return ACD_INVALID_RDPCICONFIGLOCAL_PARAMS;
     }
@@ -383,7 +383,7 @@ static acdStatus RdEndPointConfigPciLocal(CmdInOut* cmdInOut)
     const int wordFrameSize = (sizeof(uint64_t) / sizeof(uint16_t));
 
     if (!IsRdEndPointConfigPciLocalParamsValid(cmdInOut->in.params,
-                                               &cmdInOut->validatorParams))
+                                               cmdInOut->validatorParams))
     {
         return ACD_INVALID_RDENDPOINTCONFIGPCILOCAL_PARAMS;
     }
@@ -455,7 +455,7 @@ static acdStatus WrEndPointConfigPciLocal(CmdInOut* cmdInOut)
     cJSON* it = NULL;
 
     if (!IsWrEndPointConfigPciLocalParamsValid(cmdInOut->in.params,
-                                               &cmdInOut->validatorParams))
+                                               cmdInOut->validatorParams))
     {
         return ACD_INVALID_WRENDPOINTCONFIGPCILOCAL_PARAMS;
     }
@@ -510,7 +510,7 @@ static acdStatus RdEndPointConfigMmio(CmdInOut* cmdInOut)
     cJSON* it = NULL;
 
     if (!IsRdEndPointConfigMmioParamsValid(cmdInOut->in.params,
-                                           &cmdInOut->validatorParams))
+                                           cmdInOut->validatorParams))
     {
         return ACD_INVALID_RDENDPOINTCONFIGMMIO_PARAMS;
     }
@@ -569,7 +569,7 @@ static acdStatus RdPostEnumBus(CmdInOut* cmdInOut)
     int position = 0;
 
     if (!IsRdPostEnumBusParamsValid(cmdInOut->in.params,
-                                    &cmdInOut->validatorParams))
+                                    cmdInOut->validatorParams))
     {
         return ACD_INVALID_RDPOSTENUMBUS_PARAMS;
     }
@@ -620,7 +620,7 @@ static acdStatus RdChaCount(CmdInOut* cmdInOut)
     uint8_t chaCountValue;
 
     if (!IsRdChaCountParamsValid(cmdInOut->in.params,
-                                 &cmdInOut->validatorParams))
+                                 cmdInOut->validatorParams))
     {
         return ACD_INVALID_RDCHACOUNT_PARAMS;
     }
@@ -658,7 +658,7 @@ static acdStatus Telemetry_Discovery(CmdInOut* cmdInOut)
     cJSON* it = NULL;
 
     if (!IsTelemetry_DiscoveryParamsValid(cmdInOut->in.params,
-                                          &cmdInOut->validatorParams))
+                                          cmdInOut->validatorParams))
     {
         return ACD_INVALID_TELEMETRY_DISCOVERY_PARAMS;
     }
@@ -906,7 +906,7 @@ static acdStatus RdAndConcatenate(CmdInOut* cmdInOut)
     uint32_t low32BitValue = 0;
 
     if (!IsRdAndConcatenateParamsValid(cmdInOut->in.params,
-                                       &cmdInOut->validatorParams))
+                                       cmdInOut->validatorParams))
     {
         return ACD_INVALID_RD_CONCATENATE_PARAMS;
     }
@@ -940,7 +940,7 @@ static acdStatus RdAndConcatenate(CmdInOut* cmdInOut)
 
 static acdStatus RdGlobalVars(CmdInOut* cmdInOut)
 {
-    if (!IsRdGlobalVarsValid(cmdInOut->in.params, &cmdInOut->validatorParams))
+    if (!IsRdGlobalVarsValid(cmdInOut->in.params, cmdInOut->validatorParams))
     {
         return ACD_INVALID_GLOBAL_VARS_PARAMS;
     }
@@ -1057,7 +1057,7 @@ static acdStatus RdGlobalVars(CmdInOut* cmdInOut)
 
 static acdStatus SaveStrVars(CmdInOut* cmdInOut)
 {
-    if (!IsSaveStrVarsValid(cmdInOut->in.params, &cmdInOut->validatorParams))
+    if (!IsSaveStrVarsValid(cmdInOut->in.params, cmdInOut->validatorParams))
     {
         return ACD_INVALID_SAVE_STR_VARS_PARAMS;
     }

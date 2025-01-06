@@ -26,6 +26,9 @@ inherit systemd
 DEPENDS:append = " update-rc.d-native"
 RDEPENDS:${PN} += "bash"
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://sensor-setup.sh \
     file://sensor-setup.service \
@@ -43,7 +46,7 @@ install_systemd() {
   install -d ${D}${localbindir}
   install -d ${D}${systemd_system_unitdir}
   install -m 755 sensor-setup.sh ${D}${localbindir}
-  install -m 644 ${S}/sensor-setup.service ${D}${systemd_system_unitdir}
+  install -m 644 ${UNPACKDIR}/sensor-setup.service ${D}${systemd_system_unitdir}
 }
 
 do_install() {

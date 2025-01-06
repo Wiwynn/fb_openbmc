@@ -24,5 +24,5 @@ DEPENDS += " \
     "
 
 do_install:append() {
-  install -m 755 ${S}/rebind-rt-mux.sh ${D}${sysconfdir}/init.d/rebind-rt-mux.sh
+  install -m 755 ${UNPACKDIR}/rebind-rt-mux.sh ${D}${sysconfdir}/init.d/rebind-rt-mux.sh
 }

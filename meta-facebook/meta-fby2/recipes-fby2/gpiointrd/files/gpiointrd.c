@@ -78,14 +78,14 @@ static pthread_mutex_t latch_open_mutex[MAX_NODES + 1];
 static uint8_t dev_fru_complete[MAX_NODES + 1][MAX_NUM_DEVS + 1] = {DEV_FRU_NOT_COMPLETE};
 static bool is_slot_missing();
 
-static char **fru_prsnt_log_string[3][MAX_NODES+1] = {
+static const char* const fru_prsnt_log_string[3][MAX_NODES+1] = {
   // slot1, slot2, slot3, slot4
   {"", "Slot1 Removal", "Slot2 Removal", "Slot3 Removal", "Slot4 Removal"},
   {"", "Slot1 Insertion", "Slot2 Insertion", "Slot3 Insertion", "Slot4 Insertion"},
   {"", "Slot1 Removal Without 12V-OFF", "Slot2 Removal Without 12V-OFF", "Slot3 Removal Without 12V-OFF", "Slot4 Removal Without 12V-OFF"}
 };
 
-static char* gpio_slot_latch[] = { 0, "SLOT1_EJECTOR_LATCH_DETECT_N", "SLOT2_EJECTOR_LATCH_DETECT_N", "SLOT3_EJECTOR_LATCH_DETECT_N", "SLOT4_EJECTOR_LATCH_DETECT_N" };
+static const char* const gpio_slot_latch[] = { 0, "SLOT1_EJECTOR_LATCH_DETECT_N", "SLOT2_EJECTOR_LATCH_DETECT_N", "SLOT3_EJECTOR_LATCH_DETECT_N", "SLOT4_EJECTOR_LATCH_DETECT_N" };
 
 static uint32_t gpv2_dev_nvme_temp[] = { 0, GPV2_SENSOR_DEV0_Temp, GPV2_SENSOR_DEV1_Temp, GPV2_SENSOR_DEV2_Temp, GPV2_SENSOR_DEV3_Temp, GPV2_SENSOR_DEV4_Temp, GPV2_SENSOR_DEV5_Temp,
                                                  GPV2_SENSOR_DEV6_Temp, GPV2_SENSOR_DEV7_Temp, GPV2_SENSOR_DEV8_Temp, GPV2_SENSOR_DEV9_Temp, GPV2_SENSOR_DEV10_Temp, GPV2_SENSOR_DEV11_Temp};
@@ -100,7 +100,6 @@ static struct threadinfo t_fru_cache[MAX_NUM_FRUS] = {0, };
 typedef struct {
   uint8_t def_val;
   char name[64];
-  uint32_t num;
   char log[256];
 } def_chk_info;
 
@@ -584,7 +583,7 @@ static void gpio_event_handle(gpiopoll_pin_t *gp, gpio_value_t last, gpio_value_
     } else {
         slot_id = 4;
     }
-    
+
     if (curr == 1) { // low to high
       clock_gettime(CLOCK_MONOTONIC, &ts);
       if (last_ejector_ts[slot_id].tv_sec && ((ts.tv_sec - last_ejector_ts[slot_id].tv_sec) < 5)) {
@@ -709,7 +708,7 @@ static void gpio_event_handle(gpiopoll_pin_t *gp, gpio_value_t last, gpio_value_
     syslog(LOG_INFO, "change hand_sw location to FRU %s by button", locstr);
   }
   else if ((strncmp(cfg->shadow, "SLOT1_POWER_EN", sizeof(cfg->shadow)) == 0) || (strncmp(cfg->shadow, "SLOT2_POWER_EN", sizeof(cfg->shadow)) == 0) ||
-           (strncmp(cfg->shadow, "SLOT3_POWER_EN", sizeof(cfg->shadow)) == 0) || (strncmp(cfg->shadow, "SLOT4_POWER_EN", sizeof(cfg->shadow)) == 0) 
+           (strncmp(cfg->shadow, "SLOT3_POWER_EN", sizeof(cfg->shadow)) == 0) || (strncmp(cfg->shadow, "SLOT4_POWER_EN", sizeof(cfg->shadow)) == 0)
           ) // SLOT1/2/3/4_POWER_EN
   {
     if (strncmp(cfg->shadow, "SLOT1_POWER_EN", sizeof(cfg->shadow)) == 0) {
@@ -1103,12 +1102,12 @@ static struct gpiopoll_config g_gpios_yv250[] = {
 static def_chk_info def_gpio_chk[] = {
   // { default value, gpio name, gpio num, log }
 #if DEBUG_ME_EJECTOR_LOG
-  { 0, "SLOT1_EJECTOR_LATCH_DETECT_N", GPIO_SLOT1_EJECTOR_LATCH_DETECT_N, "FRU: 1, GPIO_SLOT1_EJECTOR_LATCH_DETECT_N is \"1\" and SLOT_12v is ON" },
-  { 0, "SLOT2_EJECTOR_LATCH_DETECT_N", GPIO_SLOT2_EJECTOR_LATCH_DETECT_N, "FRU: 2, GPIO_SLOT2_EJECTOR_LATCH_DETECT_N is \"1\" and SLOT_12v is ON" },
-  { 0, "SLOT3_EJECTOR_LATCH_DETECT_N", GPIO_SLOT3_EJECTOR_LATCH_DETECT_N, "FRU: 3, GPIO_SLOT3_EJECTOR_LATCH_DETECT_N is \"1\" and SLOT_12v is ON" },
-  { 0, "SLOT4_EJECTOR_LATCH_DETECT_N", GPIO_SLOT4_EJECTOR_LATCH_DETECT_N, "FRU: 4, GPIO_SLOT4_EJECTOR_LATCH_DETECT_N is \"1\" and SLOT_12v is ON" },
+  { 0, "SLOT1_EJECTOR_LATCH_DETECT_N", "FRU: 1, GPIO_SLOT1_EJECTOR_LATCH_DETECT_N is \"1\" and SLOT_12v is ON" },
+  { 0, "SLOT2_EJECTOR_LATCH_DETECT_N", "FRU: 2, GPIO_SLOT2_EJECTOR_LATCH_DETECT_N is \"1\" and SLOT_12v is ON" },
+  { 0, "SLOT3_EJECTOR_LATCH_DETECT_N", "FRU: 3, GPIO_SLOT3_EJECTOR_LATCH_DETECT_N is \"1\" and SLOT_12v is ON" },
+  { 0, "SLOT4_EJECTOR_LATCH_DETECT_N", "FRU: 4, GPIO_SLOT4_EJECTOR_LATCH_DETECT_N is \"1\" and SLOT_12v is ON" },
 #endif
-  { 0, "FAN_LATCH_DETECT",             GPIO_FAN_LATCH_DETECT,             "ASSERT: SLED is not seated"                                    },
+  { 0, "FAN_LATCH_DETECT",             "ASSERT: SLED is not seated"                                    },
 };
 
 static char* power_enable[] = { 0, "SLOT1_POWER_EN",  "SLOT2_POWER_EN",  "SLOT3_POWER_EN",  "SLOT4_POWER_EN" };
@@ -1221,7 +1220,7 @@ main(int argc, void **argv) {
     openlog("gpiointrd", LOG_CONS, LOG_DAEMON);
     syslog(LOG_INFO, "gpiointrd: daemon started");
     if (spb_type == TYPE_SPB_YV250 || spb_type == TYPE_SPB_YV2ND2) {
-      polldesc = gpio_poll_open(g_gpios_yv250, sizeof(g_gpios_yv250)/sizeof(g_gpios_yv250[0]));      
+      polldesc = gpio_poll_open(g_gpios_yv250, sizeof(g_gpios_yv250)/sizeof(g_gpios_yv250[0]));
     } else {
       polldesc = gpio_poll_open(g_gpios, sizeof(g_gpios)/sizeof(g_gpios[0]));
     }

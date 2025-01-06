@@ -8,7 +8,7 @@ DEPENDS = " \
     "
 
 PV = "1.0+git${SRCPV}"
-SRCREV = "379e492ac7ac2f1f994b77312d895dc0f2d940cd"
+SRCREV = "cc36701137e8ad0e7a537c624cd486fb72fb66de"
 
 SRC_URI = "git://github.com/openbmc/libcper.git;protocol=https;branch=main"
 
@@ -20,3 +20,5 @@ EXTRA_OEMESON = " \
     -Dtests=${@bb.utils.contains('PTEST_ENABLED', '1', 'enabled', 'disabled', d)} \
 "
 
+# Upstream has a bug of an unused value in a test case.
+PTEST_ENABLED="0"

@@ -8,9 +8,9 @@ SRC_URI += "file://rsyslog.conf \
 do_install:append() {
   dst="${D}/usr/local/fbpackages/rotate"
   install -d $dst
-  install -m 755 ${WORKDIR}/rotate_logfile ${dst}/logfile
-  install -m 755 ${WORKDIR}/rotate_cri_sel ${dst}/cri_sel
-  install -m 644 ${WORKDIR}/rsyslog.conf ${D}${sysconfdir}/rsyslog.conf
+  install -m 755 ${UNPACKDIR}/rotate_logfile ${dst}/logfile
+  install -m 755 ${UNPACKDIR}/rotate_cri_sel ${dst}/cri_sel
+  install -m 644 ${UNPACKDIR}/rsyslog.conf ${D}${sysconfdir}/rsyslog.conf
 
   dir=$(pwd)
   while [ -n "$dir" -a "$dir" != "/" -a ! -d "$dir/meta-openbmc/.git" ]; do

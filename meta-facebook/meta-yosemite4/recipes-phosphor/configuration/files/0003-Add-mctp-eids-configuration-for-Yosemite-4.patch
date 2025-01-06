@@ -1,7 +1,7 @@
-From 0497045cffb651ca7a35361fb9746dc6332ee4e8 Mon Sep 17 00:00:00 2001
+From b283b4dc3c71a32171322f507d10ea67f834e4d3 Mon Sep 17 00:00:00 2001
 From: Delphine CC Chiu <Delphine_CC_Chiu@wiwynn.com>
 Date: Mon, 25 Sep 2023 11:10:46 +0800
-Subject: [PATCH 1/4] Add mctp eids configuration for Yosemite 4
+Subject: [PATCH 3/6] Add mctp eids configuration for Yosemite 4
 
 The MCTP specification is defined in DSP0236. As describe in section
 8.17.2, we need a configuration for static EIDs. The `mctpd` from
@@ -18,19 +18,19 @@ Tested: check D-Bus path for configuration.
 Change-Id: I587f5a69051f783753f5855d2f51242aa1cd5bc4
 Signed-off-by: Delphine CC Chiu <Delphine_CC_Chiu@wiwynn.com>
 ---
- configurations/yosemite4_floatingfalls.json   | 19 ++++++++++++++-
- configurations/yosemite4_sentineldome_t1.json |  8 +++++++
+ .../meta/yosemite4_floatingfalls.json         | 19 ++++++++++++++-
+ .../meta/yosemite4_sentineldome_t1.json       |  8 +++++++
  .../yosemite4_sentineldome_t1_retimer.json    |  8 +++++++
- configurations/yosemite4_sentineldome_t2.json |  8 +++++++
+ .../meta/yosemite4_sentineldome_t2.json       |  8 +++++++
  .../yosemite4_sentineldome_t2_retimer.json    |  8 +++++++
- configurations/yosemite4_wailuafalls.json     | 24 +++++++++++++++++++
+ .../meta/yosemite4_wailuafalls.json           | 24 +++++++++++++++++++
  schemas/legacy.json                           |  6 +++++
  7 files changed, 80 insertions(+), 1 deletion(-)
 
-diff --git a/configurations/yosemite4_floatingfalls.json b/configurations/yosemite4_floatingfalls.json
+diff --git a/configurations/meta/yosemite4_floatingfalls.json b/configurations/meta/yosemite4_floatingfalls.json
 index 1ee4e91..5a9cb31 100644
---- a/configurations/yosemite4_floatingfalls.json
-+++ b/configurations/yosemite4_floatingfalls.json
+--- a/configurations/meta/yosemite4_floatingfalls.json
++++ b/configurations/meta/yosemite4_floatingfalls.json
 @@ -1,5 +1,22 @@
  {
 -    "Exposes": [],
@@ -55,10 +55,10 @@ index 1ee4e91..5a9cb31 100644
      "Name": "Yosemite 4 Floating Falls Slot $bus % 15",
      "Probe": "xyz.openbmc_project.FruDevice({'BOARD_PRODUCT_NAME': 'Floating Falls', 'PRODUCT_PRODUCT_NAME': 'Yosemite V4'})",
      "Type": "Board",
-diff --git a/configurations/yosemite4_sentineldome_t1.json b/configurations/yosemite4_sentineldome_t1.json
-index 21b93eb..2663d1a 100644
---- a/configurations/yosemite4_sentineldome_t1.json
-+++ b/configurations/yosemite4_sentineldome_t1.json
+diff --git a/configurations/meta/yosemite4_sentineldome_t1.json b/configurations/meta/yosemite4_sentineldome_t1.json
+index 708d445..ba21d6b 100644
+--- a/configurations/meta/yosemite4_sentineldome_t1.json
++++ b/configurations/meta/yosemite4_sentineldome_t1.json
 @@ -338,6 +338,14 @@
              "Zones": [
                  "Zone 1"
@@ -74,10 +74,10 @@ index 21b93eb..2663d1a 100644
          }
      ],
      "Name": "Yosemite 4 Sentinel Dome T1 Slot $bus % 15",
-diff --git a/configurations/yosemite4_sentineldome_t1_retimer.json b/configurations/yosemite4_sentineldome_t1_retimer.json
-index 2ee102d..aaa8cd2 100644
---- a/configurations/yosemite4_sentineldome_t1_retimer.json
-+++ b/configurations/yosemite4_sentineldome_t1_retimer.json
+diff --git a/configurations/meta/yosemite4_sentineldome_t1_retimer.json b/configurations/meta/yosemite4_sentineldome_t1_retimer.json
+index f2c6a6a..599df17 100644
+--- a/configurations/meta/yosemite4_sentineldome_t1_retimer.json
++++ b/configurations/meta/yosemite4_sentineldome_t1_retimer.json
 @@ -398,6 +398,14 @@
              "Zones": [
                  "Zone 1"
@@ -93,10 +93,10 @@ index 2ee102d..aaa8cd2 100644
          }
      ],
      "Name": "Yosemite 4 Sentinel Dome T1 with Retimer Slot $bus % 15",
-diff --git a/configurations/yosemite4_sentineldome_t2.json b/configurations/yosemite4_sentineldome_t2.json
-index 2244d36..d765305 100644
---- a/configurations/yosemite4_sentineldome_t2.json
-+++ b/configurations/yosemite4_sentineldome_t2.json
+diff --git a/configurations/meta/yosemite4_sentineldome_t2.json b/configurations/meta/yosemite4_sentineldome_t2.json
+index 0538241..745453f 100644
+--- a/configurations/meta/yosemite4_sentineldome_t2.json
++++ b/configurations/meta/yosemite4_sentineldome_t2.json
 @@ -399,6 +399,14 @@
              "Zones": [
                  "Zone 1"
@@ -112,10 +112,10 @@ index 2244d36..d765305 100644
          }
      ],
      "Name": "Yosemite 4 Sentinel Dome T2 Slot $bus % 15",
-diff --git a/configurations/yosemite4_sentineldome_t2_retimer.json b/configurations/yosemite4_sentineldome_t2_retimer.json
-index 75bae2c..38a26ed 100644
---- a/configurations/yosemite4_sentineldome_t2_retimer.json
-+++ b/configurations/yosemite4_sentineldome_t2_retimer.json
+diff --git a/configurations/meta/yosemite4_sentineldome_t2_retimer.json b/configurations/meta/yosemite4_sentineldome_t2_retimer.json
+index b44c25b..631c3b4 100644
+--- a/configurations/meta/yosemite4_sentineldome_t2_retimer.json
++++ b/configurations/meta/yosemite4_sentineldome_t2_retimer.json
 @@ -459,6 +459,14 @@
              "Zones": [
                  "Zone 1"
@@ -131,11 +131,11 @@ index 75bae2c..38a26ed 100644
          }
      ],
      "Name": "Yosemite 4 Sentinel Dome T2 with Retimer Slot $bus % 15",
-diff --git a/configurations/yosemite4_wailuafalls.json b/configurations/yosemite4_wailuafalls.json
-index 0c1045b..0f8e308 100644
---- a/configurations/yosemite4_wailuafalls.json
-+++ b/configurations/yosemite4_wailuafalls.json
-@@ -257,6 +257,30 @@
+diff --git a/configurations/meta/yosemite4_wailuafalls.json b/configurations/meta/yosemite4_wailuafalls.json
+index f7da000..7d3337a 100644
+--- a/configurations/meta/yosemite4_wailuafalls.json
++++ b/configurations/meta/yosemite4_wailuafalls.json
+@@ -277,6 +277,30 @@
              "Zones": [
                  "Zone 1"
              ]
@@ -167,7 +167,7 @@ index 0c1045b..0f8e308 100644
      ],
      "Name": "Yosemite 4 Wailua Falls Slot $bus % 15",
 diff --git a/schemas/legacy.json b/schemas/legacy.json
-index 2ff537e..54837c2 100644
+index 22e1e5f..0c908fc 100644
 --- a/schemas/legacy.json
 +++ b/schemas/legacy.json
 @@ -68,6 +68,9 @@
@@ -180,7 +180,7 @@ index 2ff537e..54837c2 100644
                  "FaultIndex": {
                      "$ref": "#/$defs/Types/FaultIndex"
                  },
-@@ -1018,6 +1021,9 @@
+@@ -1021,6 +1024,9 @@
              "EntityInstance": {
                  "type": "number"
              },
@@ -191,5 +191,5 @@ index 2ff537e..54837c2 100644
                  "type": "number"
              },
 -- 
-2.25.1
+2.44.2
 

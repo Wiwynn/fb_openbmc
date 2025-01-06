@@ -12,6 +12,9 @@ DEPENDS:append = "libpal libexp update-rc.d-native"
 
 inherit meson pkgconfig
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://meson.build \
     file://setup-exp-cached.sh \
@@ -21,7 +24,7 @@ LOCAL_URI = " \
 do_install:append() {
   install -d ${D}${sysconfdir}/init.d
   install -d ${D}${sysconfdir}/rcS.d
-  install -m 755 ${S}/setup-exp-cached.sh ${D}${sysconfdir}/init.d/setup-exp-cached.sh
+  install -m 755 ${UNPACKDIR}/setup-exp-cached.sh ${D}${sysconfdir}/init.d/setup-exp-cached.sh
   update-rc.d -r ${D} setup-exp-cached.sh start 71 5 .
 }
 

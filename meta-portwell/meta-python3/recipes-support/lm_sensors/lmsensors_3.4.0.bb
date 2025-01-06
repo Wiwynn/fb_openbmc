@@ -39,7 +39,7 @@ do_install() {
     install -d ${D}${sysconfdir}/init.d
 
     # Install fancontrol init script
-    install -m 0755 ${WORKDIR}/fancontrol.init \
+    install -m 0755 ${UNPACKDIR}/fancontrol.init \
         ${D}${sysconfdir}/init.d/fancontrol
 }
 

@@ -7,7 +7,8 @@ PR = "r1"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/Apache-2.0;md5=89aea4e17d99a7cacdbeed46a0096b10"
 
-S = "${WORKDIR}"
+S = "${WORKDIR}/sources"
+UNPACKDIR = "${S}"
 
 FCB_INSTANCES="1:2:3:4:5:6"
 
@@ -45,9 +46,9 @@ do_install:append() {
         BEFORE=$(echo "$f" | cut -d, -f3 | sed 's/_/ /g')
         WANTEDBY=$(echo "$f" | cut -d, -f4 | sed 's/_/ /g')
 
-        install -m 0755 ${S}/$SERVICE ${D}${libexecdir}/${BPN}/$SERVICE
+        install -m 0755 ${UNPACKDIR}/$SERVICE ${D}${libexecdir}/${BPN}/$SERVICE
 
-        install -m 0644 ${S}/fw-versions@.service \
+        install -m 0644 ${UNPACKDIR}/fw-versions@.service \
             ${D}${systemd_system_unitdir}/fw-versions-$SERVICE@.service
 
         sed -i ${D}${systemd_system_unitdir}/fw-versions-$SERVICE@.service \

@@ -6,6 +6,9 @@ PR = "r1"
 LICENSE = "GPL-2.0-or-later"
 LIC_FILES_CHKSUM = "file://sensor-correction.c;beginline=5;endline=17;md5=da35978751a9d71b73679307c4d296ec"
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://CMakeLists.txt \
     file://sensor-correction.h \
@@ -18,7 +21,7 @@ SENSOR_CORR_CONFIG = "sensor-correction-conf.json"
 do_install:append() {
   install -d ${D}${sysconfdir}
   for f in ${SENSOR_CORR_CONFIG}; do
-    install -m 644 ${S}/$f ${D}${sysconfdir}/$f
+    install -m 644 ${UNPACKDIR}/$f ${D}${sysconfdir}/$f
   done
 }
 

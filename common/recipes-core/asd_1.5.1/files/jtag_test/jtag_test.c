@@ -57,6 +57,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     } while (0)
 #endif
 
+void load_ir_size_map_str();
+
 bool continue_loop = true;
 const ASD_LogStream stream = ASD_LogStream_Test;
 const ASD_LogOption option = ASD_LogOption_None;
@@ -525,7 +527,7 @@ bool uncore_discovery(JTAG_Handler* jtag, uncore_info* uncore,
     for (int i = 0; i < uncore->numUncores; i++)
     {
         ia[0] = i;
-        sprintf_s(prefix, sizeof(prefix), "Device %d", ia, 1);
+        sprintf_s(prefix, sizeof(prefix), "Device %d", ia[0]);
         ASD_log_shift(ASD_LogLevel_Info, stream, option, 32, 4, &tdo[i * 4],
                       prefix);
     }

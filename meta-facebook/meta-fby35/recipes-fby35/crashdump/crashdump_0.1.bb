@@ -25,6 +25,9 @@ inherit meson pkgconfig
 
 RDEPENDS:${PN} += "bash"
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://dump.sh \
     file://crashdump_coreid \

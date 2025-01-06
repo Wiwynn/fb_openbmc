@@ -32,7 +32,7 @@ char getEncodedValueFromTable(char bitsteam)
 uint64_t base64Encode(const uint8_t* src, const uint16_t srcSize,
                       char* encodedString)
 {
-    uint8_t* text = src;
+    const uint8_t* text = src;
     uint8_t fragment = 0;
     uint8_t bitstream = 0;
     uint8_t* stringOut = encodedString;

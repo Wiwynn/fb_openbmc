@@ -9,6 +9,9 @@ LIC_FILES_CHKSUM = "file://iocd.c;beginline=5;endline=17;md5=da35978751a9d71b736
 
 inherit meson pkgconfig
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://meson.build \
     file://iocd.c \
@@ -27,9 +30,9 @@ do_install:append() {
   install -d ${D}${sysconfdir}/sv
   install -d ${D}${sysconfdir}/sv/iocd_11
   install -d ${D}${sysconfdir}/sv/iocd_12
-  install -m 755 ${S}/setup-iocd.sh ${D}${sysconfdir}/init.d/setup-iocd.sh
-  install -m 755 ${S}/run-iocd_11.sh ${D}${sysconfdir}/sv/iocd_11/run
-  install -m 755 ${S}/run-iocd_12.sh ${D}${sysconfdir}/sv/iocd_12/run
+  install -m 755 ${UNPACKDIR}/setup-iocd.sh ${D}${sysconfdir}/init.d/setup-iocd.sh
+  install -m 755 ${UNPACKDIR}/run-iocd_11.sh ${D}${sysconfdir}/sv/iocd_11/run
+  install -m 755 ${UNPACKDIR}/run-iocd_12.sh ${D}${sysconfdir}/sv/iocd_12/run
   update-rc.d -r ${D} setup-iocd.sh start 95 5 .
 }
 

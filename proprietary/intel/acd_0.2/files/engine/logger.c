@@ -369,8 +369,8 @@ void Logger(CmdInOut* cmdInOut, cJSON* root, LoggerStruct* loggerStruct)
     char registerName[64];
     if (GenerateJsonPath(cmdInOut, root, loggerStruct, false) == ACD_SUCCESS)
     {
-        GenerateRegisterName(&registerName, loggerStruct);
-        LogValue(&registerName, cmdInOut, loggerStruct,
+        GenerateRegisterName(registerName, loggerStruct);
+        LogValue(registerName, cmdInOut, loggerStruct,
                  loggerStruct->nameProcessing.jsonOutput);
     }
     else

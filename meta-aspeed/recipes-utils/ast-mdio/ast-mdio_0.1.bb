@@ -16,8 +16,11 @@
 # Boston, MA 02110-1301 USA
 
 SUMMARY = "AST MDIO Utility"
-LICENSE = "GPLv2"
+LICENSE = "GPL-2.0-only"
 LIC_FILES_CHKSUM = "file://COPYING;md5=eb723b61539feef013de476e68b5c50a"
+
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
 
 LOCAL_URI = " \
     file://COPYING \

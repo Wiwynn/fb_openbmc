@@ -22,6 +22,9 @@ PR = "r1"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/Apache-2.0;md5=89aea4e17d99a7cacdbeed46a0096b10"
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://redfish-events.py \
     file://redfish-events.cfg \
@@ -43,10 +46,10 @@ RDEPENDS:${PN} += "python3-syslog python3-ply python3-aiohttp python3-attrs"
 install_sysv() {
     install -d ${D}${sysconfdir}/sv
     install -d ${D}${sysconfdir}/sv/redfishevents
-    install -m 755 ${S}/run-redfish-events.sh ${D}${sysconfdir}/sv/redfishevents/run
+    install -m 755 ${UNPACKDIR}/run-redfish-events.sh ${D}${sysconfdir}/sv/redfishevents/run
     install -d ${D}${sysconfdir}/init.d
     install -d ${D}${sysconfdir}/rcS.d
-    install -m 755 ${S}/setup-redfish-events.sh ${D}${sysconfdir}/init.d/setup-redfish-events.sh
+    install -m 755 ${UNPACKDIR}/setup-redfish-events.sh ${D}${sysconfdir}/init.d/setup-redfish-events.sh
     update-rc.d -r ${D} setup-redfish-events.sh start 95 2 3 4 5  .
 }
 
@@ -60,9 +63,9 @@ do_install:append() {
     install -d $bin
     install -d ${D}${sysconfdir}
     for cfg in ${CONFIGS}; do
-      install -m 644 ${S}/${cfg} ${D}${sysconfdir}/${cfg}
+      install -m 644 ${UNPACKDIR}/${cfg} ${D}${sysconfdir}/${cfg}
     done
-    install -m 755 ${S}/redfish-events.py ${bin}/redfish-events.py
+    install -m 755 ${UNPACKDIR}/redfish-events.py ${bin}/redfish-events.py
 
     if ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'true', 'false', d)}; then
         install_systemd

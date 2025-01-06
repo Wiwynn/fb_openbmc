@@ -1,21 +1,21 @@
-From 6c1db017d6eac8b3d47d01482228b23821d569b6 Mon Sep 17 00:00:00 2001
+From a85cb40e3e36a137049c734aafe0c90f181988ed Mon Sep 17 00:00:00 2001
 From: Potin Lai <potin.lai@quantatw.com>
 Date: Tue, 14 Nov 2023 17:08:07 +0800
-Subject: [PATCH 1/1] mmap hack 20231114
+Subject: [PATCH] mmap hack 20231114
 
 Signed-off-by: Potin Lai <potin.lai@quantatw.com>
 ---
- src/common.c         |  36 ++++++++++
+ src/common.c         |  36 +++++++++
  src/common.h         |  10 +++
  src/dfu.c            |  10 ++-
- src/idevicerestore.c |  36 ++++++++--
+ src/idevicerestore.c |  44 ++++++++---
  src/idevicerestore.h |   1 +
- src/img4.c           |  53 +++++++-------
- src/ipsw.c           | 132 ++++++++++++++++++++++++++++++++---
+ src/img4.c           |  53 ++++++++------
+ src/ipsw.c           | 138 ++++++++++++++++++++++++++++++++---
  src/ipsw.h           |   4 +-
  src/recovery.c       |   4 +-
- src/restore.c        | 160 ++++++++++++++++++++++++++++---------------
- 10 files changed, 346 insertions(+), 100 deletions(-)
+ src/restore.c        | 170 ++++++++++++++++++++++++++++---------------
+ 10 files changed, 360 insertions(+), 110 deletions(-)
 
 diff --git a/src/common.c b/src/common.c
 index 9a73994..e54595c 100644
@@ -65,7 +65,7 @@ index 9a73994..e54595c 100644
  	uint32_t size = 0;
  	char* data = NULL;
 diff --git a/src/common.h b/src/common.h
-index 493b1df..dbda8af 100644
+index 493b1df..92d5c2f 100644
 --- a/src/common.h
 +++ b/src/common.h
 @@ -39,6 +39,9 @@ extern "C" {
@@ -82,10 +82,10 @@ index 493b1df..dbda8af 100644
  
  #define USER_AGENT_STRING "InetURL/1.0"
  
-+#define free_mmap(data, size) \
++#define free_mmap(data, size, fail_return) \
 +if (munmap(data, size)) { \
 +	error("ERROR: %s: munmap failed: %s (%d)\n", __func__, strerror(errno), errno); \
-+	return -1; \
++	return fail_return; \
 +}
 +
  struct dfu_client_t;
@@ -100,7 +100,7 @@ index 493b1df..dbda8af 100644
  
  char *generate_guid(void);
 diff --git a/src/dfu.c b/src/dfu.c
-index 4487ade..52bb7f3 100644
+index 4487ade..7a80cd1 100644
 --- a/src/dfu.c
 +++ b/src/dfu.c
 @@ -121,6 +121,7 @@ int dfu_send_buffer(struct idevicerestore_client_t* client, unsigned char* buffe
@@ -134,7 +134,7 @@ index 4487ade..52bb7f3 100644
  	}
 -	free(component_data);
 +	if (is_mmap_data) {
-+		free_mmap(component_data, component_size);
++		free_mmap(component_data, component_size, -1);
 +	} else {
 +		free(component_data);
 +	}
@@ -142,7 +142,7 @@ index 4487ade..52bb7f3 100644
  
  	if (!client->image4supported && client->build_major > 8 && !(client->flags & FLAG_CUSTOM) && !strcmp(component, "iBEC")) {
 diff --git a/src/idevicerestore.c b/src/idevicerestore.c
-index 064c503..c11de94 100644
+index 064c503..c21c94b 100644
 --- a/src/idevicerestore.c
 +++ b/src/idevicerestore.c
 @@ -206,7 +206,7 @@ static int load_version_data(struct idevicerestore_client_t* client)
@@ -159,12 +159,16 @@ index 064c503..c11de94 100644
  	client->version_data = NULL;
  	plist_from_xml(verbuf, verlen, &client->version_data);
 -	free(verbuf);
-+	free_mmap(verbuf, verlen);
++	free_mmap(verbuf, verlen, -1);
  
  	if (!client->version_data) {
  		remove(version_xml);
-@@ -391,7 +391,7 @@ int idevicerestore_start(struct idevicerestore_client_t* client)
- 		unsigned int wtfsize = 0;
+@@ -388,10 +388,10 @@ int idevicerestore_start(struct idevicerestore_client_t* client)
+ 		char wtfname[256];
+ 		sprintf(wtfname, "Firmware/dfu/WTF.s5l%04xxall.RELEASE.dfu", cpid);
+ 		unsigned char* wtftmp = NULL;
+-		unsigned int wtfsize = 0;
++		uint64_t wtfsize = 0;
  
  		// Prefer to get WTF file from the restore IPSW
 -		ipsw_extract_to_memory(client->ipsw, wtfname, &wtftmp, &wtfsize);
@@ -186,15 +190,17 @@ index 064c503..c11de94 100644
  		dfu_client_free(client);
  
 -		free(wtftmp);
-+		free_mmap(wtftmp, wtfsize);
++		free_mmap(wtftmp, wtfsize, -1);
  
  		cond_wait_timeout(&client->device_event_cond, &client->device_event_mutex, 10000);
  		if (client->mode != MODE_DFU || (client->flags & FLAG_QUIT)) {
-@@ -736,7 +736,7 @@ int idevicerestore_start(struct idevicerestore_client_t* client)
+@@ -735,8 +735,8 @@ int idevicerestore_start(struct idevicerestore_client_t* client)
+ 			// get all_flash file manifest
  			char *files[16];
  			char *fmanifest = NULL;
- 			uint32_t msize = 0;
+-			uint32_t msize = 0;
 -			if (ipsw_extract_to_memory(client->ipsw, tmpstr, (unsigned char**)&fmanifest, &msize) < 0) {
++			uint64_t msize = 0;
 +			if (ipsw_extract_to_memory_mmap(client->ipsw, tmpstr, (unsigned char**)&fmanifest, &msize) < 0) {
  				error("ERROR: could not extract %s from IPSW\n", tmpstr);
  				free(build_identity);
@@ -204,11 +210,20 @@ index 064c503..c11de94 100644
  				tok = strtok(NULL, "\r\n");
  			}
 -			free(fmanifest);
-+			free_mmap(fmanifest, msize);
++			free_mmap(fmanifest, msize, -1);
  
  			manifest = plist_new_dict();
  
-@@ -2538,6 +2538,28 @@ int extract_component(ipsw_archive_t ipsw, const char* path, unsigned char** com
+@@ -1083,7 +1083,7 @@ int idevicerestore_start(struct idevicerestore_client_t* client)
+ 		if (client->flags & FLAG_QUIT) {
+ 			return -1;
+ 		}
+-		
++
+ 		if (get_tss_response(client, build_identity, &client->tss) < 0) {
+ 			error("ERROR: Unable to get SHSH blobs for this device\n");
+ 			return -1;
+@@ -2538,6 +2538,30 @@ int extract_component(ipsw_archive_t ipsw, const char* path, unsigned char** com
  	return 0;
  }
  
@@ -226,10 +241,12 @@ index 064c503..c11de94 100644
 +		component_name = (char*) path;
 +
 +	info("Extracting %s (%s)...\n", component_name, path);
-+	if (ipsw_extract_to_memory_mmap(ipsw, path, component_data, component_size) < 0) {
++    uint64_t comp_size = 0;
++	if (ipsw_extract_to_memory_mmap(ipsw, path, component_data, &comp_size) < 0) {
 +		error("ERROR: Unable to extract %s from %s\n", component_name, ipsw->path);
 +		return -1;
 +	}
++    *component_size = (uint32_t)comp_size;
 +
 +	return 0;
 +}
@@ -335,14 +352,16 @@ index 56b0496..3ebadb8 100644
  	*img4_size = (p - outbuf);
  
 diff --git a/src/ipsw.c b/src/ipsw.c
-index c25f61d..24af550 100644
+index c25f61d..ddd893a 100644
 --- a/src/ipsw.c
 +++ b/src/ipsw.c
-@@ -112,7 +112,7 @@ int ipsw_print_info(const char* path)
+@@ -111,8 +111,8 @@ int ipsw_print_info(const char* path)
+ 
  	if (memcmp(&magic, "PK\x03\x04", 4) == 0) {
  		ipsw_archive_t ipsw = ipsw_open(thepath);
- 		unsigned int rlen = 0;
+-		unsigned int rlen = 0;
 -		if (ipsw_extract_to_memory(ipsw, "BuildManifest.plist", (unsigned char**)&plist_buf, &rlen) < 0) {
++		uint64_t rlen = 0;
 +		if (ipsw_extract_to_memory_mmap(ipsw, "BuildManifest.plist", (unsigned char**)&plist_buf, &rlen) < 0) {
  			ipsw_close(ipsw);
  			error("ERROR: Failed to extract BuildManifest.plist from IPSW!\n");
@@ -361,7 +380,7 @@ index c25f61d..24af550 100644
  	plist_t manifest = NULL;
  	plist_from_memory(plist_buf, plist_len, &manifest, NULL);
 -	free(plist_buf);
-+	free_mmap(plist_buf, plist_len);
++	free_mmap(plist_buf, plist_len, -1);
  
  	plist_t val;
  
@@ -369,7 +388,7 @@ index c25f61d..24af550 100644
  	return 0;
  }
  
-+int ipsw_extract_to_memory_mmap(ipsw_archive_t ipsw, const char* infile, unsigned char** pbuffer, unsigned int* psize)
++int ipsw_extract_to_memory_mmap(ipsw_archive_t ipsw, const char* infile, unsigned char** pbuffer, uint64_t* psize)
 +{
 +	uint64_t size = 0;
 +	unsigned char* buffer = NULL;
@@ -418,7 +437,7 @@ index c25f61d..24af550 100644
  int ipsw_extract_send(ipsw_archive_t ipsw, const char* infile, int blocksize, ipsw_send_cb send_callback, void* ctx)
  {
  	unsigned char* buffer = NULL;
-@@ -817,6 +863,74 @@ int ipsw_extract_send(ipsw_archive_t ipsw, const char* infile, int blocksize, ip
+@@ -817,18 +863,86 @@ int ipsw_extract_send(ipsw_archive_t ipsw, const char* infile, int blocksize, ip
  	return 0;
  }
  
@@ -468,15 +487,15 @@ index c25f61d..24af550 100644
 +
 +			if (send_callback(ctx, buffer, size, done, total_size) < 0) {
 +				error("ERROR: %s: send failed\n", __func__);
-+				free_mmap(buffer, size);
++				free_mmap(buffer, size, -1);
 +				break;
 +			}
 +			done += size;
-+			free_mmap(buffer, size);
++			free_mmap(buffer, size, -1);
 +		}
 +		fclose(f);
 +		free(filepath);
-+		// free_mmap(buffer, total_size);
++		// free_mmap(buffer, total_size, -1);
 +	}
 +
 +	if (done < total_size) {
@@ -492,8 +511,11 @@ index c25f61d..24af550 100644
 +
  int ipsw_extract_build_manifest(ipsw_archive_t ipsw, plist_t* buildmanifest, int *tss_enabled)
  {
- 	unsigned int size = 0;
-@@ -826,9 +940,9 @@ int ipsw_extract_build_manifest(ipsw_archive_t ipsw, plist_t* buildmanifest, int
+-	unsigned int size = 0;
++	uint64_t size = 0;
+ 	unsigned char* data = NULL;
+ 
+ 	*tss_enabled = 0;
  
  	/* older devices don't require personalized firmwares and use a BuildManifesto.plist */
  	if (ipsw_file_exists(ipsw, "BuildManifesto.plist")) {
@@ -501,7 +523,7 @@ index c25f61d..24af550 100644
 +		if (ipsw_extract_to_memory_mmap(ipsw, "BuildManifesto.plist", &data, &size) == 0) {
  			plist_from_xml((char*)data, size, buildmanifest);
 -			free(data);
-+			free_mmap(data, size);
++			free_mmap(data, size, -1);
  			return 0;
  		}
  	}
@@ -514,24 +536,28 @@ index c25f61d..24af550 100644
  		*tss_enabled = 1;
  		plist_from_xml((char*)data, size, buildmanifest);
 -		free(data);
-+		free_mmap(data, size);
++		free_mmap(data, size, -1);
  		return 0;
  	}
  
-@@ -852,9 +966,9 @@ int ipsw_extract_restore_plist(ipsw_archive_t ipsw, plist_t* restore_plist)
- 	unsigned int size = 0;
+@@ -849,12 +963,12 @@ int ipsw_extract_build_manifest(ipsw_archive_t ipsw, plist_t* buildmanifest, int
+ 
+ int ipsw_extract_restore_plist(ipsw_archive_t ipsw, plist_t* restore_plist)
+ {
+-	unsigned int size = 0;
++	uint64_t size = 0;
  	unsigned char* data = NULL;
  
 -	if (ipsw_extract_to_memory(ipsw, "Restore.plist", &data, &size) == 0) {
 +	if (ipsw_extract_to_memory_mmap(ipsw, "Restore.plist", &data, &size) == 0) {
  		plist_from_xml((char*)data, size, restore_plist);
 -		free(data);
-+		free_mmap(data, size);
++		free_mmap(data, size, -1);
  		return 0;
  	}
  
 diff --git a/src/ipsw.h b/src/ipsw.h
-index f0e11a1..77cd1fa 100644
+index f0e11a1..daf12e0 100644
 --- a/src/ipsw.h
 +++ b/src/ipsw.h
 @@ -44,7 +44,7 @@ void ipsw_close(ipsw_archive_t ipsw);
@@ -547,14 +573,14 @@ index f0e11a1..77cd1fa 100644
  int ipsw_extract_to_file(ipsw_archive_t ipsw, const char* infile, const char* outfile);
  int ipsw_extract_to_file_with_progress(ipsw_archive_t ipsw, const char* infile, const char* outfile, int print_progress);
  int ipsw_extract_to_memory(ipsw_archive_t ipsw, const char* infile, unsigned char** pbuffer, unsigned int* psize);
-+int ipsw_extract_to_memory_mmap(ipsw_archive_t ipsw, const char* infile, unsigned char** pbuffer, unsigned int* psize);
++int ipsw_extract_to_memory_mmap(ipsw_archive_t ipsw, const char* infile, unsigned char** pbuffer, uint64_t* psize);
  int ipsw_extract_send(ipsw_archive_t ipsw, const char* infile, int blocksize, ipsw_send_cb send_callback, void* ctx);
 +int ipsw_extract_send_mmap(ipsw_archive_t ipsw, const char* infile, int blocksize, ipsw_send_cb send_callback, void* ctx);
  int ipsw_extract_build_manifest(ipsw_archive_t ipsw, plist_t* buildmanifest, int *tss_enabled);
  int ipsw_extract_restore_plist(ipsw_archive_t ipsw, plist_t* restore_plist);
  int ipsw_list_contents(ipsw_archive_t ipsw, ipsw_list_cb cb, void *ctx);
 diff --git a/src/recovery.c b/src/recovery.c
-index 02f5689..70a96f4 100644
+index 02f5689..5742b5d 100644
 --- a/src/recovery.c
 +++ b/src/recovery.c
 @@ -297,7 +297,7 @@ int recovery_send_component(struct idevicerestore_client_t* client, plist_t buil
@@ -571,12 +597,12 @@ index 02f5689..70a96f4 100644
  
  	ret = personalize_component(component, component_data, component_size, client->tss, &data, &size);
 -	free(component_data);
-+	free_mmap(component_data, component_size);
++	free_mmap(component_data, component_size, -1);
  	if (ret < 0) {
  		error("ERROR: Unable to get personalized component: %s\n", component);
  		return -1;
 diff --git a/src/restore.c b/src/restore.c
-index 7fa104b..6a61060 100644
+index 7fa104b..acef2ab 100644
 --- a/src/restore.c
 +++ b/src/restore.c
 @@ -1101,7 +1101,7 @@ int restore_send_component(restored_client_t restore, struct idevicerestore_clie
@@ -593,10 +619,19 @@ index 7fa104b..6a61060 100644
  
  	ret = personalize_component(component, component_data, component_size, client->tss, &data, &size);
 -	free(component_data);
-+	free_mmap(component_data, component_size);
++	free_mmap(component_data, component_size, -1);
  	component_data = NULL;
  	if (ret < 0) {
  		error("ERROR: Unable to get personalized component %s\n", component);
+@@ -1144,7 +1144,7 @@ int restore_send_nor(restored_client_t restore, struct idevicerestore_client_t*
+ 	char* restore_sep_path = NULL;
+ 	char firmware_path[PATH_MAX - 9];
+ 	char manifest_file[PATH_MAX];
+-	unsigned int manifest_size = 0;
++	uint64_t manifest_size = 0;
+ 	unsigned char* manifest_data = NULL;
+ 	char firmware_filename[PATH_MAX];
+ 	unsigned int llb_size = 0;
 @@ -1191,7 +1191,7 @@ int restore_send_nor(restored_client_t restore, struct idevicerestore_client_t*
  
  	firmware_files = plist_new_dict();
@@ -611,7 +646,7 @@ index 7fa104b..6a61060 100644
  			plist_dict_set_item(firmware_files, compname, plist_new_string(firmware_filename));
  		}
 -		free(manifest_data);
-+		free_mmap(manifest_data, manifest_size);
++		free_mmap(manifest_data, manifest_size, -1);
  	} else {
  		info("Getting firmware manifest from build identity\n");
  		plist_dict_iter iter = NULL;
@@ -629,7 +664,7 @@ index 7fa104b..6a61060 100644
  
  	ret = personalize_component(component, component_data, component_size, client->tss, &llb_data, &llb_size);
 -	free(component_data);
-+	free_mmap(component_data, component_size);
++	free_mmap(component_data, component_size, -1);
  	component_data = NULL;
  	component_size = 0;
  	if (ret < 0) {
@@ -647,13 +682,13 @@ index 7fa104b..6a61060 100644
  			free(comp);
  			free(comppath);
 -			free(component_data);
-+			free_mmap(component_data, component_size);
++			free_mmap(component_data, component_size, -1);
  			plist_free(firmware_files);
  			error("ERROR: Unable to get personalized component: %s\n", component);
  			return -1;
  		}
 -		free(component_data);
-+		free_mmap(component_data, component_size);
++		free_mmap(component_data, component_size, -1);
  		component_data = NULL;
  		component_size = 0;
  
@@ -671,7 +706,7 @@ index 7fa104b..6a61060 100644
  
  		ret = personalize_component(component, component_data, component_size, client->tss, &personalized_data, &personalized_size);
 -		free(component_data);
-+		free_mmap(component_data, component_size);
++		free_mmap(component_data, component_size, -1);
  		component_data = NULL;
  		component_size = 0;
  		if (ret < 0) {
@@ -689,7 +724,7 @@ index 7fa104b..6a61060 100644
  
  		ret = personalize_component(component, component_data, component_size, client->tss, &personalized_data, &personalized_size);
 -		free(component_data);
-+		free_mmap(component_data, component_size);
++		free_mmap(component_data, component_size, -1);
  		component_data = NULL;
  		component_size = 0;
  		if (ret < 0) {
@@ -707,7 +742,7 @@ index 7fa104b..6a61060 100644
  
  		ret = personalize_component(component, component_data, component_size, client->tss, &personalized_data, &personalized_size);
 -		free(component_data);
-+		free_mmap(component_data, component_size);
++		free_mmap(component_data, component_size, -1);
  		component_data = NULL;
  		component_size = 0;
  		if (ret < 0) {
@@ -725,7 +760,7 @@ index 7fa104b..6a61060 100644
  	dict = plist_new_dict();
  	plist_dict_set_item(dict, "BasebandData", plist_new_data(buffer, (uint64_t)sz));
 -	free(buffer);
-+	free_mmap(buffer, sz);
++	free_mmap(buffer, sz, -1);
  	buffer = NULL;
  
  	info("Sending BasebandData now...\n");
@@ -745,7 +780,7 @@ index 7fa104b..6a61060 100644
  
  						ret = personalize_component(component, component_data, component_size, client->tss, &data, &size);
 -						free(component_data);
-+						free_mmap(component_data, component_size);
++						free_mmap(component_data, component_size, -1);
  						component_data = NULL;
  						if (ret < 0) {
  							error("ERROR: Unable to get personalized component: %s\n", component);
@@ -763,7 +798,7 @@ index 7fa104b..6a61060 100644
  	if (request == NULL) {
  		error("ERROR: Unable to create SE TSS request\n");
 -		free(component_data);
-+		free_mmap(component_data, component_size);
++		free_mmap(component_data, component_size, NULL);
  		return NULL;
  	}
  
@@ -772,7 +807,7 @@ index 7fa104b..6a61060 100644
  	if (response == NULL) {
  		error("ERROR: Unable to fetch SE ticket\n");
 -		free(component_data);
-+		free_mmap(component_data, component_size);
++		free_mmap(component_data, component_size, NULL);
  		return NULL;
  	}
  
@@ -781,7 +816,7 @@ index 7fa104b..6a61060 100644
  
  	plist_dict_set_item(response, "FirmwareData", plist_new_data((char*)component_data, (uint64_t) component_size));
 -	free(component_data);
-+	free_mmap(component_data, component_size);
++	free_mmap(component_data, component_size, NULL);
  	component_data = NULL;
  	component_size = 0;
  
@@ -809,12 +844,12 @@ index 7fa104b..6a61060 100644
 +#else
 +	component_data_tmp = malloc((size_t)component_size+16);
 +	if (!component_data_tmp) {
-+		free_mmap(component_data, component_size);
++		free_mmap(component_data, component_size, NULL);
 +		return NULL;
 +	}
 +	memcpy(component_data_tmp + 16, component_data, (size_t)component_size);
 +	memset(component_data_tmp, '\0', 16);
-+	free_mmap(component_data, component_size);
++	free_mmap(component_data, component_size, NULL);
  
 +	// use component_data_tmp from now
 +	*(uint32_t*)(component_data_tmp + 4) = htole32((uint32_t)component_size);
@@ -842,7 +877,7 @@ index 7fa104b..6a61060 100644
  	plist_dict_set_item(response, "FirmwareData", firmware_data);
  
 -	free(component_data);
-+	free_mmap(component_data, component_size);
++	free_mmap(component_data, component_size, NULL);
  	component_data = NULL;
  	component_size = 0;
  
@@ -860,12 +895,12 @@ index 7fa104b..6a61060 100644
  	}
  	if (ftab_parse(component_data, component_size, &ftab, &ftag) != 0) {
 -		free(component_data);
-+		free_mmap(component_data, component_size);
++		free_mmap(component_data, component_size, NULL);
  		error("ERROR: Failed to parse '%s' component data.\n", comp_name);
  		return NULL;
  	}
 -	free(component_data);
-+	free_mmap(component_data, component_size);
++	free_mmap(component_data, component_size, NULL);
  	component_data = NULL;
  	component_size = 0;
  	if (ftag != 'rkos') {
@@ -883,13 +918,13 @@ index 7fa104b..6a61060 100644
  		ftag = 0;
  		if (ftab_parse(component_data, component_size, &rftab, &ftag) != 0) {
 -			free(component_data);
-+			free_mmap(component_data, component_size);
++			free_mmap(component_data, component_size, NULL);
  			ftab_free(ftab);
  			error("ERROR: Failed to parse '%s' component data.\n", comp_name);
  			return NULL;
  		}
 -		free(component_data);
-+		free_mmap(component_data, component_size);
++		free_mmap(component_data, component_size, NULL);
  		component_data = NULL;
  		component_size = 0;
  		if (ftag != 'rkos') {
@@ -898,7 +933,7 @@ index 7fa104b..6a61060 100644
  
  	plist_dict_set_item(response, "FirmwareData", plist_new_data((char *)component_data, (uint64_t)component_size));
 -	free(component_data);
-+	free_mmap(component_data, component_size);
++	free_mmap(component_data, component_size, NULL);
  	component_data = NULL;
  	component_size = 0;
  
@@ -916,7 +951,7 @@ index 7fa104b..6a61060 100644
  		plist_from_xml((const char*)component_data, component_size, &fw_map);
  	}
 -	free(component_data);
-+	free_mmap(component_data, component_size);
++	free_mmap(component_data, component_size, NULL);
  	component_data = NULL;
  	component_size = 0;
  
@@ -934,7 +969,7 @@ index 7fa104b..6a61060 100644
  
  	plist_dict_set_item(response, "FirmwareData", plist_new_data((char *)component_data, (uint64_t)component_size));
 -	free(component_data);
-+	free_mmap(component_data, component_size);
++	free_mmap(component_data, component_size, NULL);
  	component_data = NULL;
  	component_size = 0;
  
@@ -952,12 +987,12 @@ index 7fa104b..6a61060 100644
  		}
  		if (ftab_parse(component_data, component_size, &ftab, &ftag) != 0) {
 -			free(component_data);
-+			free_mmap(component_data, component_size);
++			free_mmap(component_data, component_size, NULL);
  			error("ERROR: Failed to parse '%s' component data.\n", comp_name);
  			return NULL;
  		}
 -		free(component_data);
-+		free_mmap(component_data, component_size);
++		free_mmap(component_data, component_size, NULL);
  		component_data = NULL;
  		component_size = 0;
  		if (ftag != 'rkos') {
@@ -975,31 +1010,38 @@ index 7fa104b..6a61060 100644
  		ftag = 0;
  		if (ftab_parse(component_data, component_size, &rftab, &ftag) != 0) {
 -			free(component_data);
-+			free_mmap(component_data, component_size);
++			free_mmap(component_data, component_size, NULL);
  			ftab_free(ftab);
  			error("ERROR: Failed to parse '%s' component data.\n", comp_name);
  			return NULL;
  		}
 -		free(component_data);
-+		free_mmap(component_data, component_size);
++		free_mmap(component_data, component_size, NULL);
  		component_data = NULL;
  		component_size = 0;
  		if (ftag != 'rkos') {
-@@ -3371,7 +3391,7 @@ static int restore_bootability_send_one(void *ctx, ipsw_archive_t ipsw, const ch
- 	unsigned int size = 0;
+@@ -3368,12 +3388,12 @@ static int restore_bootability_send_one(void *ctx, ipsw_archive_t ipsw, const ch
+ 	debug("DEBUG: BootabilityBundle send m=%07o s=%10ld %s\n", stat->st_mode, (long)stat->st_size, subpath);
+ 
+ 	unsigned char *buf = NULL;
+-	unsigned int size = 0;
++	uint64_t size = 0;
  
  	if ((S_ISLNK(stat->st_mode) || S_ISREG(stat->st_mode)) && stat->st_size != 0) {
 -		ipsw_extract_to_memory(ipsw, name, &buf, &size);
 +		ipsw_extract_to_memory_mmap(ipsw, name, &buf, &size);
  		if (size != stat->st_size) {
- 			error("ERROR: expected %ld bytes but got %d for file %s\n", (long)stat->st_size, size, name);
+-			error("ERROR: expected %ld bytes but got %d for file %s\n", (long)stat->st_size, size, name);
++			error("ERROR: expected %ld bytes but got %lld for file %s\n", (long)stat->st_size, size, name);
  			free(buf);
+ 			return -1;
+ 		}
 @@ -3383,7 +3403,7 @@ static int restore_bootability_send_one(void *ctx, ipsw_archive_t ipsw, const ch
  
  	int ret = cpio_send_file(connection, subpath, stat, buf);
  
 -	free(buf);
-+	free_mmap(buf, size);
++	free_mmap(buf, size, -1);
  	return ret;
  }
  
@@ -1007,7 +1049,7 @@ index 7fa104b..6a61060 100644
  	return 0;
  }
  
-+int extract_global_manifest_mmap(struct idevicerestore_client_t* client, plist_t build_identity, char *variant, unsigned char** pbuffer, unsigned int* psize)
++int extract_global_manifest_mmap(struct idevicerestore_client_t* client, plist_t build_identity, char *variant, unsigned char** pbuffer, uint64_t* psize)
 +{
 +	char* ticket_path = extract_global_manifest_path(build_identity, variant);
 +	if (!ticket_path) {
@@ -1082,22 +1124,31 @@ index 7fa104b..6a61060 100644
  		free(path);
  		path = NULL;
  		if (ret < 0) {
-@@ -3649,7 +3691,7 @@ int restore_send_personalized_boot_object_v3(restored_client_t restore, struct i
+@@ -3648,13 +3690,15 @@ int restore_send_personalized_boot_object_v3(restored_client_t restore, struct i
+ 		}
  
  		// Personalize IMG4
- 		ret = personalize_component(component, component_data, component_size, client->tss, &data, &size);
+-		ret = personalize_component(component, component_data, component_size, client->tss, &data, &size);
 -		free(component_data);
-+		free_mmap(component_data, component_size);
++        unsigned int img4_size = 0;
++		ret = personalize_component(component, component_data, component_size, client->tss, &data, &img4_size);
++		free_mmap(component_data, component_size, -1);
  		component_data = NULL;
  		if (ret < 0) {
  			error("ERROR: Unable to get personalized component %s\n", component);
-@@ -3668,13 +3710,21 @@ int restore_send_personalized_boot_object_v3(restored_client_t restore, struct i
+ 			return -1;
+ 		}
++        size = img4_size;
+ 	}
+ 
+ 	info("Sending %s now (%" PRIu64 " bytes)...\n", component, (uint64_t)size);
+@@ -3668,13 +3712,21 @@ int restore_send_personalized_boot_object_v3(restored_client_t restore, struct i
  	while (i > 0) {
  		int blob_size = i > 8192 ? 8192 : i;
  		if (_restore_send_file_data(&rctx, (data + size - i), blob_size, size-i, size) < 0) {
 -			free(data);
 +			if (is_mmap_data) {
-+				free_mmap(data, size);
++				free_mmap(data, size, -1);
 +			} else {
 +				free(data);
 +			}
@@ -1108,14 +1159,14 @@ index 7fa104b..6a61060 100644
  	}
 -	free(data);
 +	if (is_mmap_data) {
-+		free_mmap(data, size);
++		free_mmap(data, size, -1);
 +	} else {
 +		free(data);
 +	}
  
  	_restore_send_file_data(&rctx, NULL, 0, size-i, size);
  
-@@ -3762,7 +3812,7 @@ int restore_send_source_boot_object_v4(restored_client_t restore, struct idevice
+@@ -3762,7 +3814,7 @@ int restore_send_source_boot_object_v4(restored_client_t restore, struct idevice
  	rctx.restore = restore;
  	rctx.last_progress = 0;
  
@@ -1125,5 +1176,5 @@ index 7fa104b..6a61060 100644
  		error("ERROR: Failed to send component %s\n", component);
  		return -1;
 -- 
-2.31.1
+2.44.2
 

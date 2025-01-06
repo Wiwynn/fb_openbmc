@@ -6,5 +6,5 @@ SRC_URI += "file://yamp.conf \
 
 do_install:append() {
     install -d ${D}${sysconfdir}/sensors.d
-    install -m 644 ../yamp.conf ${D}${sysconfdir}/sensors.d/yamp.conf
+    install -m 644 ${UNPACKDIR}/yamp.conf ${D}${sysconfdir}/sensors.d/yamp.conf
 }

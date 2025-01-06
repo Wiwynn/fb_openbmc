@@ -12,7 +12,7 @@ SRC_URI += " \
 
 do_install() {
     install -d ${D}${libexecdir}
-    install -m 0755 ${WORKDIR}/system-state-init ${D}${libexecdir}
+    install -m 0755 ${UNPACKDIR}/system-state-init ${D}${libexecdir}
 }
 
 TGT = "${SYSTEMD_DEFAULT_TARGET}"

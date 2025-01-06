@@ -1,4 +1,4 @@
-From d0ff6858135f6de089e4c4b9da22d66cd18de0b0 Mon Sep 17 00:00:00 2001
+From 854e78f46b62f38bb04fe8da4d0acc10d059da42 Mon Sep 17 00:00:00 2001
 From: Peter Delevoryas <peter@pjd.dev>
 Date: Tue, 23 Aug 2022 18:11:55 -0700
 Subject: [PATCH 523/532] fby35: Add CPLD and BIC as I2C devices
@@ -12,10 +12,10 @@ Signed-off-by: Peter Delevoryas <peter@pjd.dev>
  1 file changed, 2 insertions(+)
 
 diff --git a/hw/arm/aspeed.c b/hw/arm/aspeed.c
-index 13546a5420..51ec3cb6e0 100644
+index 9567f0d130..aaf8128e15 100644
 --- a/hw/arm/aspeed.c
 +++ b/hw/arm/aspeed.c
-@@ -1032,6 +1032,8 @@ static void fby35_i2c_init(AspeedMachineState *bmc)
+@@ -1059,6 +1059,8 @@ static void fby35_i2c_init(AspeedMachineState *bmc)
       * buses 0, 1, 2, 3, and 9. Source address 0x10, target address 0x20 on
       * each.
       */
@@ -25,5 +25,5 @@ index 13546a5420..51ec3cb6e0 100644
  
  static void fbttn_i2c_init(AspeedMachineState *bmc)
 -- 
-2.43.0
+2.44.2
 

@@ -44,6 +44,7 @@ BAD_RECOMMENDATIONS += " \
     ca-certificates \
     udev-hwdb \
     shared-mime-info \
+    systemd-mime \
     "
 
 # Many of the sysv init files we already have install into runlevel 5, so

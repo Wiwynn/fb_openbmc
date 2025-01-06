@@ -107,7 +107,6 @@ SRC_URI:append = " \
 #
 SRC_URI:append = " \
     file://0200-ARM-dts-aspeed-g6-Add-AST2600-I3Cs.patch \
-    file://0201-i3c-master-add-enable-disable-hot-join-in-sys-entry.patch \
     file://0202-i3c-dw-Add-hot-join-support.patch \
     file://0203-i3c-ast2600-Validate-AST2600-I3C-for-MCTP-over-I3C.patch \
     file://0204-dt-bindings-i3c-hub-Add-Renesas-RG3MxxB12A1-I3C-HUB.patch \

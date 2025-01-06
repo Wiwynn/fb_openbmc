@@ -32,7 +32,7 @@ do_install:append() {
 do_install:append() {
     install -d ${D}/${sysconfdir}/profile.d
     if [ "${SSH_IDLE_TIMEOUT}" -ne "0" ]; then
-        install -m 644 ../ssh_idle_logout.sh ${D}/${sysconfdir}/profile.d/ssh_idle_logout.sh
+        install -m 644 ${UNPACKDIR}/ssh_idle_logout.sh ${D}/${sysconfdir}/profile.d/ssh_idle_logout.sh
         sed -i 's/__SSH_TMOUT__/${SSH_IDLE_TIMEOUT}/g' ${D}/${sysconfdir}/profile.d/ssh_idle_logout.sh
     fi
 }

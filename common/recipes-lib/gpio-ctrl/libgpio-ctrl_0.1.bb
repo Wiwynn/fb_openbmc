@@ -25,6 +25,9 @@ LIC_FILES_CHKSUM = "file://gpio.c;beginline=4;endline=16;md5=da35978751a9d71b736
 inherit meson pkgconfig python3-dir
 inherit ptest-meson
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://meson.build \
     file://gpio.c \
@@ -44,6 +47,6 @@ RDEPENDS:${PN}-ptest += "libmisc-utils libobmc-i2c"
 
 do_install:append() {
     install -d ${D}${PYTHON_SITEPACKAGES_DIR}
-    install -m 644 ${S}/libgpio.py ${D}${PYTHON_SITEPACKAGES_DIR}/
+    install -m 644 ${UNPACKDIR}/libgpio.py ${D}${PYTHON_SITEPACKAGES_DIR}/
 }
 FILES:${PN} += "${PYTHON_SITEPACKAGES_DIR}/libgpio.py"

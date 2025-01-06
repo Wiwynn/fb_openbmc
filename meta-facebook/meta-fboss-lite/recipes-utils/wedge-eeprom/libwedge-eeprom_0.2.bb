@@ -37,7 +37,7 @@ RDEPENDS:${PN} = "python3-core bash liblog libobmc-i2c"
 S = "${WORKDIR}/lib"
 
 do_install() {
-	  install -d ${D}${libdir}
+    install -d ${D}${libdir}
     install -m 0644 libwedge-eeprom.so ${D}${libdir}/libwedge-eeprom.so
     install -m 0644 libwedge-eeprom.so.0 ${D}${libdir}/libwedge-eeprom.so.0
 
@@ -45,7 +45,7 @@ do_install() {
     install -m 0644 ${S}/WeutilInterface.h ${D}${includedir}/facebook/WeutilInterface.h
 
     install -d ${D}/${sysconfdir}/weutil
-    install -m 0644 ${S}/eeprom.json ${D}/${sysconfdir}/weutil/eeprom.json
+    install -m 0644 ${UNPACKDIR}/eeprom.json ${D}/${sysconfdir}/weutil/eeprom.json
 }
 
 FILES:${PN} = "${sysconfdir}/weutil/eeprom.json"

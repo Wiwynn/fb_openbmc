@@ -28,14 +28,12 @@ inherit python3-dir
 
 CFLAGS += "-Wall -Werror"
 
-SRC_URI = "file://utils  \
-           file://lib/WeutilInterface.h "
-
+SRC_URI = "file://utils"
 
 S = "${WORKDIR}/utils"
 
 do_install() {
-	  install -d ${D}${bindir}
+	install -d ${D}${bindir}
     install -m 0755 weutil ${D}${bindir}/weutil
 }
 

@@ -28,7 +28,7 @@ SYSTEMD_SERVICE:${PN} += "${@' '.join(['ras-polling@{}.service'.format(i) for i 
 
 do_install:append() {
     install -d ${D}${libexecdir}/amd-ras
-    install -m 0755 ${WORKDIR}/ras-polling.sh ${D}${libexecdir}/amd-ras/
+    install -m 0755 ${UNPACKDIR}/ras-polling.sh ${D}${libexecdir}/amd-ras/
     install -d ${D}${systemd_system_unitdir}
-    install -m 0644 ${WORKDIR}/ras-polling@.service ${D}${systemd_system_unitdir}/ras-polling@.service
+    install -m 0644 ${UNPACKDIR}/ras-polling@.service ${D}${systemd_system_unitdir}/ras-polling@.service
 }

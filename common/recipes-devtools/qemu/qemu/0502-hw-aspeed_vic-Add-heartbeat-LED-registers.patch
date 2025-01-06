@@ -1,4 +1,4 @@
-From 1c9d9b8214792b86097567e9444549145bd54434 Mon Sep 17 00:00:00 2001
+From 78231f669ef5bd95a0c89f3d2884c141039153d0 Mon Sep 17 00:00:00 2001
 From: Peter Delevoryas <pdel@fb.com>
 Date: Tue, 23 Nov 2021 09:22:10 -0800
 Subject: [PATCH 502/532] hw: aspeed_vic: Add heartbeat LED registers
@@ -10,7 +10,7 @@ Signed-off-by: Peter Delevoryas <pdel@fb.com>
  2 files changed, 20 insertions(+)
 
 diff --git a/hw/intc/aspeed_vic.c b/hw/intc/aspeed_vic.c
-index 5ba06c5262..13c700d4f6 100644
+index ba1d953c2c..f4c0f507dd 100644
 --- a/hw/intc/aspeed_vic.c
 +++ b/hw/intc/aspeed_vic.c
 @@ -168,6 +168,12 @@ static uint64_t aspeed_vic_read(void *opaque, hwaddr offset, unsigned size)
@@ -66,5 +66,5 @@ index 68d6ab997a..d162d2da07 100644
  
  #endif /* ASPEED_VIC_H */
 -- 
-2.43.0
+2.44.2
 

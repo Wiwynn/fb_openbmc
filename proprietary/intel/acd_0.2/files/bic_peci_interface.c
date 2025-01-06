@@ -89,7 +89,7 @@ static uint8_t CalculateCRC8(uint8_t *data, size_t len)
  *------------------------------------------------------------------------*/
 static uint8_t calculate_fcs(peci_cmd_t *peci_cmd)
 {
-	return CalculateCRC8(peci_cmd, peci_cmd->write_len + 2);
+	return CalculateCRC8((uint8_t*)peci_cmd, peci_cmd->write_len + 2);
 }
 
 /*-------------------------------------------------------------------------

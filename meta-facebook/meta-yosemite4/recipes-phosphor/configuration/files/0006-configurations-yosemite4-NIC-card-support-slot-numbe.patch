@@ -1,13 +1,13 @@
-From e9d09e8b03a6e89efae7b5af17d018ba86f2dc09 Mon Sep 17 00:00:00 2001
+From 172992cf154675d917d4efa11a57862a5f66f814 Mon Sep 17 00:00:00 2001
 From: IngridChen-wiwynn <Ingrid_Chen@wiwynn.com>
 Date: Mon, 12 Aug 2024 11:41:09 +0800
-Subject: [PATCH 4/4] configurations: yosemite4: NIC card support slot number
+Subject: [PATCH 6/6] configurations: yosemite4: NIC card support slot number
 
 Support NIC card with slot number.
 ---
- configurations/brcm_200g_1p_ocp_mezz.json    | 3 +++
- configurations/cx7_ocp.json                  | 3 +++
- configurations/terminus_2x100g_nic_tsff.json | 3 +++
+ configurations/brcm_200g_1p_ocp_mezz.json         | 3 +++
+ configurations/cx7_ocp.json                       | 3 +++
+ configurations/meta/terminus_2x100g_nic_tsff.json | 3 +++
  3 files changed, 9 insertions(+)
 
 diff --git a/configurations/brcm_200g_1p_ocp_mezz.json b/configurations/brcm_200g_1p_ocp_mezz.json
@@ -36,10 +36,10 @@ index 9403a23..ce705ae 100644
 +        "SlotNumber": "$bus % 24"
      }
  }
-diff --git a/configurations/terminus_2x100g_nic_tsff.json b/configurations/terminus_2x100g_nic_tsff.json
+diff --git a/configurations/meta/terminus_2x100g_nic_tsff.json b/configurations/meta/terminus_2x100g_nic_tsff.json
 index 19e8548..d9ddd14 100644
---- a/configurations/terminus_2x100g_nic_tsff.json
-+++ b/configurations/terminus_2x100g_nic_tsff.json
+--- a/configurations/meta/terminus_2x100g_nic_tsff.json
++++ b/configurations/meta/terminus_2x100g_nic_tsff.json
 @@ -40,5 +40,8 @@
          "Model": "$BOARD_PRODUCT_NAME",
          "PartNumber": "$BOARD_PART_NUMBER",
@@ -50,5 +50,5 @@ index 19e8548..d9ddd14 100644
      }
  }
 -- 
-2.25.1
+2.44.2
 

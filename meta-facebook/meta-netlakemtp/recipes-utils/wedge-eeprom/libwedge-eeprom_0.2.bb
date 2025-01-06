@@ -42,10 +42,10 @@ do_install() {
     install -m 0644 libwedge-eeprom.so.0 ${D}${libdir}/libwedge-eeprom.so.0
 
     install -d ${D}${includedir}/facebook
-    install -m 0644 ${S}/WeutilInterface.h ${D}${includedir}/facebook/WeutilInterface.h
+    install -m 0644 ${UNPACKDIR}/WeutilInterface.h ${D}${includedir}/facebook/WeutilInterface.h
 
     install -d ${D}/${sysconfdir}/weutil
-    install -m 0644 ${S}/eeprom.json ${D}/${sysconfdir}/weutil/eeprom.json
+    install -m 0644 ${UNPACKDIR}/eeprom.json ${D}/${sysconfdir}/weutil/eeprom.json
 }
 
 FILES:${PN} = "${sysconfdir}/weutil/eeprom.json"

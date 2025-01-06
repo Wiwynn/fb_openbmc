@@ -90,9 +90,9 @@ static void do_get_ver(uint8_t bus, int eid) {
   }
 }
 
-static void do_get_effecter(uint8_t bus, int eid, std::vector<uint8_t>& payload) {
+static void do_get_effecter(uint8_t bus, int eid, const std::vector<uint8_t>& payload) {
 
-  std::vector<uint8_t> data{};
+  std::vector<uint8_t> data = {};
 
   // 0:5 pldm_type = 0x2 (PLDM for Platform
   // Monitoring and Control) (6:7 hdr-version  0)
@@ -100,7 +100,10 @@ static void do_get_effecter(uint8_t bus, int eid, std::vector<uint8_t>& payload)
   // pldm_command 0x3A = GetStateEffecterStates
   data.push_back(0x3A);
   // Add data
-  data.insert(data.end(), payload.begin(), payload.end());
+  for (auto d : payload)
+  {
+      data.push_back(d);
+  }
 
   show_request_info(bus, eid, data);
 

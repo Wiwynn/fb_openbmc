@@ -1,4 +1,4 @@
-From c67420843f26090c4a76cc938546bd65b96a850d Mon Sep 17 00:00:00 2001
+From b078f4aaa6c155d0cd89012f2158e3128adefe99 Mon Sep 17 00:00:00 2001
 From: Nima <v.nima2007@gmail.com>
 Date: Fri, 3 Mar 2023 16:26:13 -0800
 Subject: [PATCH] Nima rough draft http proxy support for raw socket
@@ -16,10 +16,10 @@ Instructions:
  1 file changed, 193 insertions(+)
 
 diff --git a/src/socket.c b/src/socket.c
-index 48eb831..444be6c 100644
+index 6e65c42..8432a9f 100644
 --- a/src/socket.c
 +++ b/src/socket.c
-@@ -79,6 +79,7 @@ static int wsa_init = 0;
+@@ -82,6 +82,7 @@ static int wsa_init = 0;
  #ifndef ETIMEDOUT
  #define ETIMEDOUT 138
  #endif
@@ -27,7 +27,7 @@ index 48eb831..444be6c 100644
  
  static int verbose = 0;
  
-@@ -976,8 +977,200 @@ LIBIMOBILEDEVICE_GLUE_API int socket_connect_addr(struct sockaddr* addr, uint16_
+@@ -1155,8 +1156,200 @@ int socket_connect_addr(struct sockaddr* addr, uint16_t port)
  	return sfd;
  }
  
@@ -213,7 +213,7 @@ index 48eb831..444be6c 100644
 +    return sock;
 +}
 +
- LIBIMOBILEDEVICE_GLUE_API int socket_connect(const char *addr, uint16_t port)
+ int socket_connect(const char *addr, uint16_t port)
  {
 +    //Check if we should use nima code.
 +    char *use_proxy = getenv("RPROXY");
@@ -229,5 +229,5 @@ index 48eb831..444be6c 100644
  	int yes = 1;
  	int bufsize = 0x20000;
 -- 
-2.31.1
+2.44.2
 

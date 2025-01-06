@@ -18,6 +18,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#define _DEFAULT_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -443,7 +445,7 @@ fru_cache_init(uint8_t fru) {
   if (ret < 0) {
     syslog(LOG_WARNING, "%s() Failed to get 1OU & 2OU present status, return val: %d", __func__, ret);
     return -1;
-  } 
+  }
   if ((ret & PRESENT_2OU) != PRESENT_2OU) {
     return -1;
   }
@@ -573,7 +575,7 @@ gpio_monitor_poll(void *ptr) {
     syslog(LOG_WARNING, "gpio_monitor_poll: get_struct_gpio_pin failed for fru %u", fru);
     pthread_exit(NULL);
   }
- 
+
   ret = bic_get_gpio(fru, &o_pin_val[fru-1], NONE_INTF);
   if ( ret < 0 ) {
     syslog(LOG_WARNING, "gpio_monitor_poll: bic_get_gpio failed for fru %u", fru);
@@ -650,10 +652,10 @@ gpio_monitor_poll(void *ptr) {
     }
 
     //check PWRGD_CPU_LVC3_R is changed
-    if ( (get_pwrgd_cpu_flag(fru) == false) && 
+    if ( (get_pwrgd_cpu_flag(fru) == false) &&
          (GET_BIT(n_pin_val, PWRGD_CPU_LVC3_R) != GET_BIT(o_pin_val[fru-1], PWRGD_CPU_LVC3_R))) {
       rst_timer(fru);
-      set_pwrgd_cpu_flag(fru, true);  
+      set_pwrgd_cpu_flag(fru, true);
       //update the value since the bit is not monitored
       SET_BIT(o_pin_val[fru-1], PWRGD_CPU_LVC3_R, GET_BIT(n_pin_val, PWRGD_CPU_LVC3_R));
     }
@@ -677,7 +679,7 @@ gpio_monitor_poll(void *ptr) {
     for (i = 0; i < MAX_GPIO_PINS; i++) {
       if (GET_BIT(revised_pins, i) && (gpios[i].flag == 1)) {
         gpios[i].status = GET_BIT(n_pin_val, i);
-    
+
         // Check if the new GPIO val is ASSERT
         if (gpios[i].status == gpios[i].ass_val) {
           if (i == RST_PLTRST_BMC_N) {
@@ -698,7 +700,7 @@ gpio_monitor_poll(void *ptr) {
     pthread_mutex_lock(&pin_val_mutex[fru-1]);
     memcpy(&o_pin_val[fru-1], &n_pin_val, sizeof(o_pin_val[fru-1]));
     pthread_mutex_unlock(&pin_val_mutex[fru-1]);
-    
+
     usleep(DELAY_GPIOD_READ);
   } /* while loop */
 } /* function definition*/

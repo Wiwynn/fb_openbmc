@@ -19,8 +19,11 @@ SUMMARY = "CPLD update DLL using Aspeed JTAG"
 DESCRIPTION = "CPLD update DLL using Aspeed JTAG"
 SECTION = "dev"
 
-LICENSE = "GPLv2"
+LICENSE = "GPL-2.0-only"
 LIC_FILES_CHKSUM = "file://cpldupdate_dll_ast_jtag.c;beginline=4;endline=16;md5=da35978751a9d71b73679307c4d296ec"
+
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
 
 LOCAL_URI += " \
     file://cpldupdate_dll_ast_jtag.c \

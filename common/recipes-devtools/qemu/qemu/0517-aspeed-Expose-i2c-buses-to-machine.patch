@@ -1,4 +1,4 @@
-From 69c330c175451dd3ef9669ba5469f127e92d1eca Mon Sep 17 00:00:00 2001
+From 2ca6b66a2e4907fa7e34e721ba026b533262bc5b Mon Sep 17 00:00:00 2001
 From: Peter Delevoryas <peter@pjd.dev>
 Date: Wed, 17 Aug 2022 10:14:07 +0200
 Subject: [PATCH 517/532] aspeed: Expose i2c buses to machine
@@ -16,10 +16,10 @@ Signed-off-by: Cédric Le Goater <clg@kaod.org>
  4 files changed, 36 insertions(+), 1 deletion(-)
 
 diff --git a/hw/arm/aspeed_soc_common.c b/hw/arm/aspeed_soc_common.c
-index 828f61093b..99aa4bd733 100644
+index 05551461ae..3faad5fbe7 100644
 --- a/hw/arm/aspeed_soc_common.c
 +++ b/hw/arm/aspeed_soc_common.c
-@@ -97,6 +97,20 @@ bool aspeed_soc_dram_init(AspeedSoCState *s, Error **errp)
+@@ -107,6 +107,20 @@ bool aspeed_soc_dram_init(AspeedSoCState *s, Error **errp)
      return true;
  }
  
@@ -74,10 +74,10 @@ index c9964bd283..490f5d6e23 100644
  }
  
 diff --git a/hw/i2c/aspeed_i2c.c b/hw/i2c/aspeed_i2c.c
-index f3e294b796..48f50ea441 100644
+index 71c9b7ea57..bb98154b8a 100644
 --- a/hw/i2c/aspeed_i2c.c
 +++ b/hw/i2c/aspeed_i2c.c
-@@ -1258,7 +1258,12 @@ static void aspeed_i2c_bus_realize(DeviceState *dev, Error **errp)
+@@ -1260,7 +1260,12 @@ static void aspeed_i2c_bus_realize(DeviceState *dev, Error **errp)
  
      sysbus_init_irq(SYS_BUS_DEVICE(dev), &s->irq);
  
@@ -91,7 +91,7 @@ index f3e294b796..48f50ea441 100644
      s->slave = i2c_slave_create_simple(s->bus, TYPE_ASPEED_I2C_BUS_SLAVE,
                                         0xff);
      ASPEED_I2C_BUS_SLAVE(s->slave)->bus = s;
-@@ -1272,6 +1277,7 @@ static Property aspeed_i2c_bus_properties[] = {
+@@ -1274,6 +1279,7 @@ static Property aspeed_i2c_bus_properties[] = {
      DEFINE_PROP_UINT8("bus-id", AspeedI2CBus, id, 0),
      DEFINE_PROP_LINK("controller", AspeedI2CBus, controller, TYPE_ASPEED_I2C,
                       AspeedI2CState *),
@@ -100,10 +100,10 @@ index f3e294b796..48f50ea441 100644
  };
  
 diff --git a/include/hw/arm/aspeed_soc.h b/include/hw/arm/aspeed_soc.h
-index cb832bc1ee..6c0f352c73 100644
+index 624d489e0d..da9692beea 100644
 --- a/include/hw/arm/aspeed_soc.h
 +++ b/include/hw/arm/aspeed_soc.h
-@@ -222,6 +222,8 @@ qemu_irq aspeed_soc_get_irq(AspeedSoCState *s, int dev);
+@@ -255,6 +255,8 @@ qemu_irq aspeed_soc_get_irq(AspeedSoCState *s, int dev);
  bool aspeed_soc_uart_realize(AspeedSoCState *s, Error **errp);
  void aspeed_soc_uart_set_chr(AspeedSoCState *s, int dev, Chardev *chr);
  bool aspeed_soc_dram_init(AspeedSoCState *s, Error **errp);
@@ -113,5 +113,5 @@ index cb832bc1ee..6c0f352c73 100644
  void aspeed_mmio_map_unimplemented(AspeedSoCState *s, SysBusDevice *dev,
                                     const char *name, hwaddr addr,
 -- 
-2.43.0
+2.44.2
 

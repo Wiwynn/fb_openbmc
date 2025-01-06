@@ -28,9 +28,9 @@ LOCAL_URI += " \
 
 do_install:append() {
   install -d ${D}${sysconfdir}
-  install -m 644 ${S}/aggregate-sensor-gpv2-conf.json ${D}${sysconfdir}/aggregate-sensor-gpv2-conf.json
-  install -m 644 ${S}/aggregate-sensor-gpv2-conf.json ${D}${sysconfdir}/aggregate-sensor-gpv2-10kfan-conf.json
-  install -m 644 ${S}/aggregate-sensor-fbnd-conf.json ${D}${sysconfdir}/aggregate-sensor-fbnd-conf.json
-  install -m 644 ${S}/aggregate-sensor-yv250-10kfan-conf.json ${D}${sysconfdir}/aggregate-sensor-yv250-10kfan-conf.json
-  install -m 644 ${S}/aggregate-sensor-yv250-15kfan-conf.json ${D}${sysconfdir}/aggregate-sensor-yv250-15kfan-conf.json
+  install -m 644 ${UNPACKDIR}/aggregate-sensor-gpv2-conf.json ${D}${sysconfdir}/aggregate-sensor-gpv2-conf.json
+  install -m 644 ${UNPACKDIR}/aggregate-sensor-gpv2-conf.json ${D}${sysconfdir}/aggregate-sensor-gpv2-10kfan-conf.json
+  install -m 644 ${UNPACKDIR}/aggregate-sensor-fbnd-conf.json ${D}${sysconfdir}/aggregate-sensor-fbnd-conf.json
+  install -m 644 ${UNPACKDIR}/aggregate-sensor-yv250-10kfan-conf.json ${D}${sysconfdir}/aggregate-sensor-yv250-10kfan-conf.json
+  install -m 644 ${UNPACKDIR}/aggregate-sensor-yv250-15kfan-conf.json ${D}${sysconfdir}/aggregate-sensor-yv250-15kfan-conf.json
 }

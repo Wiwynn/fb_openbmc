@@ -36,7 +36,7 @@ do_install() {
   install -m 644 crashdump_coreid ${dst}/crashdump_coreid
   install -m 644 crashdump_msr ${dst}/crashdump_msr
   for f in ${binfiles}; do
-    install -m 755 $f ${dst}/$f
+    install -m 755 ${S}/$f ${dst}/$f
     ln -snf ../fbpackages/${pkgdir}/$f ${bin}/$f
   done
 }

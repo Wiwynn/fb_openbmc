@@ -13,6 +13,6 @@ EXTRA_MAP_FILES = "4s_device_map.json 4s_memory_map.json ex_device_map.json ex_m
 do_install:append() {
   install -d ${D}/var/bafi
   for f in ${EXTRA_MAP_FILES}; do
-    install -m 644 ${S}/$f ${D}/var/bafi/$f
+    install -m 644 ${UNPACKDIR}/$f ${D}/var/bafi/$f
   done
 }

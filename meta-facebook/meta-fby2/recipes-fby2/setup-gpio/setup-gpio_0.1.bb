@@ -8,6 +8,9 @@ LIC_FILES_CHKSUM = "file://setup-gpio.c;beginline=8;endline=20;md5=8e8a5829be6e2
 
 inherit meson pkgconfig
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://setup-gpio.c \
     file://meson.build \
@@ -20,7 +23,7 @@ RDEPENDS:${PN} += "libpal libgpio-ctrl libfby2-common libphymem"
 
 do_install:append() {
   install -d ${D}${sysconfdir}/init.d
-  install -m 755 ${S}/setup-gpio.sh ${D}${sysconfdir}/init.d/setup-gpio.sh
+  install -m 755 ${UNPACKDIR}/setup-gpio.sh ${D}${sysconfdir}/init.d/setup-gpio.sh
   update-rc.d -r ${D} setup-gpio.sh start 50 S .
 }
 

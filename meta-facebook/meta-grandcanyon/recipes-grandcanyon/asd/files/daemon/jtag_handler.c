@@ -96,7 +96,7 @@ STATUS jtag_bic_ipmb_wrapper(uint8_t netfn, uint8_t cmd,
     STATUS ret = ST_ERR;
 
     if ((txbuf == NULL) || (rxlen == NULL)) {
-        ASD_log(ASD_LogLevel_Error, stream, option, 
+        ASD_log(ASD_LogLevel_Error, stream, option,
                 "%s(): invalid input parameter\n", __func__);
         return ST_ERR;
     }
@@ -113,7 +113,7 @@ STATUS jtag_bic_ipmb_wrapper(uint8_t netfn, uint8_t cmd,
 #endif
     ret = bic_ipmb_wrapper(netfn, cmd, txbuf, txlen, rxbuf, rxlen);
     if (ret < 0) {
-        ASD_log(ASD_LogLevel_Error, stream, option, 
+        ASD_log(ASD_LogLevel_Error, stream, option,
                 "ERROR, jtag_bic_ipmb_wrapper failed,\n");
         ret = ST_ERR;
     } else ret = ST_OK;
@@ -139,7 +139,7 @@ STATUS JTAG_clock_cycle(int number_of_cycles)
 
     if (number_of_cycles > 256)
     {
-      ASD_log(ASD_LogLevel_Error, stream, option, 
+      ASD_log(ASD_LogLevel_Error, stream, option,
               "ASD: delay cycle = %d(> 256). ", number_of_cycles);
       number_of_cycles = 255;
     } else if (number_of_cycles == 256 ) {
@@ -239,12 +239,12 @@ STATUS JTAG_bic_read_write_scan(JTAG_Handler* state, struct scan_xfer *scan_xfer
     uint8_t *tdi_buffer, *tdo_buffer;
 
     if (state == NULL) {
-        ASD_log(ASD_LogLevel_Error, stream, option, 
+        ASD_log(ASD_LogLevel_Error, stream, option,
                 "%s(): invalid JTAG state\n", __func__);
         return ST_ERR;
     }
     if (scan_xfer == NULL) {
-        ASD_log(ASD_LogLevel_Error, stream, option, 
+        ASD_log(ASD_LogLevel_Error, stream, option,
                 "%s(): invalid scan transfer\n", __func__);
         return ST_ERR;
     }
@@ -272,10 +272,10 @@ STATUS JTAG_bic_read_write_scan(JTAG_Handler* state, struct scan_xfer *scan_xfer
         int this_read_bit_length  = MIN(read_bit_length, MAX_TRANSFER_BITS);
 
         // check if we entered illegal state
-        if ( this_write_bit_length < 0 || 
-              this_read_bit_length < 0 || 
-                 last_transaction == 1 || 
-             (this_write_bit_length == 0 && this_read_bit_length ==0) ) 
+        if ( this_write_bit_length < 0 ||
+              this_read_bit_length < 0 ||
+                 last_transaction == 1 ||
+             (this_write_bit_length == 0 && this_read_bit_length ==0) )
         {
             printf("ASD_SP02: ERROR: invalid read write length. read=%d, write=%d, last_transaction=%d\n",
                     this_read_bit_length, this_write_bit_length,
@@ -306,7 +306,7 @@ STATUS JTAG_bic_read_write_scan(JTAG_Handler* state, struct scan_xfer *scan_xfer
         tdi_buffer += (this_write_bit_length >> 3);
         tdo_buffer += (this_read_bit_length >> 3);
         if (ret != ST_OK) {
-            ASD_log(ASD_LogLevel_Info, stream, option, 
+            ASD_log(ASD_LogLevel_Info, stream, option,
                     "ERROR, JTAG_bic_shift_wrapper failed");
             break;
         }
@@ -318,14 +318,14 @@ STATUS JTAG_bic_read_write_scan(JTAG_Handler* state, struct scan_xfer *scan_xfer
 static
 STATUS generateTMSbits(enum jtag_states src, enum jtag_states dst, uint8_t *length, uint8_t *tmsbits)
 {
-   
+
     if (length == NULL) {
-        ASD_log(ASD_LogLevel_Error, stream, option, 
+        ASD_log(ASD_LogLevel_Error, stream, option,
                 "%s(): invalid length\n", __func__);
         return ST_ERR;
     }
     if (tmsbits == NULL) {
-        ASD_log(ASD_LogLevel_Error, stream, option, 
+        ASD_log(ASD_LogLevel_Error, stream, option,
                 "%s(): invalid tmsbits\n", __func__);
         return ST_ERR;
     }
@@ -364,12 +364,12 @@ STATUS perform_shift(JTAG_Handler* state, unsigned int number_of_bits,
     scan_xfer.end_tap_state = end_tap_state;
 
     if (state == NULL) {
-        ASD_log(ASD_LogLevel_Error, stream, option, 
+        ASD_log(ASD_LogLevel_Error, stream, option,
                 "%s(): state should not be NULL\n", __func__);
         return ST_ERR;
     }
     if (input == NULL) {
-        ASD_log(ASD_LogLevel_Error, stream, option, 
+        ASD_log(ASD_LogLevel_Error, stream, option,
                 "%s(): invalid input data\n", __func__);
         return ST_ERR;
     }
@@ -407,9 +407,9 @@ STATUS perform_shift(JTAG_Handler* state, unsigned int number_of_bits,
 void initialize_jtag_chains(JTAG_Handler* state)
 {
     if (state == NULL) {
-        ASD_log(ASD_LogLevel_Error, stream, option, 
+        ASD_log(ASD_LogLevel_Error, stream, option,
                 "%s(): state should not be NULL\n", __func__);
-        return ST_ERR;
+        exit(1);
     }
     for (int i = 0; i < MAX_SCAN_CHAINS; i++)
     {
@@ -459,9 +459,9 @@ static void *out_msg_thread(void *arg)
     STATUS (*callback)(void* state, unsigned char* buffer, size_t length);
 
     if (arg == NULL) {
-        ASD_log(ASD_LogLevel_Error, stream, option, 
+        ASD_log(ASD_LogLevel_Error, stream, option,
                 "%s(): argument should not be NULL\n", __func__);
-        return ST_ERR;
+        exit(1);
     }
 
     // create the socket to recevie msgs from BIC
@@ -541,7 +541,7 @@ static void *out_msg_thread(void *arg)
                 for (int i = 0; i < HEADER_SIZE; i++){
                    printf("res_buf[%d]=%02X\n", i, res_buf[i]);
                 }
- 
+
                 //get data size
                 size = ((msg->header.size_msb & 0x1F) << 8) | (msg->header.size_lsb & 0xFF);
                 if ( size > MAX_PACKET_SIZE ) {
@@ -557,10 +557,10 @@ static void *out_msg_thread(void *arg)
 
                 // get the size of segmant data
                 size = recv_size - HEADER_SIZE - 1;
-               
+
                 // copy data
-                if (size > 0 && 
-                    memcpy_safe(&res_buf[HEADER_SIZE], MAX_PACKET_SIZE - HEADER_SIZE, 
+                if (size > 0 &&
+                    memcpy_safe(&res_buf[HEADER_SIZE], MAX_PACKET_SIZE - HEADER_SIZE,
                     msg->buffer, (size_t)size)) {
                    ASD_log(ASD_LogLevel_Error, ASD_LogStream_JTAG, ASD_LogOption_None,
                    "memcpy_safe: message buffer to send buffer offset copy failed.");
@@ -585,7 +585,7 @@ static void *out_msg_thread(void *arg)
                     continue;
                 }
 
-                // get the actual data size 
+                // get the actual data size
                 // the first byte is used to identify packets, recv_size - 1 = data_size
                 if ((size = (recv_size - 1)) < 0) {
                     ASD_log(ASD_LogLevel_Error, stream, option,
@@ -639,7 +639,7 @@ STATUS init_passthrough_path(void *state, uint8_t fru,
     struct sigaction sa;
 
     if (state == NULL) {
-        ASD_log(ASD_LogLevel_Error, stream, option, 
+        ASD_log(ASD_LogLevel_Error, stream, option,
                 "%s(): state should not be NULL\n", __func__);
         return ST_ERR;
     }
@@ -677,7 +677,7 @@ STATUS init_passthrough_path(void *state, uint8_t fru,
 
 STATUS JTAG_initialize(JTAG_Handler* state, bool sw_mode) {
     if (state == NULL) {
-        ASD_log(ASD_LogLevel_Error, stream, option, 
+        ASD_log(ASD_LogLevel_Error, stream, option,
                 "%s(): state should not be NULL\n", __func__);
         return ST_ERR;
     }
@@ -688,7 +688,7 @@ STATUS JTAG_initialize(JTAG_Handler* state, bool sw_mode) {
         return ST_ERR;
     }
 
-    ASD_log(ASD_LogLevel_Warning, stream, option, 
+    ASD_log(ASD_LogLevel_Warning, stream, option,
             "ASD runs JTAG on %s.", (state->msg_flow == JFLOW_BIC)?"BIC":"BMC");
 
     if (JTAG_set_tap_state(state, jtag_tlr) != ST_OK) {
@@ -703,7 +703,7 @@ STATUS JTAG_initialize(JTAG_Handler* state, bool sw_mode) {
 STATUS JTAG_deinitialize(JTAG_Handler* state)
 {
     if (state == NULL) {
-        ASD_log(ASD_LogLevel_Error, stream, option, 
+        ASD_log(ASD_LogLevel_Error, stream, option,
                 "%s(): state should not be NULL\n", __func__);
         return ST_ERR;
     }
@@ -718,7 +718,7 @@ STATUS JTAG_set_padding(JTAG_Handler* state, const JTAGPaddingTypes padding,
                         const unsigned int value)
 {
     if (state == NULL) {
-        ASD_log(ASD_LogLevel_Error, stream, option, 
+        ASD_log(ASD_LogLevel_Error, stream, option,
                 "%s(): state should not be NULL\n", __func__);
         return ST_ERR;
     }
@@ -768,7 +768,7 @@ STATUS JTAG_set_padding(JTAG_Handler* state, const JTAGPaddingTypes padding,
 STATUS JTAG_tap_reset(JTAG_Handler* state)
 {
     if (state == NULL) {
-        ASD_log(ASD_LogLevel_Error, stream, option, 
+        ASD_log(ASD_LogLevel_Error, stream, option,
                 "%s(): state should not be NULL\n", __func__);
         return ST_ERR;
     }
@@ -788,11 +788,11 @@ STATUS JTAG_set_tap_state(JTAG_Handler* state, enum jtag_states tap_state)
     STATUS ret = ST_ERR;
 
     if (state == NULL) {
-        ASD_log(ASD_LogLevel_Error, stream, option, 
+        ASD_log(ASD_LogLevel_Error, stream, option,
                 "%s(): state should not be NULL\n", __func__);
         return ST_ERR;
     }
-    // Jtag state is tap_state already. 
+    // Jtag state is tap_state already.
     if (state->active_chain->tap_state == tap_state) {
         return ST_OK;
     }
@@ -802,11 +802,11 @@ STATUS JTAG_set_tap_state(JTAG_Handler* state, enum jtag_states tap_state)
         tbuf[4] = 0xff;
     } else {
         // look up the TMS sequence to go from current state to tap_state
-        ret = generateTMSbits(state->active_chain->tap_state, 
+        ret = generateTMSbits(state->active_chain->tap_state,
                               tap_state, &(tbuf[3]), &(tbuf[4]));
         if ( ret != ST_OK ) {
             ASD_log(ASD_LogLevel_Error, stream, option,
-                    "Failed to find path from state%d to state", 
+                    "Failed to find path from state%d to state",
                      state->active_chain->tap_state, tap_state);
         }
     }
@@ -817,7 +817,7 @@ STATUS JTAG_set_tap_state(JTAG_Handler* state, enum jtag_states tap_state)
     }
 
     ret = jtag_bic_ipmb_wrapper(NETFN_OEM_1S_REQ, CMD_OEM_1S_SET_TAP_STATE,
-                                                    tbuf, tlen, rbuf, &rlen);            
+                                                    tbuf, tlen, rbuf, &rlen);
     if (ret != ST_OK){
         ASD_log(ASD_LogLevel_Error, stream, option,
                 "Failed to run CMD_OEM_1S_SET_TAP_STATE");
@@ -863,7 +863,7 @@ STATUS JTAG_shift(JTAG_Handler* state, unsigned int number_of_bits,
     JTAG_get_tap_state(state, &current_state);
 
     if (state == NULL) {
-        ASD_log(ASD_LogLevel_Error, stream, option, 
+        ASD_log(ASD_LogLevel_Error, stream, option,
                 "%s(): state should not be NULL\n", __func__);
         return ST_ERR;
     }
@@ -933,7 +933,7 @@ STATUS JTAG_shift(JTAG_Handler* state, unsigned int number_of_bits,
 STATUS JTAG_wait_cycles(JTAG_Handler* state, unsigned int number_of_cycles)
 {
     if (state == NULL) {
-        ASD_log(ASD_LogLevel_Error, stream, option, 
+        ASD_log(ASD_LogLevel_Error, stream, option,
                 "%s(): state should not be NULL\n", __func__);
         return ST_ERR;
     }
@@ -960,7 +960,7 @@ STATUS JTAG_set_jtag_tck(JTAG_Handler* state, unsigned int tck)
 STATUS JTAG_set_active_chain(JTAG_Handler* state, scanChain chain)
 {
     if (state == NULL) {
-        ASD_log(ASD_LogLevel_Error, stream, option, 
+        ASD_log(ASD_LogLevel_Error, stream, option,
                 "%s(): state should not be NULL\n", __func__);
         return ST_ERR;
     }

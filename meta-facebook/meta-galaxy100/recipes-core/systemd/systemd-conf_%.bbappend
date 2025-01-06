@@ -27,5 +27,5 @@ SRC_URI += " \
 
 do_install:append() {
     # Override journald.conf that ships with LF OpenBMC.  galaxy100 has low memory.
-    install -m 644 -D ${WORKDIR}/99-journald-limits.conf ${D}${base_libdir}/systemd/journald.conf.d/99-journald-limits.conf
+    install -m 644 -D ${UNPACKDIR}/99-journald-limits.conf ${D}${base_libdir}/systemd/journald.conf.d/99-journald-limits.conf
 }

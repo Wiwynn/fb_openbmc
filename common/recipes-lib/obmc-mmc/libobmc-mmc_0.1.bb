@@ -26,6 +26,9 @@ BBCLASSEXTEND = "native"
 
 inherit meson pkgconfig
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://lsmmc.c \
     file://mmc.h \
@@ -40,6 +43,6 @@ inherit python3-dir
 
 do_install:append() {
     install -d ${D}${PYTHON_SITEPACKAGES_DIR}
-    install -m 644 ${S}/obmc_mmc.py ${D}${PYTHON_SITEPACKAGES_DIR}/
+    install -m 644 ${UNPACKDIR}/obmc_mmc.py ${D}${PYTHON_SITEPACKAGES_DIR}/
 }
 FILES:${PN} += "${PYTHON_SITEPACKAGES_DIR}/obmc_mmc.py"

@@ -1,18 +1,18 @@
-From f9b35eb91e4dca5f570b1cba0149c24c430202c6 Mon Sep 17 00:00:00 2001
+From 0064ac8f99ed224f4de53711f37a67da88c71bd0 Mon Sep 17 00:00:00 2001
 From: RickyWu-wiwynn <ricky_cx_wu@wiwynn.com>
 Date: Wed, 17 Jul 2024 11:33:26 +0800
-Subject: [PATCH 3/4] configurations: Revise the Terminus NIC sensor name
+Subject: [PATCH 5/6] configurations: Revise the Terminus NIC sensor name
 
 1. Revise the Terminus NIC temperature sensor name to NICX_TEMP_C.
 2. Revise the temperature threshold.
 ---
- configurations/terminus_2x100g_nic_tsff.json | 13 ++++++++++---
+ configurations/meta/terminus_2x100g_nic_tsff.json | 13 ++++++++++---
  1 file changed, 10 insertions(+), 3 deletions(-)
 
-diff --git a/configurations/terminus_2x100g_nic_tsff.json b/configurations/terminus_2x100g_nic_tsff.json
+diff --git a/configurations/meta/terminus_2x100g_nic_tsff.json b/configurations/meta/terminus_2x100g_nic_tsff.json
 index 35dbf6f..19e8548 100644
---- a/configurations/terminus_2x100g_nic_tsff.json
-+++ b/configurations/terminus_2x100g_nic_tsff.json
+--- a/configurations/meta/terminus_2x100g_nic_tsff.json
++++ b/configurations/meta/terminus_2x100g_nic_tsff.json
 @@ -3,7 +3,7 @@
          {
              "Address": "$address",
@@ -49,5 +49,5 @@ index 35dbf6f..19e8548 100644
      "Type": "Board",
      "xyz.openbmc_project.Inventory.Decorator.Asset": {
 -- 
-2.25.1
+2.44.2
 

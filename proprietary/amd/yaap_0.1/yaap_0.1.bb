@@ -6,6 +6,9 @@ DEPENDS = "libgpiod"
 
 inherit meson pkgconfig
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 # Generate this list with:
 #   find -name "*.[ch]" -o -name "*.[ch]pp" -o -name "meson*" | \
 #         sed "s#./files/#        file://#" | sed 's#$# \\#' | sort

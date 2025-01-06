@@ -63,6 +63,9 @@ RDEPENDS:${PN} += " \
     sensors-py \
 "
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://setup-rest-api.sh \
     file://rest.py \
@@ -206,17 +209,17 @@ pkgdir = "rest-api"
 
 install_systemd() {
     install -d ${D}${systemd_system_unitdir}
-    install -m 0644 ${S}/restapi.service ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/restapi.service ${D}${systemd_system_unitdir}
 }
 
 
 install_sysv() {
     install -d ${D}${sysconfdir}/sv
     install -d ${D}${sysconfdir}/sv/restapi
-    install -m 755 ${S}/run_rest ${D}${sysconfdir}/sv/restapi/run
+    install -m 755 ${UNPACKDIR}/run_rest ${D}${sysconfdir}/sv/restapi/run
     install -d ${D}${sysconfdir}/init.d
     install -d ${D}${sysconfdir}/rcS.d
-    install -m 755 ${S}/setup-rest-api.sh ${D}${sysconfdir}/init.d/setup-rest-api.sh
+    install -m 755 ${UNPACKDIR}/setup-rest-api.sh ${D}${sysconfdir}/init.d/setup-rest-api.sh
     update-rc.d -r ${D} setup-rest-api.sh start 95 2 3 4 5  .
 }
 
@@ -228,12 +231,12 @@ do_install:class-target() {
   install -d $bin
   install -d $acld
   install -d ${D}${sysconfdir}
-  for f in ${S}/*.py; do
+  for f in ${UNPACKDIR}/*.py; do
     n=$(basename $f)
     install -m 755 "$f" ${dst}/$n
     ln -snf ../fbpackages/${pkgdir}/$n ${bin}/$n
   done
-  for f in ${S}/acl_providers/*.py; do
+  for f in ${UNPACKDIR}/acl_providers/*.py; do
     n=$(basename $f)
     install -m 755 "$f" ${acld}/$n
     ln -snf ../fbpackages/${pkgdir}/acl_providers/$n ${bin}/$n
@@ -245,13 +248,13 @@ do_install:class-target() {
       install_sysv
   fi
 
-  install -m 644 ${S}/rest.cfg ${D}${sysconfdir}/rest.cfg
-  install -m 644 ${S}/.flake8 ${dst}/.flake8
+  install -m 644 ${UNPACKDIR}/rest.cfg ${D}${sysconfdir}/rest.cfg
+  install -m 644 ${UNPACKDIR}/.flake8 ${dst}/.flake8
 
 }
 
 do_compile_ptest() {
-cat <<EOF > ${WORKDIR}/run-ptest
+cat <<EOF > ${UNPACKDIR}/run-ptest
 #!/bin/sh
   set -e
   echo "[UNIT TESTS]"

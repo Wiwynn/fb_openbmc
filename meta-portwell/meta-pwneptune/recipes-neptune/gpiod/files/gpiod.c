@@ -18,6 +18,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#define _DEFAULT_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -220,20 +222,20 @@ static void
 
   char *pin_name="GPIOG7";
   int pin_num = 0;
-  int smi_timeout_count = 1;  
+  int smi_timeout_count = 1;
   int smi_timeout_threshold = 90;
   bool is_issue_event = false;
- 
+
   pin_num = gpio_num(pin_name);
 
 #ifdef SMI_DEBUG
   syslog(LOG_WARNING, "[%s][%lu] Timer is started.\n", __func__, pthread_self());
   syslog(LOG_WARNING, "[%s] Get GPIO Num: %d", __func__, pin_num);
 #endif
-  
+
   while(1)
   {
-    if ( GPIO_VALUE_LOW == gpio_get(pin_num) ) 
+    if ( GPIO_VALUE_LOW == gpio_get(pin_num) )
     {
       smi_timeout_count++;
     }
@@ -245,7 +247,7 @@ static void
 #ifdef SMI_DEBUG
     syslog(LOG_WARNING, "[%s][%lu] smi_timeout_count[%d] == smi_timeout_threshold[%d]\n", __func__, pthread_self(), smi_timeout_count, smi_timeout_threshold);
 #endif
-    
+
     if ( smi_timeout_count == smi_timeout_threshold )
     {
       syslog(LOG_CRIT, "ASSERT: GPIOG7-FM_BIOS_SMI_ACTIVE_N\n");
@@ -669,11 +671,11 @@ main(int argc, char **argv) {
     }
 
     //Create thread for SMI check
-    if (pthread_create(&tid_smi_timer, NULL, smi_timer, NULL) < 0) 
+    if (pthread_create(&tid_smi_timer, NULL, smi_timer, NULL) < 0)
     {
       syslog(LOG_WARNING, "pthread_create for smi_handler fail\n");
       exit(1);
-    }   
+    }
 
     gpio_poll_open(g_gpios, g_count);
     //GPIO status pre check

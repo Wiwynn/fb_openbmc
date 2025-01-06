@@ -49,10 +49,10 @@ do_work_sysv() {
     install -d ${D}${sysconfdir}/rcS.d
 
     # the script to mount /mnt/data
-    install -m 0755 ${S}/mount_data0.sh ${D}${sysconfdir}/init.d/
+    install -m 0755 ${UNPACKDIR}/mount_data0.sh ${D}${sysconfdir}/init.d/
     update-rc.d -r ${D} mount_data0.sh start 03 S .
 
-    install -m 0755 ${S}/rc.early ${D}${sysconfdir}/init.d/
+    install -m 0755 ${UNPACKDIR}/rc.early ${D}${sysconfdir}/init.d/
     update-rc.d -r ${D} rc.early start 04 S .
 
     # Launch board specific configurations
@@ -75,7 +75,7 @@ do_work_sysv() {
     install -d ${D}/${sysconfdir}/network/if-up.d
     install -m 0755 create_vlan_intf ${D}${sysconfdir}/network/if-up.d/
 
-    install -m 0755 ${S}/rc.local ${D}${sysconfdir}/init.d/
+    install -m 0755 ${UNPACKDIR}/rc.local ${D}${sysconfdir}/init.d/
     update-rc.d -r ${D} rc.local start 99 2 3 4 5 .
 }
 

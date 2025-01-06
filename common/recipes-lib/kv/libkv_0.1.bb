@@ -37,6 +37,9 @@ LIC_FILES_CHKSUM = "\
 inherit meson pkgconfig python3-dir
 inherit ptest-meson
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://fileops.cpp \
     file://fileops.hpp \
@@ -55,7 +58,7 @@ RDEPENDS:${PN} += "python3-core bash"
 
 do_install:append() {
     install -d ${D}${PYTHON_SITEPACKAGES_DIR}
-    install -m 644 ${S}/kv.py ${D}${PYTHON_SITEPACKAGES_DIR}/
+    install -m 644 ${UNPACKDIR}/kv.py ${D}${PYTHON_SITEPACKAGES_DIR}/
 }
 FILES:${PN} += "${PYTHON_SITEPACKAGES_DIR}/kv.py"
 

@@ -29,6 +29,9 @@ RDEPENDS:${PN} += "libwedge-eeprom liblog"
 
 inherit systemd
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://Makefile \
     file://setup-ipmid.sh \

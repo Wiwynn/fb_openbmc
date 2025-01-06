@@ -48,7 +48,6 @@ HOSTTOOLS += "realpath"
 
 PREFERRED_VERSION_asd ?= "0.1"
 
-TCLIBCAPPEND = ""
 QEMU_TARGETS ?= "arm aarch64 i386 riscv32 riscv64 ppc64le x86_64"
 INIT_MANAGER ?= "sysvinit"
 

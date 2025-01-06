@@ -1,4 +1,4 @@
-From 3bfd1c11c663fda9764b0f941c4f2ca801e24122 Mon Sep 17 00:00:00 2001
+From 81621723b535a3f1423f6540e378cc55d1be7caf Mon Sep 17 00:00:00 2001
 From: Peter Delevoryas <peter@pjd.dev>
 Date: Wed, 24 Aug 2022 17:51:06 -0700
 Subject: [PATCH 525/532] fby35: Add motherboard fru EEPROM to BIC
@@ -23,5 +23,5 @@ index 6acf5088be..dd8cbd1c61 100644
      i2c_slave_create_simple(i2c[4], "isl69259", 0x76);
      i2c_slave_create_simple(i2c[4], "isl69259", 0x62);
 -- 
-2.43.0
+2.44.2
 

@@ -1,4 +1,4 @@
-From b6cef4fbf160755fa5fbc27edcc6fa3f68009bd7 Mon Sep 17 00:00:00 2001
+From 6b9593188ee166e2b88a8acb32da87275fa67cc6 Mon Sep 17 00:00:00 2001
 From: Peter Delevoryas <pdel@fb.com>
 Date: Fri, 17 Jun 2022 12:21:22 -0700
 Subject: [PATCH 501/532] aspeed: Zero extend flash files to 128MB
@@ -35,14 +35,15 @@ For example, if your image is 256MB, it won't truncate to 128MB.
 
 Signed-off-by: Peter Delevoryas <pdel@fb.com>
 ---
- hw/arm/aspeed.c | 15 ++++++++++++++-
- 1 file changed, 14 insertions(+), 1 deletion(-)
+ hw/arm/aspeed.c  | 15 ++++++++++++++-
+ hw/block/block.c |  2 +-
+ 2 files changed, 15 insertions(+), 2 deletions(-)
 
 diff --git a/hw/arm/aspeed.c b/hw/arm/aspeed.c
-index cc59176563..744441b5cc 100644
+index fd5603f7aa..32f3f0cd4e 100644
 --- a/hw/arm/aspeed.c
 +++ b/hw/arm/aspeed.c
-@@ -307,12 +307,25 @@ void aspeed_board_init_flashes(AspeedSMCState *s, const char *flashtype,
+@@ -317,12 +317,25 @@ void aspeed_board_init_flashes(AspeedSMCState *s, const char *flashtype,
      }
  
      for (i = 0; i < count; ++i) {
@@ -70,18 +71,18 @@ index cc59176563..744441b5cc 100644
          qdev_prop_set_uint8(dev, "cs", i);
          qdev_realize_and_unref(dev, BUS(s->spi), &error_fatal);
 diff --git a/hw/block/block.c b/hw/block/block.c
-index 9f52ee6..e7790b0 100644
+index 3ceca7dce6..8b632e7cec 100644
 --- a/hw/block/block.c
 +++ b/hw/block/block.c
-@@ -73,7 +73,7 @@ bool blk_check_size_and_read_all(BlockBackend *blk, void *buf, hwaddr size,
-                          "can't get size of block backend");
+@@ -72,7 +72,7 @@ bool blk_check_size_and_read_all(BlockBackend *blk, DeviceState *dev,
+                          "can't get size of %s block backend", blk_name(blk));
          return false;
      }
 -    if (blk_len != size) {
 +    if (blk_len < size) {
-         error_setg(errp, "device requires %" HWADDR_PRIu " bytes, "
-                    "block backend provides %" PRIu64 " bytes",
-                    size, blk_len);
+         dev_id = qdev_get_human_name(dev);
+         error_setg(errp, "%s device '%s' requires %" HWADDR_PRIu
+                    " bytes, %s block backend provides %" PRIu64 " bytes",
 -- 
-2.43.0
+2.44.2
 

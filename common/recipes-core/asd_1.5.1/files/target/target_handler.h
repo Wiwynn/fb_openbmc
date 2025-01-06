@@ -145,6 +145,9 @@ static const Target_Control_GPIOS ASD_PIN_TO_GPIO[] = {
     BMC_TCK_MUX_SEL, // PIN_TCK_MUX_SELECT
 };
 
+// Forward declare.
+struct Target_Control_Handle;
+
 typedef STATUS (*TargetReadFunctionPtr)(struct Target_Control_Handle * state,
                                         int pin, int * value);
 typedef STATUS (*TargetWriteFunctionPtr)(struct Target_Control_Handle * state,

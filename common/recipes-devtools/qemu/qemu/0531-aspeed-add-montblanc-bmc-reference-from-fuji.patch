@@ -1,4 +1,4 @@
-From 552d7d1f91540a8d60451d9dd61eb33ee3cb4d47 Mon Sep 17 00:00:00 2001
+From 2383bedb47116ae82c081d77a5bf0bf4d17c4876 Mon Sep 17 00:00:00 2001
 From: Sittisak Sinprem <ssinprem@celestica.com>
 Date: Mon, 8 May 2023 14:37:18 +0700
 Subject: [PATCH 531/532] aspeed add montblanc bmc reference from fuji
@@ -8,16 +8,16 @@ Subject: [PATCH 531/532] aspeed add montblanc bmc reference from fuji
 
 Signed-off-by: Sittisak Sinprem <ssinprem@celestica.com>
 ---
- hw/arm/aspeed.c        | 63 ++++++++++++++++++++++++++++++++++++++++++
- hw/arm/aspeed_eeprom.c | 49 ++++++++++++++++++++++++++++++++
+ hw/arm/aspeed.c        | 62 ++++++++++++++++++++++++++++++++++++++++++
+ hw/arm/aspeed_eeprom.c | 49 +++++++++++++++++++++++++++++++++
  hw/arm/aspeed_eeprom.h |  7 +++++
- 3 files changed, 119 insertions(+)
+ 3 files changed, 118 insertions(+)
 
 diff --git a/hw/arm/aspeed.c b/hw/arm/aspeed.c
-index 6d8901f9d6..95fc35fd4c 100644
+index 64858645d4..ae9360e78e 100644
 --- a/hw/arm/aspeed.c
 +++ b/hw/arm/aspeed.c
-@@ -191,6 +191,10 @@ struct AspeedMachineState {
+@@ -198,6 +198,10 @@ struct AspeedMachineState {
  #define FUJI_BMC_HW_STRAP1    0x00000000
  #define FUJI_BMC_HW_STRAP2    0x00000000
  
@@ -28,7 +28,7 @@ index 6d8901f9d6..95fc35fd4c 100644
  /* Bletchley hardware value */
  /* TODO: Leave same as EVB for now. */
  #define BLETCHLEY_BMC_HW_STRAP1 AST2600_EVB_HW_STRAP1
-@@ -930,6 +934,39 @@ static void fuji_bmc_i2c_init(AspeedMachineState *bmc)
+@@ -957,6 +961,39 @@ static void fuji_bmc_i2c_init(AspeedMachineState *bmc)
      }
  }
  
@@ -68,8 +68,8 @@ index 6d8901f9d6..95fc35fd4c 100644
  static void wedge100_i2c_init(AspeedMachineState *bmc)
  {
      AspeedSoCState *soc = bmc->soc;
-@@ -1497,6 +1534,28 @@ static void aspeed_machine_fuji_class_init(ObjectClass *oc, void *data)
-         aspeed_soc_num_cpus(amc->soc_name);
+@@ -1552,6 +1589,27 @@ static void aspeed_machine_fuji_class_init(ObjectClass *oc, void *data)
+     aspeed_machine_class_init_cpus_defaults(mc);
  };
  
 +#define MONTBLANC_BMC_RAM_SIZE ASPEED_RAM_SIZE(2 * GiB)
@@ -90,14 +90,13 @@ index 6d8901f9d6..95fc35fd4c 100644
 +    amc->i2c_init = montblanc_bmc_i2c_init;
 +    amc->uart_default = ASPEED_DEV_UART1;
 +    mc->default_ram_size = MONTBLANC_BMC_RAM_SIZE;
-+    mc->default_cpus = mc->min_cpus = mc->max_cpus =
-+        aspeed_soc_num_cpus(amc->soc_name);
++    aspeed_machine_class_init_cpus_defaults(mc);
 +};
 +
  #define BLETCHLEY_BMC_RAM_SIZE ASPEED_RAM_SIZE(2 * GiB)
  
  static void aspeed_machine_bletchley_class_init(ObjectClass *oc, void *data)
-@@ -1734,6 +1793,10 @@ static const TypeInfo aspeed_machine_types[] = {
+@@ -1807,6 +1865,10 @@ static const TypeInfo aspeed_machine_types[] = {
          .name          = MACHINE_TYPE_NAME("fuji-bmc"),
          .parent        = TYPE_ASPEED_MACHINE,
          .class_init    = aspeed_machine_fuji_class_init,
@@ -109,10 +108,10 @@ index 6d8901f9d6..95fc35fd4c 100644
          .name          = MACHINE_TYPE_NAME("bletchley-bmc"),
          .parent        = TYPE_ASPEED_MACHINE,
 diff --git a/hw/arm/aspeed_eeprom.c b/hw/arm/aspeed_eeprom.c
-index ace5266cec..432bea62bf 100644
+index daa3d329d1..b8d0fb769d 100644
 --- a/hw/arm/aspeed_eeprom.c
 +++ b/hw/arm/aspeed_eeprom.c
-@@ -161,6 +161,52 @@ const uint8_t rainier_bmc_fruid[] = {
+@@ -162,6 +162,52 @@ const uint8_t rainier_bmc_fruid[] = {
      0x31, 0x50, 0x46, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
  };
  
@@ -165,7 +164,7 @@ index ace5266cec..432bea62bf 100644
  const size_t tiogapass_bmc_fruid_len = sizeof(tiogapass_bmc_fruid);
  const size_t fby35_nic_fruid_len = sizeof(fby35_nic_fruid);
  const size_t fby35_bb_fruid_len = sizeof(fby35_bb_fruid);
-@@ -168,3 +214,6 @@ const size_t fby35_bmc_fruid_len = sizeof(fby35_bmc_fruid);
+@@ -169,3 +215,6 @@ const size_t fby35_bmc_fruid_len = sizeof(fby35_bmc_fruid);
  const size_t yosemitev2_bmc_fruid_len = sizeof(yosemitev2_bmc_fruid);
  const size_t rainier_bb_fruid_len = sizeof(rainier_bb_fruid);
  const size_t rainier_bmc_fruid_len = sizeof(rainier_bmc_fruid);
@@ -173,10 +172,10 @@ index ace5266cec..432bea62bf 100644
 +const size_t montblanc_fcm_fruid_len = sizeof(montblanc_fcm_fruid);
 +const size_t montblanc_bmc_fruid_len = sizeof(montblanc_bmc_fruid);
 diff --git a/hw/arm/aspeed_eeprom.h b/hw/arm/aspeed_eeprom.h
-index bbf9e54365..b8fbdd0734 100644
+index f08c16ef50..1a770664ae 100644
 --- a/hw/arm/aspeed_eeprom.h
 +++ b/hw/arm/aspeed_eeprom.h
-@@ -27,4 +27,11 @@ extern const size_t rainier_bb_fruid_len;
+@@ -26,4 +26,11 @@ extern const size_t rainier_bb_fruid_len;
  extern const uint8_t rainier_bmc_fruid[];
  extern const size_t rainier_bmc_fruid_len;
  
@@ -189,5 +188,5 @@ index bbf9e54365..b8fbdd0734 100644
 +
  #endif
 -- 
-2.25.1
+2.44.2
 

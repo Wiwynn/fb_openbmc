@@ -1,4 +1,4 @@
-From c02cb2789c53d77e06be59c7f2fa914bf75684e1 Mon Sep 17 00:00:00 2001
+From 38eb010d6d7d2310c43cce5f9b6dcc7acaaa6b77 Mon Sep 17 00:00:00 2001
 From: Hao Wu <wuhaotsh@google.com>
 Date: Tue, 5 Apr 2022 15:36:35 -0700
 Subject: [PATCH 505/532] hw/intc: Add a property to allow GIC to reset into
@@ -16,7 +16,7 @@ Signed-off-by: Peter Delevoryas <pdel@fb.com>
  1 file changed, 2 insertions(+)
 
 diff --git a/hw/intc/arm_gic_common.c b/hw/intc/arm_gic_common.c
-index 7c28504ace..2117d2c689 100644
+index 53fb2c4e2d..74d63a1e61 100644
 --- a/hw/intc/arm_gic_common.c
 +++ b/hw/intc/arm_gic_common.c
 @@ -360,6 +360,8 @@ static Property arm_gic_common_properties[] = {
@@ -29,5 +29,5 @@ index 7c28504ace..2117d2c689 100644
  };
  
 -- 
-2.43.0
+2.44.2
 

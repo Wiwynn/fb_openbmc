@@ -20,6 +20,9 @@ LIC_FILES_CHKSUM = "\
     file://${COREBASE}/meta/files/common-licenses/${@lic_file_name(d)} \
     "
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://obmc-pal.h \
     file://obmc_pal_sensors.h \
@@ -31,8 +34,8 @@ do_compile() {
 }
 do_install() {
   install -d ${D}${includedir}/openbmc
-  cp obmc-pal.h ${D}${includedir}/openbmc/obmc-pal.h
-  cp obmc_pal_sensors.h ${D}${includedir}/openbmc/obmc_pal_sensors.h
+  cp ${UNPACKDIR}/obmc-pal.h ${D}${includedir}/openbmc/obmc-pal.h
+  cp ${UNPACKDIR}/obmc_pal_sensors.h ${D}${includedir}/openbmc/obmc_pal_sensors.h
 }
 
 FILES:${PN}-dev += "${includedir}openbmc/obmc-pal.h ${includedir}openbmc/obmc_pal_sensors.h"

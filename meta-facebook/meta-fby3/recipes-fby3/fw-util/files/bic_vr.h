@@ -22,7 +22,7 @@ class VrComponent : public Component {
 class VrExtComponent : public Component {
   uint8_t slot_id = 0;
   uint8_t fw_comp = 0;
-  string name;
+  std::string name;
   Server server;
   ExpansionBoard expansion;
   private:

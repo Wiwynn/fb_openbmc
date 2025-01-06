@@ -18,6 +18,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#define _DEFAULT_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -914,7 +916,7 @@ void
             syslog(LOG_CRIT, "FRU: %u is not Present", fru);
           } else if (last_mc_present != gta_exp_prsnt_status && is_fru_prsnt_check) {
             syslog(LOG_CRIT, "FRU: %u is Present", fru);
-          } 
+          }
           last_mc_present = gta_exp_prsnt_status;
         }
       }

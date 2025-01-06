@@ -130,7 +130,7 @@ static EPECIStatus IPMB_peci_issue_cmd(ipmb_req_t *req, ipmb_res_t *res)
 	req->req_slave_addr = BMC_SLAVE_ADDR << 1;
 	req->seq_lun = 0x00;
 
-	peci_cmd = &(data_tmp[0]);
+	peci_cmd = (peci_cmd_t*) &(data_tmp[0]);
 
         tlen = peci_cmd->write_len + 6 + MIN_IPMB_REQ_LEN;
 
@@ -184,7 +184,7 @@ EPECIStatus peci_Ping_seq(uint8_t target, int peci_fd)
 
 	ipmb_req = ipmb_txb();
 	ipmb_res = ipmb_rxb();
-	peci_cmd = &(ipmb_req->data[0]);
+	peci_cmd = (peci_cmd_t*) &(ipmb_req->data[0]);
 	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
@@ -232,7 +232,7 @@ EPECIStatus peci_GetDIB_seq(uint8_t target, uint64_t* dib)
 
 	ipmb_req = ipmb_txb();
 	ipmb_res = ipmb_rxb();
-	peci_cmd = &(ipmb_req->data[0]);
+	peci_cmd = (peci_cmd_t*) &(ipmb_req->data[0]);
 	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
@@ -278,7 +278,7 @@ EPECIStatus peci_GetTemp(uint8_t target, int16_t* temperature)
 
 	ipmb_req = ipmb_txb();
 	ipmb_res = ipmb_rxb();
-	peci_cmd = &(ipmb_req->data[0]);
+	peci_cmd = (peci_cmd_t*) &(ipmb_req->data[0]);
 	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
@@ -353,7 +353,7 @@ EPECIStatus peci_RdPkgConfig_seq(uint8_t target, uint8_t u8Index,
 
 	ipmb_req = ipmb_txb();
 	ipmb_res = ipmb_rxb();
-	peci_cmd = &(ipmb_req->data[0]);
+	peci_cmd = (peci_cmd_t*) &(ipmb_req->data[0]);
 	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
@@ -429,7 +429,7 @@ EPECIStatus peci_WrPkgConfig_seq(uint8_t target, uint8_t u8Index,
 
 	ipmb_req = ipmb_txb();
 	ipmb_res = ipmb_rxb();
-	peci_cmd = &(ipmb_req->data[0]);
+	peci_cmd = (peci_cmd_t*) &(ipmb_req->data[0]);
 	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
@@ -480,7 +480,7 @@ EPECIStatus peci_RdIAMSR(uint8_t target, uint8_t threadID, uint16_t MSRAddress,
 
 	ipmb_req = ipmb_txb();
 	ipmb_res = ipmb_rxb();
-	peci_cmd = &(ipmb_req->data[0]);
+	peci_cmd = (peci_cmd_t*) &(ipmb_req->data[0]);
 	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
@@ -553,7 +553,7 @@ EPECIStatus peci_RdPCIConfig_seq(uint8_t target, uint8_t u8Bus,
 
 	ipmb_req = ipmb_txb();
 	ipmb_res = ipmb_rxb();
-	peci_cmd = &(ipmb_req->data[0]);
+	peci_cmd = (peci_cmd_t*) &(ipmb_req->data[0]);
 	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
@@ -638,7 +638,7 @@ EPECIStatus peci_RdPCIConfigLocal_seq(uint8_t target, uint8_t u8Bus,
 
 	ipmb_req = ipmb_txb();
 	ipmb_res = ipmb_rxb();
-	peci_cmd = &(ipmb_req->data[0]);
+	peci_cmd = (peci_cmd_t*) &(ipmb_req->data[0]);
 	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
@@ -698,7 +698,7 @@ EPECIStatus peci_WrPCIConfigLocal(uint8_t target, uint8_t u8Bus,
 
 	ipmb_req = ipmb_txb();
 	ipmb_res = ipmb_rxb();
-	peci_cmd = &(ipmb_req->data[0]);
+	peci_cmd = (peci_cmd_t*) &(ipmb_req->data[0]);
 	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
@@ -756,7 +756,7 @@ static EPECIStatus peci_RdEndPointConfigPciCommon(
 
 	ipmb_req = ipmb_txb();
 	ipmb_res = ipmb_rxb();
-	peci_cmd = &(ipmb_req->data[0]);
+	peci_cmd = (peci_cmd_t*) &(ipmb_req->data[0]);
 	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
@@ -950,7 +950,7 @@ EPECIStatus peci_RdEndPointConfigMmio_seq(
 
 	ipmb_req = ipmb_txb();
 	ipmb_res = ipmb_rxb();
-	peci_cmd = &(ipmb_req->data[0]);
+	peci_cmd = (peci_cmd_t*) &(ipmb_req->data[0]);
 	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
@@ -1018,7 +1018,7 @@ EPECIStatus peci_WrEndPointConfig_seq(uint8_t target, uint8_t u8MsgType,
 
 	ipmb_req = ipmb_txb();
 	ipmb_res = ipmb_rxb();
-	peci_cmd = &(ipmb_req->data[0]);
+	peci_cmd = (peci_cmd_t*) &(ipmb_req->data[0]);
 	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
@@ -1123,7 +1123,7 @@ EPECIStatus peci_CrashDump_Discovery(uint8_t target, uint8_t subopcode,
 
 	ipmb_req = ipmb_txb();
 	ipmb_res = ipmb_rxb();
-	peci_cmd = &(ipmb_req->data[0]);
+	peci_cmd = (peci_cmd_t*) &(ipmb_req->data[0]);
 	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;
@@ -1184,7 +1184,7 @@ EPECIStatus peci_CrashDump_GetFrame(uint8_t target, uint16_t param0,
 
 	ipmb_req = ipmb_txb();
 	ipmb_res = ipmb_rxb();
-	peci_cmd = &(ipmb_req->data[0]);
+	peci_cmd = (peci_cmd_t*) &(ipmb_req->data[0]);
 	memset(peci_cmd, 0, sizeof(peci_cmd_t));
 
 	peci_cmd->target = target;

@@ -9,8 +9,8 @@ SRC_URI += "file://elbert.conf \
 
 do_install:append() {
     install -d ${D}${sysconfdir}/sensors.d
-    install -m 644 ../elbert.conf ${D}${sysconfdir}/sensors.d/elbert.conf
-    install -m 644 ../pim16q.conf ${D}${sysconfdir}/sensors.d/.pim16q.conf
-    install -m 644 ../pim16q2.conf ${D}${sysconfdir}/sensors.d/.pim16q2.conf
-    install -m 644 ../pim8ddm.conf ${D}${sysconfdir}/sensors.d/.pim8ddm.conf
+    install -m 644 ${UNPACKDIR}/elbert.conf ${D}${sysconfdir}/sensors.d/elbert.conf
+    install -m 644 ${UNPACKDIR}/pim16q.conf ${D}${sysconfdir}/sensors.d/.pim16q.conf
+    install -m 644 ${UNPACKDIR}/pim16q2.conf ${D}${sysconfdir}/sensors.d/.pim16q2.conf
+    install -m 644 ${UNPACKDIR}/pim8ddm.conf ${D}${sysconfdir}/sensors.d/.pim8ddm.conf
 }

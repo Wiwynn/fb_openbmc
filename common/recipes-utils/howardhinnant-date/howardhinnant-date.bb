@@ -22,5 +22,5 @@ do_compile() {
 }
 do_install() {
     install -d ${D}/${includedir}/date
-    install -m 755 -t ${D}/${includedir}/date ${S}/include/date/*
+    install -m 755 -t ${D}/${includedir}/date ${UNPACKDIR}/include/date/*
 }

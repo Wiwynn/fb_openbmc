@@ -1,4 +1,4 @@
-From 034fb070664c4d227c03b8b96640791b1347e89e Mon Sep 17 00:00:00 2001
+From b59d2ac9a7ffef70ca1f788e86cbc8791f87460d Mon Sep 17 00:00:00 2001
 From: Bin Huang <binhuang@fb.com>
 Date: Tue, 13 Sep 2022 12:00:56 -0700
 Subject: [PATCH 530/532] aspeed: Add Sandia
@@ -8,10 +8,10 @@ Subject: [PATCH 530/532] aspeed: Add Sandia
  1 file changed, 11 insertions(+)
 
 diff --git a/hw/arm/aspeed.c b/hw/arm/aspeed.c
-index 0c3e25b421..6d8901f9d6 100644
+index 9535401c97..64858645d4 100644
 --- a/hw/arm/aspeed.c
 +++ b/hw/arm/aspeed.c
-@@ -1827,6 +1827,17 @@ static const struct FBMachineData fb_machines[] = {
+@@ -1906,6 +1906,17 @@ static const struct FBMachineData fb_machines[] = {
          .stdout_path = ASPEED_DEV_UART1,
          .ram_size    = FUJI_BMC_RAM_SIZE,
      },
@@ -30,5 +30,5 @@ index 0c3e25b421..6d8901f9d6 100644
          .name        = "grandcanyon-bmc",
          .desc        = "Facebook GrandCanyon BMC (Cortex-A7)",
 -- 
-2.43.0
+2.44.2
 

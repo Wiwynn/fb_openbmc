@@ -26,7 +26,7 @@ LOCAL_URI += "\
 
 do_install:append() {
     install -d ${D}/usr/local/bin
-    install -m 755 ${S}/bios-util.sh ${D}/usr/local/bin
+    install -m 755 ${UNPACKDIR}/bios-util.sh ${D}/usr/local/bin
 }
 
 #Not needed for morgan800cc

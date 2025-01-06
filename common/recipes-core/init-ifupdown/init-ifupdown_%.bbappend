@@ -16,9 +16,9 @@ NETWORK_INTERFACES ?= "auto/lo auto/eth0 static/usb0"
 
 do_configure:append() {
     if [ -n "${NETWORK_INTERFACES}" ]; then
-        echo -n > ${S}/interfaces
+        echo -n > ${UNPACKDIR}/interfaces
         for intf in ${NETWORK_INTERFACES}; do
-            cat ${S}/interfaces.d/$intf >> ${S}/interfaces
+            cat ${UNPACKDIR}/interfaces.d/$intf >> ${UNPACKDIR}/interfaces
         done
     fi
 }
@@ -26,9 +26,9 @@ do_configure:append() {
 do_install_interfaces() {
     if [ -n "${NETWORK_INTERFACES}" ]; then
         for intf in ${NETWORK_INTERFACES}; do
-            if [ -e ${S}/if-down.d/${intf} ]; then
+            if [ -e ${UNPACKDIR}/if-down.d/${intf} ]; then
                 install -d ${D}${sysconfdir}/network/if-down.d
-                install -m 755 ${S}/if-down.d/${intf} \
+                install -m 755 ${UNPACKDIR}/if-down.d/${intf} \
                     ${D}${sysconfdir}/network/if-down.d/$(basename ${intf})
             fi
         done
@@ -51,9 +51,9 @@ do_install_dhcp() {
     # systemd
     if ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'false', 'true', d)}; then
         install -d ${D}/${sysconfdir}/network/if-up.d
-        install -m 755 ${WORKDIR}/dhcpv6_up ${D}${sysconfdir}/network/if-up.d/dhcpv6_up
+        install -m 755 ${UNPACKDIR}/dhcpv6_up ${D}${sysconfdir}/network/if-up.d/dhcpv6_up
         install -d ${D}/${sysconfdir}/network/if-down.d
-        install -m 755 ${WORKDIR}/dhcpv6_down ${D}${sysconfdir}/network/if-down.d/dhcpv6_down
+        install -m 755 ${UNPACKDIR}/dhcpv6_down ${D}${sysconfdir}/network/if-down.d/dhcpv6_down
         install -d ${D}${sysconfdir}/sv
         install -d ${D}${sysconfdir}/sv/dhc6
         install -m 755 setup-dhc6.sh ${D}${sysconfdir}/init.d/setup-dhc6.sh
@@ -64,7 +64,7 @@ do_install_dhcp() {
 
 do_install_dhcp_vendor_info() {
   install -d ${D}/${sysconfdir}/network/if-pre-up.d
-  install -m 755 ${WORKDIR}/dhcp_vendor_info \
+  install -m 755 ${UNPACKDIR}/dhcp_vendor_info \
     ${D}${sysconfdir}/network/if-pre-up.d/dhcp_vendor_info
 }
 

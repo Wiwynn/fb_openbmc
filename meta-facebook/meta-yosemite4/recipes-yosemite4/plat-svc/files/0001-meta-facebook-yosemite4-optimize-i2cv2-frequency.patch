@@ -1,16 +1,17 @@
-From 9de9f49c2c2029a49123f6b800c737322f7f150f Mon Sep 17 00:00:00 2001
+From 8e5cfc947a12f274da772c78a32ef956874f6a3f Mon Sep 17 00:00:00 2001
 From: YikaiTsai-wiwynn <yikai_tsai@wiwynn.com>
-Date: Tue, 12 Nov 2024 14:03:36 +0800
+Date: Fri, 13 Dec 2024 16:38:19 -0500
 Subject: [PATCH] meta-facebook: yosemite4: optimize i2cv2 frequency
 
+Change-Id: Idee35c4fa5295f7f56bb761c9037765ae4154105
 ---
  .../plat-svc/files/yosemite4-early-sys-init         | 13 +++++++++++--
  1 file changed, 11 insertions(+), 2 deletions(-)
 
-diff --git a/yosemite4-early-sys-init b/yosemite4-early-sys-init
+diff --git a/meta-facebook/meta-yosemite4/recipes-yosemite4/plat-svc/files/yosemite4-early-sys-init b/meta-facebook/meta-yosemite4/recipes-yosemite4/plat-svc/files/yosemite4-early-sys-init
 index cef96b2c79c..119a383be4f 100644
---- a/yosemite4-early-sys-init
-+++ b/yosemite4-early-sys-init
+--- a/meta-facebook/meta-yosemite4/recipes-yosemite4/plat-svc/files/yosemite4-early-sys-init
++++ b/meta-facebook/meta-yosemite4/recipes-yosemite4/plat-svc/files/yosemite4-early-sys-init
 @@ -85,8 +85,17 @@ then
      chown root:kmem /dev/mem
      devmem 0x1e78008c 32 0x19000000
@@ -32,5 +33,5 @@ index cef96b2c79c..119a383be4f 100644
  
  # Enable all fan input as early as possible
 -- 
-2.34.1
+2.44.2
 

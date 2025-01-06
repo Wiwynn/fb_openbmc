@@ -28,7 +28,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vprobe_handler.h"
 
 #include <fcntl.h>
-#define HAVE_C99
+#ifndef HAVE_C99
+    #define HAVE_C99
+#endif
 #include <safe_str_lib.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -108,7 +110,7 @@ STATUS vProbe_initialize(vProbe_Handler* state)
     for (unsigned int i = 0; i < state->remoteConfigs; i++)
     {
         ia[0] = MAX_SCAN_CHAINS + i; // UniqueId
-        if (sprintf_s(line, sizeof(line), "<Probe UniqueId=\"%d\">\r\n", ia, 1))
+        if (sprintf_s(line, sizeof(line), "<Probe UniqueId=\"%d\">\r\n", ia[0]))
             return ST_ERR;
 
         result = vProbeConfigAppend(&buffer, &cfg_remain_size, line);
@@ -119,7 +121,7 @@ STATUS vProbe_initialize(vProbe_Handler* state)
         if (sprintf_s(line, sizeof(line),
                       "<Interface.Jtag Protocol_Value=\"%d\" "
                       "JTAG_Speed=\"1000000\" Divisor=\"1\"/>\r\n",
-                      ia, 1))
+                      ia[0]))
         {
             return ST_ERR;
         }

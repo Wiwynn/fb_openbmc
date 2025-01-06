@@ -46,14 +46,14 @@ OPENBMC_UTILS_FILES += " \
     switchToCpu.sh \
     "
 do_install_bios_layout() {
-    install -m 0644 ${S}/bmc_aboot.conf ${D}${sysconfdir}/bmc_aboot.conf
-    install -m 0644 ${S}/cpu_aboot.conf ${D}${sysconfdir}/cpu_aboot.conf
-    install -m 0644 ${S}/meru_flash.layout ${D}${sysconfdir}/meru_flash.layout
+    install -m 0644 ${UNPACKDIR}/bmc_aboot.conf ${D}${sysconfdir}/bmc_aboot.conf
+    install -m 0644 ${UNPACKDIR}/cpu_aboot.conf ${D}${sysconfdir}/cpu_aboot.conf
+    install -m 0644 ${UNPACKDIR}/meru_flash.layout ${D}${sysconfdir}/meru_flash.layout
 }
 
 do_install_vlan4092() {
-    install -m 0644 ${S}/meru-21-eth0.4092.netdev ${D}${sysconfdir}
-    install -m 0644 ${S}/meru-21-eth0.4092.network ${D}${sysconfdir}
+    install -m 0644 ${UNPACKDIR}/meru-21-eth0.4092.netdev ${D}${sysconfdir}
+    install -m 0644 ${UNPACKDIR}/meru-21-eth0.4092.network ${D}${sysconfdir}
 }
 
 do_install:append() {

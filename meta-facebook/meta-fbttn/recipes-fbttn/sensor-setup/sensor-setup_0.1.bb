@@ -23,6 +23,9 @@ LIC_FILES_CHKSUM = "file://sensor-setup.sh;beginline=5;endline=18;md5=0b1ee7d6f8
 
 DEPENDS:append = " update-rc.d-native"
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://sensor-setup.sh \
     "

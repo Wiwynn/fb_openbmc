@@ -72,7 +72,7 @@ typedef struct
 typedef struct
 {
     Model pchModel;
-    acdStatus (*logCrashlogVx)(const CPUInfo* const cpuInfo, cJSON* pJsonChild);
+    acdStatus (*logCrashlogVx)(const CPUInfo* const cpuInfo, cJSON* pJsonChild, const uint16_t agentsNum);
 } CrashlogVx;
 
 acdStatus logCrashlogSection(const CPUInfo* const cpuInfo,

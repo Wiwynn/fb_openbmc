@@ -4,6 +4,9 @@ SECTION = "base"
 LICENSE = "BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://COPYING;md5=c110423312df5eaf34c8925fc0995bd4"
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI += " \
     file://COPYING \
     file://pyfdt/__init__.py \
@@ -44,20 +47,20 @@ inherit legacy-packages
 do_install:append() {
   install -d ${D}${PYTHON_SITEPACKAGES_DIR}/pyfdt
 
-  for file in ${S}/pyfdt/*.py; do
+  for file in ${UNPACKDIR}/pyfdt/*.py; do
     install -m 644 "$file" ${D}${PYTHON_SITEPACKAGES_DIR}/pyfdt/
   done
-  install -m 644 ${S}/vboot_common.py ${D}${PYTHON_SITEPACKAGES_DIR}/
-  install -m 644 ${S}/image_meta.py ${D}${PYTHON_SITEPACKAGES_DIR}/
-  install -m 644 ${S}/measure_func.py ${D}${PYTHON_SITEPACKAGES_DIR}/
-  install -m 644 ${S}/tpm_event_log.py ${D}${PYTHON_SITEPACKAGES_DIR}/
-  install -m 0755 ${S}/measure.py ${D}${PYTHON_SITEPACKAGES_DIR}/
-  install -m 0755 ${S}/memdump.py ${D}${PYTHON_SITEPACKAGES_DIR}/
+  install -m 644 ${UNPACKDIR}/vboot_common.py ${D}${PYTHON_SITEPACKAGES_DIR}/
+  install -m 644 ${UNPACKDIR}/image_meta.py ${D}${PYTHON_SITEPACKAGES_DIR}/
+  install -m 644 ${UNPACKDIR}/measure_func.py ${D}${PYTHON_SITEPACKAGES_DIR}/
+  install -m 644 ${UNPACKDIR}/tpm_event_log.py ${D}${PYTHON_SITEPACKAGES_DIR}/
+  install -m 0755 ${UNPACKDIR}/measure.py ${D}${PYTHON_SITEPACKAGES_DIR}/
+  install -m 0755 ${UNPACKDIR}/memdump.py ${D}${PYTHON_SITEPACKAGES_DIR}/
 
   install -d ${D}/usr/bin
   ln -snf ${PYTHON_SITEPACKAGES_DIR}/measure.py ${D}/usr/bin/mboot-check
   ln -snf ${PYTHON_SITEPACKAGES_DIR}/memdump.py ${D}/usr/bin/phymemdump
-  install -m 0755 ${S}/vboot-check ${D}/usr/bin/vboot-check
+  install -m 0755 ${UNPACKDIR}/vboot-check ${D}/usr/bin/vboot-check
 
   install -d ${D}/usr/local/bin
   ln -snf /usr/bin/vboot-check ${D}/usr/local/bin/vboot-check

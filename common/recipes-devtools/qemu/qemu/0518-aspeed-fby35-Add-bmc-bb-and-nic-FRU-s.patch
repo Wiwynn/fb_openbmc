@@ -1,4 +1,4 @@
-From 2183c07e9d5b8cdb84ce98ffadf67cee3fab1b74 Mon Sep 17 00:00:00 2001
+From e70c8bf9bda5228fd5198b894edd4da9aacc7e13 Mon Sep 17 00:00:00 2001
 From: Peter Delevoryas <pdel@fb.com>
 Date: Wed, 15 Jun 2022 13:45:39 -0700
 Subject: [PATCH 518/532] aspeed: fby35: Add bmc, bb, and nic FRU's
@@ -78,7 +78,7 @@ Signed-off-by: Peter Delevoryas <pdel@fb.com>
  create mode 100644 scripts/gen_eeprom.py
 
 diff --git a/hw/arm/aspeed.c b/hw/arm/aspeed.c
-index 826bc834d8..84618d738b 100644
+index 25e06ba667..9dffa3201d 100644
 --- a/hw/arm/aspeed.c
 +++ b/hw/arm/aspeed.c
 @@ -30,6 +30,7 @@
@@ -229,5 +229,5 @@ index 0000000000..b5eceb47bd
 +            sys.stdout.write('0x%02x,' % b)
 +    sys.stdout.write('\n};\n')
 -- 
-2.43.0
+2.44.2
 

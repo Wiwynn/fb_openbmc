@@ -2748,7 +2748,7 @@ signed char ispVMRead( unsigned short a_usiDataSize )
 		if(g_usChecksum != 0)
 		{
 			g_usChecksum &= 0xFFFF;
-			sprintf(StrChecksum,"Data Checksum: %04x\n\n",g_usChecksum);
+			sprintf(StrChecksum,"Data Checksum: %04lx\n\n",g_usChecksum);
 			vme_out_string(StrChecksum);
 			g_usChecksum = 0;
 		}

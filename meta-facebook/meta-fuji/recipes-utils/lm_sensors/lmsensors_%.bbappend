@@ -30,8 +30,8 @@ do_install:append() {
 
     install -d ${D}${sysconfdir}/sensors.d
     install -d ${D}${sysconfdir}/sensors.d/custom
-    install -m 644 ${WORKDIR}/fuji.conf ${D}${sysconfdir}/sensors.d/custom/fuji.conf
-    install -m 644 ${WORKDIR}/PIM16Q.conf ${D}${sysconfdir}/sensors.d/custom/PIM16Q.conf
-    install -m 644 ${WORKDIR}/PIM16O.conf ${D}${sysconfdir}/sensors.d/custom/PIM16O.conf
+    install -m 644 ${UNPACKDIR}/fuji.conf ${D}${sysconfdir}/sensors.d/custom/fuji.conf
+    install -m 644 ${UNPACKDIR}/PIM16Q.conf ${D}${sysconfdir}/sensors.d/custom/PIM16Q.conf
+    install -m 644 ${UNPACKDIR}/PIM16O.conf ${D}${sysconfdir}/sensors.d/custom/PIM16O.conf
 
 }

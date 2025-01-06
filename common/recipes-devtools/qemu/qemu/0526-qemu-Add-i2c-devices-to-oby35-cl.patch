@@ -1,4 +1,4 @@
-From 76043bf8beaa7caed47cfc7d2002c91ee86a9025 Mon Sep 17 00:00:00 2001
+From 254a31fcc4ae9003505edcab1d5a8852b1e9a8cf Mon Sep 17 00:00:00 2001
 From: Peter Delevoryas <peter@pjd.dev>
 Date: Fri, 26 Aug 2022 02:03:46 -0700
 Subject: [PATCH 526/532] qemu: Add i2c devices to oby35-cl
@@ -14,10 +14,10 @@ Signed-off-by: Peter Delevoryas <peter@pjd.dev>
  3 files changed, 3 insertions(+), 13 deletions(-)
 
 diff --git a/hw/arm/aspeed.c b/hw/arm/aspeed.c
-index aa2d351a77..f8d5831086 100644
+index 975cd02fa7..32f0a770f7 100644
 --- a/hw/arm/aspeed.c
 +++ b/hw/arm/aspeed.c
-@@ -1068,18 +1068,7 @@ static void create_unimplemented_i2c_device(I2CBus *bus, uint8_t addr)
+@@ -1095,18 +1095,7 @@ static void create_unimplemented_i2c_device(I2CBus *bus, uint8_t addr)
  static void oby35_cl_i2c_init(AspeedMachineState *bmc)
  {
      AspeedSoCState *soc = bmc->soc;
@@ -62,5 +62,5 @@ index 87cb1a10c2..0f8369f0fa 100644
  
  #endif
 -- 
-2.43.0
+2.44.2
 

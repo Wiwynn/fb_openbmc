@@ -19,7 +19,7 @@ DESCRIPTION = "Various utilities"
 SECTION = "base"
 PR = "r1"
 LICENSE = "GPL-2.0-or-later"
-LIC_FILES_CHKSUM = "file://COPYING;md5=eb723b61539feef013de476e68b5c50a"
+LIC_FILES_CHKSUM = "file://${UNPACKDIR}/COPYING;md5=eb723b61539feef013de476e68b5c50a"
 
 LOCAL_URI = " \
     file://sol-util \
@@ -50,28 +50,28 @@ do_install() {
   install -d $dst
 
   # install ast-functions
-  install -m 644 ast-functions ${dst}/ast-functions
+  install -m 644 ${UNPACKDIR}/ast-functions ${dst}/ast-functions
 
   # create linkages to those binaries
   localbindir="${D}/usr/local/bin"
   install -d ${localbindir}
   for f in ${binfiles}; do
-      install -m 755 $f ${dst}/${f}
+      install -m 755 ${UNPACKDIR}/$f ${dst}/${f}
       ln -s ../fbpackages/${pkgdir}/${f} ${localbindir}/${f}
   done
   
   # init
   install -d ${D}${sysconfdir}/init.d
   install -d ${D}${sysconfdir}/rcS.d
-  install -m 755 check_nic_status.sh ${D}${sysconfdir}/init.d/check_nic_status.sh
+  install -m 755 ${UNPACKDIR}/check_nic_status.sh ${D}${sysconfdir}/init.d/check_nic_status.sh
   update-rc.d -r ${D} check_nic_status.sh start 99 5 .
-  install -m 755 run_power_on.sh ${D}${sysconfdir}/init.d/run_power_on.sh
+  install -m 755 ${UNPACKDIR}/run_power_on.sh ${D}${sysconfdir}/init.d/run_power_on.sh
   update-rc.d -r ${D} run_power_on.sh start 99 5 .
-  install -m 755 setup-platform.sh ${D}${sysconfdir}/init.d/setup-platform.sh
+  install -m 755 ${UNPACKDIR}/setup-platform.sh ${D}${sysconfdir}/init.d/setup-platform.sh
   update-rc.d -r ${D} setup-platform.sh start 92 5 .
   
   # install check_bmc_ready.sh
-  install -m 755 check_bmc_ready.sh ${D}${sysconfdir}/init.d/check_bmc_ready.sh
+  install -m 755 ${UNPACKDIR}/check_bmc_ready.sh ${D}${sysconfdir}/init.d/check_bmc_ready.sh
   update-rc.d -r ${D} check_bmc_ready.sh start 100 5 .
 }
 

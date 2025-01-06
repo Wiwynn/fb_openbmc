@@ -18,10 +18,13 @@ SUMMARY = "Configure the sensors"
 DESCRIPTION = "The script configure sensors"
 SECTION = "base"
 PR = "r1"
-LICENSE = "GPLv2"
+LICENSE = "GPL-2.0-only"
 LIC_FILES_CHKSUM = "file://sensor-setup.sh;beginline=5;endline=18;md5=0b1ee7d6f844d472fa306b2fee2167e0"
 
 DEPENDS:append = " update-rc.d-native"
+
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
 
 LOCAL_URI = " \
     file://sensor-setup.sh \

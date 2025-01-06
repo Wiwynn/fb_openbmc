@@ -16,9 +16,9 @@ do_install:append() {
   install -d ${D}${sysconfdir}/sv/pldmd_4
   install -d ${D}${sysconfdir}/sv/pldmd_11
 
-  install -m 755 ${S}/setup-pldmd.sh ${D}${sysconfdir}/init.d/setup-pldmd.sh
-  install -m 755 ${S}/run-pldmd_3.sh ${D}${sysconfdir}/sv/pldmd_3/run
-  install -m 755 ${S}/run-pldmd_4.sh ${D}${sysconfdir}/sv/pldmd_4/run
-  install -m 755 ${S}/run-pldmd_11.sh ${D}${sysconfdir}/sv/pldmd_11/run
+  install -m 755 ${UNPACKDIR}/setup-pldmd.sh ${D}${sysconfdir}/init.d/setup-pldmd.sh
+  install -m 755 ${UNPACKDIR}/run-pldmd_3.sh ${D}${sysconfdir}/sv/pldmd_3/run
+  install -m 755 ${UNPACKDIR}/run-pldmd_4.sh ${D}${sysconfdir}/sv/pldmd_4/run
+  install -m 755 ${UNPACKDIR}/run-pldmd_11.sh ${D}${sysconfdir}/sv/pldmd_11/run
   update-rc.d -r ${D} setup-pldmd.sh start 58 5 .
 }

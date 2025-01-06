@@ -18,7 +18,7 @@ SUMMARY = "Utilities"
 DESCRIPTION = "Various utilities"
 SECTION = "base"
 PR = "r1"
-LICENSE = "GPLv2"
+LICENSE = "GPL-2.0-only"
 LIC_FILES_CHKSUM = "file://COPYING;md5=eb723b61539feef013de476e68b5c50a"
 
 SRC_URI = "file://COPYING \
@@ -31,7 +31,8 @@ SRC_URI = "file://COPYING \
 
 pkgdir = "utils"
 
-S = "${WORKDIR}"
+S = "${WORKDIR}/sources"
+UNPACKDIR = "${S}"
 
 # the tools for BMC will be installed in the image
 binfiles = " sol-util sync_date.sh power-on.sh"
@@ -51,7 +52,7 @@ do_install() {
   localbindir="${D}/usr/local/bin"
   install -d ${localbindir}
   for f in ${binfiles}; do
-      install -m 755 $f ${dst}/${f}
+      install -m 755 ${UNPACKDIR}/$f ${dst}/${f}
       ln -s ../fbpackages/${pkgdir}/${f} ${localbindir}/${f}
   done
   

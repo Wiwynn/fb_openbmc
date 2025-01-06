@@ -51,9 +51,9 @@ asd_state main_state = {};
 extnet_conn_t* p_extconn = NULL;
 bool b_data_pending = false;
 
-static void send_remote_log_message(ASD_LogLevel asd_level,
-                                    ASD_LogStream asd_stream,
-                                    const char* message);
+static void main_send_remote_log_message(ASD_LogLevel asd_level,
+                                         ASD_LogStream asd_stream,
+                                         const char* message);
 
 #ifndef UNIT_TEST_MAIN
 int main(int argc, char** argv)
@@ -786,9 +786,9 @@ size_t read_data(void* buffer, size_t length)
     return size;
 }
 
-static void send_remote_log_message(ASD_LogLevel asd_level,
-                                    ASD_LogStream asd_stream,
-                                    const char* message)
+void main_send_remote_log_message(ASD_LogLevel asd_level,
+                             ASD_LogStream asd_stream,
+                             const char* message)
 {
     asd_target_interface_remote_log remote_log = {
         asd_level,
@@ -917,7 +917,7 @@ STATUS on_client_connect(asd_state* state, extnet_conn_t* p_extcon)
         ASD_initialize_log_settings(
             state->args.log_level, state->args.log_streams,
             state->args.use_syslog, main_should_remote_log,
-            send_remote_log_message);
+            main_send_remote_log_message);
     }
 
     return result;

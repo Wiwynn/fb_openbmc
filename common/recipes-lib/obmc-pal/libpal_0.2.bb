@@ -20,6 +20,9 @@ LIC_FILES_CHKSUM = "\
     file://${COREBASE}/meta/files/common-licenses/${@lic_file_name(d)} \
     "
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://meson.build \
     file://plat/meson.build \
@@ -51,7 +54,7 @@ inherit python3-dir
 
 do_install:append() {
     install -d ${D}${PYTHON_SITEPACKAGES_DIR}
-    install -m 644 ${S}/pal.py ${D}${PYTHON_SITEPACKAGES_DIR}/
+    install -m 644 ${UNPACKDIR}/pal.py ${D}${PYTHON_SITEPACKAGES_DIR}/
 }
 
 FILES:${PN} += "${PYTHON_SITEPACKAGES_DIR}/pal.py"

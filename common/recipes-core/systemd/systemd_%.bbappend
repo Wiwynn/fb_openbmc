@@ -31,15 +31,15 @@ SRC_URI += " \
 "
 
 do_install:append() {
-    install -m 644 -D ${WORKDIR}/journald-maxlevel.conf ${D}${systemd_unitdir}/journald.conf.d/maxlevel.conf
+    install -m 644 -D ${UNPACKDIR}/journald-maxlevel.conf ${D}${systemd_unitdir}/journald.conf.d/maxlevel.conf
 
     sed -i -e 's/.*ForwardToSyslog.*/ForwardToSyslog=yes/' ${D}${sysconfdir}/systemd/journald.conf
 
     # Create /var/log/{wtmp,lastlog} at boot
-    install -m 644 -D ${WORKDIR}/lastlog.conf ${D}${sysconfdir}/tmpfiles.d/lastlog.conf
+    install -m 644 -D ${UNPACKDIR}/lastlog.conf ${D}${sysconfdir}/tmpfiles.d/lastlog.conf
 
     # Create /run/lock at boot
-    install -m 644 -D ${WORKDIR}/lock.conf ${D}${sysconfdir}/tmpfiles.d/lock.conf
+    install -m 644 -D ${UNPACKDIR}/lock.conf ${D}${sysconfdir}/tmpfiles.d/lock.conf
 
     # systemd 234 (rocko) does not support RequiredForOnline=no.
     sed -i 's@ExecStart.*@\0 --ignore=eth0.4088@' ${D}${systemd_unitdir}/system/systemd-networkd-wait-online.service
@@ -48,5 +48,5 @@ do_install:append() {
     sed -E -i -e 's@(.*/tmp 1777 root root).*@\1 -@' ${D}${libdir}/tmpfiles.d/tmp.conf
 
     # Override coredump configuration
-    install -m 644 -D ${WORKDIR}/coredump.conf ${D}${sysconfdir}/systemd/coredump.conf
+    install -m 644 -D ${UNPACKDIR}/coredump.conf ${D}${sysconfdir}/systemd/coredump.conf
 }

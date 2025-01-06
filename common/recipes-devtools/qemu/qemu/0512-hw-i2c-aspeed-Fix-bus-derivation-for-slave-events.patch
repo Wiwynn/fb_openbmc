@@ -1,4 +1,4 @@
-From b74bf0343d00ea8e3536d7339c46660e936d0ed7 Mon Sep 17 00:00:00 2001
+From 2d59f5d6b9b574029a02b9de5d4c2ae759272bea Mon Sep 17 00:00:00 2001
 From: Peter Delevoryas <peter@pjd.dev>
 Date: Wed, 24 Aug 2022 01:55:12 -0700
 Subject: [PATCH 512/532] hw/i2c/aspeed: Fix bus derivation for slave events
@@ -14,10 +14,10 @@ Signed-off-by: Peter Delevoryas <peter@pjd.dev>
  2 files changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/hw/i2c/aspeed_i2c.c b/hw/i2c/aspeed_i2c.c
-index 899aedcc9a..bf70e3c03b 100644
+index 33c3b27375..089fd9e75d 100644
 --- a/hw/i2c/aspeed_i2c.c
 +++ b/hw/i2c/aspeed_i2c.c
-@@ -1145,8 +1145,7 @@ static int aspeed_i2c_bus_new_slave_event(AspeedI2CBus *bus,
+@@ -1147,8 +1147,7 @@ static int aspeed_i2c_bus_new_slave_event(AspeedI2CBus *bus,
  
  static int aspeed_i2c_bus_slave_event(I2CSlave *slave, enum i2c_event event)
  {
@@ -27,7 +27,7 @@ index 899aedcc9a..bf70e3c03b 100644
      uint32_t reg_intr_sts = aspeed_i2c_bus_intr_sts_offset(bus);
      uint32_t reg_byte_buf = aspeed_i2c_bus_byte_buf_offset(bus);
      uint32_t reg_dev_addr = aspeed_i2c_bus_dev_addr_offset(bus);
-@@ -1204,8 +1203,7 @@ static void aspeed_i2c_bus_new_slave_send_async(AspeedI2CBus *bus, uint8_t data)
+@@ -1206,8 +1205,7 @@ static void aspeed_i2c_bus_new_slave_send_async(AspeedI2CBus *bus, uint8_t data)
  
  static void aspeed_i2c_bus_slave_send_async(I2CSlave *slave, uint8_t data)
  {
@@ -37,7 +37,7 @@ index 899aedcc9a..bf70e3c03b 100644
      uint32_t reg_intr_sts = aspeed_i2c_bus_intr_sts_offset(bus);
      uint32_t reg_byte_buf = aspeed_i2c_bus_byte_buf_offset(bus);
  
-@@ -1263,6 +1261,7 @@ static void aspeed_i2c_bus_realize(DeviceState *dev, Error **errp)
+@@ -1265,6 +1263,7 @@ static void aspeed_i2c_bus_realize(DeviceState *dev, Error **errp)
      s->bus = i2c_init_bus(dev, name);
      s->slave = i2c_slave_create_simple(s->bus, TYPE_ASPEED_I2C_BUS_SLAVE,
                                         0xff);
@@ -46,7 +46,7 @@ index 899aedcc9a..bf70e3c03b 100644
      memory_region_init_io(&s->mr, OBJECT(s), &aspeed_i2c_bus_ops,
                            s, name, aic->reg_size);
 diff --git a/include/hw/i2c/aspeed_i2c.h b/include/hw/i2c/aspeed_i2c.h
-index d468b84971..f1e3e016d2 100644
+index eacf1dd0eb..b9165fbe9d 100644
 --- a/include/hw/i2c/aspeed_i2c.h
 +++ b/include/hw/i2c/aspeed_i2c.h
 @@ -269,6 +269,7 @@ struct AspeedI2CState {
@@ -58,5 +58,5 @@ index d468b84971..f1e3e016d2 100644
  
  struct AspeedI2CClass {
 -- 
-2.43.0
+2.44.2
 

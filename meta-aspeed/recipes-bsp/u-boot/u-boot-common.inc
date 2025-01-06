@@ -66,10 +66,10 @@ do_configure_merge_and_tweak() {
     return
   fi
 
-  if [ -n "${UBOOT_CONFIG_BASE}" -a -e ${WORKDIR}/${UBOOT_MACHINE}.append  ]; then
+  if [ -n "${UBOOT_CONFIG_BASE}" -a -e ${UNPACKDIR}/${UBOOT_MACHINE}.append  ]; then
     bbnote "Append ${UBOOT_MACHINE}.append to ${UBOOT_CONFIG_BASE} to generate ${UBOOT_MACHINE}"
     KCONFIG_CONFIG=${S}/configs/${UBOOT_MACHINE} \
-      merge_config.sh -m ${S}/configs/${UBOOT_CONFIG_BASE} ${WORKDIR}/${UBOOT_MACHINE}.append
+      merge_config.sh -m ${S}/configs/${UBOOT_CONFIG_BASE} ${UNPACKDIR}/${UBOOT_MACHINE}.append
   fi
   bbnote "Turn off CONFIG_ASPEED_RECOVERY_BUILD for normal build"
   defconfig_option_off CONFIG_ASPEED_RECOVERY_BUILD ${S}/configs/${UBOOT_MACHINE}

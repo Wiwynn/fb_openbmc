@@ -22,7 +22,8 @@ SRC_URI += "file://mTerm_server.service \
             file://sol.sh \
            "
 
-S = "${WORKDIR}"
+S = "${WORKDIR}/sources"
+UNPACKDIR = "${S}"
 
 MTERM_CONSOLES ?= "115200;ttyS1"
 
@@ -30,7 +31,7 @@ MTERM_SYSTEMD_SERVICES = "mTerm_server.service"
 
 do_install:append() {
     install -d ${D}/usr/local/bin
-    install -m 0755 ${S}/sol.sh ${D}/usr/local/bin/
+    install -m 0755 ${UNPACKDIR}/sol.sh ${D}/usr/local/bin/
 
     #
     # fixup serial devices and baudrate

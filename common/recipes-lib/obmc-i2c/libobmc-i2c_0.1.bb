@@ -26,6 +26,9 @@ BBCLASSEXTEND = "native"
 
 inherit meson pkgconfig
 
+S="${WORKDIR}/sources"
+UNPACKDIR="${S}"
+
 LOCAL_URI = " \
     file://obmc-i2c.h \
     file://i2c_cdev.c \

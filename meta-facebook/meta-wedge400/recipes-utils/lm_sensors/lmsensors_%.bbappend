@@ -33,11 +33,11 @@ do_install:append() {
 
     install -d ${D}${sysconfdir}/sensors.d
     install -d ${D}${sysconfdir}/sensors.d/custom
-    install -m 644 ${WORKDIR}/wedge400.conf ${D}${sysconfdir}/sensors.d/custom/wedge400.conf
-    install -m 644 ${WORKDIR}/wedge400c.conf ${D}${sysconfdir}/sensors.d/custom/wedge400c.conf
-    install -m 644 ${WORKDIR}/wedge400-evt-mp.conf ${D}${sysconfdir}/sensors.d/custom/wedge400-evt-mp.conf
-    install -m 644 ${WORKDIR}/wedge400-respin.conf ${D}${sysconfdir}/sensors.d/custom/wedge400-respin.conf
-    install -m 644 ${WORKDIR}/wedge400c-evt-dvt2.conf ${D}${sysconfdir}/sensors.d/custom/wedge400c-evt-dvt2.conf
-    install -m 644 ${WORKDIR}/wedge400c-respin.conf   ${D}${sysconfdir}/sensors.d/custom/wedge400c-respin.conf
+    install -m 644 ${UNPACKDIR}/wedge400.conf ${D}${sysconfdir}/sensors.d/custom/wedge400.conf
+    install -m 644 ${UNPACKDIR}/wedge400c.conf ${D}${sysconfdir}/sensors.d/custom/wedge400c.conf
+    install -m 644 ${UNPACKDIR}/wedge400-evt-mp.conf ${D}${sysconfdir}/sensors.d/custom/wedge400-evt-mp.conf
+    install -m 644 ${UNPACKDIR}/wedge400-respin.conf ${D}${sysconfdir}/sensors.d/custom/wedge400-respin.conf
+    install -m 644 ${UNPACKDIR}/wedge400c-evt-dvt2.conf ${D}${sysconfdir}/sensors.d/custom/wedge400c-evt-dvt2.conf
+    install -m 644 ${UNPACKDIR}/wedge400c-respin.conf   ${D}${sysconfdir}/sensors.d/custom/wedge400c-respin.conf
 
 }

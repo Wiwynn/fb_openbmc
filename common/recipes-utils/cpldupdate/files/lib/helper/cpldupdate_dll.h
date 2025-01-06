@@ -85,8 +85,8 @@ static int cpldupdate_helper_has_do_io(
 
 static int cpldupdate_helper_do_io(
     struct cpldupdate_helper_st *helper,
-    cpldupdate_pin_en tms, cpldupdate_pin_en tdi,
-    cpldupdate_pin_en *tdo) {
+    cpldupdate_pin_value_en tms, cpldupdate_pin_value_en tdi,
+    cpldupdate_pin_value_en *tdo) {
   return helper->do_io(helper->func_ctx, tms, tdi, tdo);
 }
 
