@@ -1,4 +1,4 @@
-From 3948b6442321d63988bd1eda8df7ef2a071d14ea Mon Sep 17 00:00:00 2001
+From 4b71904b32f9c3aa48ac3ba29cc846977596d5fd Mon Sep 17 00:00:00 2001
 From: Rush_Chen_Wiwynn <Rush_Chen@wiwynn.com>
 Date: Thu, 20 Jun 2024 15:07:00 +0800
 Subject: [PATCH 1008/1012] arm: dts: aspeed: yosemite4: Support MP5990 for all

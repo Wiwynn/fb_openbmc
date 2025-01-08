@@ -1,4 +1,4 @@
-From 9b0c95679160e1df8d669ff577000bb1117dd00e Mon Sep 17 00:00:00 2001
+From d2d6e05bc72ff7ac1aa2fccbc07b800bd7de6b86 Mon Sep 17 00:00:00 2001
 From: RickyWu-wiwynn <ricky_cx_wu@wiwynn.com>
 Date: Fri, 1 Nov 2024 14:06:29 +0800
 Subject: [PATCH 1007/1012] arm: dts: aspeed: yosemite4: add EMC1403 for Terminus

@@ -1,4 +1,4 @@
-From de9c844c55fd0c1251ef5f760e500ad22c804120 Mon Sep 17 00:00:00 2001
+From ec50f7b8358e87035cd3292b85b338a9d8a41124 Mon Sep 17 00:00:00 2001
 From: RickyWu-wiwynn <ricky_cx_wu@wiwynn.com>
 Date: Fri, 1 Nov 2024 11:25:35 +0800
 Subject: [PATCH 1003/1012] arm: dts: aspeed: yosemite4: add power and adc sensors

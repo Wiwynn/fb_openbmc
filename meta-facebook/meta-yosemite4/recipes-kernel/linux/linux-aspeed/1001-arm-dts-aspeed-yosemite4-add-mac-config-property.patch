@@ -1,4 +1,4 @@
-From 59d505316668f5c89918a1060e758cb302cb35f2 Mon Sep 17 00:00:00 2001
+From 00e53d4d85e68d8994a798ec0ded473683d004b4 Mon Sep 17 00:00:00 2001
 From: RickyWu-wiwynn <ricky_cx_wu@wiwynn.com>
 Date: Fri, 1 Nov 2024 13:50:21 +0800
 Subject: [PATCH 1001/1012] arm: dts: aspeed: yosemite4: add mac config property

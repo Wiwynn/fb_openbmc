@@ -1,22 +1,22 @@
-From 16b7860df3f90c3e7de5c328cbe922be17a722c9 Mon Sep 17 00:00:00 2001
+From 9d8ad6701a6e0e7cebc11e8fc617ff50fdef9cf3 Mon Sep 17 00:00:00 2001
 From: Delphine CC Chiu <Delphine_CC_Chiu@wiwynn.com>
 Date: Wed, 22 May 2024 17:15:50 +0800
 Subject: [PATCH 1010/1012] ARM: dts: aspeed: yosemite4: add fan led config
 
 Set fan led config in yosemite4 DTS.
 
-Lore link: https://lore.kernel.org/all/20240523091812.2032933-24-Delphine_CC_Chiu@wiwynn.com/
+Lore link: https://lore.kernel.org/all/20241220043852.1096074-1-delphine_cc_chiu@wiwynn.com/
 
 Signed-off-by: Delphine CC Chiu <Delphine_CC_Chiu@wiwynn.com>
 ---
- .../aspeed/aspeed-bmc-facebook-yosemite4.dts  | 152 +++++++++++++++++-
- 1 file changed, 150 insertions(+), 2 deletions(-)
+ .../aspeed/aspeed-bmc-facebook-yosemite4.dts  | 166 +++++++++++++++++-
+ 1 file changed, 163 insertions(+), 3 deletions(-)
 
 diff --git a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts
-index e65268312c5e..2b200a322da4 100644
+index e65268312c5e..0a6a86a2a494 100644
 --- a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts
 +++ b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-yosemite4.dts
-@@ -73,6 +73,154 @@ tpm@0 {
+@@ -73,6 +73,160 @@ tpm@0 {
  			spi-max-frequency = <33000000>;
  		};
  	};
@@ -24,145 +24,151 @@ index e65268312c5e..2b200a322da4 100644
 +	leds {
 +		compatible = "gpio-leds";
 +
-+		fan0_blue {
++		led_identify {
++			retain-state-shutdown;
++			default-state = "off";
++			gpios = <&identify_gpio 8 GPIO_ACTIVE_HIGH>;
++		};
++
++		led_fan0_blue {
 +			retain-state-shutdown;
 +			default-state = "on";
 +			gpios = <&led_gpio0 4 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan0_amber {
++		led_fan0_amber {
 +			retain-state-shutdown;
 +			default-state = "off";
 +			gpios = <&led_gpio0 5 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan1_blue {
++		led_fan1_blue {
 +			retain-state-shutdown;
 +			default-state = "on";
 +			gpios = <&led_gpio0 10 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan1_amber {
++		led_fan1_amber {
 +			retain-state-shutdown;
 +			default-state = "off";
 +			gpios = <&led_gpio0 11 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan2_blue {
++		led_fan2_blue {
 +			retain-state-shutdown;
 +			default-state = "on";
 +			gpios = <&led_gpio1 4 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan2_amber {
++		led_fan2_amber {
 +			retain-state-shutdown;
 +			default-state = "off";
 +			gpios = <&led_gpio1 5 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan3_blue {
++		led_fan3_blue {
 +			retain-state-shutdown;
 +			default-state = "on";
 +			gpios = <&led_gpio1 10 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan3_amber {
++		led_fan3_amber {
 +			retain-state-shutdown;
 +			default-state = "off";
 +			gpios = <&led_gpio1 11 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan4_blue {
++		led_fan4_blue {
 +			retain-state-shutdown;
 +			default-state = "on";
 +			gpios = <&led_gpio0 2 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan4_amber {
++		led_fan4_amber {
 +			retain-state-shutdown;
 +			default-state = "off";
 +			gpios = <&led_gpio0 3 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan5_blue {
++		led_fan5_blue {
 +			retain-state-shutdown;
 +			default-state = "on";
 +			gpios = <&led_gpio0 8 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan5_amber {
++		led_fan5_amber {
 +			retain-state-shutdown;
 +			default-state = "off";
 +			gpios = <&led_gpio0 9 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan6_blue {
++		led_fan6_blue {
 +			retain-state-shutdown;
 +			default-state = "on";
 +			gpios = <&led_gpio1 2 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan6_amber {
++		led_fan6_amber {
 +			retain-state-shutdown;
 +			default-state = "off";
 +			gpios = <&led_gpio1 3 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan7_blue {
++		led_fan7_blue {
 +			retain-state-shutdown;
 +			default-state = "on";
 +			gpios = <&led_gpio1 8 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan7_amber {
++		led_fan7_amber {
 +			retain-state-shutdown;
 +			default-state = "off";
 +			gpios = <&led_gpio1 9 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan8_blue {
++		led_fan8_blue {
 +			retain-state-shutdown;
 +			default-state = "on";
 +			gpios = <&led_gpio0 0 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan8_amber {
++		led_fan8_amber {
 +			retain-state-shutdown;
 +			default-state = "off";
 +			gpios = <&led_gpio0 1 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan9_blue {
++		led_fan9_blue {
 +			retain-state-shutdown;
 +			default-state = "on";
 +			gpios = <&led_gpio0 6 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan9_amber {
++		led_fan9_amber {
 +			retain-state-shutdown;
 +			default-state = "off";
 +			gpios = <&led_gpio0 7 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan10_blue {
++		led_fan10_blue {
 +			retain-state-shutdown;
 +			default-state = "on";
 +			gpios = <&led_gpio1 0 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan10_amber {
++		led_fan10_amber {
 +			retain-state-shutdown;
 +			default-state = "off";
 +			gpios = <&led_gpio1 1 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan11_blue {
++		led_fan11_blue {
 +			retain-state-shutdown;
 +			default-state = "on";
 +			gpios = <&led_gpio1 6 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		fan11_amber {
++		led_fan11_amber {
 +			retain-state-shutdown;
 +			default-state = "off";
 +			gpios = <&led_gpio1 7 GPIO_ACTIVE_HIGH>;
@@ -171,7 +177,26 @@ index e65268312c5e..2b200a322da4 100644
  };
  
  &uart1 {
-@@ -1325,7 +1473,7 @@ eeprom@52 {
+@@ -1047,11 +1201,17 @@ gpio@20 {
+ 				#gpio-cells = <2>;
+ 			};
+ 
+-			gpio@21 {
++			identify_gpio: gpio@21 {
+ 				compatible = "nxp,pca9506";
+ 				reg = <0x21>;
+ 				gpio-controller;
+ 				#gpio-cells = <2>;
++				gpio-line-names = "","","","",
++						  "","","","",
++						  "LED_IDENTIFY",
++						  "","","","","","","",
++						  "","","","","","","","",
++						  "","","","","","","","";
+ 			};
+ 
+ 			gpio@22 {
+@@ -1325,7 +1485,7 @@ eeprom@52 {
  				reg = <0x52>;
  			};
  
@@ -180,7 +205,7 @@ index e65268312c5e..2b200a322da4 100644
  				compatible = "nxp,pca9552";
  				reg = <0x61>;
  				#address-cells = <1>;
-@@ -1463,7 +1611,7 @@ eeprom@52 {
+@@ -1463,7 +1623,7 @@ eeprom@52 {
  				reg = <0x52>;
  			};
  
