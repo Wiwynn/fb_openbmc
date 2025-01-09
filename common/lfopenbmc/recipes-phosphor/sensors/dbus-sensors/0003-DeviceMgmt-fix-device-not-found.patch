@@ -1,0 +1,221 @@
+From 6cadd4432a0dc24af7f4188c44119a9456c588e2 Mon Sep 17 00:00:00 2001
+From: Cosmo Chou <cosmo.chou@quantatw.com>
+Date: Tue, 31 Dec 2024 14:39:48 +0800
+Subject: [PATCH 3/3] DeviceMgmt: fix device not found
+
+Link:https://gerrit.openbmc.org/c/openbmc/dbus-sensors/+/69161
+
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+There are custom sensor names that do not match with `Name` field in the
+configuration. It causes sensors set device is_new to true incorrectly.
+
+In psusensor, it depends on "is_new" to decide whether to skip sensor
+creation and activation for his device. If "is_new" is always true, it
+could cause the sensor's activate() called multiple times and cause
+program to crash after throwing a system error.
+
+Take MB_ADC0 in harma_mb.json for example, the "sensorName" in code is
+the Name field of config, which is "MB_ADC0". And the "sensor.first" in
+code will be the customized name from inX_Name. For example, there are
+will have 5 sensors from this config in psusensor as below.
+
+- Sensor config of MB_ADC0 in harma_mb.json
+```
+root@harma:~# busctl introspect xyz.openbmc_project.EntityManager /xyz/openbmc_project/inventory/system/board/Harma_MB/MB_ADC0 xyz.openbmc_project.Configuration.ADC128D818
+NAME                                         TYPE      SIGNATURE RESULT/VALUE                    FLAGS
+.Address                                     property  t         29                              emits-change
+.Bus                                         property  t         29                              emits-change
+.Labels                                      property  as        5 "in1" "in2" "in3" "in4" "in5" emits-change
+.Name                                        property  s         "MB_ADC0"                       emits-change
+.Type                                        property  s         "ADC128D818"                    emits-change
+.in1_Name                                    property  s         "MB_PVDD11_S3_VOLT_V"           emits-change
+.in2_Name                                    property  s         "MB_P3V3_STBY_VOLT_V"           emits-change
+.in2_Scale                                   property  t         500                             emits-change
+.in3_Name                                    property  s         "MB_PVDD18_S5_VOLT_V"           emits-change
+.in4_Name                                    property  s         "MB_P12V_AUX_VOLT_V"            emits-change
+.in4_Scale                                   property  d         151.515                         emits-change
+.in5_Name                                    property  s         "MB_P12V_STBY_VOLT_V"           emits-change
+.in5_Scale                                   property  d         151.515                         emits-change
+```
+
+- Actual sensor names of MB_ADC0
+ - in1_Name: MB_PVDD11_S3_VOLT_V
+ - in2_Name: MB_P3V3_STBY_VOLT_V
+ - in3_Name: MB_PVDD18_S5_VOLT_V
+ - in4_Name: MB_P12V_AUX_VOLT_V
+ - in5_Name: MB_P12V_STBY_VOLT_V
+
+When the snesor name is not matched with Name field in sensor config,
+the devices will add a new device base on the config, but the is_new is
+set to true. [1]
+
+psusensor will decide whether to activate the sensor based on the
+device list returned by instantiateDevices().
+
+- "is_new" equal to false
+  sensor activated already, so skip the rest sensor setup actions [2]
+
+- "is_new" equal to true
+  it means a new sensor or sensor needs activate, then it will calling
+  "sensor->activate()" again. (PS: activateOnly will be true if it is
+  the callback from PowerSate change match) [3]
+
+Take "MB_PVDD11_S3_VOLT_V" sensor as example, "MB_PVDD11_S3_VOLT_V" is
+create and activate at psusensor starts, and then a Host PowerState
+change (from off to on) triggered, the createSensorsCallback() will be
+called, "MB_PVDD11_S3_VOLT_V" will be activate again due to "is_new" is
+equal to true (name not match), then causing psusensor crashed.
+
+- Crashed log when host power on
+```
+Clearing out previous instance for /xyz/openbmc_project/inventory/system/board/Harma_MB/MB_ADC0
+Driver name mcp9600 not found in sensor whitelist
+Driver name ast2600-adc1 not found in sensor whitelist
+Driver name mcp9600 not found in sensor whitelist
+Driver name mcp9600 not found in sensor whitelist
+Driver name mcp9600 not found in sensor whitelist
+Driver name mcp9600 not found in sensor whitelist
+Driver name mcp9600 not found in sensor whitelist
+Driver name ast2600-adc0 not found in sensor whitelist
+Driver name mcp9600 not found in sensor whitelist
+Driver name mcp9600 not found in sensor whitelist
+Driver name mcp9600 not found in sensor whitelist
+Driver name mcp9600 not found in sensor whitelist
+failed to find match for 29-0045
+Driver name tmp75 not found in sensor whitelist
+failed to find match for 28-004f
+Driver name tmp75 not found in sensor whitelist
+Driver name tmp75 not found in sensor whitelist
+failed to find match for 7-003c
+failed to find match for 22-0045
+Driver name tmp421 not found in sensor whitelist
+failed to find match for 29-001f
+Driver name tmp75 not found in sensor whitelist
+Driver name tmp75 not found in sensor whitelist
+terminate called after throwing an instance of 'boost::wrapexcept<boost::system::system_error>'
+  what():  open: Already open [asio.misc:1 at /usr/include/boost/asio/detail/impl/io_uring_file_service.ipp:53:5 in function 'boost::system::error_code boost::asio::detail::io_uring_file_service::open(implementation_type&, const char*, boost::asio::file_base::flags, boost::system::error_code&)']
+Aborted (core dumped)
+```
+
+In parent class "Sensor", the data member configurationPath stores the
+corresponding EM configuration object path, so we use direct comparison
+of "path.str" and "configurationPath" to replace sensorNameFind().
+
+[1] https://github.com/openbmc/dbus-sensors/blob/cafd72f/src/DeviceMgmt.hpp#L154-L157
+[2] https://github.com/openbmc/dbus-sensors/blob/5b3542e/src/PSUSensorMain.cpp#L442-L445
+[3] https://github.com/openbmc/dbus-sensors/blob/5b3542e/src/PSUSensorMain.cpp#L926
+
+Tested Result:
+psusensor service not crashing after host power cycle.
+```
+root@harma:~# systemctl status xyz.openbmc_project.psusensor
+● xyz.openbmc_project.psusensor.service - PSU Sensor
+     Loaded: loaded (/usr/lib/systemd/system/xyz.openbmc_project.psusensor.service; enabled; preset: enabled)
+    Drop-In: /usr/lib/systemd/system/xyz.openbmc_project.psusensor.service.d
+             └─psusensor-wait-host-state-ready.conf
+     Active: active (running) since Mon 2024-02-26 20:27:36 PST; 2min 49s ago
+   Main PID: 455 (psusensor)
+        CPU: 16.564s
+     CGroup: /system.slice/xyz.openbmc_project.psusensor.service
+             └─455 /usr/bin/psusensor
+
+Feb 26 20:30:23 harma psusensor[455]: Failure assert
+Feb 26 20:30:23 harma psusensor[455]: MB_DIMM_A10_PWR_W read failed
+Feb 26 20:30:23 harma psusensor[455]: MB_DIMM_A10_TEMP_C read failed
+Feb 26 20:30:24 harma psusensor[455]: MB_DIMM_A10_PWR_W read failed
+Feb 26 20:30:24 harma psusensor[455]: MB_DIMM_A10_TEMP_C read failed
+Feb 26 20:30:25 harma psusensor[455]: MB_DIMM_A10_PWR_W read failed
+Feb 26 20:30:25 harma psusensor[455]: MB_DIMM_A10_TEMP_C read failed
+Feb 26 20:30:26 harma psusensor[455]: Failure deassert
+Feb 26 20:30:26 harma psusensor[455]: MB_DIMM_A10_PWR_W read failed
+Feb 26 20:30:26 harma psusensor[455]: MB_DIMM_A10_TEMP_C read failed
+root@harma:~#
+root@harma:~# obmcutil poweroff
+root@harma:~# sleep 10
+root@harma:~# obmcutil poweron
+root@harma:~# sleep 10
+root@harma:~#
+root@harma:~# systemctl status xyz.openbmc_project.psusensor
+● xyz.openbmc_project.psusensor.service - PSU Sensor
+     Loaded: loaded (/usr/lib/systemd/system/xyz.openbmc_project.psusensor.service; enabled; preset: enabled)
+    Drop-In: /usr/lib/systemd/system/xyz.openbmc_project.psusensor.service.d
+             └─psusensor-wait-host-state-ready.conf
+     Active: active (running) since Mon 2024-02-26 20:27:36 PST; 4min 11s ago
+   Main PID: 455 (psusensor)
+        CPU: 24.262s
+     CGroup: /system.slice/xyz.openbmc_project.psusensor.service
+             └─455 /usr/bin/psusensor
+
+Feb 26 20:31:42 harma psusensor[455]: Failure deassert
+Feb 26 20:31:43 harma psusensor[455]: PSUSubEvent asserted by /sys/class/hwmon/hwmon26/in2_alarm
+Feb 26 20:31:43 harma psusensor[455]: Failure assert
+Feb 26 20:31:44 harma psusensor[455]: Failure deassert
+Feb 26 20:31:45 harma psusensor[455]: PSUSubEvent asserted by /sys/class/hwmon/hwmon25/in2_alarm
+Feb 26 20:31:45 harma psusensor[455]: Failure assert
+Feb 26 20:31:45 harma psusensor[455]: Failure deassert
+Feb 26 20:31:46 harma psusensor[455]: PSUSubEvent asserted by /sys/class/hwmon/hwmon34/in2_alarm
+Feb 26 20:31:46 harma psusensor[455]: Failure assert
+Feb 26 20:31:48 harma psusensor[455]: Failure deassert
+```
+
+Change-Id: If73c622cdcda50492d6ef3162da0e11966276cdb
+Signed-off-by: Potin Lai <potin.lai@quantatw.com>
+---
+ src/DeviceMgmt.hpp | 21 +++------------------
+ 1 file changed, 3 insertions(+), 18 deletions(-)
+
+diff --git a/src/DeviceMgmt.hpp b/src/DeviceMgmt.hpp
+index 4b4dea8..d2a84fc 100644
+--- a/src/DeviceMgmt.hpp
++++ b/src/DeviceMgmt.hpp
+@@ -96,26 +96,10 @@ boost::container::flat_map<std::string,
+                 continue;
+             }
+ 
+-            auto findSensorName = cfg.find("Name");
+-            if (findSensorName == cfg.end())
+-            {
+-                continue;
+-            }
+-
+-            const auto* sensorName =
+-                std::get_if<std::string>(&findSensorName->second);
+-            if (sensorName == nullptr)
+-            {
+-                std::cerr << "Unable to find sensor name " << name
+-                          << " on path " << path.str << "\n";
+-                continue;
+-            }
+-
+             std::shared_ptr<T> findSensor(nullptr);
+             for (const auto& sensor : sensors)
+             {
+-                if (sensorNameFind(sensor.first, *sensorName) !=
+-                    std::string::npos)
++                if (path.str == sensor.second->configurationPath)
+                 {
+                     findSensor = sensor.second;
+                     break;
+@@ -126,7 +110,7 @@ boost::container::flat_map<std::string,
+                 devices.emplace(
+                     path.str,
+                     std::make_pair(findSensor->getI2CDevice(), false));
+-                continue;
++                break;
+             }
+ 
+             std::optional<I2CDeviceParams> params =
+@@ -154,6 +138,7 @@ boost::container::flat_map<std::string,
+                         path.str,
+                         std::make_pair(std::make_shared<I2CDevice>(*params),
+                                        true));
++                    break;
+                 }
+                 catch (std::runtime_error&)
+                 {
+-- 
+2.25.1
+

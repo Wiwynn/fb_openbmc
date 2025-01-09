@@ -55,9 +55,9 @@ d 12.209
  src/hwmon-temp/HwmonTempMain.cpp |   6 +-
  src/psu/PSUSensor.cpp            |  25 +-
  src/psu/PSUSensor.hpp            |   9 +-
- src/psu/PSUSensorMain.cpp        |  21 +-
+ src/psu/PSUSensorMain.cpp        |  10 +-
  src/sensor.hpp                   |   7 +-
- 7 files changed, 349 insertions(+), 178 deletions(-)
+ 7 files changed, 342 insertions(+), 174 deletions(-)
 
 diff --git a/src/Utils.cpp b/src/Utils.cpp
 index ac0778d..59e989e 100644
@@ -746,7 +746,7 @@ index f7ccb4f..82ec61b 100644
          }
      }
 diff --git a/src/psu/PSUSensor.cpp b/src/psu/PSUSensor.cpp
-index a2913cf..7ce3430 100644
+index ca77edf..3c7c6f1 100644
 --- a/src/psu/PSUSensor.cpp
 +++ b/src/psu/PSUSensor.cpp
 @@ -44,23 +44,22 @@ static constexpr const char* sensorPathPrefix = "/xyz/openbmc_project/sensors/";
@@ -786,7 +786,7 @@ index a2913cf..7ce3430 100644
      buffer = std::make_shared<std::array<char, 128>>();
      std::string unitPath = sensor_paths::getPathForUnits(sensorUnits);
 diff --git a/src/psu/PSUSensor.hpp b/src/psu/PSUSensor.hpp
-index cebe730..27609be 100644
+index 7dbd15b..c2afe4a 100644
 --- a/src/psu/PSUSensor.hpp
 +++ b/src/psu/PSUSensor.hpp
 @@ -25,7 +25,8 @@ class PSUSensor : public Sensor, public std::enable_shared_from_this<PSUSensor>
@@ -798,8 +798,8 @@ index cebe730..27609be 100644
 +              const size_t& slotId);
      ~PSUSensor() override;
      void setupRead();
-     void activate();
-@@ -61,6 +62,7 @@ class PSUSensor : public Sensor, public std::enable_shared_from_this<PSUSensor>
+     void activate(const std::string& newPath,
+@@ -62,6 +63,7 @@ class PSUSensor : public Sensor, public std::enable_shared_from_this<PSUSensor>
      static constexpr double defaultSensorPoll = 1.0;
      static constexpr unsigned int defaultSensorPollMs =
          static_cast<unsigned int>(defaultSensorPoll * 1000);
@@ -807,7 +807,7 @@ index cebe730..27609be 100644
  };
  
  class PSUProperty
-@@ -68,8 +70,9 @@ class PSUProperty
+@@ -69,8 +71,9 @@ class PSUProperty
    public:
      PSUProperty(std::string name, double max, double min, double factor,
                  double offset) :
@@ -820,10 +820,10 @@ index cebe730..27609be 100644
      ~PSUProperty() = default;
  
 diff --git a/src/psu/PSUSensorMain.cpp b/src/psu/PSUSensorMain.cpp
-index fec80ef..d452704 100644
+index e64b1cc..c45aff6 100644
 --- a/src/psu/PSUSensorMain.cpp
 +++ b/src/psu/PSUSensorMain.cpp
-@@ -513,6 +513,7 @@ static void createSensorsCallback(
+@@ -518,6 +518,7 @@ static void createSensorsCallback(
          checkGroupEvent(directory.string(), groupEventPathList);
  
          PowerState readState = getPowerState(*baseConfig);
@@ -831,42 +831,17 @@ index fec80ef..d452704 100644
  
          /* Check if there are more sensors in the same interface */
          int i = 1;
-@@ -953,7 +954,7 @@ static void createSensorsCallback(
-                 readState, findSensorUnit->second, factor,
-                 psuProperty.maxReading, psuProperty.minReading,
-                 psuProperty.sensorOffset, labelHead, thresholdConfSize,
--                pollRate, i2cDev);
-+                pollRate, i2cDev, readSlot);
-             sensors[sensorName]->setupRead();
-             ++numCreated;
-             if constexpr (debug)
-@@ -1059,9 +1060,9 @@ void createSensors(
-     auto getter = std::make_shared<GetSensorConfiguration>(
-         dbusConnection, [&io, &objectServer, &dbusConnection, sensorsChanged](
-                             const ManagedObjectType& sensorConfigs) {
--        createSensorsCallback(io, objectServer, dbusConnection, sensorConfigs,
--                              sensorsChanged);
--    });
-+            createSensorsCallback(io, objectServer, dbusConnection,
-+                                  sensorConfigs, sensorsChanged);
-+        });
-     std::vector<std::string> types(sensorTypes.size());
-     for (const auto& [type, dt] : sensorTypes)
-     {
-@@ -1124,7 +1125,11 @@ static void powerStateChanged(
-         {
-             if (sensor != nullptr && sensor->readState == type)
-             {
--                sensor->activate();
-+                if ((type == PowerState::chassisOn) &&
-+                    (isChassisOn(sensor->slotId)))
-+                {
-+                    sensor->activate();
-+                }
-             }
-         }
-     }
-@@ -1134,7 +1139,11 @@ static void powerStateChanged(
+@@ -970,7 +971,8 @@ static void createSensorsCallback(
+                     readState, findSensorUnit->second, factor,
+                     psuProperty.maxReading, psuProperty.minReading,
+                     psuProperty.sensorOffset, labelHead, thresholdConfSize,
+-                    pollRate, i2cDev);
++                    pollRate, i2cDev, readSlot);
++
+                 sensors[sensorName]->setupRead();
+                 ++numCreated;
+                 if constexpr (debug)
+@@ -1149,7 +1151,11 @@ static void powerStateChanged(
          {
              if (sensor != nullptr && sensor->readState == type)
              {
@@ -919,5 +894,5 @@ index 82798dc..be25504 100644
  
      void markFunctional(bool isFunctional)
 -- 
-2.43.5
+2.25.1
 
