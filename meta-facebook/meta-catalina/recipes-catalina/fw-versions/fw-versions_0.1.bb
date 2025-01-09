@@ -21,6 +21,7 @@ FW_TOOLS = "\
     pdb-vr-n1,catalina-sys-init.service,,multi-user.target,0 \
     pdb-vr-n2,catalina-sys-init.service,,multi-user.target,0 \
     scm-cpld,catalina-sys-init.service,,multi-user.target,0 \
+    hdd-cpld,catalina-sys-init.service,,multi-user.target,0 \
     hmc-hgx-fw-bmc-0,catalina-sys-init.service,,multi-user.target,0 \
     hmc-hgx-fw-cpld-0,catalina-sys-init.service,,multi-user.target,0 \
     hmc-hgx-fw-cpu-0,catalina-sys-init.service,,multi-user.target,0 \
@@ -33,9 +34,10 @@ FW_TOOLS = "\
     hmc-hgx-fw-fpga-0,catalina-sys-init.service,,multi-user.target,0 \
     hmc-hgx-fw-fpga-1,catalina-sys-init.service,,multi-user.target,0 \
     hmc-hgx-fw-gpu-0,catalina-sys-init.service,,multi-user.target,0 \
-    hmc-hgx-fw-gpu-2,catalina-sys-init.service,,multi-user.target,0 \
+    hmc-hgx-fw-gpu-1,catalina-sys-init.service,,multi-user.target,0 \
     hmc-hgx-inforom-gpu-0,catalina-sys-init.service,,multi-user.target,0 \
-    hmc-hgx-inforom-gpu-2,catalina-sys-init.service,,multi-user.target,0 \
+    hmc-hgx-inforom-gpu-1,catalina-sys-init.service,,multi-user.target,0 \
+    hmc-hgx-pcieswitchconfig-0,catalina-sys-init.service,,multi-user.target,0 \
 "
 
 LOCAL_URI = " \
