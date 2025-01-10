@@ -1,0 +1,245 @@
+From c5a89a539d9987b874ffb165b8f4a0d13950fd87 Mon Sep 17 00:00:00 2001
+From: Potin Lai <potin.lai.pt@gmail.com>
+Date: Thu, 2 Jan 2025 13:24:42 +0800
+Subject: [PATCH 04/12] ARM: dts: aspeed: catalina: update catalina dts file
+
+Update device nodes list below for driver binding.
+
+- Add IOB NIC thermal nodes (TMP421)
+  - 24-001f, 26-001f, 36-001f, 38-001f
+- Add FIO Remote thermal node (TMP75)
+  - 23-001f
+- Add Power sensor node (MP5990)
+  - 16-0022
+- Add main source fan controllers (MAX31790)
+  - 18-0021, 18-0027
+- Add 2nd source fan controllers (NCT7363)
+  - 18-0001, 18-0002
+- Add 2nd source HSC nodes (XDP710)
+  - 20-0013, 20-001c
+- Remove all ina238 nodes, move to userspace
+  - 16-0041, 16-0042, 16-0044, 17-0041, 17-0043
+
+Signed-off-by: Potin Lai <potin.lai.pt@gmail.com>
+---
+LORE: https://lore.kernel.org/all/20250103-potin-catalina-dts-update-20250102-v1-1-b0b7a523c968@gmail.com/
+---
+ .../aspeed/aspeed-bmc-facebook-catalina.dts   | 149 +++++++++++++++---
+ 1 file changed, 126 insertions(+), 23 deletions(-)
+
+diff --git a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts
+index c151984289bc6..5a8fcb0d7a081 100644
+--- a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts
++++ b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts
+@@ -198,6 +198,12 @@ i2c0mux0ch0: i2c@0 {
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 			reg = <0>;
++
++			// IOB0 NIC0 TEMP
++			temperature-sensor@1f {
++				compatible = "ti,tmp421";
++				reg = <0x1f>;
++			};
+ 		};
+ 		i2c0mux0ch1: i2c@1 {
+ 			#address-cells = <1>;
+@@ -208,6 +214,12 @@ i2c0mux0ch2: i2c@2 {
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 			reg = <2>;
++
++			// IOB0 NIC1 TEMP
++			temperature-sensor@1f {
++				compatible = "ti,tmp421";
++				reg = <0x1f>;
++			};
+ 		};
+ 		i2c0mux0ch3: i2c@3 {
+ 			#address-cells = <1>;
+@@ -299,6 +311,12 @@ i2c0mux3ch0: i2c@0 {
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 			reg = <0>;
++
++			// IOB1 NIC0 TEMP
++			temperature-sensor@1f {
++				compatible = "ti,tmp421";
++				reg = <0x1f>;
++			};
+ 		};
+ 		i2c0mux3ch1: i2c@1 {
+ 			#address-cells = <1>;
+@@ -309,6 +327,12 @@ i2c0mux3ch2: i2c@2 {
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 			reg = <2>;
++
++			// IOB1 NIC1 TEMP
++			temperature-sensor@1f {
++				compatible = "ti,tmp421";
++				reg = <0x1f>;
++			};
+ 		};
+ 		i2c0mux3ch3: i2c@3 {
+ 			#address-cells = <1>;
+@@ -404,40 +428,105 @@ i2c1mux0ch0: i2c@0 {
+ 			#size-cells = <0>;
+ 			reg = <0x0>;
+ 
+-			power-sensor@41 {
+-				compatible = "ti,ina238";
+-				reg = <0x41>;
+-				shunt-resistor = <500>;
+-			};
+-			power-sensor@42 {
+-				compatible = "ti,ina238";
+-				reg = <0x42>;
+-				shunt-resistor = <500>;
+-			};
+-			power-sensor@44 {
+-				compatible = "ti,ina238";
+-				reg = <0x44>;
+-				shunt-resistor = <500>;
++			power-sensor@22 {
++				compatible = "mps,mp5990";
++				reg = <0x22>;
+ 			};
+ 		};
+ 		i2c1mux0ch1: i2c@1 {
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 			reg = <0x1>;
+-
+-			power-sensor@41 {
+-				compatible = "ti,ina238";
+-				reg = <0x41>;
+-			};
+-			power-sensor@43 {
+-				compatible = "ti,ina238";
+-				reg = <0x43>;
+-			};
+ 		};
+ 		i2c1mux0ch2: i2c@2 {
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 			reg = <0x2>;
++
++			hwmon0: hwmon@1 {
++				compatible = "nuvoton,nct7363";
++				reg = <0x01>;
++				#pwm-cells = <2>;
++
++				fan-9 {
++					pwms = <&hwmon0 0 40000>;
++					tach-ch = /bits/ 8 <0x09>;
++				};
++				fan-11 {
++					pwms = <&hwmon0 0 40000>;
++					tach-ch = /bits/ 8 <0x0b>;
++				};
++				fan-10 {
++					pwms = <&hwmon0 4 40000>;
++					tach-ch = /bits/ 8 <0x0a>;
++				};
++				fan-13 {
++					pwms = <&hwmon0 4 40000>;
++					tach-ch = /bits/ 8 <0x0d>;
++				};
++				fan-15 {
++					pwms = <&hwmon0 6 40000>;
++					tach-ch = /bits/ 8 <0x0f>;
++				};
++				fan-1 {
++					pwms = <&hwmon0 6 40000>;
++					tach-ch = /bits/ 8 <0x01>;
++				};
++				fan-0 {
++					pwms = <&hwmon0 10 40000>;
++					tach-ch = /bits/ 8 <0x00>;
++				};
++				fan-3 {
++					pwms = <&hwmon0 10 40000>;
++					tach-ch = /bits/ 8 <0x03>;
++				};
++			};
++			hwmon1: hwmon@2 {
++				compatible = "nuvoton,nct7363";
++				reg = <0x02>;
++				#pwm-cells = <2>;
++
++				fan-9 {
++					pwms = <&hwmon1 0 40000>;
++					tach-ch = /bits/ 8 <0x09>;
++				};
++				fan-11 {
++					pwms = <&hwmon1 0 40000>;
++					tach-ch = /bits/ 8 <0x0b>;
++				};
++				fan-10 {
++					pwms = <&hwmon1 4 40000>;
++					tach-ch = /bits/ 8 <0x0a>;
++				};
++				fan-13 {
++					pwms = <&hwmon1 4 40000>;
++					tach-ch = /bits/ 8 <0x0d>;
++				};
++				fan-15 {
++					pwms = <&hwmon1 6 40000>;
++					tach-ch = /bits/ 8 <0x0f>;
++				};
++				fan-1 {
++					pwms = <&hwmon1 6 40000>;
++					tach-ch = /bits/ 8 <0x01>;
++				};
++				fan-0 {
++					pwms = <&hwmon1 10 40000>;
++					tach-ch = /bits/ 8 <0x00>;
++				};
++				fan-3 {
++					pwms = <&hwmon1 10 40000>;
++					tach-ch = /bits/ 8 <0x03>;
++				};
++			};
++			pwm@21{
++				compatible = "maxim,max31790";
++				reg = <0x21>;
++			};
++			pwm@27{
++				compatible = "maxim,max31790";
++				reg = <0x27>;
++			};
+ 		};
+ 		i2c1mux0ch3: i2c@3 {
+ 			#address-cells = <1>;
+@@ -449,6 +538,14 @@ i2c1mux0ch4: i2c@4 {
+ 			#size-cells = <0>;
+ 			reg = <0x4>;
+ 
++			power-monitor@13 {
++				compatible = "infineon,xdp710";
++				reg = <0x13>;
++			};
++			power-monitor@1c {
++				compatible = "infineon,xdp710";
++				reg = <0x1c>;
++			};
+ 			power-monitor@42 {
+ 				compatible = "lltc,ltc4287";
+ 				reg = <0x42>;
+@@ -520,6 +617,12 @@ temperature-sensor@4b {
+ 				compatible = "ti,tmp75";
+ 				reg = <0x4b>;
+ 			};
++
++			// FIO REMOTE TEMP SENSOR
++			temperature-sensor@4f {
++				compatible = "ti,tmp75";
++				reg = <0x4f>;
++			};
+ 		};
+ 	};
+ };
+-- 
+2.31.1
+

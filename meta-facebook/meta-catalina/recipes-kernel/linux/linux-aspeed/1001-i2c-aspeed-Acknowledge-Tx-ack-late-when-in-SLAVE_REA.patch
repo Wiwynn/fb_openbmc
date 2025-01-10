@@ -1,7 +1,7 @@
-From a70d09e0ce8d8568af9c1a0a1d4e3f0288f57975 Mon Sep 17 00:00:00 2001
+From 22829d738336c6a23a9bfd253a087c3938f1cf6c Mon Sep 17 00:00:00 2001
 From: Cosmo Chou <chou.cosmo@gmail.com>
 Date: Mon, 20 Nov 2023 17:17:46 +0800
-Subject: [PATCH 1/6] i2c: aspeed: Acknowledge Tx ack late when in
+Subject: [PATCH 01/12] i2c: aspeed: Acknowledge Tx ack late when in
  SLAVE_READ_PROCESSED
 
 commit 2be6b47211e1 ("i2c: aspeed: Acknowledge most interrupts early
@@ -22,10 +22,10 @@ LORE Link: https://lore.kernel.org/all/20231120091746.2866232-1-chou.cosmo@gmail
  1 file changed, 14 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/i2c/busses/i2c-aspeed.c b/drivers/i2c/busses/i2c-aspeed.c
-index 51e0297384acf..4c2b887c91c37 100644
+index 3069ed1e0b5c7..0858ea690ddf7 100644
 --- a/drivers/i2c/busses/i2c-aspeed.c
 +++ b/drivers/i2c/busses/i2c-aspeed.c
-@@ -393,6 +393,12 @@ static u32 aspeed_i2c_slave_irq(struct aspeed_i2c_bus *bus, u32 irq_status)
+@@ -400,6 +400,12 @@ static u32 aspeed_i2c_slave_irq(struct aspeed_i2c_bus *bus, u32 irq_status)
  		break;
  	}
  

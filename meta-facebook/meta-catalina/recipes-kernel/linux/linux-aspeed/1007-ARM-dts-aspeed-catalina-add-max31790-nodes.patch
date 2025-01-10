@@ -1,28 +1,24 @@
-From 0fa9713097e262006f1d361742a11e1e73eda21d Mon Sep 17 00:00:00 2001
+From f17e5ba44db1f14a2d66013506ef9c17eec720dc Mon Sep 17 00:00:00 2001
 From: Potin Lai <potin.lai.pt@gmail.com>
 Date: Fri, 2 Aug 2024 17:32:49 +0800
-Subject: [PATCH 4/6] ARM: dts: aspeed: catalina: add max31790 nodes
+Subject: [PATCH 07/12] ARM: dts: aspeed: catalina: add max31790 nodes
 
 max31790 nodes were removed due to compatible string not exist on upstream.
 Add back max31790 nodes back in this patch.
 
 Signed-off-by: Potin Lai <potin.lai.pt@gmail.com>
 ---
- .../aspeed/aspeed-bmc-facebook-catalina.dts   | 29 +++++++++++++++++++
- 1 file changed, 29 insertions(+)
+ .../aspeed/aspeed-bmc-facebook-catalina.dts   | 20 +++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
 diff --git a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts
-index 4d7ff91a02a4f..baaaa75821c8d 100644
+index 04b2ca24f4887..8a303fb27e228 100644
 --- a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts
 +++ b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts
-@@ -442,6 +442,35 @@ i2c1mux0ch2: i2c@2 {
- 			#address-cells = <1>;
- 			#size-cells = <0>;
- 			reg = <0x2>;
-+
-+			pwm@21{
-+				compatible = "maxim,max31790";
-+				reg = <0x21>;
+@@ -526,10 +526,30 @@ fan-3 {
+ 			pwm@21{
+ 				compatible = "maxim,max31790";
+ 				reg = <0x21>;
 +				#address-cells = <1>;
 +				#size-cells = <0>;
 +				channel@2 {
@@ -33,10 +29,10 @@ index 4d7ff91a02a4f..baaaa75821c8d 100644
 +					reg = <5>;
 +					sensor-type = "TACH";
 +				};
-+			};
-+			pwm@27{
-+				compatible = "maxim,max31790";
-+				reg = <0x27>;
+ 			};
+ 			pwm@27{
+ 				compatible = "maxim,max31790";
+ 				reg = <0x27>;
 +				#address-cells = <1>;
 +				#size-cells = <0>;
 +				channel@2 {
@@ -47,10 +43,9 @@ index 4d7ff91a02a4f..baaaa75821c8d 100644
 +					reg = <5>;
 +					sensor-type = "TACH";
 +				};
-+			};
+ 			};
  		};
  		i2c1mux0ch3: i2c@3 {
- 			#address-cells = <1>;
 -- 
 2.31.1
 

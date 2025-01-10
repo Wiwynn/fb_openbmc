@@ -1,7 +1,7 @@
-From 55f8f42ec1b2547cf8790a0f21f83869bed95546 Mon Sep 17 00:00:00 2001
+From f6a8ec8fd3962fedc0cbd91fc38168dbeb07db8c Mon Sep 17 00:00:00 2001
 From: Potin Lai <potin.lai.pt@gmail.com>
 Date: Mon, 4 Nov 2024 19:13:30 +0800
-Subject: [PATCH 1/2] ARM: dts: aspeed: catalina: update pdb board cpld ioexp
+Subject: [PATCH 11/12] ARM: dts: aspeed: catalina: update pdb board cpld ioexp
  linename
 
 Due to there are huge changes of PDB CPLD IOEXP pin definitions since
@@ -12,41 +12,82 @@ Signed-off-by: Potin Lai <potin.lai.pt@gmail.com>
 ---
 LORE Link: https://lore.kernel.org/all/20241107-catalina-cpld-ioexp-update-v2-1-d7742eabc0e6@gmail.com/
 ---
- .../aspeed/aspeed-bmc-facebook-catalina.dts   | 99 ++++++-------------
- 1 file changed, 29 insertions(+), 70 deletions(-)
+ .../aspeed/aspeed-bmc-facebook-catalina.dts   | 112 ++++++++----------
+ 1 file changed, 47 insertions(+), 65 deletions(-)
 
 diff --git a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts
-index 82835e96317d..10a9fca1b803 100644
+index bfd795330df26..12eb2c4dd8675 100644
 --- a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts
 +++ b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts
-@@ -802,26 +802,6 @@ io_expander12: gpio@13 {
- 		gpio-controller;
- 		#gpio-cells = <2>;
- 	};
--
--	// PDB CPLD IOEXP 0x14
--	io_expander13: gpio@14 {
--		compatible = "nxp,pca9555";
+@@ -931,8 +931,8 @@ &i2c14 {
+ 	// PDB CPLD IOEXP 0x10
+ 	io_expander9: gpio@10 {
+ 		compatible = "nxp,pca9555";
 -		interrupt-parent = <&gpio0>;
 -		interrupts = <ASPEED_GPIO(I, 6) IRQ_TYPE_LEVEL_LOW>;
--		reg = <0x14>;
--		gpio-controller;
--		#gpio-cells = <2>;
++		interrupt-parent = <&io_expander13>;
++		interrupts = <4 IRQ_TYPE_EDGE_FALLING>;
+ 		reg = <0x10>;
+ 		gpio-controller;
+ 		#gpio-cells = <2>;
+@@ -941,8 +941,8 @@ io_expander9: gpio@10 {
+ 	// PDB CPLD IOEXP 0x11
+ 	io_expander10: gpio@11 {
+ 		compatible = "nxp,pca9555";
+-		interrupt-parent = <&gpio0>;
+-		interrupts = <ASPEED_GPIO(I, 6) IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&io_expander13>;
++		interrupts = <5 IRQ_TYPE_EDGE_FALLING>;
+ 		reg = <0x11>;
+ 		gpio-controller;
+ 		#gpio-cells = <2>;
+@@ -951,8 +951,8 @@ io_expander10: gpio@11 {
+ 	// PDB CPLD IOEXP 0x12
+ 	io_expander11: gpio@12 {
+ 		compatible = "nxp,pca9555";
+-		interrupt-parent = <&gpio0>;
+-		interrupts = <ASPEED_GPIO(I, 6) IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&io_expander13>;
++		interrupts = <6 IRQ_TYPE_EDGE_FALLING>;
+ 		reg = <0x12>;
+ 		gpio-controller;
+ 		#gpio-cells = <2>;
+@@ -961,8 +961,8 @@ io_expander11: gpio@12 {
+ 	// PDB CPLD IOEXP 0x13
+ 	io_expander12: gpio@13 {
+ 		compatible = "nxp,pca9555";
+-		interrupt-parent = <&gpio0>;
+-		interrupts = <ASPEED_GPIO(I, 6) IRQ_TYPE_LEVEL_LOW>;
++		interrupt-parent = <&io_expander13>;
++		interrupts = <7 IRQ_TYPE_EDGE_FALLING>;
+ 		reg = <0x13>;
+ 		gpio-controller;
+ 		#gpio-cells = <2>;
+@@ -971,21 +971,13 @@ io_expander12: gpio@13 {
+ 	// PDB CPLD IOEXP 0x14
+ 	io_expander13: gpio@14 {
+ 		compatible = "nxp,pca9555";
+-		interrupt-parent = <&gpio0>;
+-		interrupts = <ASPEED_GPIO(I, 6) IRQ_TYPE_LEVEL_LOW>;
+ 		reg = <0x14>;
+ 		gpio-controller;
+ 		#gpio-cells = <2>;
 -	};
 -
 -	// PDB CPLD IOEXP 0x15
 -	io_expander14: gpio@15 {
 -		compatible = "nxp,pca9555";
--		interrupt-parent = <&gpio0>;
--		interrupts = <ASPEED_GPIO(I, 6) IRQ_TYPE_LEVEL_LOW>;
++		interrupt-controller;
++		#interrupt-cells = <2>;
+ 		interrupt-parent = <&gpio0>;
+ 		interrupts = <ASPEED_GPIO(I, 6) IRQ_TYPE_LEVEL_LOW>;
 -		reg = <0x15>;
 -		gpio-controller;
 -		#gpio-cells = <2>;
--	};
+ 	};
  };
  
- &i2c15 {
-@@ -1040,71 +1020,50 @@ &io_expander8 {
+@@ -1205,71 +1197,61 @@ &io_expander8 {
  
  &io_expander9 {
  	gpio-line-names =
@@ -122,23 +163,31 @@ index 82835e96317d..10a9fca1b803 100644
 -		"OCP_V3_2_PERST_FROM_HOST_ISO_PLD_N","OCP_V3_2_MAIN_PWR_EN",
 -		"FM_OCP_V3_2_PWR_GOOD_PLD","OCP_V3_2_AUX_PWR_PLD_EN_R",
 -		"HP_LVC3_OCP_V3_2_PWRGD_PLD","HP_OCP_V3_2_HSC_PWRGD_PLD_R";
--};
--
--&io_expander13 {
--	gpio-line-names =
++		"HP_LVC3_OCP_V3_2_PRSNT2_PLD_N","HP_LVC3_OCP_V3_1_PRSNT2_PLD_N",
++		"PRSNT_HDDBD_POWER_CABLE_N","PRSNT_OSFP0_POWER_CABLE_N",
++		"PRSNT_CHASSIS3_LEAK_CABLE_R_N","PRSNT_CHASSIS2_LEAK_CABLE_R_N",
++		"PRSNT_CHASSIS1_LEAK_CABLE_R_N","PRSNT_CHASSIS0_LEAK_CABLE_R_N";
+ };
+ 
+ &io_expander13 {
+ 	gpio-line-names =
 -		"NODEA_NODEB_PWOK_PLD_ISO_R","PWR_EN_NICS",
 -		"PWRGD_P12V_AUX_FAN_PLD","P12V_AUX_FAN_EN_PLD",
 -		"PWRGD_P3V3_AUX_PLD","PWRGD_P12V_AUX_PLD_ISO_R",
 -		"FM_MAIN_PWREN_FROM_RMC_R","FM_MAIN_PWREN_RMC_EN_ISO_R",
 -		"PWRGD_RMC_R","PWRGD_P12V_AUX_FAN_PLD",
 -		"P12V_AUX_FAN_EN_PLD","FM_SYS_THROTTLE_N",
- 		"HP_LVC3_OCP_V3_2_PRSNT2_PLD_N","HP_LVC3_OCP_V3_1_PRSNT2_PLD_N",
--		"","";
-+		"PRSNT_HDDBD_POWER_CABLE_N","PRSNT_OSFP0_POWER_CABLE_N",
-+		"PRSNT_CHASSIS3_LEAK_CABLE_R_N","PRSNT_CHASSIS2_LEAK_CABLE_R_N",
-+		"PRSNT_CHASSIS1_LEAK_CABLE_R_N","PRSNT_CHASSIS0_LEAK_CABLE_R_N";
+-		"HP_LVC3_OCP_V3_2_PRSNT2_PLD_N","HP_LVC3_OCP_V3_1_PRSNT2_PLD_N",
++		"","",
++		"","",
++		"","",
++		"","",
++		"leak_config_0","leak_config_1",
++		"leak_config_2","leak_config_3",
++		"small_leak_err_inj","large_leak_err_inj",
+ 		"","";
  };
- 
+-
 -&io_expander14 {
 -	gpio-line-names =
 -		"","","","","","","","",

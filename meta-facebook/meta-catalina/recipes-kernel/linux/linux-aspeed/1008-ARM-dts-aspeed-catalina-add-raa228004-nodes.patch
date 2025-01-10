@@ -1,7 +1,7 @@
-From dfd725eaacf5609718026088fb332278a649a005 Mon Sep 17 00:00:00 2001
+From 24fc3b1e59fa271d7121c9cecd167d8b95898a0c Mon Sep 17 00:00:00 2001
 From: Potin Lai <potin.lai.pt@gmail.com>
 Date: Fri, 2 Aug 2024 17:34:10 +0800
-Subject: [PATCH 5/6] ARM: dts: aspeed: catalina: add raa228004 nodes
+Subject: [PATCH 08/12] ARM: dts: aspeed: catalina: add raa228004 nodes
 
 raa228004 nodes were removed due to compatible string not exist on upstream.
 Add back raa228004 nodes back in this patch.
@@ -12,10 +12,10 @@ Signed-off-by: Potin Lai <potin.lai.pt@gmail.com>
  1 file changed, 13 insertions(+)
 
 diff --git a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts
-index baaaa75821c8d..d486e8ccaf347 100644
+index 8a303fb27e228..34a16740d134a 100644
 --- a/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts
 +++ b/arch/arm/boot/dts/aspeed/aspeed-bmc-facebook-catalina.dts
-@@ -476,6 +476,19 @@ i2c1mux0ch3: i2c@3 {
+@@ -556,6 +556,19 @@ i2c1mux0ch3: i2c@3 {
  			#address-cells = <1>;
  			#size-cells = <0>;
  			reg = <0x3>;
