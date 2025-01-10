@@ -1,0 +1,41 @@
+From 11950fd530e725da7050e1915c9937eab01634ff Mon Sep 17 00:00:00 2001
+From: Potin Lai <potin.lai@quantatw.com>
+Date: Fri, 20 Dec 2024 16:31:39 +0800
+Subject: [PATCH 1/1] hwmontempsensor: check active state before activation
+
+The activate() function can be called by the createSensors() when host
+power state changes, when host goes off and on again, the sensor will be
+activated repeatedly and cause coredump.
+
+This commit add the check activation state before activating the sensor,
+which reference from PSUSensor[1].
+
+[1] https://gerrit.openbmc.org/c/openbmc/dbus-sensors/+/74727
+
+Change-Id: I72af303fe808538e20b60a5619c036973b3eac91
+Signed-off-by: Potin Lai <potin.lai@quantatw.com>
+---
+Gerrit: https://gerrit.openbmc.org/c/openbmc/dbus-sensors/+/76973
+---
+ src/hwmon-temp/HwmonTempSensor.cpp | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/src/hwmon-temp/HwmonTempSensor.cpp b/src/hwmon-temp/HwmonTempSensor.cpp
+index eab7349..9ebd6c9 100644
+--- a/src/hwmon-temp/HwmonTempSensor.cpp
++++ b/src/hwmon-temp/HwmonTempSensor.cpp
+@@ -97,6 +97,11 @@ bool HwmonTempSensor::isActive()
+ void HwmonTempSensor::activate(const std::string& newPath,
+                                const std::shared_ptr<I2CDevice>& newI2CDevice)
+ {
++    if (isActive())
++    {
++        // Avoid activating an active sensor
++        return;
++    }
+     path = newPath;
+     i2cDevice = newI2CDevice;
+     inputDev.open(path, boost::asio::random_access_file::read_only);
+-- 
+2.31.1
+

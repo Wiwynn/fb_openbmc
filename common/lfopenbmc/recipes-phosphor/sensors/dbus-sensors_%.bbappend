@@ -5,6 +5,7 @@ SRC_URI:append = " \
     file://0002-PSUSensor-add-adm1281-support.patch \
     file://0003-DeviceMgmt-fix-device-not-found.patch \
     file://0004-PSUSensor-Fix-error-for-decimal-part-of-scalefactor.patch \
+    file://0006-hwmontempsensor-check-active-state-before-activation.patch \
 "
 
 SRC_URI:append:fb-compute-multihost = " \
