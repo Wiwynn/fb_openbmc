@@ -1,7 +1,7 @@
-From 8d59eb74c8afbdf782112ab7251b342c4e57ec72 Mon Sep 17 00:00:00 2001
+From f492fb7a42327b0a93166186491a4c4de18ba277 Mon Sep 17 00:00:00 2001
 From: PeterHo-wiwynn <Peter_MH_Ho@wiwynn.com>
 Date: Wed, 11 Oct 2023 14:31:47 +0800
-Subject: [PATCH] Support get static eid config from entity manager
+Subject: [PATCH 500/502] Support get static eid config from entity manager
 
 The mctpd will try to find the configuration interface
 "xyz.openbmc_project.Configuration.MCTPEndpoint" and parse the data.
@@ -32,17 +32,17 @@ root@bmc:~# pldmtool base GetTID -m 60
 
 Signed-off-by: PeterHo-wiwynn <Peter_MH_Ho@wiwynn.com>
 ---
- src/mctpd.c | 582 +++++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 574 insertions(+), 8 deletions(-)
+ src/mctpd.c | 589 +++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 580 insertions(+), 9 deletions(-)
 
 diff --git a/src/mctpd.c b/src/mctpd.c
-index b89b01b..a33bea8 100644
+index 52e3769..e444288 100644
 --- a/src/mctpd.c
 +++ b/src/mctpd.c
-@@ -38,6 +38,12 @@
- #define MCTP_DBUS_IFACE "xyz.openbmc_project.MCTP"
+@@ -51,6 +51,12 @@
  #define MCTP_DBUS_IFACE_ENDPOINT "xyz.openbmc_project.MCTP.Endpoint"
  #define OPENBMC_IFACE_COMMON_UUID "xyz.openbmc_project.Common.UUID"
+ #define CC_MCTP_DBUS_IFACE_INTERFACE "au.com.codeconstruct.MCTP.Interface1"
 +#define OPENBMC_MCTP_CONFIG_IFACE "xyz.openbmc_project.Configuration.MCTPEndpoint"
 +#define OPENBMC_ASSOCIATION_IFACE "xyz.openbmc_project.Association.Definitions"
 +#define OPENBMC_ENTITY_MANAGER "xyz.openbmc_project.EntityManager"
@@ -52,7 +52,7 @@ index b89b01b..a33bea8 100644
  
  // an arbitrary constant for use with sd_id128_get_machine_app_specific()
  static const char* mctpd_appid = "67369c05-4b97-4b7e-be72-65cfd8639f10";
-@@ -47,6 +53,7 @@ static mctp_eid_t eid_alloc_max = 0xfe;
+@@ -62,6 +68,7 @@ static mctp_eid_t eid_alloc_max = 0xfe;
  
  // arbitrary sanity
  static size_t MAX_PEER_SIZE = 1000000;
@@ -60,9 +60,9 @@ index b89b01b..a33bea8 100644
  
  static const uint8_t RQDI_REQ = 1<<7;
  static const uint8_t RQDI_RESP = 0x0;
-@@ -71,6 +78,13 @@ struct ctx;
- // all local peers have the same phys
- static const dest_phys local_phys = { .ifindex = 0 };
+@@ -123,6 +130,13 @@ static const struct role roles[] = {
+ 	},
+ };
  
 +struct association {
 +	char *forward;
@@ -74,7 +74,7 @@ index b89b01b..a33bea8 100644
  struct peer {
  	int net;
  	mctp_eid_t eid;
-@@ -110,6 +124,9 @@ struct peer {
+@@ -163,6 +177,9 @@ struct peer {
  	// From Get Endpoint UUID. A malloced 16 bytes */
  	uint8_t *uuid;
  
@@ -83,8 +83,8 @@ index b89b01b..a33bea8 100644
 +
  	// Stuff the ctx pointer into peer for tidier parameter passing
  	struct ctx *ctx;
- };
-@@ -214,6 +231,18 @@ static peer * find_peer_by_addr(ctx *ctx, mctp_eid_t eid, int net)
+ 
+@@ -288,6 +305,18 @@ static peer * find_peer_by_addr(ctx *ctx, mctp_eid_t eid, int net)
  	return NULL;
  }
  
@@ -103,7 +103,7 @@ index b89b01b..a33bea8 100644
  /* Returns a deferred free pointer */
  static const char* dest_phys_tostr(const dest_phys *dest)
  {
-@@ -1121,7 +1150,7 @@ out:
+@@ -1349,7 +1378,7 @@ out:
  /* Returns the newly added peer.
   * Error is -EEXISTS if it exists */
  static int add_peer(ctx *ctx, const dest_phys *dest, mctp_eid_t eid,
@@ -112,7 +112,7 @@ index b89b01b..a33bea8 100644
  {
  	ssize_t idx;
  	size_t new_size;
-@@ -1183,6 +1212,14 @@ static int add_peer(ctx *ctx, const dest_phys *dest, mctp_eid_t eid,
+@@ -1411,6 +1440,14 @@ static int add_peer(ctx *ctx, const dest_phys *dest, mctp_eid_t eid,
  	// Update network eid map
  	n->peeridx[eid] = idx;
  
@@ -127,7 +127,7 @@ index b89b01b..a33bea8 100644
  	*ret_peer = peer;
  	return 0;
  }
-@@ -1243,6 +1280,12 @@ static int remove_peer(peer *peer)
+@@ -1482,6 +1519,12 @@ static int remove_peer(peer *peer)
  	n->peeridx[peer->eid] = -1;
  	free(peer->message_types);
  	free(peer->uuid);
@@ -140,25 +140,40 @@ index b89b01b..a33bea8 100644
  	memset(peer, 0x0, sizeof(struct peer));
  	return 0;
  }
-@@ -1324,7 +1367,7 @@ static int endpoint_assign_eid(ctx *ctx, sd_bus_error *berr, const dest_phys *de
- 	/* Find an unused EID */
- 	for (e = eid_alloc_min; e <= eid_alloc_max; e++) {
- 		if (n->peeridx[e] == -1) {
--			rc = add_peer(ctx, dest, e, net, &peer);
-+			rc = add_peer(ctx, dest, e, net, NULL, &peer);
- 			if (rc < 0)
- 				return rc;
- 			break;
-@@ -1503,7 +1546,7 @@ static int get_endpoint_peer(ctx *ctx, sd_bus_error *berr,
+@@ -1561,7 +1604,7 @@ static int endpoint_assign_eid(ctx *ctx, sd_bus_error *berr, const dest_phys *de
+ 	}
+ 
+ 	if (static_eid) {
+-		rc = add_peer(ctx, dest, static_eid, net, &peer);
++		rc = add_peer(ctx, dest, static_eid, net, NULL, &peer);
+ 		if (rc < 0)
+ 			return rc;
+ 
+@@ -1570,7 +1613,7 @@ static int endpoint_assign_eid(ctx *ctx, sd_bus_error *berr, const dest_phys *de
+ 		/* Find an unused EID */
+ 		for (e = eid_alloc_min; e <= eid_alloc_max; e++) {
+ 			if (n->peeridx[e] == -1) {
+-				rc = add_peer(ctx, dest, e, net, &peer);
++				rc = add_peer(ctx, dest, e, net, NULL, &peer);
+ 				if (rc < 0)
+ 					return rc;
+ 				break;
+@@ -1751,8 +1794,12 @@ static int get_endpoint_peer(ctx *ctx, sd_bus_error *berr,
  			return 0;
  		}
  		/* New endpoint */
 -		rc = add_peer(ctx, dest, eid, net, &peer);
+-		if (rc < 0)
 +		rc = add_peer(ctx, dest, eid, net, NULL, &peer);
- 		if (rc == -EEXIST)
- 			return sd_bus_error_setf(berr, SD_BUS_ERROR_FILE_EXISTS,
- 					"Endpoint claimed EID %d which is already used",
-@@ -1666,6 +1709,191 @@ static int message_read_hwaddr(sd_bus_message *call, dest_phys* dest)
++		if (rc == -EEXIST)
++			return sd_bus_error_setf(berr, SD_BUS_ERROR_FILE_EXISTS,
++					"Endpoint claimed EID %d which is already used",
++					eid);
++		else if (rc < 0)
+ 			return rc;
+ 	}
+ 
+@@ -1963,6 +2010,190 @@ static int message_read_hwaddr(sd_bus_message *call, dest_phys* dest)
  	return 0;
  }
  
@@ -172,7 +187,6 @@ index b89b01b..a33bea8 100644
 +	peer *peer = NULL;
 +	struct sockaddr_mctp_ext addr;
 +	struct mctp_ctrl_cmd_get_eid req = {0};
-+	struct mctp_ctrl_resp_get_eid *resp = NULL;
 +	req.ctrl_hdr.rq_dgram_inst = RQDI_REQ;
 +	req.ctrl_hdr.command_code = MCTP_CTRL_CMD_GET_ENDPOINT_ID;
 +	sd_bus_error error = SD_BUS_ERROR_NULL;
@@ -252,7 +266,7 @@ index b89b01b..a33bea8 100644
 +		const uint64_t* hwaddr_array = (const uint64_t*)msg_hwaddr;
 +
 +		memset(dest->hwaddr, 0x0, MAX_ADDR_LEN);
-+		for (int i = 0; i < msg_hwaddr_len; ++i) {
++		for (size_t i = 0; i < msg_hwaddr_len; ++i) {
 +			dest->hwaddr[i] = (uint8_t)hwaddr_array[i] & 0xFF;
 +		}
 +		dest->hwaddr_len = msg_hwaddr_len / sizeof(uint64_t);
@@ -303,7 +317,7 @@ index b89b01b..a33bea8 100644
 +		// for the chassis path.
 +		char object_path[MAX_STRING_SIZE];
 +		if (strlen(object_paths[i]) >= MAX_STRING_SIZE) {
-+			warnx("Object path too large >= %d", MAX_STRING_SIZE);
++			warnx("Object path too large >= %zd", MAX_STRING_SIZE);
 +			continue;
 +		}
 +		strcpy(object_path, object_paths[i]);
@@ -350,7 +364,7 @@ index b89b01b..a33bea8 100644
  /* SetupEndpoint method tries the following in order:
    - request Get Endpoint ID to add to the known table, return that
    - request Set Endpoint ID, return that */
-@@ -1832,6 +2060,20 @@ err:
+@@ -2195,6 +2426,20 @@ err:
  	return rc;
  }
  
@@ -371,7 +385,7 @@ index b89b01b..a33bea8 100644
  // Query various properties of a peer.
  // To be called when a new peer is discovered/assigned, once an EID is known
  // and routable.
-@@ -2274,6 +2516,11 @@ static const sd_bus_vtable bus_mctpd_vtable[] = {
+@@ -2842,6 +3087,11 @@ static const sd_bus_vtable bus_owner_vtable[] = {
  		SD_BUS_PARAM(found),
  		method_learn_endpoint,
  		0),
@@ -383,10 +397,10 @@ index b89b01b..a33bea8 100644
  	SD_BUS_VTABLE_END,
  
  };
-@@ -2337,6 +2584,10 @@ static int bus_endpoint_get_prop(sd_bus *bus,
- 	} else if (strcmp(property, "UUID") == 0 && peer->uuid) {
- 		const char *s = dfree(bytes_to_uuid(peer->uuid));
+@@ -2958,6 +3208,10 @@ static int bus_endpoint_get_prop(sd_bus *bus,
  		rc = sd_bus_message_append(reply, "s", s);
+ 	} else if (strcmp(property, "Connectivity") == 0) {
+ 		rc = sd_bus_message_append(reply, "s", peer->degraded ? "Degraded" : "Available");
 +	} else if (strcmp(property, "Associations") == 0 && peer->association) {
 +		rc = sd_bus_message_append(reply, "a(sss)",
 +			1, peer->association->forward, peer->association->reverse,
@@ -394,7 +408,7 @@ index b89b01b..a33bea8 100644
  	} else {
  		printf("Unknown property '%s' for %s iface %s\n", property, path, interface);
  		rc = -ENOENT;
-@@ -2390,6 +2641,16 @@ static const sd_bus_vtable bus_endpoint_cc_vtable[] = {
+@@ -3199,6 +3453,16 @@ static const sd_bus_vtable bus_endpoint_cc_vtable[] = {
  	SD_BUS_VTABLE_END
  };
  
@@ -411,8 +425,8 @@ index b89b01b..a33bea8 100644
  static int bus_endpoint_find(sd_bus *bus, const char *path,
  	const char *interface, void *userdata, void **ret_found,
  	sd_bus_error *ret_error)
-@@ -2425,6 +2686,24 @@ static int bus_endpoint_find_uuid(sd_bus *bus, const char *path,
- 	return 0;
+@@ -3312,6 +3576,24 @@ static int bus_mctp_link_busowner_find(sd_bus *bus, const char *path,
+ 				    ret_found, ret_error);
  }
  
 +/* Association.Definitions interface is only added for peers that get EID
@@ -436,7 +450,7 @@ index b89b01b..a33bea8 100644
  static char* net_path(int net)
  {
  	size_t l;
-@@ -2584,6 +2863,251 @@ out:
+@@ -3613,6 +3895,251 @@ out:
  	return rc;
  }
  
@@ -500,7 +514,7 @@ index b89b01b..a33bea8 100644
 +					}
 +					const uint64_t* hwaddr_array = (const uint64_t*)msg_hwaddr;
 +					memset(dest->hwaddr, 0x0, MAX_ADDR_LEN);
-+					for (int i = 0; i < msg_hwaddr_len; ++i) {
++					for (size_t i = 0; i < msg_hwaddr_len; ++i) {
 +						dest->hwaddr[i] = (uint8_t)hwaddr_array[i] & 0xFF;
 +					}
 +					dest->hwaddr_len = msg_hwaddr_len / sizeof(uint64_t);
@@ -669,7 +683,7 @@ index b89b01b..a33bea8 100644
 +
 +	char temp[MAX_STRING_SIZE];
 +	if (strlen(object_path) >= MAX_STRING_SIZE) {
-+		warnx("Object path too large >= %d", MAX_STRING_SIZE);
++		warnx("Object path too large >= %zd", MAX_STRING_SIZE);
 +		return -1;
 +	}
 +	strcpy(temp, object_path);
@@ -687,11 +701,12 @@ index b89b01b..a33bea8 100644
 +
  static int setup_bus(ctx *ctx)
  {
- 	int rc;
-@@ -2655,6 +3179,17 @@ static int setup_bus(ctx *ctx)
+ 	sigset_t sigset;
+@@ -3713,6 +4240,18 @@ static int setup_bus(ctx *ctx)
+ 		warnx("Failed creating D-Bus object");
  		goto out;
  	}
- 
++
 +	rc = sd_bus_add_fallback_vtable(ctx->bus, NULL,
 +					MCTP_DBUS_PATH,
 +					OPENBMC_ASSOCIATION_IFACE,
@@ -706,7 +721,7 @@ index b89b01b..a33bea8 100644
  	rc = sd_bus_add_object_manager(ctx->bus, NULL, MCTP_DBUS_PATH);
  	if (rc < 0) {
  		warnx("Adding object manager failed: %s", strerror(-rc));
-@@ -2668,6 +3203,36 @@ static int setup_bus(ctx *ctx)
+@@ -3726,6 +4265,36 @@ static int setup_bus(ctx *ctx)
  		goto out;
  	}
  
@@ -743,7 +758,7 @@ index b89b01b..a33bea8 100644
  	rc = 0;
  out:
  	return rc;
-@@ -2870,7 +3435,7 @@ static int add_local_eid(ctx *ctx, int net, int eid)
+@@ -3935,7 +4504,7 @@ static int add_local_eid(ctx *ctx, int net, int eid)
  		}
  	}
  
@@ -752,7 +767,7 @@ index b89b01b..a33bea8 100644
  	if (rc < 0) {
  		warn("BUG: Error adding local eid %d net %d", eid, net);
  		return rc;
-@@ -3021,7 +3586,7 @@ static int setup_testing(ctx *ctx) {
+@@ -4130,7 +4699,7 @@ static int setup_testing(ctx *ctx) {
  			for (i = 0; i < 256; i++)
  				ctx->nets[j].peeridx[i] = -1;
  
@@ -761,7 +776,7 @@ index b89b01b..a33bea8 100644
  		if (rc < 0) {
  			warnx("%s failed add_peer, %s", __func__, strerror(-rc));
  			return rc;
-@@ -3031,7 +3596,7 @@ static int setup_testing(ctx *ctx) {
+@@ -4140,7 +4709,7 @@ static int setup_testing(ctx *ctx) {
  		sd_id128_randomize((void*)peer->uuid);
  		publish_peer(peer, false);
  
@@ -770,7 +785,7 @@ index b89b01b..a33bea8 100644
  		if (rc < 0) {
  			warnx("%s failed add_peer, %s", __func__, strerror(-rc));
  			return rc;
-@@ -3044,7 +3609,7 @@ static int setup_testing(ctx *ctx) {
+@@ -4153,7 +4722,7 @@ static int setup_testing(ctx *ctx) {
  		peer->message_types[2] = 0x04;
  		publish_peer(peer, false);
  
@@ -779,7 +794,7 @@ index b89b01b..a33bea8 100644
  		if (rc < 0) {
  			warnx("%s failed add_peer, %s", __func__, strerror(-rc));
  			return rc;
-@@ -3192,6 +3757,8 @@ int main(int argc, char **argv)
+@@ -4412,6 +4981,8 @@ int main(int argc, char **argv)
  	if (rc < 0 && !ctx->testing)
  		return 1;
  
@@ -788,14 +803,6 @@ index b89b01b..a33bea8 100644
  	// TODO add net argument?
  	rc = listen_control_msg(ctx, MCTP_NET_ANY);
  	if (rc < 0) {
-@@ -3210,7 +3777,6 @@ int main(int argc, char **argv)
- 	if (rc < 0)
- 		return 1;
- 
--
- 	rc = sd_event_loop(ctx->event);
- 	sd_event_unref(ctx->event);
- 	if (rc < 0) {
 -- 
-2.25.1
+2.44.2
 
