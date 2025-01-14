@@ -1,6 +1,6 @@
 # recipes-connectivity/dhcp doesn't exist anymore on master but older
 # branches need the bbappend for compatibility.
-BBMASK:append = " dhcp.*\.bbappend"
+BBMASK:append = " dhcp_.*\.bbappend"
 # recipes-utils/flashrom/flashrom_1.2 is needed for both dunfell and kirkstone.
 BBMASK:append = " flashrom/flashrom_1.2\.bbappend"
 # The linux-aspeed_5.% only exists for non-LF systems; this probably wasn't
