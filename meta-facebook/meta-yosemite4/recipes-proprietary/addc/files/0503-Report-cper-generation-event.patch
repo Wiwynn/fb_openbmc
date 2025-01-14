@@ -1,0 +1,27 @@
+From d0d4859a2c46e87f327d86e8bce910a596d87069 Mon Sep 17 00:00:00 2001
+From: PeterHo-wiwynn <Peter_MH_Ho@wiwynn.com>
+Date: Thu, 2 Jan 2025 15:02:33 +0800
+Subject: [PATCH] Report cper generation event
+
+---
+ src/write_cper_data.cpp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/write_cper_data.cpp b/src/write_cper_data.cpp
+index 03d8be4..ae526e6 100644
+--- a/src/write_cper_data.cpp
++++ b/src/write_cper_data.cpp
+@@ -913,6 +913,10 @@ void write_to_cper_file(const std::shared_ptr<T>& data, std::string ErrorType,
+         fclose(file);
+     }
+ 
++    auto eventString = "Crashdump for Host: " + std::to_string(fru) +
++                       " is generated at " + cperFilePath;
++    reportError(eventString);
++
+     lock.unlock();
+ }
+ 
+-- 
+2.25.1
+

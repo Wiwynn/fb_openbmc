@@ -1,15 +1,15 @@
-From aa6fd9f19c102c3947f017bbb87cbb9092b6e72e Mon Sep 17 00:00:00 2001
+From 52ef4f23263ca5a9de7e44a6f43b117d1b23b7e5 Mon Sep 17 00:00:00 2001
 From: PeterHo-wiwynn <Peter_MH_Ho@wiwynn.com>
 Date: Fri, 30 Aug 2024 11:28:50 +0800
 Subject: [PATCH] Report CPU error to D-Bus
 
 ---
- inc/ras.hpp         |  1 +
+ inc/ras.hpp         |  2 ++
  src/fatal_error.cpp | 42 ++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 43 insertions(+)
+ 2 files changed, 44 insertions(+)
 
 diff --git a/inc/ras.hpp b/inc/ras.hpp
-index 93028a6..4a3d801 100644
+index 93028a6..ddee9f5 100644
 --- a/inc/ras.hpp
 +++ b/inc/ras.hpp
 @@ -14,6 +14,7 @@
@@ -20,6 +20,14 @@ index 93028a6..4a3d801 100644
  #include <regex>
  #include <sdbusplus/asio/connection.hpp>
  #include <sdbusplus/asio/object_server.hpp>
+@@ -145,6 +146,7 @@ void dump_proc_error_info_section(const std::shared_ptr<T>&, uint8_t, uint16_t,
+                                   uint64_t*, uint32_t);
+ void exportCrashdumpToDBus(int, const ERROR_TIME_STAMP&);
+ void write_register(uint8_t, uint32_t, uint32_t);
++void reportError(const std::string errorMsg);
+ 
+ extern boost::asio::io_service io;
+ extern std::vector<uint8_t> BlockId;
 diff --git a/src/fatal_error.cpp b/src/fatal_error.cpp
 index 5351ef4..29b9e71 100644
 --- a/src/fatal_error.cpp

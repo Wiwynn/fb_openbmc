@@ -15,6 +15,7 @@ SRC_URI += " \
     file://0500-Support-addc-for-YV4.patch \
     file://0501-Add-some-initial-properties-for-TURIN-CPU.patch \
     file://0502-Improve-efficiency-for-mailbox-command.patch \
+    file://0503-Report-cper-generation-event.patch \
     file://ras-polling.sh \
     file://ras-polling@.service \
 "
