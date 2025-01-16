@@ -93,6 +93,8 @@ do_status() {
 }
 
 do_on_com_e() {
+    logger -p user.crit "Power on microserver ..."
+
     echo 1 > "$PWR_USRV_SYSFS"
     echo 1 > "$PWR_USRV_FORCE_OFF"
     return $?
@@ -155,6 +157,8 @@ do_off_com_e() {
 do_off() {
     local ret
     echo -n "Power off microserver ..."
+    logger -p user.crit "Power off microserver ..."
+
     do_off_com_e
     ret=$?
     if [ $ret -eq 0 ]; then
@@ -242,11 +246,11 @@ do_reset() {
             if [ $timer -eq 1 ]; then
                 do_config_reset_timer "$wake_t"
             fi
+            logger -p user.crit "Power cycle the whole system ..."
             # Synchronize cached writes to persistent storage
             # We found somethimes /mnt/data data lost after wedge_power.sh reset -s,
             # add sync in case of file system will be broken by random power cycle.
             sync
-            logger "Power reset the whole system ..."
             echo  "Power reset the whole system ..."
             echo 1 > "$PWR_L_CYCLE_SYSFS"
             echo 1 > "$PWR_R_CYCLE_SYSFS"
@@ -254,7 +258,7 @@ do_reset() {
             # Control should not reach here, but if it failed to reset
             # the system through PSU, then run a workaround to reset
             # most of the system instead (if not all)
-            logger "Failed to reset the system. Running a workaround"
+            logger -p user.crit "Failed to reset the system. Running a workaround"
             echo "Failed to reset the system. Running a workaround"
             i2cset -f -y 1 0x3a 0x12 0
     else
@@ -264,6 +268,7 @@ do_reset() {
             return 1
         fi
         echo -n "Power reset microserver ..."
+        logger -p user.crit "Reset microserver ..."
         echo 0 > "$PWR_USRV_RST_SYSFS"
         sleep 1
         echo 1 > "$PWR_USRV_RST_SYSFS"
