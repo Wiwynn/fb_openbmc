@@ -18,7 +18,6 @@ fi
 mkdir -p $SYSCONFDIR
 
 HOST_KEY_RSA=$SYSCONFDIR/ssh_host_rsa_key
-HOST_KEY_DSA=$SYSCONFDIR/ssh_host_dsa_key
 HOST_KEY_ECDSA=$SYSCONFDIR/ssh_host_ecdsa_key
 HOST_KEY_ED25519=$SYSCONFDIR/ssh_host_ed25519_key
 
@@ -88,15 +87,6 @@ check_keys() {
 		ssh-keygen -q -f $HOST_KEY_ECDSA -N '' -t ecdsa
 		save_keyfile $HOST_KEY_ECDSA
 		save_keyfile $HOST_KEY_ECDSA.pub
-	fi
-
-	get_keyfile $HOST_KEY_DSA
-	get_keyfile $HOST_KEY_DSA.pub
-	if [ ! -f $HOST_KEY_DSA ]; then
-		echo "  generating ssh DSA key..."
-		ssh-keygen -q -f $HOST_KEY_DSA -N '' -t dsa
-		save_keyfile $HOST_KEY_DSA
-		save_keyfile $HOST_KEY_DSA.pub
 	fi
 
 	get_keyfile $HOST_KEY_ED25519
