@@ -14,6 +14,7 @@ write_aura_reg() {
 }
 
 config_aura_cl_parameter() {
+    logger -p user.crit "Applying Auro Volatile Fix.."
     /usr/sbin/i2cset -y -f 10 0x68 0xff 0x00
     /usr/sbin/i2cset -y -f 10 0x68 0x2c 0xa2
     /usr/sbin/i2cset -y -f 10 0x68 0x2d 0x2a
@@ -87,8 +88,7 @@ improve_aura_pll() {
     if [ "$aura_found" == "1" ]; then
        echo "Aura Crystal found. Moving on"
     else
-       echo "Aura chip not found. Exiting."
-       echo "AURA_NOT_FOUND"
+       echo "improve_aura_pll() skipped: AURA_NOT_FOUND"
        exit 0
     fi
     retry="3"
@@ -111,6 +111,7 @@ improve_aura_pll() {
            fi
         else
            echo "Aura is in bad state. Trying soft reset of Aura."
+           logger -p user.crit "Recover (soft reset) Aura from bad state.."
            /usr/sbin/i2cset -y -f 10 0x68 0xff 0x00
            /usr/sbin/i2cset -y -f 10 0x68 0xfe 0x01
            /usr/sbin/i2cset -y -f 10 0x68 0xfe 0x00
