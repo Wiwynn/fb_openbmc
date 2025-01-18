@@ -12,6 +12,7 @@ UNPACKDIR="${S}"
 
 LOCAL_URI = " \
     file://meson.build \
+    file://config.meson.hpp \
     file://mfg-tool.cpp \
     file://cmd \
     file://utils \
@@ -28,6 +29,7 @@ DEPENDS += " \
 
 RDEPENDS:${PN} += " \
     bash \
+    phosphor-dbus-interfaces-redfish-registry \
     "
 
 do_install:append() {

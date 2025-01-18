@@ -17,6 +17,16 @@ phosphor_dbus_interfaces_dep = dependency('phosphor-dbus-interfaces')
 phosphor_logging_dep = dependency('phosphor-logging')
 sdbusplus_dep = dependency('sdbusplus')
 
+registry_dir = phosphor_dbus_interfaces_dep.get_variable('registry_dir')
+config_data = configuration_data()
+config_data.set('REGISTRY_DIR', registry_dir)
+
+configure_file(
+  input: 'config.meson.hpp',
+  output: 'config.hpp',
+  configuration: config_data,
+)
+
 executable(
   'mfg-tool',
   'mfg-tool.cpp',
@@ -36,8 +46,9 @@ executable(
   'cmd/sensor-display.cpp',
   'cmd/version-display.cpp',
   'utils/json.cpp',
-  'utils/register.cpp',
   'utils/mapper.cpp',
+  'utils/redfish-registry.cpp',
+  'utils/register.cpp',
   dependencies: [
     CLI11_dep,
     nlohmann_json_dep,
