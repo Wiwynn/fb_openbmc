@@ -1,0 +1,11 @@
+[Unit]
+Description=Start satellite management controller (SMC) event relay
+Requires=xyz.openbmc_project.EntityManager.service
+After=xyz.openbmc_project.EntityManager.service
+
+[Service]
+Restart=on-failure
+ExecStart=/usr/bin/satellite-relay --from=http://172.31.13.251 --bind=http://172.31.13.241:8888
+
+[Install]
+WantedBy=multi-user.target
