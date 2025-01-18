@@ -39,6 +39,7 @@ executable(
   'cmd/inventory.cpp',
   'cmd/log-clear.cpp',
   'cmd/log-display.cpp',
+  'cmd/log-registry.cpp',
   'cmd/log-resolve.cpp',
   'cmd/postcode-display.cpp',
   'cmd/power-control.cpp',
