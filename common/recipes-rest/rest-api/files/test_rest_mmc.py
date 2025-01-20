@@ -5,6 +5,7 @@ import unittest
 import aiohttp
 
 unittest.mock.patch.object(ctypes, "CDLL", create=True).start()
+import aiohttp.log
 import obmc_mmc
 import rest_mmc
 from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop
@@ -46,6 +47,10 @@ class TestRestMMC(AioHTTPTestCase):
                     EXT_CSD_DEVICE_LIFE_TIME_EST_TYP_B=3,
                 ),
             ),
+            unittest.mock.patch(
+                "aiohttp.log.server_logger.exception",
+                wraps=aiohttp.log.server_logger.exception,
+            ),
         ]
         for p in self.patches:
             p.start()
@@ -76,18 +81,18 @@ class TestRestMMC(AioHTTPTestCase):
         )
 
     def test_get_dev_info_suppress_exceptions(self):
-        obmc_mmc.mmc_dev.side_effect = obmc_mmc.LibObmcMmcException("blah")
+        expected_exception = obmc_mmc.LibObmcMmcException("blah")
 
-        # Should not raise exception
-        with self.assertLogs() as cm:
+        with unittest.mock.patch("obmc_mmc.mmc_dev", side_effect=expected_exception):
+            # Should not raise exception
             ret = rest_mmc._get_dev_info("<dev_path>")
 
         self.assertEqual(ret, {})
 
         # Ensure exception was logged
-        self.assertRegex(
-            cm.records[0].msg,
-            r"Error while attempting to fetch mmc health data for '<dev_path>': LibObmcMmcException.*blah.*[)]",  # noqa: B950
+        aiohttp.log.server_logger.exception.assert_called_once_with(
+            "Error while attempting to fetch mmc health data for '<dev_path>': "
+            + repr(expected_exception)
         )
 
     @unittest_run_loop

@@ -2,8 +2,9 @@ import asyncio
 import functools
 import typing as t
 
+import aiohttp.log
+
 import obmc_mmc
-from aiohttp.log import server_logger
 
 
 async def get_mmc_info() -> t.Dict[str, t.Dict[str, t.Union[int, str]]]:
@@ -49,7 +50,7 @@ def _get_dev_info(dev_path: str) -> t.Dict[str, t.Union[int, str]]:
             )
 
     except obmc_mmc.LibObmcMmcException as e:
-        server_logger.exception(
+        aiohttp.log.server_logger.exception(
             "Error while attempting to fetch mmc health data for {dev_path}: {e}".format(  # noqa: B950
                 dev_path=repr(dev_path), e=repr(e)
             )

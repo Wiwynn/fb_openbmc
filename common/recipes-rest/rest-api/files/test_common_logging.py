@@ -20,6 +20,7 @@
 
 import copy
 import datetime
+import importlib
 import io
 import json
 import logging
@@ -60,7 +61,9 @@ class TestLoggerConfigurator(unittest.TestCase):
 
     def tearDown(self):
         # reset logger
+        logging.shutdown()
         logging.disable(logging.NOTSET)
+        importlib.reload(logging)
 
         # remove the tempfile
         self.temp_file.close()

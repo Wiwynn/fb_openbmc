@@ -84,7 +84,7 @@ class TestRatelimiterWorks(test_utils.AioHTTPTestCase):
         headers = {"User-Agent": "test-agent"}
         request = await self.client.request("GET", "/test", headers=headers)
         self.assertEqual(request.status, 429)
-        self.__assert_normal_request("GET", "agent2")
+        await self.__assert_normal_request("GET", "agent2")
 
     @test_utils.unittest_run_loop
     async def test_ratelimiter_allows_other_methods_for_same_agent(self):
