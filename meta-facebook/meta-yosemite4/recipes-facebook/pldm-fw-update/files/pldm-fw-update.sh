@@ -52,6 +52,7 @@ FAIL_TO_UPDATE_PLDM_TIME_OUT_ERROR=22
 FAIL_TO_UPDATE_PLDM_FAIL_TO_DELETE_SOFTWARE_ID=23
 FAIL_TO_UPDATE_PLDM_IMAGE_DOES_NOT_MATCH=24
 FAIL_TO_UPDATE_PLDM_MISS_SOFTWARE_ID=25
+FAIL_TO_UPDATE_PLDM_FAIL_TO_SET_REQUESTED_ACTIVATION=26
 FAIL_TO_UPDATE_PLDM_FAIL_TO_INIT_REAMAINING_WRITE_UNKNOWN_VR_DEVICE=28
 FAIL_TO_UPDATE_PLDM_SD_VR_SLOT_ID_IS_WRONG=30
 FAIL_TO_UPDATE_PLDM_UNABLE_TO_DETERMINE_RETIMER_TYPE=33
@@ -69,10 +70,10 @@ fi
 is_nuvoton_board="$(check_nuvoton_board)"
 
 show_usage() {
-	echo "Usage: pldm-fw-update.sh [sd|ff|wf|sd_vr|wf_vr|sd_retimer] (--rcvy <slot_id> <uart image>) (<slot_id>) <pldm image>"
-	echo "       update all PLDM component  : pldm-fw-update.sh [sd|ff|wf] <pldm image>"
-	echo "       update one PLDM component  : pldm-fw-update.sh [sd|ff|wf|sd_vr|wf_vr|sd_retimer] <slot_id> <pldm image>"
-	echo "       recover and then update one BIC. : pldm-fw-update.sh [sd|ff|wf] --rcvy <slot_id> <uart image> <pldm image>"
+	echo "Usage: pldm-fw-update.sh [sd|wf|sd_vr|wf_vr|sd_retimer] (--rcvy <slot_id> <uart image>) (<slot_id>) <pldm image>"
+	echo "       update all PLDM component  : pldm-fw-update.sh [sd|wf] <pldm image>"
+	echo "       update one PLDM component  : pldm-fw-update.sh [sd|wf|sd_vr|wf_vr|sd_retimer] <slot_id> <pldm image>"
+	echo "       recover and then update one BIC. : pldm-fw-update.sh [sd|wf] --rcvy <slot_id> <uart image> <pldm image>"
 	echo "       recovery SD re-timer : pldm-fw-update.sh [sd_retimer] <slot_id> <pldm recovery image>"
 	echo ""
 }
@@ -85,7 +86,7 @@ check_power_on() {
 	power_status=$(gpioget "$(basename /sys/bus/i2c/devices/"$i2c_bus"-0023/*gpiochip*)" 16)
 	if [ "$power_status" != "1" ]; then
 		echo "Check Power : Off"
-		echo "Power on before FF/WF PLDM component update"
+		echo "Power on before WF PLDM component update"
 		exit 255
 	fi
 
@@ -259,7 +260,10 @@ update_bic() {
 			return $FAIL_TO_UPDATE_PLDM_IMAGE_DOES_NOT_MATCH
 		fi
 		sleep 10
-		busctl set-property xyz.openbmc_project.PLDM /xyz/openbmc_project/software/"$software_id" xyz.openbmc_project.Software.Activation RequestedActivation s "xyz.openbmc_project.Software.Activation.RequestedActivations.Active"
+		if ! busctl set-property xyz.openbmc_project.PLDM /xyz/openbmc_project/software/"$software_id" xyz.openbmc_project.Software.Activation RequestedActivation s "xyz.openbmc_project.Software.Activation.RequestedActivations.Active" --timeout=120 2>&1; then
+			echo "Failed to set RequestedActivation. Return with error code: $FAIL_TO_UPDATE_PLDM_FAIL_TO_SET_REQUESTED_ACTIVATION"
+			return $FAIL_TO_UPDATE_PLDM_FAIL_TO_SET_REQUESTED_ACTIVATION
+		fi
 		wait_for_update_complete
 		update_status=$?
 		if [ "$3" == "wf_bic" ] || [ "$3" == "sd_bic" ]; then
@@ -357,11 +361,11 @@ is_other_bic_updating() {
   retry_remain_count=$RETRY_UPDATE_COUNT
   while true
   do
-	  pldm_output=$(busctl tree xyz.openbmc_project.PLDM)
+	  pldm_output=$(busctl tree xyz.openbmc_project.PLDM --timeout=120)
 	  if echo "$pldm_output" | grep -qE "/xyz/openbmc_project/software/[0-9]+"; then
 		echo "$pldm_output" | grep -E "/xyz/openbmc_project/software/[0-9]+"
-		previous_software_id=$(busctl tree xyz.openbmc_project.PLDM |grep /xyz/openbmc_project/software/ | cut -d "/" -f 5)
-		busctl get-property xyz.openbmc_project.PLDM /xyz/openbmc_project/software/"$previous_software_id" xyz.openbmc_project.Software.ActivationProgress Progress > /dev/null 2>&1
+		previous_software_id=$(echo "$pldm_output" | grep /xyz/openbmc_project/software/ | cut -d "/" -f 5)
+		busctl get-property xyz.openbmc_project.PLDM /xyz/openbmc_project/software/"$previous_software_id" xyz.openbmc_project.Software.ActivationProgress Progress --timeout=120 > /dev/null 2>&1
 		ret=$?
 		if [ "$ret" -eq 0 ]; then
 			echo -ne "Please wait until the other software update is completed, retry in 10 seconds, $retry_remain_count time(s) remaining... "\\r
@@ -523,7 +527,7 @@ check_if_no_retimer_sku() {
 
 restart_sd_bic_for_i3c_re-init () {
 	# Workaround: Restart all Sentinel dome BIC for i3c hub re-init
-	mapfile -t eid_arr < <(busctl tree xyz.openbmc_project.MCTP | grep /xyz/openbmc_project/mctp/1/ | cut -d "/" -f 6)
+	mapfile -t eid_arr < <(echo "$mctp_tree" | cut -d "/" -f 9)
 	for EID in "${eid_arr[@]}"
 	do
 		mctp_slot_id=$((EID/10));
@@ -555,10 +559,8 @@ handle_firmware_operations () {
 			recovery_bic_by_uart "$slot_id" "0x04" "0x01" "$uart_image"
 			ret=$?
 			;;
-		ff|wf)
+		wf)
 			check_power_on "$slot_id"
-			cpld_uart_routing=$( [ "$bic_name" == "ff" ] && echo "0x05" || echo "0x01" )
-			boot_strap_reg=$( [ "$bic_name" == "ff" ] && echo "0x04" || echo "0x02" )
 			recovery_bic_by_uart "$slot_id" "$cpld_uart_routing" "$boot_strap_reg" "$uart_image"
 			ret=$?
 			pldmtool raw -m "${slot_id}0" -d 0x80 0x02 0x39 0x1 0x1 0x1 0x1 0x1
@@ -578,7 +580,7 @@ handle_firmware_operations () {
 		sleep 60
 	fi
 
-	# TODO: WF/FF need to implement the remaining write times check
+	# TODO: WF need to implement the remaining write times check
 	if [ "$bic_name" == "sd_vr" ]; then
 		if ! [[ "$slot_id" =~ ^[1-8]$ ]]; then
 			echo "Failed to update SD VR because <slot${slot_id}> is wrong"
@@ -599,16 +601,17 @@ handle_firmware_operations () {
 		echo "PLDM image name: ${pldm_image}"
 	fi
 
-	mctp_tree=$(busctl tree xyz.openbmc_project.MCTP | tee /dev/tty)
+	mctp_tree=$(busctl tree au.com.codeconstruct.MCTP1 --timeout=120 2>&1 | grep "/au/com/codeconstruct/mctp1/networks/1/endpoints")
+	echo "$mctp_tree"
 	case "$bic_name" in
 	sd|sd_vr|sd_retimer)
-		if [ "$is_rcvy" == false ] && ! echo "$mctp_tree" | grep -q "/xyz/openbmc_project/mctp/1/${slot_id}0"; then
+		if [ "$is_rcvy" == false ] && ! echo "$mctp_tree" | grep -q "/au/com/codeconstruct/mctp1/networks/1/endpoints/${slot_id}0"; then
 			echo "EID ${slot_id}0 does not exist, unable to update PLDM device. Return with error code: $FAIL_TO_UPDATE_PLDM_MCTP_EID_NOT_EXIST"
 			return $FAIL_TO_UPDATE_PLDM_MCTP_EID_NOT_EXIST
 		fi
 		;;
 	wf|wf_vr)
-		if [ "$is_rcvy" == false ] && ! echo "$mctp_tree" | grep -q "/xyz/openbmc_project/mctp/1/${slot_id}2"; then
+		if [ "$is_rcvy" == false ] && ! echo "$mctp_tree" | grep -q "/au/com/codeconstruct/mctp1/networks/1/endpoints/${slot_id}2"; then
 			echo "EID ${slot_id}2 does not exist, unable to update PLDM device. Return with error code: $FAIL_TO_UPDATE_PLDM_MCTP_EID_NOT_EXIST"
 			return $FAIL_TO_UPDATE_PLDM_MCTP_EID_NOT_EXIST
 		fi
@@ -635,10 +638,12 @@ handle_firmware_operations () {
 
 	if [ "$is_rcvy" == true ]; then
 		echo "Slot$slot_id: Do 12V cycle"
-		busctl set-property xyz.openbmc_project.State.Chassis"$slot_id" /xyz/openbmc_project/state/chassis"$slot_id" xyz.openbmc_project.State.Chassis RequestedPowerTransition s "xyz.openbmc_project.State.Chassis.Transition.PowerCycle"
+		if ! busctl set-property xyz.openbmc_project.State.Chassis"$slot_id" /xyz/openbmc_project/state/chassis"$slot_id" xyz.openbmc_project.State.Chassis RequestedPowerTransition s "xyz.openbmc_project.State.Chassis.Transition.PowerCycle" --timeout=120 2>&1; then
+			echo "Failed to do 12V cycle"
+		fi
 		sleep 40
 	else
-		if [ "$bic_name" == "wf" ] || [ "$bic_name" == "ff" ]; then
+		if [ "$bic_name" == "wf" ]; then
 			restart_sd_bic_for_i3c_re-init
 		elif [ "$bic_name" == "sd" ]; then
 			sleep 15
@@ -669,9 +674,7 @@ handle_firmware_operations () {
 			# Loop through slot_id values from 1 to 8 if slot_id is empty
 			for slot_id in {1..8}; do
 				# Check EID presence first
-				busctl get-property xyz.openbmc_project.MCTP \
-					/xyz/openbmc_project/mctp/1/"$slot_id"0 \
-					xyz.openbmc_project.MCTP.Endpoint EID  > /dev/null 2>&1
+				echo "$mctp_tree" | grep -q "/au/com/codeconstruct/mctp1/networks/1/endpoints/${slot_id}0"
 				ret=$?
 				if [ "$ret" -eq 0 ]; then
 					/usr/libexec/fw-versions/sd-bic "$slot_id"
@@ -680,7 +683,7 @@ handle_firmware_operations () {
 					if [ "$ret" -eq 0 ]; then
 						version=$(busctl get-property xyz.openbmc_project.Settings \
 							"/xyz/openbmc_project/software/host$slot_id/Sentinel_Dome_bic" \
-							xyz.openbmc_project.Software.Version Version | awk -F'"' '{print $2}')
+							xyz.openbmc_project.Software.Version Version --timeout=120 2>&1 | awk -F'"' '{print $2}')
 						echo "Version retrieved successfully: $version"
 					fi
 				fi
@@ -693,7 +696,7 @@ handle_firmware_operations () {
 			if [ "$ret" -eq 0 ]; then
 				version=$(busctl get-property xyz.openbmc_project.Settings \
 					"/xyz/openbmc_project/software/host$slot_id/Sentinel_Dome_bic" \
-					xyz.openbmc_project.Software.Version Version | awk -F'"' '{print $2}')
+					xyz.openbmc_project.Software.Version Version --timeout=120 2>&1 | awk -F'"' '{print $2}')
 				echo "Version retrieved successfully: $version"
 			fi
 		fi
@@ -705,9 +708,7 @@ handle_firmware_operations () {
 			# Loop through slot_id values from 1 to 8 if slot_id is empty
 			for slot_id in {1..8}; do
 				# Check EID presence first
-				busctl get-property xyz.openbmc_project.MCTP \
-					/xyz/openbmc_project/mctp/1/"$slot_id"2 \
-					xyz.openbmc_project.MCTP.Endpoint EID  > /dev/null 2>&1
+				echo "$mctp_tree" | grep -q "/au/com/codeconstruct/mctp1/networks/1/endpoints/${slot_id}2"
 				ret=$?
 				if [ "$ret" -eq 0 ]; then
 					/usr/libexec/fw-versions/wf-bic "$slot_id"
@@ -716,7 +717,7 @@ handle_firmware_operations () {
 					if [ "$ret" -eq 0 ]; then
 						version=$(busctl get-property xyz.openbmc_project.Settings \
 							"/xyz/openbmc_project/software/host$slot_id/Wailua_Falls_bic" \
-							xyz.openbmc_project.Software.Version Version | awk -F'"' '{print $2}')
+							xyz.openbmc_project.Software.Version Version --timeout=120 2>&1 | awk -F'"' '{print $2}')
 						echo "Version retrieved successfully: $version"
 					fi
 				fi
@@ -729,7 +730,7 @@ handle_firmware_operations () {
 			if [ "$ret" -eq 0 ]; then
 				version=$(busctl get-property xyz.openbmc_project.Settings \
 					"/xyz/openbmc_project/software/host$slot_id/Wailua_Falls_bic" \
-					xyz.openbmc_project.Software.Version Version | awk -F'"' '{print $2}')
+					xyz.openbmc_project.Software.Version Version --timeout=120 2>&1 | awk -F'"' '{print $2}')
 				echo "Version retrieved successfully: $version"
 			fi
 		fi
