@@ -1,5 +1,6 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/linux-aspeed:"
 SRC_URI += " \
+    file://0001-adc128-filter-out-0x1ff.patch \
     file://1000-arm-dts-aspeed-yosemite4-enable-Jtag-on-yosemite4.patch \
     file://1001-arm-dts-aspeed-yosemite4-add-mac-config-property.patch \
     file://1002-arm-dts-aspeed-yosemite4-Revise-i2c-duty-cycle.patch \
