@@ -561,13 +561,16 @@ handle_firmware_operations () {
 			;;
 		wf)
 			check_power_on "$slot_id"
-			recovery_bic_by_uart "$slot_id" "$cpld_uart_routing" "$boot_strap_reg" "$uart_image"
+			recovery_bic_by_uart "$slot_id" "0x01" "0x02" "$uart_image"
 			ret=$?
 			pldmtool raw -m "${slot_id}0" -d 0x80 0x02 0x39 0x1 0x1 0x1 0x1 0x1
 			;;
 		esac
 
 		if [ "$ret" -ne 0 ]; then
+			sleep 10
+			systemctl start pldmd
+			sleep 60
 			echo "Failed to Recovery BIC. Exiting with error code: $ret"
 			exit "$ret"
 		fi
