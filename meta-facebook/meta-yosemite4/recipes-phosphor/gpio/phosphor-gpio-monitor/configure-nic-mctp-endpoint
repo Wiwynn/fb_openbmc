@@ -16,7 +16,7 @@ set_nic_eid() {
     MAX_RETRIES=3
     RETRY_COUNT=0
     while [ "$RETRY_COUNT" -lt "$MAX_RETRIES" ]; do
-        busctl call xyz.openbmc_project.MCTP /xyz/openbmc_project/mctp au.com.CodeConstruct.MCTP AssignEndpointStatic sayy "mctpi2c${bus}" 1 0x32 "$eid"
+        busctl call au.com.codeconstruct.MCTP1 /au/com/codeconstruct/mctp1/interfaces/"mctpi2c${bus}" au.com.codeconstruct.MCTP.BusOwner1 AssignEndpointStatic ayy 1 0x32 "$eid"
         ret=$?
         if [ "$ret" -eq 0 ]; then
             break
@@ -31,6 +31,6 @@ if [ "$action" = "add" ]; then
     set_nic_eid
 elif [ "$action" = "remove" ]; then
     echo "Removing MCTP endpoint for slot $slot"
-    busctl call xyz.openbmc_project.MCTP /xyz/openbmc_project/mctp/1/${eid} au.com.CodeConstruct.MCTP.Endpoint Remove
+    busctl call au.com.codeconstruct.MCTP1 /au/com/codeconstruct/mctp1/networks/1/endpoints/${eid} au.com.codeconstruct.MCTP.Endpoint1 Remove
 fi
 
